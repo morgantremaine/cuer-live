@@ -20,24 +20,14 @@ export const useFieldDeltaSave = (
   const pendingDeltasRef = useRef<FieldDelta[]>([]);
   const lastSavedStateRef = useRef<RundownState | null>(null);
 
-  // Optimized field change tracking with reduced logging
+  // Optimized field change tracking
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
-    const delta: FieldDelta = {
+    pendingDeltasRef.current.push({
       itemId,
       field,
       value,
       timestamp: Date.now()
-    };
-    
-    pendingDeltasRef.current.push(delta);
-    // Reduced logging frequency for performance
-    if (pendingDeltasRef.current.length % 10 === 0) {
-      console.log('📝 Field delta batch tracked:', { 
-        batchSize: pendingDeltasRef.current.length,
-        latestField: field,
-        itemId: itemId?.substring(0, 8)
-      });
-    }
+    });
   }, []);
 
   // Compare states and extract deltas
@@ -45,8 +35,6 @@ export const useFieldDeltaSave = (
     const deltas: FieldDelta[] = [];
     
     if (!previousState) {
-      // Initial save - save everything
-      console.warn('🧪 TRACE Delta: previousState missing - initial fullState delta would be created');
       return [{
         field: 'fullState',
         value: currentState,
@@ -91,13 +79,12 @@ export const useFieldDeltaSave = (
                        JSON.stringify(currentItemIds) !== JSON.stringify(previousItemIds);
     
     if (isReordered) {
-      console.log('🔄 Delta: detected item reordering - triggering full items update');
       deltas.push({
         field: 'fullItemsReorder',
         value: currentItems,
         timestamp: Date.now()
       });
-      return deltas; // Return early for reorder - no need to check individual items
+      return deltas;
     }
     
     // Track by item ID for efficient comparison
@@ -188,15 +175,10 @@ export const useFieldDeltaSave = (
     const hasFullUpdate = deltas.some(d => d.field === 'fullState' || d.field === 'fullItem');
     const hasReorder = deltas.some(d => d.field === 'fullItemsReorder');
 
-    // Only fall back to full updates for actual structural changes, not arbitrary size limits
+    // Only fall back to full updates for actual structural changes
     if (hasFullUpdate || hasReorder) {
-      // Fall back to full update only for structural operations that require it
-      console.log('💾 Performing full rundown update (structural changes detected)');
       return await performFullUpdate(currentState, updateTimestamp);
     }
-
-    // Perform optimized delta update with OCC
-    console.log('⚡ Performing delta update with OCC:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
     
     const updateData: any = {};
     

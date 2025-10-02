@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
-import { debugLogger } from '@/utils/debugLogger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
@@ -40,78 +39,48 @@ export const useStructuralSave = (
 
     const operations = [...pendingOperationsRef.current];
     pendingOperationsRef.current = [];
-
-    console.log('🏗️ STRUCTURAL SAVE: Processing', operations.length, 'operations');
     
-    // Notify UI that save is starting
-    console.log('🏗️ STRUCTURAL SAVE: Triggering onSaveStart callback');
-    if (onSaveStart) {
-      onSaveStart();
-    }
+    onSaveStart?.();
 
     try {
-      // For now, process operations sequentially to maintain order
-      // TODO: Optimize with batch processing if needed
       for (const operation of operations) {
         const { data, error } = await supabase.functions.invoke('structural-operation-save', {
           body: operation
         });
 
         if (error) {
-          console.error('🚨 STRUCTURAL SAVE ERROR:', error);
-          debugLogger.autosave(`Structural save failed: ${error.message}`);
+          console.error('Structural save error:', error);
           throw error;
         }
 
         if (data?.success) {
-          console.log('✅ STRUCTURAL SAVE SUCCESS:', {
-            operation: operation.operationType,
-            docVersion: data.docVersion,
-            itemCount: data.itemCount
-          });
-
           // Track our own update to prevent conflict detection via centralized tracker
           if (data.updatedAt) {
             const context = rundownId ? `realtime-${rundownId}` : undefined;
             ownUpdateTracker.track(data.updatedAt, context);
-            console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
           }
 
           // Broadcast structural change to other users for real-time updates
           if (rundownId && currentUserId) {
-            const broadcastData = {
-              operationType: operation.operationType,
-              operationData: operation.operationData,
-              docVersion: data.docVersion,
-              timestamp: operation.timestamp
-            };
-            
-            console.log('📡 Broadcasting structural operation:', {
-              operation: operation.operationType,
-              rundownId,
-              userId: currentUserId
-            });
-            
             cellBroadcast.broadcastCellUpdate(
               rundownId,
               undefined,
               `structural:${operation.operationType}`,
-              broadcastData,
+              {
+                operationType: operation.operationType,
+                operationData: operation.operationData,
+                docVersion: data.docVersion,
+                timestamp: operation.timestamp
+              },
               currentUserId
             );
           }
-
-          debugLogger.autosave(`Structural save success: ${operation.operationType}`);
         }
       }
       
-      // Notify UI that save completed successfully
-      console.log('🏗️ STRUCTURAL SAVE: Triggering onSaveComplete callback');
-      if (onSaveComplete) {
-        onSaveComplete();
-      }
+      onSaveComplete?.();
     } catch (error) {
-      console.error('🚨 STRUCTURAL SAVE BATCH ERROR:', error);
+      console.error('Structural save batch error:', error);
       // Re-queue failed operations for retry
       pendingOperationsRef.current.unshift(...operations);
       throw error;
@@ -126,48 +95,32 @@ export const useStructuralSave = (
       userId: string,
       sequenceNumber?: number
     ) => {
-      if (!rundownId) {
-        console.warn('🚨 Cannot queue structural operation: no rundownId');
-        return;
-      }
+      if (!rundownId) return;
 
       const operation: StructuralOperation = {
         rundownId,
         operationType,
         operationData: {
           ...operationData,
-          sequenceNumber // Add sequence number for ordering
+          sequenceNumber
         },
         userId,
         timestamp: new Date().toISOString()
       };
 
-      console.log('🏗️ STRUCTURAL SAVE: Queuing operation', {
-        type: operationType,
-        rundownId,
-        userId,
-        sequenceNumber,
-        dataKeys: Object.keys(operationData)
-      });
-
       pendingOperationsRef.current.push(operation);
-      
-      // Notify UI of unsaved changes
-      console.log('🏗️ STRUCTURAL SAVE: Triggering onUnsavedChanges callback');
-      if (onUnsavedChanges) {
-        onUnsavedChanges();
-      }
+      onUnsavedChanges?.();
 
-      // Debounce save operations with shorter delay for better coordination
+      // Debounce save operations
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
       saveTimeoutRef.current = setTimeout(() => {
         saveStructuralOperations().catch(error => {
-          console.error('🚨 STRUCTURAL SAVE ERROR:', error);
+          console.error('Structural save error:', error);
         });
-      }, 100); // Reduced to 100ms for better responsiveness during coordination
+      }, 100);
     },
     [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
