@@ -595,6 +595,18 @@ export const useTeam = () => {
         t.id === team.id ? { ...t, name: trimmedName } : t
       ));
       
+      // Update global cache for all hook instances
+      if (user?.id) {
+        const loadKey = `${user.id}-${team.id}`;
+        const cachedTeam = globalTeamCache.get(loadKey);
+        if (cachedTeam) {
+          globalTeamCache.set(loadKey, { ...cachedTeam, name: trimmedName });
+        }
+      }
+      
+      // Reload allUserTeams to ensure consistency across all components
+      await loadAllUserTeams();
+      
       return { success: true };
     } catch (error) {
       return { error: 'Failed to update team name' };
