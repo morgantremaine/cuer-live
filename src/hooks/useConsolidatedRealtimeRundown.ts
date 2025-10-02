@@ -29,7 +29,6 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
-  gapDetectionInProgress: boolean;
 }>();
 
 export const useConsolidatedRealtimeRundown = ({
@@ -115,79 +114,9 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // SIMPLIFIED: No queuing - just apply updates immediately (Google Sheets style)
-    // If the user is typing, the UI layer will handle conflicts with proper field focus protection
-
-    // Enhanced gap detection with improved handling
-    const expectedVersion = currentDocVersion + 1;
-    const hasSignificantGap = incomingDocVersion && incomingDocVersion > (expectedVersion + 1); // Allow 1 version tolerance
-    
-    if (hasSignificantGap && !globalState.gapDetectionInProgress) {
-      console.warn('⚠️ Significant version gap detected, performing smart catch-up', {
-        incomingDocVersion,
-        expectedVersion,
-        gap: incomingDocVersion - expectedVersion,
-        lastProcessed: currentDocVersion
-      });
-      
-      globalState.gapDetectionInProgress = true;
-      // Only show processing indicator for gap detection if not initial load
-      if (!isInitialLoadRef.current) {
-        setIsProcessingUpdate(true);
-      }
-      
-      (async () => {
-        try {
-          const { data, error } = await supabase
-            .from('rundowns')
-            .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state, last_updated_by')
-            .eq('id', rundownId as string)
-            .single();
-            
-             if (!error && data) {
-              const serverVersion = data.doc_version || 0;
-              const serverTimestamp = normalizeTimestamp(data.updated_at);
-              
-              // SIMPLIFIED: Apply gap resolution immediately - no queuing
-              // The UI layer handles field-level protection during active typing
-              
-              // Only apply if server data is newer than what we're processing
-             if (serverVersion >= incomingDocVersion) {
-              globalState.lastProcessedTimestamp = serverTimestamp;
-              globalState.lastProcessedDocVersion = serverVersion;
-              
-              // Apply complete server data to resolve gap
-              globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-                try { cb(data); } catch (err) { console.error('Error in gap resolution callback:', err); }
-              });
-              
-              console.log('✅ Gap resolved with server data:', {
-                serverVersion,
-                targetVersion: incomingDocVersion
-              });
-            } else {
-              console.warn('⚠️ Server data outdated during gap resolution, continuing with update');
-              // Continue with normal processing below
-            }
-          } else {
-            console.error('❌ Gap resolution failed:', error);
-          }
-        } catch (error) {
-          console.error('❌ Gap resolution error:', error);
-        } finally {
-          globalState.gapDetectionInProgress = false;
-          // Keep processing indicator active briefly for UI feedback
-          setTimeout(() => {
-            setIsProcessingUpdate(false);
-          }, 500);
-        }
-      })();
-      
-      // If gap detection is handling it, skip normal processing
-      if (hasSignificantGap) {
-        return;
-      }
-    }
+    // SIMPLIFIED: No gap detection - just apply all updates immediately (Google Sheets style)
+    // Let per-cell saves handle conflicts at database level
+    // "Last write wins" for concurrent editing - simple and predictable
 
     // Determine update type with better categorization
     const hasContentChanges = ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
@@ -199,7 +128,6 @@ export const useConsolidatedRealtimeRundown = ({
       type: hasBlueprintChanges ? 'blueprint' : hasShowcallerChanges && !hasContentChanges ? 'showcaller' : 'content',
       docVersion: incomingDocVersion,
       timestamp: normalizedTimestamp,
-      hasGap: hasSignificantGap,
       userId: payload.new?.last_updated_by
     });
     
@@ -328,7 +256,7 @@ export const useConsolidatedRealtimeRundown = ({
           },
           (payload) => {
             const state = globalSubscriptions.get(rundownId);
-            if (state && !state.gapDetectionInProgress) {
+            if (state) {
               processRealtimeUpdate(payload, state);
             }
           }
@@ -406,8 +334,7 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
-        refCount: 0,
-        gapDetectionInProgress: false // Initialize gap detection state
+        refCount: 0
       };
 
       globalSubscriptions.set(rundownId, globalState);
