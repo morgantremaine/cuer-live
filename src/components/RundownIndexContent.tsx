@@ -626,6 +626,7 @@ const RundownIndexContent = () => {
           setShowColumnManager(show);
         }}
         items={items}
+        visibleItems={visibleItems}
         visibleColumns={visibleColumns}
         columns={userColumns}
         showColorPicker={showColorPicker as any}
@@ -750,7 +751,6 @@ const RundownIndexContent = () => {
         toggleHeaderCollapse={toggleHeaderCollapse}
         isHeaderCollapsed={isHeaderCollapsed}
         getHeaderGroupItemIds={getHeaderGroupItemIds}
-        visibleItems={visibleItems}
         onMoveItemUp={(index) => moveItemUp(index)}
         onMoveItemDown={(index) => moveItemDown(index)}
         dragAndDrop={dragAndDrop}
