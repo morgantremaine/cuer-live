@@ -68,6 +68,12 @@ export const useConsolidatedRealtimeRundown = ({
     const handleOffline = () => {
       console.log('📵 Browser detected network offline');
       setIsConnected(false);
+      
+      // Also update global subscription state immediately
+      const state = globalSubscriptions.get(rundownId);
+      if (state) {
+        state.isConnected = false;
+      }
     };
     
     // Listen to browser network events for instant detection

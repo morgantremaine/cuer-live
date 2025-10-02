@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff, Search, Calendar } from 'lucide-react';
 import { debugLogger } from '@/utils/debugLogger';
@@ -91,6 +91,28 @@ const RundownHeader = ({
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isBrowserOnline, setIsBrowserOnline] = useState(navigator.onLine);
+
+  // Listen to browser network events for immediate WiFi icon updates
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🌐 RundownHeader: Browser online');
+      setIsBrowserOnline(true);
+    };
+    
+    const handleOffline = () => {
+      console.log('🌐 RundownHeader: Browser offline');
+      setIsBrowserOnline(false);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   // Debug logging for presence tracking and computed display flag
   const showTeammateEditing = !!(hasActiveTeammates && !isProcessingRealtimeUpdate);
@@ -297,30 +319,35 @@ const RundownHeader = ({
   // Get reconnection status from context
   const { isReconnecting } = useRealtimeConnection();
 
-  // Helper function to render connection status icon - shows connection quality only
+  // Helper function to render connection status icon with priority-based detection
   const renderConnectionIcon = () => {
     let icon;
     let tooltip;
     
-    // Yellow spinner for reconnecting
-    if (isReconnecting) {
+    // PRIORITY 1: Browser offline (immediate detection)
+    if (!isBrowserOnline) {
+      icon = <WifiOff className="h-4 w-4 text-red-500" />;
+      tooltip = "No internet connection";
+    }
+    // PRIORITY 2: Reconnecting state (from coordinator)
+    else if (isReconnecting) {
       icon = <LoaderCircle className="h-4 w-4 text-yellow-500 animate-spin" />;
       tooltip = "Reconnecting...";
     }
-    // Yellow for degraded connection
+    // PRIORITY 3: Supabase channel disconnected
+    else if (!isConnected) {
+      icon = <LoaderCircle className="h-4 w-4 text-yellow-500 animate-spin" />;
+      tooltip = "Connecting to server...";
+    }
+    // PRIORITY 4: Degraded connection (poor broadcast health)
     else if (isDegraded) {
       icon = <Wifi className="h-4 w-4 text-yellow-500" />;
       tooltip = "Connection issues - may be slower";
     }
-    // Green for good connection
-    else if (isConnected) {
+    // PRIORITY 5: All good
+    else {
       icon = <Wifi className="h-4 w-4 text-green-500" />;
       tooltip = "Connection healthy";
-    }
-    // Red for disconnected
-    else {
-      icon = <WifiOff className="h-4 w-4 text-red-500" />;
-      tooltip = "Disconnected - reconnecting...";
     }
     
     return (
