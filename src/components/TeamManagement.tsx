@@ -550,84 +550,59 @@ const TeamManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Leave Team Card (Members Only) */}
+      {/* Leave Team Button (Members Only) */}
       {canLeaveTeam && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <LogOut className="h-5 w-5" />
-              Leave Team
-            </CardTitle>
-            <CardDescription className="text-orange-700">
-              Leave this team and return to your personal workspace
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 bg-white border border-orange-200 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-3">
-                  <strong>What will happen when you leave:</strong>
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Your rundowns and blueprints will be transferred to the team admin</li>
-                  <li>• You'll keep your account and personal team</li>
-                  <li>• You'll lose access to all team data immediately</li>
-                  <li>• You can be re-invited to the team later</li>
-                </ul>
-              </div>
-              
-              <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="border-orange-600 text-orange-700 hover:bg-orange-100">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Leave {team?.name}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-orange-500" />
-                      Leave Team
-                    </AlertDialogTitle>
-                    <AlertDialogDescription className="space-y-3">
-                      <p>
-                        Are you sure you want to leave <strong>{team?.name}</strong>?
-                      </p>
-                      <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
-                        <p className="font-semibold text-orange-700 mb-2">You will:</p>
-                        <ul className="space-y-1 text-sm">
-                          <li>• Transfer all your data to {teamAdminName || 'the team admin'}</li>
-                          <li>• Keep your account and personal team</li>
-                          <li>• Lose access to team rundowns immediately</li>
-                          <li>• Need a new invitation to rejoin</li>
-                        </ul>
-                      </div>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLeavingTeam}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleLeaveTeam}
-                      disabled={isLeavingTeam}
-                      className="bg-orange-600 text-white hover:bg-orange-700"
-                    >
-                      {isLeavingTeam ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Leaving...
-                        </>
-                      ) : (
-                        'Leave Team'
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="pt-6 border-t">
+          <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="border-orange-600 text-orange-700 hover:bg-orange-100">
+                <LogOut className="h-4 w-4 mr-2" />
+                Leave {team?.name}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  Leave Team
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-3">
+                  <p>
+                    Are you sure you want to leave <strong>{team?.name}</strong>?
+                  </p>
+                  <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
+                    <p className="font-semibold text-orange-700 mb-2">You will:</p>
+                    <ul className="space-y-1 text-sm">
+                      <li>• Transfer all your data to {teamAdminName || 'the team admin'}</li>
+                      <li>• Keep your account and personal team</li>
+                      <li>• Lose access to team rundowns immediately</li>
+                      <li>• Need a new invitation to rejoin</li>
+                    </ul>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isLeavingTeam}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleLeaveTeam}
+                  disabled={isLeavingTeam}
+                  className="bg-orange-600 text-white hover:bg-orange-700"
+                >
+                  {isLeavingTeam ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Leaving...
+                    </>
+                  ) : (
+                    'Leave Team'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       )}
 
       {/* Enhanced Remove Member Dialog */}
