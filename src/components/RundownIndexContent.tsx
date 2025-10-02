@@ -597,10 +597,13 @@ const RundownIndexContent = () => {
         onShowDateChange={handleShowDateChange}
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
-        onUndo={undo}
-        canUndo={canUndo}
-        lastAction={lastAction || ''}
-        isConnected={isConnected}
+        onUndo={coreState.undo}
+        canUndo={coreState.canUndo}
+        lastAction={coreState.lastAction}
+        onRedo={coreState.redo}
+        canRedo={coreState.canRedo}
+        nextRedoAction={coreState.nextRedoAction}
+        isConnected={coreState.isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         hasActiveTeammates={hasActiveTeammates}
         activeTeammateNames={activeTeammateNames}

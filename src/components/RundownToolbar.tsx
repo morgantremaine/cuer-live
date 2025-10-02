@@ -28,6 +28,10 @@ interface RundownToolbarProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  // Redo functionality
+  onRedo: () => void;
+  canRedo: boolean;
+  nextRedoAction: string | null;
   // Rundown title for sharing
   rundownTitle?: string;
   // Rundown data for CSV export
@@ -66,6 +70,9 @@ const RundownToolbar = ({
   onUndo,
   canUndo,
   lastAction,
+  onRedo,
+  canRedo,
+  nextRedoAction,
   rundownTitle,
   rundownData,
   autoScrollEnabled,
@@ -91,6 +98,9 @@ const RundownToolbar = ({
     onUndo,
     canUndo,
     lastAction,
+    onRedo,
+    canRedo,
+    nextRedoAction,
     rundownId,
     onOpenTeleprompter,
     selectedRowId,

@@ -24,6 +24,9 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     onUndo,
     canUndo,
     lastAction,
+    onRedo,
+    canRedo,
+    nextRedoAction,
     items,
     visibleColumns,
     isConnected,
@@ -62,6 +65,9 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onUndo={onUndo}
       canUndo={canUndo}
       lastAction={lastAction}
+      onRedo={onRedo}
+      canRedo={canRedo}
+      nextRedoAction={nextRedoAction}
       isConnected={isConnected}
       isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
       isPlaying={isPlaying}

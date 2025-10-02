@@ -42,6 +42,9 @@ interface RundownHeaderSectionProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  onRedo: () => void;
+  canRedo: boolean;
+  nextRedoAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
   rundownData?: CSVExportData;
@@ -101,6 +104,9 @@ const RundownHeaderSection = ({
   onUndo,
   canUndo,
   lastAction,
+  onRedo,
+  canRedo,
+  nextRedoAction,
   isConnected,
   isProcessingRealtimeUpdate,
   rundownData,
@@ -141,6 +147,9 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        onRedo={onRedo}
+        canRedo={canRedo}
+        nextRedoAction={nextRedoAction}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         isPlaying={isPlaying}
@@ -171,6 +180,9 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
+        onRedo={onRedo}
+        canRedo={canRedo}
+        nextRedoAction={nextRedoAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}

@@ -38,6 +38,9 @@ interface RundownHeaderProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  onRedo: () => void;
+  canRedo: boolean;
+  nextRedoAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
   isPlaying: boolean;
@@ -67,6 +70,9 @@ const RundownHeader = ({
   onUndo,
   canUndo,
   lastAction,
+  onRedo,
+  canRedo,
+  nextRedoAction,
   isConnected,
   isProcessingRealtimeUpdate,
   isPlaying,

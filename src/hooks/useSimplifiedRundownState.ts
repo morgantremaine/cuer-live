@@ -205,8 +205,8 @@ export const useSimplifiedRundownState = () => {
     applyingCellBroadcastRef // Pass the cell broadcast flag
   );
 
-  // Standalone undo system - unchanged
-  const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
+  // Standalone undo system - now with redo
+  const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
       setUndoActive(true);
       actions.setItems(items);
@@ -1705,11 +1705,14 @@ export const useSimplifiedRundownState = () => {
       setColumns(newColumns);
     },
 
-    // Undo functionality - properly expose these including saveUndoState
+    // Undo/Redo functionality - properly expose these including saveUndoState
     saveUndoState,
-    undo,
+    undo: () => undo(state.items, columns, state.title),
     canUndo,
     lastAction,
+    redo: () => redo(),
+    canRedo,
+    nextRedoAction,
     
     // Teleprompter sync callbacks (exposed globally) + track own update integration
     teleprompterSaveHandlers: {

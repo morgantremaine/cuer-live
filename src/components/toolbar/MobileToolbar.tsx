@@ -20,6 +20,9 @@ interface MobileToolbarProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
+  onRedo: () => void;
+  canRedo: boolean;
+  nextRedoAction: string | null;
   rundownId: string | undefined;
   selectedRowId: string | null;
   isPlaying: boolean;
@@ -54,6 +57,9 @@ const MobileToolbar = ({
   onUndo,
   canUndo,
   lastAction,
+  onRedo,
+  canRedo,
+  nextRedoAction,
   rundownId,
   selectedRowId,
   isPlaying,
@@ -114,6 +120,9 @@ const MobileToolbar = ({
                   onUndo={onUndo}
                   canUndo={canUndo}
                   lastAction={lastAction}
+                  onRedo={onRedo}
+                  canRedo={canRedo}
+                  nextRedoAction={nextRedoAction}
                   rundownId={rundownId}
                   selectedRowId={selectedRowId}
                   isMobile={true}
