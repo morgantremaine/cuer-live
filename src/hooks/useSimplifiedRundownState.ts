@@ -562,6 +562,17 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
+            case 'items:remove-multiple': {
+              const ids = update.value?.ids as string[];
+              if (ids && Array.isArray(ids) && ids.length > 0) {
+                const newItems = stateRef.current.items.filter(i => !ids.includes(i.id));
+                if (newItems.length !== stateRef.current.items.length) {
+                  console.log('📱 Multi-delete broadcast applied', { deletedCount: stateRef.current.items.length - newItems.length, idsCount: ids.length });
+                  actionsRef.current.loadState({ items: newItems });
+                }
+              }
+              break;
+            }
             default:
               console.warn('🚨 Unknown rundown-level field:', update.field);
           }
