@@ -595,18 +595,7 @@ export const useTeam = () => {
         t.id === team.id ? { ...t, name: trimmedName } : t
       ));
       
-      // Update global cache for all hook instances
-      if (user?.id) {
-        const loadKey = `${user.id}-${team.id}`;
-        const cachedTeam = globalTeamCache.get(loadKey);
-        if (cachedTeam) {
-          globalTeamCache.set(loadKey, { ...cachedTeam, name: trimmedName });
-        }
-      }
-      
-      // Reload allUserTeams to ensure consistency across all components
-      await loadAllUserTeams();
-      
+      // Realtime subscription will propagate this change to all other hook instances
       return { success: true };
     } catch (error) {
       return { error: 'Failed to update team name' };
@@ -805,6 +794,61 @@ export const useTeam = () => {
       globalRealtimeChannels.delete(channelKey);
     };
   }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam, loadAllUserTeams, switchToTeam]);
+
+  // Subscribe to team updates for real-time name changes
+  useEffect(() => {
+    if (!user?.id || !activeTeamId) return;
+
+    const channelKey = `team-updates-${user.id}-${activeTeamId}`;
+    
+    // Use global channel tracking to prevent duplicates
+    if (globalRealtimeChannels.has(channelKey)) {
+      return;
+    }
+    
+    console.log('[useTeam] Setting up team updates subscription for team:', activeTeamId);
+    
+    const channel = supabase
+      .channel(channelKey)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'teams',
+          filter: `id=eq.${activeTeamId}`
+        },
+        (payload) => {
+          console.log('🔄 Team updated via realtime:', payload);
+          const updatedTeam = payload.new as Team;
+          
+          // Update local team state
+          setTeam(prev => prev ? { ...prev, name: updatedTeam.name } : null);
+          
+          // Update in allUserTeams
+          setAllUserTeams(prev => 
+            prev.map(t => t.id === updatedTeam.id ? { ...t, name: updatedTeam.name } : t)
+          );
+          
+          // Update global cache
+          const loadKey = `${user.id}-${updatedTeam.id}`;
+          const cachedTeam = globalTeamCache.get(loadKey);
+          if (cachedTeam) {
+            globalTeamCache.set(loadKey, { ...cachedTeam, name: updatedTeam.name });
+            console.log('[useTeam] Updated global cache for team:', updatedTeam.id);
+          }
+        }
+      )
+      .subscribe();
+    
+    globalRealtimeChannels.set(channelKey, channel);
+
+    return () => {
+      console.log('[useTeam] Cleaning up team updates subscription');
+      supabase.removeChannel(channel);
+      globalRealtimeChannels.delete(channelKey);
+    };
+  }, [user?.id, activeTeamId]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
