@@ -61,10 +61,45 @@ export const useOperationBroadcast = ({
       willIgnore: payload?.operation?.clientId === clientId
     });
 
-    if (payload?.type === 'operation_applied' && payload?.rundownId === rundownId) {
+    // Handle batch operations (new format)
+    if (payload?.type === 'batch_operations_applied' && payload?.rundownId === rundownId) {
+      const operations = payload.operations as RemoteOperation[];
+      
+      console.log('✅ BATCH BROADCAST RECEIVED:', {
+        batchSize: operations.length,
+        types: operations.map(op => op.operationType)
+      });
+      
+      // Process each operation in the batch
+      for (const operation of operations) {
+        // Ignore operations from our own client
+        if (operation.clientId === clientId) {
+          console.log('🔄 IGNORING OWN OPERATION:', operation.id);
+          continue;
+        }
+
+        console.log('🎯 APPLYING REMOTE OPERATION FROM BATCH:', {
+          id: operation.id,
+          type: operation.operationType,
+          fromClient: operation.clientId,
+          sequence: operation.sequenceNumber
+        });
+
+        // Use refs to avoid dependency issues
+        if (onRemoteOperationRef.current) {
+          onRemoteOperationRef.current(operation);
+        }
+
+        if (onOperationAppliedRef.current) {
+          onOperationAppliedRef.current(operation);
+        }
+      }
+    } 
+    // Handle single operations (backwards compatibility)
+    else if (payload?.type === 'operation_applied' && payload?.rundownId === rundownId) {
       const operation = payload.operation as RemoteOperation;
       
-      console.log('✅ BROADCAST PASSED INITIAL CHECKS');
+      console.log('✅ SINGLE OPERATION BROADCAST RECEIVED');
       
       // Ignore operations from our own client
       if (operation.clientId === clientId) {
@@ -72,33 +107,26 @@ export const useOperationBroadcast = ({
         return;
       }
 
-      console.log('🎯 APPLYING REMOTE OPERATION FROM ANOTHER CLIENT:', {
+      console.log('🎯 APPLYING REMOTE OPERATION:', {
         id: operation.id,
         type: operation.operationType,
         fromClient: operation.clientId,
-        sequence: operation.sequenceNumber,
-        timestamp: new Date().toISOString()
-      });
-
-      console.log('🔍 CALLBACK STATUS:', {
-        hasOnRemoteOperation: !!onRemoteOperationRef.current,
-        hasOnOperationApplied: !!onOperationAppliedRef.current
+        sequence: operation.sequenceNumber
       });
 
       // Use refs to avoid dependency issues
       if (onRemoteOperationRef.current) {
-        console.log('📞 CALLING onRemoteOperation - THIS SHOULD UPDATE STATE');
         onRemoteOperationRef.current(operation);
       }
 
       if (onOperationAppliedRef.current) {
-        console.log('📞 CALLING onOperationApplied');
         onOperationAppliedRef.current(operation);
       }
     } else {
       console.log('❌ BROADCAST FAILED CHECKS - NOT PROCESSING', {
         hasType: !!payload?.type,
-        hasRundownId: !!payload?.rundownId
+        hasRundownId: !!payload?.rundownId,
+        payloadType: payload?.type
       });
     }
   }, [rundownId, clientId]); // Removed callback dependencies
