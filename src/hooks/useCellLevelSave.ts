@@ -77,10 +77,6 @@ export const useCellLevelSave = (
 
     const updatesToSave = [...pendingUpdatesRef.current];
     pendingUpdatesRef.current = [];
-    
-    if (onChangesSaved) {
-      onChangesSaved();
-    }
 
     try {
       debugLogger.autosave(`Saving ${updatesToSave.length} cell-level updates`);
@@ -122,6 +118,10 @@ export const useCellLevelSave = (
         
         const context = rundownId ? `realtime-${rundownId}` : undefined;
         ownUpdateTracker.track(data.updatedAt, context);
+        
+        if (onChangesSaved) {
+          onChangesSaved();
+        }
         
         if (onSaveComplete) {
           onSaveComplete(updatesToSave);
