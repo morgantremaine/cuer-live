@@ -45,16 +45,16 @@ export const useCellEditIntegration = ({
     handleKeystroke: () => {}
   };
 
-  // Only log when operation mode changes, not on every render
-  const prevOperationMode = useRef(operationSystem.isOperationMode);
-  if (prevOperationMode.current !== operationSystem.isOperationMode) {
-    console.log('🚀 OPERATION SYSTEM ACTIVE:', {
+  // Only log when realtime system changes, not on every render
+  const prevRealtimeMode = useRef(!!operationSystem.handleCellEdit);
+  if (prevRealtimeMode.current !== !!operationSystem.handleCellEdit) {
+    console.log('🚀 REALTIME SYSTEM ACTIVE:', {
       rundownId,
       userId: user?.id,
-      isOperationMode: operationSystem.isOperationMode,
-      operationSystemEnabled: true
+      realtimeEnabled: !!operationSystem.handleCellEdit,
+      realtimeSystemEnabled: true
     });
-    prevOperationMode.current = operationSystem.isOperationMode;
+    prevRealtimeMode.current = !!operationSystem.handleCellEdit;
   }
 
   // Get the coordinated save system (per-cell saves are always enabled)
@@ -94,42 +94,30 @@ export const useCellEditIntegration = ({
       itemId,
       fieldName,
       newValue: typeof newValue === 'string' ? newValue.substring(0, 50) : newValue,
-      operationSystemEnabled: operationSystem.isOperationMode,
+      realtimeEnabled: !!operationSystem.handleCellEdit,
       rundownId,
       timestamp: new Date().toISOString()
     });
     
-    // Always route through operation system
-    if (operationSystem.isOperationMode && itemId) {
-      console.log('🚀 ROUTING THROUGH OPERATION SYSTEM:', {
+    // Always route through real-time system for instant updates
+    if (itemId) {
+      console.log('🚀 ROUTING THROUGH REALTIME SYSTEM:', {
         itemId,
         fieldName,
         newValue,
-        operationSystemActive: true
+        realtimeActive: true
       });
       
       operationSystem.handleCellEdit(itemId, fieldName, newValue);
-      debugLogger.autosave(`Operation cell edit: ${fieldName} for item ${itemId}`);
+      debugLogger.autosave(`Realtime cell edit: ${fieldName} for item ${itemId}`);
       
-      console.log('✅ OPERATION SYSTEM: Cell edit queued successfully');
+      console.log('✅ REALTIME SYSTEM: Cell edit applied immediately');
       return;
     }
     
-    // Legacy fallback (should rarely be used now)
-    if (!isPerCellEnabled) {
-      console.log('⚠️ CELL EDIT INTEGRATION: Per-cell disabled, using normal tracking');
-      debugLogger.autosave(`Cell change (non-per-cell): ${fieldName} for item ${itemId || 'global'}`);
-      return;
-    }
-
-    console.log('🔄 CELL EDIT INTEGRATION: Per-cell enabled, tracking field change');
-    trackFieldChange(itemId, fieldName, newValue);
-    debugLogger.autosave(`Per-cell change tracked: ${fieldName} for item ${itemId || 'global'}`);
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-  }, [isPerCellEnabled, operationSystem, trackFieldChange]);
+    // Fallback for global fields
+    debugLogger.autosave(`Cell change (global): ${fieldName}`);
+  }, [operationSystem, trackFieldChange]);
 
   // Handle when user starts editing a cell (for LocalShadow integration)
   const handleCellEditStart = useCallback((
@@ -163,31 +151,31 @@ export const useCellEditIntegration = ({
     handleCellChange,
     handleCellEditStart,
     handleCellEditComplete,
-    // Use operation-based save state when operation mode is active
-    hasUnsavedChanges: operationSystem.isOperationMode ? 
+    // Use real-time system save state when active
+    hasUnsavedChanges: operationSystem.handleCellEdit ? 
       operationSystem.hasUnsavedChanges : 
       hasPerCellUnsavedChanges,
     isPerCellEnabled,
-    isPerCellSaving: operationSystem.isOperationMode ? 
+    isPerCellSaving: operationSystem.handleCellEdit ? 
       operationSystem.isSaving : 
       isPerCellSaving,
     
     // Enhanced save state for smart indicators
     saveState: {
-      isSaving: operationSystem.isOperationMode ? operationSystem.isSaving : isPerCellSaving,
-      hasUnsavedChanges: operationSystem.isOperationMode ? operationSystem.hasUnsavedChanges : hasPerCellUnsavedChanges,
+      isSaving: operationSystem.handleCellEdit ? operationSystem.isSaving : isPerCellSaving,
+      hasUnsavedChanges: operationSystem.handleCellEdit ? operationSystem.hasUnsavedChanges : hasPerCellUnsavedChanges,
       lastSaved: operationSystem.lastSaved,
       saveError: operationSystem.saveError,
       hasContentChanges: true,
-      isTyping: operationSystem.isTyping,
-      showSaved: operationSystem.showSaved
+      isTyping: false,
+      showSaved: operationSystem.lastSaved ? Date.now() - operationSystem.lastSaved < 3000 : false
     },
     
     // Keystroke handler for smart save indicators
-    handleKeystroke: operationSystem.handleKeystroke,
+    handleKeystroke: () => {}, // No-op for now
     
-    // Expose operation system state for debugging
-    operationSystemActive: operationSystem.isOperationMode,
+    // Expose real-time system state for debugging
+    operationSystemActive: !!operationSystem.handleCellEdit,
     operationSystemSaving: operationSystem.isSaving,
     operationSystemUnsaved: operationSystem.hasUnsavedChanges,
     operationLastSaved: operationSystem.lastSaved

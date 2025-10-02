@@ -7,7 +7,7 @@ import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
-import { useOperationBasedRundown } from './useOperationBasedRundown';
+import { useSimplifiedRealtimeRundown } from './useSimplifiedRealtimeRundown';
 import { arrayMove } from '@dnd-kit/sortable';
 import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -28,13 +28,12 @@ export const useRundownStateCoordination = () => {
   // Get rundownId first, but tell it NOT to create operation system
   const persistedState = usePersistedRundownState('SKIP_OPERATION_SYSTEM');
 
-  // Initialize operation-based system (THE PRIMARY system - always enabled)
-  // This is THE ONLY operation system that should exist in the real rundown
-  const operationSystem = useOperationBasedRundown({
+  // Initialize simplified real-time system (THE PRIMARY system - always enabled)
+  // This provides instant updates with simple real-time broadcasting
+  const operationSystem = useSimplifiedRealtimeRundown({
     rundownId: persistedState.rundownId || '',
     userId: userId || '',
-    enabled: true, // Always enabled - OT is THE system
-    skipHistoricalOperations: true // Start fresh - don't load historical operations
+    enabled: true // Always enabled - real-time collaboration
   });
 
   // Always use operation system items as the single source of truth
@@ -91,7 +90,7 @@ export const useRundownStateCoordination = () => {
     operationSystem.handleCellEdit(id, field, value);
   };
 
-  // Pure local-only update (NO operation system routing)
+  // Pure local-only update (NO database save, NO broadcast)
   // For text fields that handle their own server sync
   const localOnlyUpdateItem = (id: string, field: string, value: any) => {
     operationSystem.updateLocalState(id, field, value);
