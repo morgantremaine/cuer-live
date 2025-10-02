@@ -12,6 +12,7 @@ import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 
 export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
@@ -109,13 +110,24 @@ export const useRundownStateCoordination = () => {
       console.log('🔄 Moving item from', index, 'to', index - 1);
       persistedState.setItems(newItems);
       
-      // For per-cell saves, mark as saved after the structural operation
-      const state = persistedState as any;
-      if (state.perCellSaveEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
-        setTimeout(() => {
-          state.markSaved();
-        }, 100);
+      // Broadcast reorder for immediate realtime sync (dual broadcasting)
+      if (persistedState.rundownId && userId) {
+        const order = newItems.map(item => item.id);
+        cellBroadcast.broadcastCellUpdate(
+          persistedState.rundownId,
+          undefined,
+          'items:reorder',
+          { order },
+          userId
+        );
+        console.log('📡 Broadcasting moveUp reorder:', { orderLength: order.length });
+      }
+      
+      // Trigger structural operation for database persistence
+      if (persistedState.markStructuralChange) {
+        const order = newItems.map(item => item.id);
+        persistedState.markStructuralChange('reorder', { order });
+        console.log('🏗️ Triggered structural operation for moveUp');
       }
     }
   };
@@ -128,13 +140,24 @@ export const useRundownStateCoordination = () => {
       console.log('🔄 Moving item from', index, 'to', index + 1);
       persistedState.setItems(newItems);
       
-      // For per-cell saves, mark as saved after the structural operation
-      const state = persistedState as any;
-      if (state.perCellSaveEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
-        setTimeout(() => {
-          state.markSaved();
-        }, 100);
+      // Broadcast reorder for immediate realtime sync (dual broadcasting)
+      if (persistedState.rundownId && userId) {
+        const order = newItems.map(item => item.id);
+        cellBroadcast.broadcastCellUpdate(
+          persistedState.rundownId,
+          undefined,
+          'items:reorder',
+          { order },
+          userId
+        );
+        console.log('📡 Broadcasting moveDown reorder:', { orderLength: order.length });
+      }
+      
+      // Trigger structural operation for database persistence
+      if (persistedState.markStructuralChange) {
+        const order = newItems.map(item => item.id);
+        persistedState.markStructuralChange('reorder', { order });
+        console.log('🏗️ Triggered structural operation for moveDown');
       }
     }
   };
