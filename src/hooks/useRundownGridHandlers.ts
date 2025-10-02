@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -160,7 +161,19 @@ export const useRundownGridHandlers = ({
         return newItems;
       });
       
-      // Use structural save coordination for per-cell mode
+      // Broadcast copy for immediate realtime sync (dual broadcasting like add_row)
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:copy',
+          { items: itemsToPaste, index: insertIndex },
+          currentUserId
+        );
+        debugLogger.grid('📋 Broadcasting copy operation', { itemCount: itemsToPaste.length, insertIndex });
+      }
+      
+      // Use structural save coordination for per-cell mode (database persistence)
       if (markStructuralChange) {
         debugLogger.grid('🧪 STRUCTURAL CHANGE: paste completed - triggering structural coordination');
         markStructuralChange('copy_rows', { newItems: itemsToPaste, insertIndex });

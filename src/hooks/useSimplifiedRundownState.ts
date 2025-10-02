@@ -16,6 +16,7 @@ import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeBoolean } from '@/utils/booleanNormalization';
 import { Column } from '@/types/columns';
+import { RundownItem } from '@/types/rundown';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
@@ -559,6 +560,27 @@ export const useSimplifiedRundownState = () => {
                 const newItems = [...stateRef.current.items];
                 newItems.splice(index, 0, item);
                 actionsRef.current.loadState({ items: newItems });
+              }
+              break;
+            }
+            case 'items:copy': {
+              // Handle immediate copy/paste for real-time collaboration
+              const payload = update.value || {};
+              const items = payload.items || [];
+              const index = Math.max(0, Math.min(payload.index ?? stateRef.current.items.length, stateRef.current.items.length));
+              
+              if (items.length > 0) {
+                // Filter out any items that already exist (prevent duplicates)
+                const newItemsToAdd = items.filter((item: RundownItem) => 
+                  !stateRef.current.items.find(i => i.id === item.id)
+                );
+                
+                if (newItemsToAdd.length > 0) {
+                  const newItems = [...stateRef.current.items];
+                  newItems.splice(index, 0, ...newItemsToAdd);
+                  actionsRef.current.loadState({ items: newItems });
+                  console.log('📋 Applied copy broadcast:', { copiedCount: newItemsToAdd.length, index });
+                }
               }
               break;
             }
