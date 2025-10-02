@@ -45,6 +45,31 @@ export const useStructuralSave = (
 
     try {
       for (const operation of operations) {
+        // PHASE 1: BROADCAST FIRST (Dual Broadcasting Pattern - immediate broadcast)
+        // This ensures other users see changes instantly, before database persistence
+        if (rundownId && currentUserId) {
+          // Import mapping functions dynamically to avoid circular dependencies
+          const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
+          
+          const broadcastField = mapOperationToBroadcastField(operation.operationType);
+          const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
+          
+          console.log('📡 Broadcasting structural operation (BEFORE save):', {
+            operationType: operation.operationType,
+            broadcastField,
+            payload
+          });
+          
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            broadcastField,
+            payload,
+            currentUserId
+          );
+        }
+        
+        // PHASE 2: DATABASE PERSISTENCE (parallel/after broadcast)
         const { data, error } = await supabase.functions.invoke('structural-operation-save', {
           body: operation
         });
@@ -60,22 +85,8 @@ export const useStructuralSave = (
             const context = rundownId ? `realtime-${rundownId}` : undefined;
             ownUpdateTracker.track(data.updatedAt, context);
           }
-
-          // Broadcast structural change to other users for real-time updates
-          if (rundownId && currentUserId) {
-            cellBroadcast.broadcastCellUpdate(
-              rundownId,
-              undefined,
-              `structural:${operation.operationType}`,
-              {
-                operationType: operation.operationType,
-                operationData: operation.operationData,
-                docVersion: data.docVersion,
-                timestamp: operation.timestamp
-              },
-              currentUserId
-            );
-          }
+          
+          console.log('✅ Structural operation saved to database:', operation.operationType);
         }
       }
       

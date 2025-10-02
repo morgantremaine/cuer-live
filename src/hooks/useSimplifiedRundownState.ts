@@ -502,53 +502,7 @@ export const useSimplifiedRundownState = () => {
                   return ai - bi;
                 });
                 actionsRef.current.loadState({ items: reordered });
-              }
-              break;
-            }
-            case 'structural:reorder': {
-              // Handle new structural broadcast format
-              const operationData = update.value?.operationData;
-              const order: string[] = Array.isArray(operationData?.order) ? operationData.order : [];
-              console.log('📡 Received structural reorder broadcast:', { orderLength: order.length, userId: update.userId });
-              if (order.length > 0) {
-                const indexMap = new Map(order.map((id, idx) => [id, idx]));
-                const reordered = [...stateRef.current.items].sort((a, b) => {
-                  const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
-                  const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
-                  return ai - bi;
-                });
-                actionsRef.current.loadState({ items: reordered });
-                console.log('🎯 REAL-TIME REORDER: Applied structural reorder from user', update.userId, 'to', reordered.length, 'items');
-              }
-              break;
-            }
-            case 'structural:add_row': {
-              // Handle structural add row operations
-              const operationData = update.value?.operationData;
-              if (operationData?.newItems?.length > 0) {
-                console.log('📡 Received structural add_row broadcast:', { newItemsCount: operationData.newItems.length });
-                // For add operations, the consolidated realtime system will handle the full refresh
-                console.log('📡 Structural add_row broadcast received - consolidated realtime will handle refresh');
-              }
-              break;
-            }
-            case 'structural:delete_row': {
-              // Handle structural delete row operations
-              const operationData = update.value?.operationData;
-              if (operationData?.deletedIds?.length > 0) {
-                console.log('📡 Received structural delete_row broadcast:', { deletedIdsCount: operationData.deletedIds.length });
-                // For delete operations, the consolidated realtime system will handle the full refresh
-                console.log('📡 Structural delete_row broadcast received - consolidated realtime will handle refresh');
-              }
-              break;
-            }
-            case 'structural:copy_rows': {
-              // Handle structural copy row operations
-              const operationData = update.value?.operationData;
-              if (operationData?.newItems?.length > 0) {
-                console.log('📡 Received structural copy_rows broadcast:', { newItemsCount: operationData.newItems.length });
-                // For copy operations, the consolidated realtime system will handle the full refresh
-                console.log('📡 Structural copy_rows broadcast received - consolidated realtime will handle refresh');
+                console.log('🔄 Applied reorder broadcast:', { itemCount: reordered.length });
               }
               break;
             }
@@ -599,7 +553,7 @@ export const useSimplifiedRundownState = () => {
                 // Only apply if we have all items
                 if (reorderedItems.length === stateRef.current.items.length) {
                   actionsRef.current.loadState({ items: reorderedItems });
-                  console.log('🔄 Applied reorder broadcast:', { itemCount: reorderedItems.length });
+                  console.log('🔄 Applied reorder broadcast from useStructuralSave:', { itemCount: reorderedItems.length });
                 }
               }
               break;
