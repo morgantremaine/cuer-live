@@ -1577,18 +1577,26 @@ export const useSimplifiedRundownState = () => {
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
-      // Auto-save will handle this change - no special handling needed
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
       actions.deleteMultipleItems(itemIds);
       
-      // For per-cell saves, notify the system that a structural operation completed
+      // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: deleteMultipleItems completed - triggering per-cell save completion');
-        setTimeout(() => {
-          actions.markSaved();
-        }, 100);
+        console.log('🧪 STRUCTURAL CHANGE: deleteMultipleItems completed - triggering structural coordination');
+        markStructuralChange('delete_row', { deletedIds: itemIds });
       }
-    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, actions.markSaved]),
+      
+      // Broadcast multiple row removals for immediate realtime sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:remove-multiple',
+          { ids: itemIds },
+          currentUserId
+        );
+      }
+    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
     addItem: useCallback((item: any, targetIndex?: number) => {
       // Re-enable autosave after local edit if it was blocked due to teammate update
       if (blockUntilLocalEditRef.current) {
