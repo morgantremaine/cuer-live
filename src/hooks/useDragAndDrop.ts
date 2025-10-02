@@ -241,14 +241,6 @@ export const useDragAndDrop = (
       }
     }
     
-    // CRITICAL: Mark structural change BEFORE starting drag to prevent realtime interference
-    if (markStructuralChange) {
-      markStructuralChange();
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🏗️ Marked structural change at drag start');
-      }
-    }
-    
     setActiveId(active.id);
     setDraggedItemIndex(activeIndex);
     setIsDraggingMultiple(draggedIds.length > 1);
@@ -411,10 +403,27 @@ export const useDragAndDrop = (
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
-      // Handle reorder via structural coordination if available
+      // Broadcast reorder for immediate realtime sync (dual broadcasting like add_row/copy)
+      if (rundownId && currentUserId) {
+        const order = newItems.map(item => item.id);
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:reorder',
+          { order },
+          currentUserId
+        );
+        console.log('📡 Broadcasting reorder for immediate sync:', {
+          rundownId,
+          orderLength: order.length,
+          userId: currentUserId
+        });
+      }
+      
+      // Handle reorder via structural coordination if available (database persistence)
       if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
-        console.log('🏗️ Triggering structural operation for reorder');
+        console.log('🏗️ Triggering structural operation for reorder (database persistence)');
         
         // Call structural change handler with reorder operation
         try {
@@ -423,39 +432,6 @@ export const useDragAndDrop = (
         } catch (error) {
           // Fallback to just marking structural change
           markStructuralChange();
-          console.log('📡 Broadcasting reorder fallback:', {
-            rundownId,
-            orderLength: order.length,
-            userId: currentUserId
-          });
-          if (rundownId && currentUserId) {
-            cellBroadcast.broadcastCellUpdate(
-              rundownId,
-              undefined,
-              'items:reorder',
-              { order },
-              currentUserId
-            );
-          }
-        }
-      } else {
-        // Original broadcast fallback
-        if (rundownId && currentUserId) {
-          const order = newItems.map(item => item.id);
-          console.log('📡 Broadcasting reorder:', {
-            rundownId,
-            orderLength: order.length,
-            userId: currentUserId
-          });
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId
-          );
-        } else {
-          console.warn('⚠️ Missing rundownId or currentUserId for reorder broadcast:', { rundownId, currentUserId });
         }
       }
       

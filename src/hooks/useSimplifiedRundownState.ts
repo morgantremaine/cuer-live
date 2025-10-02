@@ -584,6 +584,26 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
+            case 'items:reorder': {
+              // Handle immediate reorder for real-time drag & drop collaboration
+              const order = update.value?.order as string[];
+              if (order && Array.isArray(order) && order.length > 0) {
+                // Create a map for quick lookup
+                const itemMap = new Map(stateRef.current.items.map(item => [item.id, item]));
+                
+                // Reorder items based on the broadcast order
+                const reorderedItems = order
+                  .map(id => itemMap.get(id))
+                  .filter(Boolean) as RundownItem[];
+                
+                // Only apply if we have all items
+                if (reorderedItems.length === stateRef.current.items.length) {
+                  actionsRef.current.loadState({ items: reorderedItems });
+                  console.log('🔄 Applied reorder broadcast:', { itemCount: reorderedItems.length });
+                }
+              }
+              break;
+            }
             case 'items:remove': {
               const id = update.value?.id as string;
               if (id) {
