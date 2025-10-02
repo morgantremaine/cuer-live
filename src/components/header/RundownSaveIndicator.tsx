@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
 import { debugLogger } from '@/utils/debugLogger';
 
@@ -23,6 +23,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   debugLogger.autosave('RundownSaveIndicator render:', {
     isTeammateEditing,
@@ -58,7 +59,8 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
       !saveError &&
       !lastSaved &&
       hasContentChanges &&
-      !showTemporarySaved // don't retrigger if already showing
+      !showTemporarySaved && // don't retrigger if already showing
+      !timerRef.current // don't retrigger if timer is already active
     ) {
       setShowTemporarySaved(true);
     }
@@ -68,16 +70,26 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
 
   // External trigger to flash "Saved" (e.g., from parent after content save completes)
   useEffect(() => {
-    if (shouldShowSavedFlash) {
+    if (shouldShowSavedFlash && !timerRef.current) {
       setShowTemporarySaved(true);
     }
   }, [shouldShowSavedFlash]);
 
   // Centralized timer to hide the temporary saved message after 2 seconds
   useEffect(() => {
-    if (showTemporarySaved) {
-      const timer = setTimeout(() => setShowTemporarySaved(false), 2000);
-      return () => clearTimeout(timer);
+    if (showTemporarySaved && !timerRef.current) {
+      // Only start a new timer if one isn't already running
+      timerRef.current = setTimeout(() => {
+        setShowTemporarySaved(false);
+        timerRef.current = null;
+      }, 2000);
+      
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      };
     }
   }, [showTemporarySaved]);
 
