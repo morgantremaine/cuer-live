@@ -23,9 +23,7 @@ interface UseRundownUndoProps {
 
 export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const [undoStack, setUndoStack] = useState<UndoState[]>([]);
-  const [redoStack, setRedoStack] = useState<UndoState[]>([]);
   const isUndoing = useRef(false);
-  const isRedoing = useRef(false);
   const isSavingHistory = useRef(false);
   const lastSavedHistoryRef = useRef<string>('');
   const lastStateSignature = useRef<string>('');
@@ -81,22 +79,15 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     title: string,
     action: string
   ) => {
-    // Don't save state during undo/redo operations, when saving history, or during auto-save
-    if (isUndoing.current || isRedoing.current || isSavingHistory.current || isAutoSaving.current) {
+    // Don't save state during undo operations, when saving history, or during auto-save
+    if (isUndoing.current || isSavingHistory.current || isAutoSaving.current) {
       console.log('Skipping undo state save during:', { 
-        isUndoing: isUndoing.current,
-        isRedoing: isRedoing.current,
+        isUndoing: isUndoing.current, 
         isSavingHistory: isSavingHistory.current, 
         isAutoSaving: isAutoSaving.current,
         action 
       });
       return;
-    }
-
-    // Clear redo stack when a new action is performed
-    if (redoStack.length > 0) {
-      console.log('Clearing redo stack due to new action');
-      setRedoStack([]);
     }
 
   // Create a signature using the unified content signature for consistency
@@ -167,8 +158,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   const undo = useCallback((
     setItems: (items: RundownItem[]) => void,
     setColumns: (columns: Column[]) => void,
-    setTitle: (title: string) => void,
-    getCurrentState: () => { items: RundownItem[]; columns: Column[]; title: string }
+    setTitle: (title: string) => void
   ) => {
     if (undoStack.length === 0) {
       console.log('No undo states available');
@@ -177,17 +167,6 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
 
     const lastState = undoStack[undoStack.length - 1];
     console.log('Undoing action:', lastState.action);
-    
-    // Save current state to redo stack before undoing
-    const currentState = getCurrentState();
-    const currentRedoState: UndoState = {
-      items: JSON.parse(JSON.stringify(currentState.items)),
-      columns: JSON.parse(JSON.stringify(currentState.columns)),
-      title: currentState.title,
-      action: lastState.action, // Keep the action name for display
-      timestamp: Date.now()
-    };
-    setRedoStack(prev => [...prev, currentRedoState]);
     
     // Mark that we're undoing to prevent saving this as a new state
     isUndoing.current = true;
@@ -225,55 +204,6 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     return lastState.action;
   }, [undoStack, saveUndoHistoryToDatabase, props?.rundownId, props?.updateRundown]);
 
-  const redo = useCallback((
-    setItems: (items: RundownItem[]) => void,
-    setColumns: (columns: Column[]) => void,
-    setTitle: (title: string) => void,
-    getCurrentState: () => { items: RundownItem[]; columns: Column[]; title: string }
-  ) => {
-    if (redoStack.length === 0) {
-      console.log('No redo states available');
-      return null;
-    }
-
-    const nextState = redoStack[redoStack.length - 1];
-    console.log('Redoing action:', nextState.action);
-    
-    // Save current state to undo stack before redoing
-    const currentState = getCurrentState();
-    const currentUndoState: UndoState = {
-      items: JSON.parse(JSON.stringify(currentState.items)),
-      columns: JSON.parse(JSON.stringify(currentState.columns)),
-      title: currentState.title,
-      action: nextState.action,
-      timestamp: Date.now()
-    };
-    setUndoStack(prev => [...prev, currentUndoState]);
-    
-    // Mark that we're redoing to prevent saving this as a new state
-    isRedoing.current = true;
-    
-    // Clear the last state signature to allow the restored state to be saved again if needed
-    lastStateSignature.current = '';
-    
-    // Restore the next state
-    setItems(nextState.items);
-    setColumns(nextState.columns);
-    setTitle(nextState.title);
-    
-    // Remove the last state from the redo stack
-    const newRedoStack = redoStack.slice(0, -1);
-    setRedoStack(newRedoStack);
-    
-    // Reset the redoing flag after a delay
-    setTimeout(() => {
-      isRedoing.current = false;
-      console.log('Redo operation completed');
-    }, 1500);
-
-    return nextState.action;
-  }, [redoStack]);
-
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -284,18 +214,13 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
   }, []);
 
   const canUndo = undoStack.length > 0;
-  const canRedo = redoStack.length > 0;
   const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].action : null;
-  const nextAction = redoStack.length > 0 ? redoStack[redoStack.length - 1].action : null;
 
   return {
     saveState,
     undo,
-    redo,
     canUndo,
-    canRedo,
     lastAction,
-    nextAction,
     loadUndoHistory,
     setAutoSaving // Export this so auto-save can coordinate
   };

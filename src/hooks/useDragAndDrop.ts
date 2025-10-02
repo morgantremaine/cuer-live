@@ -418,11 +418,8 @@ export const useDragAndDrop = (
         
         // Call structural change handler with reorder operation
         try {
-          // Pass complete items array along with order for per-cell save mode
-          (markStructuralChange as any)('reorder', { 
-            items: newItems,  // CRITICAL: Include complete items array for per-cell mode
-            order 
-          });
+          // Try to call as structural operation handler
+          (markStructuralChange as any)('reorder', { order });
         } catch (error) {
           // Fallback to just marking structural change
           markStructuralChange();

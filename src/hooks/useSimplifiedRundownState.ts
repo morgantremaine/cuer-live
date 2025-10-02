@@ -9,10 +9,8 @@ import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
-import { useOperationBasedRundown } from './useOperationBasedRundown';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
-import { RundownItem } from '@/types/rundown';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,14 +25,8 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
-import { logger } from '@/utils/logger';
-import { isTextField } from '@/utils/fieldClassification';
 
-/**
- * CRITICAL: This hook can now accept 'SKIP_OPERATION_SYSTEM' flag to prevent duplicate creation
- * If this flag is provided, no internal operation system will be created
- */
-export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
+export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,17 +47,15 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Typing tracking for conflict detection
+  // Enhanced conflict resolution system with validation
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const recentCellUpdatesRef = useRef<Map<string, { timestamp: number; value: any; clientId?: string }>>(new Map());
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
   
   // Track per-cell save enabled state to coordinate saving systems
   const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
-  
-  // Track operation mode state
-  const [isOperationModeEnabled, setIsOperationModeEnabled] = useState(false);
   
   // Track structural operation save state
   const [isStructuralSaving, setIsStructuralSaving] = useState(false);
@@ -75,8 +65,26 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
   
-  // Simplified: Just track typing for debounce
-  const TYPING_DEBOUNCE_MS = 500;
+  // Track when cell broadcasts are being applied to prevent AutoSave triggers
+  const applyingCellBroadcastRef = useRef(false);
+  // Use proper React context for cell update coordination
+  const { executeWithCellUpdate } = useCellUpdateCoordination();
+  
+  // Simplified: No protection windows needed - last writer wins
+  const TYPING_DEBOUNCE_MS = 500; // Just for typing detection
+  const CONFLICT_RESOLUTION_DELAY = 2000; // Keep for edge cases
+  
+  // Track pending structural changes to prevent overwrite during save
+  const pendingStructuralChangeRef = useRef(false);
+  // Track when to refresh on next focus to prevent infinite loops
+  const shouldRefreshOnFocusRef = useRef(false);
+  
+  // Track active structural operations to block realtime updates
+  const activeStructuralOperationRef = useRef(false);
+  
+  // Enhanced cooldown management with explicit flags  
+  const blockUntilLocalEditRef = useRef(false);
+  const cooldownUntilRef = useRef<number>(0);
   
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
@@ -84,7 +92,11 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   // Track last save time for race condition detection
   const lastSaveTimeRef = useRef<number>(0);
   
-  // Simplified: No protection needed - operations handle sync
+  // =================================================================================
+  // ULTRA-SIMPLE FIELD PROTECTION
+  //
+  // ONLY block cell broadcasts for the exact field being actively typed.
+  // No timers, no complex logic, no multiple protection layers.
   // =================================================================================
   
   // Listen to global focus tracker  
@@ -98,10 +110,15 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
 
 
 
-  // Dropdown protection removed - operations handle sync directly
+  // Simplified dropdown protection
+  const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
+  const DROPDOWN_PROTECTION_WINDOW_MS = 800; // Much shorter dropdown protection
 
-  // Track latest items state for rapid structural operations
-  const latestItemsRef = useRef<any[]>([]);
+  const markDropdownFieldChanged = useCallback((fieldKey: string) => {
+    const now = Date.now();
+    dropdownFieldProtectionRef.current.set(fieldKey, now);
+    // Simplified: no field tracking needed
+  }, []);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -116,11 +133,6 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     timezone: 'America/New_York',
     showDate: null
   }, rundownId || undefined); // Pass rundownId for broadcast functionality
-
-  // Keep latestItemsRef in sync with state.items
-  useEffect(() => {
-    latestItemsRef.current = state.items;
-  }, [state.items]);
 
   // User-specific column preferences (separate from team sync)
   const {
@@ -158,7 +170,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline (no setTrackOwnUpdate needed - uses centralized tracker)
-  const { isSaving, setUndoActive, markActiveTyping, triggerImmediateSave } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -194,13 +206,16 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
         debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
       }
     },
-    undefined, // No longer needed - operations handle sync
+    pendingStructuralChangeRef,
     undefined, // Legacy ref no longer needed
-    (isInitialized && !isLoadingColumns) // Wait for both rundown AND column initialization
+    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
+    blockUntilLocalEditRef,
+    cooldownUntilRef,
+    applyingCellBroadcastRef // Pass the cell broadcast flag
   );
 
-  // Standalone undo system - now with redo support
-  const { saveState: saveUndoState, undo, redo, canUndo, canRedo, lastAction, nextAction } = useStandaloneUndo({
+  // Standalone undo system - unchanged
+  const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
       setUndoActive(true);
       actions.setItems(items);
@@ -212,22 +227,6 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
         setUndoActive(false);
       }, 100);
     },
-    onRedo: (items, _, title) => {
-      setUndoActive(true);
-      actions.setItems(items);
-      actions.setTitle(title);
-      
-      setTimeout(() => {
-        actions.markSaved();
-        actions.setItems([...items]);
-        setUndoActive(false);
-      }, 100);
-    },
-    getCurrentState: () => ({
-      items: state.items,
-      columns: state.columns,
-      title: state.title
-    }),
     setUndoActive
   });
  
@@ -240,42 +239,234 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // Simplified realtime connection - operations handle content sync
+  // Simplified protected fields - just basic typing protection
+  const getProtectedFields = useCallback(() => {
+    const protectedFields = new Set<string>();
+    const now = Date.now();
+    
+    // Add currently typing field if any
+    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
+      protectedFields.add(typingSessionRef.current.fieldKey);
+    }
+    
+    // SIMPLIFIED: Only protect fields that are actively being typed in
+    // Don't protect based on recent edits - only active typing
+    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
+      protectedFields.add(typingSessionRef.current.fieldKey);
+    }
+    
+    // Clean up old recently edited fields
+    recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
+      if (now - timestamp > TYPING_DEBOUNCE_MS) {
+        recentlyEditedFieldsRef.current.delete(fieldKey);
+      }
+    });
+    
+    return protectedFields;
+  }, [teleprompterSync.isTeleprompterSaving]);
+
+  // Enhanced realtime connection with sync-before-write protection
   const deferredUpdateRef = useRef<any>(null);
+  const initialLoadGateRef = useRef(true);
+  const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
+  const syncBeforeWriteRef = useRef(false);
   
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
     lastSeenDocVersion,
+    blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
-      // OPERATION-BASED SYNC: Content updates handled by operations, not realtime
-      // This callback should only receive updates from fallback scenarios
-      console.log('📡 Realtime content update received (should be rare with operations):', {
-        hasItems: !!updatedRundown.items,
-        itemCount: updatedRundown.items?.length || 0
-      });
+      // SIMPLIFIED: Remove initial load gating - just apply updates immediately
+      if (initialLoadGateRef.current) {
+        console.log('⏳ Initial load in progress but applying update anyway');
+        // Don't defer - just set the gate to false and continue
+        initialLoadGateRef.current = false;
+      }
       
-      // Apply update directly - operations handle sync
-      const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
-      
-      if (wouldClearItems) {
-        console.warn('🛡️ Prevented malformed update that would clear items');
+      // Monotonic doc version guard: ignore stale updates
+      if (updatedRundown.doc_version && updatedRundown.doc_version <= lastSeenDocVersion) {
+        console.log('⏭️ Stale doc_version ignored:', {
+          incoming: updatedRundown.doc_version,
+          lastSeen: lastSeenDocVersion
+        });
         return;
       }
       
-      const updateData: any = {};
-      if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
-      if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
-      if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
-      if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
-      if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
-      if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
-      
-      if (Object.keys(updateData).length > 0) {
-        actions.loadState(updateData);
+      // Monotonic timestamp guard as fallback
+      if (updatedRundown.updated_at && lastKnownTimestamp) {
+        const incomingTime = new Date(updatedRundown.updated_at).getTime();
+        const knownTime = new Date(lastKnownTimestamp).getTime();
+        
+        if (incomingTime <= knownTime) {
+          console.log('⏭️ Stale timestamp ignored:', {
+            incoming: updatedRundown.updated_at,
+            known: lastKnownTimestamp
+          });
+          return;
+        }
       }
       
-      lastRemoteUpdateRef.current = Date.now();
-    }, [state, actions]),
+      // CRITICAL: Check for recent cell updates to prevent overwriting them
+      const recentCellUpdates = recentCellUpdatesRef.current;
+      let hasRecentCellUpdates = false;
+      
+      if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
+        // Check if any item fields have recent cell updates
+        for (const item of updatedRundown.items) {
+          const itemFromState = state.items.find(existing => existing.id === item.id);
+          if (itemFromState) {
+            for (const [field, value] of Object.entries(item)) {
+              if (field === 'id') continue;
+              const updateKey = `${item.id}-${field}`;
+              const recentUpdate = recentCellUpdates.get(updateKey);
+              if (recentUpdate && Date.now() - recentUpdate.timestamp < 3000) {
+                console.log('🚫 Skipping realtime update for recently cell-updated field:', updateKey);
+                hasRecentCellUpdates = true;
+                // Don't override this field
+                (item as any)[field] = itemFromState[field];
+              }
+            }
+          }
+        }
+      }
+      
+      // ALWAYS apply updates - never block them. Google Sheets style.
+      debugLogger.realtime('Processing realtime update immediately:', {
+        docVersion: updatedRundown.doc_version,
+        hasItems: !!updatedRundown.items,
+        itemCount: updatedRundown.items?.length || 0,
+        isTyping: isTypingActive(),
+        activeField: typingSessionRef.current?.fieldKey,
+        hasRecentCellUpdates
+      });
+      
+      // SIMPLIFIED: Remove complex structural change detection and cooldowns
+      // Just update timestamps and versions
+      if (updatedRundown.updated_at) {
+        setLastKnownTimestamp(updatedRundown.updated_at);
+      }
+      if (updatedRundown.doc_version) {
+        setLastSeenDocVersion(updatedRundown.doc_version);
+      }
+      
+      // Apply granular merge only if actively typing in a specific field
+      const protectedFields = getProtectedFields();
+      
+      // CRITICAL: Set AutoSave block for teammate updates, but clear immediately if user is actively typing
+      if (blockUntilLocalEditRef) {
+        if (protectedFields.size > 0) {
+          // User is actively typing - don't block AutoSave, they should be able to save their work
+          console.log('🛡️ Protecting actively typed field during realtime update - AutoSave enabled:', Array.from(protectedFields));
+          blockUntilLocalEditRef.current = false;
+        } else {
+          // User not typing - block AutoSave until they make a local edit
+          debugLogger.realtime('Setting blockUntilLocalEditRef = true due to remote content update (no active typing)');
+          blockUntilLocalEditRef.current = true;
+        }
+      }
+      
+      if (protectedFields.size > 0) {
+        // Create merged items by protecting local edits
+        // Enhanced conflict resolution: merge changes at field level
+        const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
+          const localItem = state.items.find(item => item.id === remoteItem.id);
+          if (!localItem) return remoteItem; // New item from remote
+          
+          const merged = { ...remoteItem };
+          
+          // Apply operational transformation: merge non-conflicting changes
+          Object.keys(localItem).forEach(key => {
+            if (key === 'id') return; // Never change IDs
+            
+            const isProtected = protectedFields.has(`${remoteItem.id}-${key}`);
+            const localValue = (localItem as any)[key];
+            const remoteValue = (remoteItem as any)[key];
+            
+            if (isProtected) {
+              // Keep local changes for actively edited fields
+              merged[key] = localValue;
+              console.log(`🛡️ Protected field ${key} for item ${remoteItem.id}: keeping local value`);
+            } else if (key === 'customFields') {
+              // Merge custom fields at field level
+              merged.customFields = { ...remoteValue };
+              if (localValue && typeof localValue === 'object') {
+                Object.keys(localValue).forEach(customKey => {
+                  const fieldKey = `${remoteItem.id}-customFields.${customKey}`;
+                  if (protectedFields.has(fieldKey)) {
+                    merged.customFields[customKey] = localValue[customKey];
+                    console.log(`🛡️ Protected custom field ${customKey} for item ${remoteItem.id}`);
+                  }
+                });
+              }
+            }
+          });
+          
+          return merged;
+        }) || [];
+        
+        // Apply the update with simple field-level protection
+        actions.loadState({
+          items: mergedItems,
+          title: protectedFields.has('title') ? state.title : updatedRundown.title,
+          startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
+          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
+          showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
+          externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
+        });
+        
+        // Track remote update time
+        lastRemoteUpdateRef.current = Date.now();
+        
+      } else {
+        // Safety guard: Don't apply updates that would clear all items unless intentional
+        // Also ensure we only update fields that are actually present in the payload
+        const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
+        
+        if (wouldClearItems) {
+          console.warn('🛡️ Prevented applying malformed update that would clear all items:', {
+            incomingItems: updatedRundown.items?.length || 0,
+            currentItems: state.items.length,
+            timestamp: updatedRundown.updated_at
+          });
+          return;
+        }
+        
+        debugLogger.realtime('Applying realtime update directly - last writer wins');
+        
+        // Simple approach: apply all changes, don't try to protect anything
+        // If user is actively typing, their next keystroke will overwrite anyway
+        const updateData: any = {};
+        if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
+        if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
+        if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
+        if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
+        if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
+        
+        // Add external notes to update data
+        if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
+        
+        // CRITICAL: Update docVersion for OCC if present
+        if (updatedRundown.hasOwnProperty('doc_version')) {
+          updateData.docVersion = updatedRundown.doc_version;
+          setLastSeenDocVersion(updatedRundown.doc_version); // Also update tracking
+        }
+        
+        // Only apply if we have fields to update
+        if (Object.keys(updateData).length > 0) {
+          actions.loadState(updateData);
+        }
+        
+        // Apply extended autosave suppression cooldown after teammate update
+        const hasIncomingItems2 = Array.isArray(updatedRundown.items);
+        const isStructuralChange2 = hasIncomingItems2 && state.items && (
+          (updatedRundown.items?.length ?? 0) !== state.items.length ||
+          JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
+        );
+         // CRITICAL: Block all autosaves until the user makes a local edit
+         debugLogger.autosave('AutoSave: BLOCKING all saves after teammate update - until local edit');
+         blockUntilLocalEditRef.current = true;
+       }
+    }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading
   });
   
@@ -286,9 +477,20 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   }, [realtimeConnection.isConnected]);
   
   // Clear initial load gate after initialization and implement sync-before-write
-  // Initial load gate no longer needed with operation-based sync
+  useEffect(() => {
+    if (isInitialized) {
+      setTimeout(() => {
+        initialLoadGateRef.current = false;
+        console.log('🚪 Initial load gate cleared - realtime updates enabled');
+      }, 500);
+    }
+  }, [isInitialized]);
 
-  // Get current user ID for cell broadcasts and OT system
+  // Connect realtime to auto-save typing/unsaved state
+  realtimeConnection.setTypingChecker(() => isTypingActive());
+  realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
+
+  // Get current user ID for cell broadcasts
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   useEffect(() => {
@@ -296,17 +498,6 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       setCurrentUserId(user?.id || null);
     });
   }, []);
-
-  // Initialize OT system when operation mode is enabled
-  // CRITICAL FIX: Skip creation if flag is set to prevent duplicates
-  const shouldSkipOperationSystem = skipOperationSystemFlag === 'SKIP_OPERATION_SYSTEM';
-  
-  const operationBasedRundown = useOperationBasedRundown({
-    rundownId: rundownId || '',
-    userId: currentUserId || '',
-    enabled: !shouldSkipOperationSystem && isOperationModeEnabled && !!rundownId && !!currentUserId,
-    skipHistoricalOperations: true // Start fresh - don't load historical operations
-  });
 
   // Cell-level broadcast system for immediate sync
   useEffect(() => {
@@ -323,8 +514,22 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
+      // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
+      applyingCellBroadcastRef.current = true;
+      
       try {
-        // No protection needed - operations handle sync directly
+        // PROTECTION: Register cell broadcast changes in shadow store to prevent full realtime overwrites
+        if (update.itemId && update.field) {
+          const { localShadowStore } = await import('@/state/localShadows');
+          localShadowStore.setShadow(update.itemId, update.field, update.value, true); // ACTIVE shadow to protect against overwrites
+          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`, 'value:', update.value);
+          
+          // Clear this shadow after a short time to allow future legitimate updates
+          setTimeout(() => {
+            localShadowStore.markInactive(update.itemId, update.field);
+            console.log('🛡️ Cleared cell broadcast protection for:', `${update.itemId}-${update.field}`);
+          }, 2000); // 2 second protection window
+        }
         
         // LAST WRITER WINS: Just apply the change immediately
         // Use loadState to avoid triggering hasUnsavedChanges for remote data
@@ -386,17 +591,10 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
             case 'structural:add_row': {
               // Handle structural add row operations
               const operationData = update.value?.operationData;
-              if (operationData?.items?.length > 0) {
-                console.log('📡 Received structural add_row broadcast - applying immediately:', { 
-                  totalItemsCount: operationData.items.length 
-                });
-                
-                // Apply the complete state from the broadcast immediately
-                actionsRef.current.loadState({ items: operationData.items });
-                
-                console.log('✅ Applied add_row broadcast:', {
-                  newCount: operationData.items.length
-                });
+              if (operationData?.newItems?.length > 0) {
+                console.log('📡 Received structural add_row broadcast:', { newItemsCount: operationData.newItems.length });
+                // For add operations, the consolidated realtime system will handle the full refresh
+                console.log('📡 Structural add_row broadcast received - consolidated realtime will handle refresh');
               }
               break;
             }
@@ -404,34 +602,9 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
               // Handle structural delete row operations
               const operationData = update.value?.operationData;
               if (operationData?.deletedIds?.length > 0) {
-                console.log('📡 Received structural delete_row broadcast - applying immediately:', { 
-                  deletedIdsCount: operationData.deletedIds.length 
-                });
-                
-                // Apply the deletion by filtering out deleted items
-                const deletedSet = new Set(operationData.deletedIds);
-                const newItems = stateRef.current.items.filter(item => !deletedSet.has(item.id));
-                actionsRef.current.loadState({ items: newItems });
-                
-                console.log('✅ Applied delete_row broadcast:', {
-                  beforeCount: stateRef.current.items.length,
-                  afterCount: newItems.length,
-                  deletedCount: operationData.deletedIds.length
-                });
-              }
-              break;
-            }
-            case 'structural:copy_rows': {
-              // Handle structural copy rows operations (paste)
-              const operationData = update.value?.operationData;
-              if (operationData?.newItems?.length > 0 && operationData?.items) {
-                console.log('📡 Received structural copy_rows broadcast - applying immediately:', { 
-                  newItemsCount: operationData.newItems.length,
-                  totalItemsCount: operationData.items.length 
-                });
-                
-                // Apply the complete state from the broadcast immediately
-                actionsRef.current.loadState({ items: operationData.items });
+                console.log('📡 Received structural delete_row broadcast:', { deletedIdsCount: operationData.deletedIds.length });
+                // For delete operations, the consolidated realtime system will handle the full refresh
+                console.log('📡 Structural delete_row broadcast received - consolidated realtime will handle refresh');
               }
               break;
             }
@@ -526,7 +699,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
           }
       } finally {
         // Reset flag immediately since loadRemoteState won't trigger AutoSave
-        // Changes applied
+        applyingCellBroadcastRef.current = false;
       }
     }, currentUserId);
 
@@ -550,7 +723,6 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
-    operationSystem: operationBasedRundown, // Pass to prevent duplicate
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
@@ -565,9 +737,10 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     }
   });
   
-  // Get save coordination system for structural operations (per-cell saves always enabled)
+  // Get save coordination system for structural operations - use same callbacks as cell edit integration
   const saveCoordination = usePerCellSaveCoordination({
     rundownId,
+    isPerCellEnabled: perCellEnabled,
     currentUserId,
     onSaveComplete: () => {
       console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
@@ -584,15 +757,48 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       setHasStructuralUnsavedChanges(true);
     }
   });
-  // Catch-up sync no longer needed with operation-based sync
-  // Operations handle all content synchronization automatically
   
-  // SYNC-BEFORE-WRITE: No longer needed with operation-based system
-  // All edits are tracked via operations which maintain consistency
+  // Get catch-up sync function from realtime connection
+  const performCatchupSync = realtimeConnection.performCatchupSync;
+  
+  // Run sync on initial mount and only when tab transitions to active
+  const hasSyncedOnceRef = useRef(false);
+  const lastSyncTimeRef = useRef(0);
+  
+  // TEMPORARILY DISABLE sync-before-write to fix typing issues
+  // Enhanced sync-before-write with catch-up functionality (only on activation or first run)
+  // useEffect(() => {
+  //   const now = Date.now();
+  //   const justActivated = isTabActive && !prevIsActiveRef.current;
+  //   const shouldSync = (justActivated || !hasSyncedOnceRef.current) && isInitialized && rundownId;
+  //   
+  //   // Debounce rapid sync calls (prevent multiple syncs within 500ms)
+  //   const timeSinceLastSync = now - lastSyncTimeRef.current;
+  //   if (shouldSync && timeSinceLastSync > 500) {
+  //     console.log('👁️ Tab became active - performing safety sync and catch-up');
+  //     lastSyncTimeRef.current = now;
+  //     syncBeforeWriteRef.current = true;
+  //     
+  //     // Trigger catch-up sync to get any missed updates
+  //     if (performCatchupSync) {
+  //       performCatchupSync();
+  //     }
+  //     
+  //     const syncLatestData = async () => {
+  //       // ... rest of sync logic temporarily disabled
+  //     };
+  //
+  //     syncLatestData();
+  //     hasSyncedOnceRef.current = true;
+  //   }
+  //
+  //   // Track previous active state for transition detection
+  //   prevIsActiveRef.current = isTabActive;
+  // }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, performCatchupSync]);
 
   // Apply deferred updates when save completes
   useEffect(() => {
-    if (!isSaving && deferredUpdateRef.current) {
+    if (!isSaving && !pendingStructuralChangeRef.current && deferredUpdateRef.current) {
       const deferredUpdate = deferredUpdateRef.current;
       deferredUpdateRef.current = null;
       
@@ -610,7 +816,18 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
         }
       }
       
-      // No cooldown needed - operations handle sync
+      // Detect if this is a structural change for cooldown
+      const isStructural = deferredUpdate.items && state.items && (
+        deferredUpdate.items.length !== state.items.length ||
+        JSON.stringify(deferredUpdate.items.map(i => i.id)) !== JSON.stringify(state.items.map(i => i.id))
+      );
+      
+      // Set cooldown after applying deferred teammate update
+      if (isStructural) {
+        cooldownUntilRef.current = Date.now() + 1500;
+      } else {
+        cooldownUntilRef.current = Date.now() + 800;
+      }
       
       // Update our known timestamp and doc version
       if (deferredUpdate.updated_at) {
@@ -620,28 +837,141 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
         setLastSeenDocVersion(deferredUpdate.doc_version);
       }
       
-      // Apply update directly - operations handle sync
-      actions.loadState({
-        items: deferredUpdate.items || [],
-        title: deferredUpdate.title,
-        startTime: deferredUpdate.start_time,
-        timezone: deferredUpdate.timezone,
-        showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null
-      });
+      // Get currently protected fields for granular merging
+      const protectedFields = getProtectedFields();
+      
+      // Apply granular merge if we have protected fields
+      if (protectedFields.size > 0) {
+        
+        // Create merged items by protecting local edits
+        const mergedItems = deferredUpdate.items?.map((remoteItem: any) => {
+          const localItem = state.items.find(item => item.id === remoteItem.id);
+          if (!localItem) return remoteItem; // New item from remote
+          
+          const merged = { ...remoteItem };
+          
+          // Protect specific fields that are currently being edited
+          protectedFields.forEach(fieldKey => {
+            if (fieldKey.startsWith(remoteItem.id + '-')) {
+              const field = fieldKey.substring(remoteItem.id.length + 1);
+              if (field.startsWith('customFields.')) {
+                const customFieldKey = field.replace('customFields.', '');
+                // Ensure customFields object exists
+                merged.customFields = merged.customFields || {};
+                localItem.customFields = localItem.customFields || {};
+                // Field-by-field protection for deferred updates too
+                merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields[customFieldKey];
+                console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id} (deferred)`);
+              } else if (localItem.hasOwnProperty(field)) {
+                merged[field] = localItem[field]; // Keep local value
+                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (deferred)`);
+              }
+            }
+          });
+          
+          return merged;
+        }) || [];
+        
+        // Apply merged update
+        actions.loadState({
+          items: mergedItems,
+          title: protectedFields.has('title') ? state.title : deferredUpdate.title,
+          startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
+          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
+          showDate: protectedFields.has('showDate') ? state.showDate : (deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null)
+        });
+        
+      } else {
+        // No protected fields - apply update normally
+        actions.loadState({
+          items: deferredUpdate.items || [],
+          title: deferredUpdate.title,
+          startTime: deferredUpdate.start_time,
+          timezone: deferredUpdate.timezone,
+          showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null
+        });
+      }
     }
-  }, [isSaving, actions, state.items, state.title, state.startTime, state.timezone, state.showDate]);
+  }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
-  // Realtime connection is simplified - operations handle content sync
-  // No need for typing/unsaved checkers with operation-based system
+  // No longer need to connect autosave tracking to realtime - both now use centralized OwnUpdateTracker
+
+  // Connect typing state checker to realtime to prevent overwrites during typing
+  useEffect(() => {
+    if (realtimeConnection.setTypingChecker) {
+      realtimeConnection.setTypingChecker(isTypingActive);
+    }
+  }, [realtimeConnection.setTypingChecker, isTypingActive]);
+
+  // Connect unsaved changes checker to defer teammate updates until local save completes
+  useEffect(() => {
+    if (realtimeConnection.setUnsavedChecker) {
+      realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
+    }
+  }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
 
 
-  // Simplified updateItem - just updates local state
-  // Server sync is handled separately by debounce or direct save
+  // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    logger.debug('📝 UPDATE ITEM: Local state update', { id, field, value: String(value).substring(0, 20), isTextField: isTextField(field) });
+    // Re-enable autosave after local edit if it was blocked due to teammate update
+    if (blockUntilLocalEditRef.current) {
+      console.log('✅ AutoSave: local edit detected - re-enabling saves');
+      blockUntilLocalEditRef.current = false;
+    }
+    // Check if this is a typing field or immediate-sync field
+    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
+                         field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
+    const isImmediateSyncField = field === 'isFloating'; // Fields that need immediate database sync (removed color)
     
-    // All fields: Just update local state immediately
-    // Server sync happens separately via debounce (text fields) or direct save (immediate fields)
+    const sessionKey = `${id}-${field}`;
+    
+    // Simplified: No field tracking needed - last writer wins
+    
+    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+    }
+    
+    if (isTypingField) {
+      // CRITICAL: Tell autosave system that user is actively typing
+      markActiveTyping();
+      
+      // CRITICAL FIX: Mark this field as recently edited for cell broadcast protection
+      markFieldAsRecentlyEdited(sessionKey);
+      
+      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
+        saveUndoState(state.items, [], state.title, `Edit ${field}`);
+        typingSessionRef.current = {
+          fieldKey: sessionKey,
+          startTime: Date.now()
+        };
+      }
+      
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        if (typingSessionRef.current?.fieldKey === sessionKey) {
+          typingSessionRef.current = null;
+        }
+      }, 3000); // Reduced to 3 seconds for faster sync
+    } else if (field === 'duration') {
+      saveUndoState(state.items, [], state.title, 'Edit duration');
+    } else if (isImmediateSyncField) {
+      // For immediate sync fields like isFloating, save undo state and trigger immediate save
+      console.log('🔄 FloatToggle: triggering immediate save for field:', field, 'id:', id);
+      saveUndoState(state.items, [], state.title, `Toggle ${field}`);
+      // DON'T use markActiveTyping() for floating - that triggers typing delay
+      // Instead, trigger an immediate flush save that bypasses the typing delay mechanism
+      triggerImmediateSave();
+    } else if (field === 'color') {
+      // Handle color changes separately - save undo state and trigger immediate save
+      saveUndoState(state.items, [], state.title, 'Change row color');
+      // Color changes should trigger immediate save without marking as typing
+      triggerImmediateSave();
+    }
+    
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
       const item = state.items.find(i => i.id === id);
@@ -657,94 +987,65 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     } else {
       let updateField = field;
       if (field === 'segmentName') updateField = 'name';
+      
+      // Handle boolean fields that come as strings from cell broadcasts
       let updateValue: any = value;
       if (field === 'isFloating') {
         updateValue = value === 'true';
       }
-      actions.updateItem(id, { [updateField]: updateValue });
-    }
-    
-    // Broadcast to other tabs/users via realtime
-    if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-    }
-  }, [actions, state.items, rundownId, currentUserId, cellBroadcast]);
-
-  // Simplified handlers - route to OT system when operation mode is enabled
-  const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
-    if (isOperationModeEnabled && operationBasedRundown && currentUserId) {
-      console.log('🎯 OT SYSTEM: Routing structural operation', { operationType, operationData });
       
-      // Route to appropriate OT handler
-      switch (operationType) {
-        case 'add_row':
-        case 'add_header':
-          if (operationData?.newItems && operationData?.newItems[0]) {
-            const newItem = operationData.newItems[0];
-            const insertIndex = operationData?.insertIndex ?? state.items.length;
-            operationBasedRundown.handleRowInsert(insertIndex, newItem);
-          }
-          break;
-          
-        case 'delete_row':
-          if (operationData?.deletedIds && operationData.deletedIds[0]) {
-            operationBasedRundown.handleRowDelete(operationData.deletedIds[0]);
-          }
-          break;
-          
-        case 'reorder':
-        case 'move_rows':
-          // Convert reorder to individual ROW_MOVE operations
-          if (operationData?.order && Array.isArray(operationData.order)) {
-            console.log('🎯 OT: Converting reorder to individual move operations', {
-              orderLength: operationData.order.length
-            });
-            
-            // Build index map from the target order
-            const targetOrder = operationData.order;
-            const currentItems = state.items;
-            
-            // Calculate the moves needed to transform current order to target order
-            // We need to move items one at a time from their current position to target position
-            const moves: Array<{from: number, to: number}> = [];
-            const workingOrder = currentItems.map(item => item.id);
-            
-            for (let targetIdx = 0; targetIdx < targetOrder.length; targetIdx++) {
-              const targetId = targetOrder[targetIdx];
-              const currentIdx = workingOrder.indexOf(targetId);
-              
-              if (currentIdx !== targetIdx) {
-                // Move from currentIdx to targetIdx
-                moves.push({ from: currentIdx, to: targetIdx });
-                
-                // Update working order to reflect the move
-                const [movedId] = workingOrder.splice(currentIdx, 1);
-                workingOrder.splice(targetIdx, 0, movedId);
-              }
-            }
-            
-            // Execute each move through the OT system
-            moves.forEach(move => {
-              operationBasedRundown.handleRowMove(move.from, move.to);
-            });
-          }
-          break;
-          
-        default:
-          console.warn('🚨 Unknown structural operation:', operationType);
-      }
-    } else if (cellEditIntegration.isPerCellEnabled && saveCoordination) {
-      // Fallback to per-cell coordination (deprecated path)
-      console.log('⚠️ Using deprecated per-cell structural path');
-      if (operationType && operationData && currentUserId) {
-        const currentOperationData = {
-          ...operationData,
-          items: latestItemsRef.current
-        };
-        saveCoordination.handleStructuralOperation(operationType as any, currentOperationData);
+      actions.updateItem(id, { [updateField]: updateValue });
+      
+      // CRITICAL: Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        cellEditIntegration.handleCellChange(id, updateField, updateValue);
       }
     }
-  }, [isOperationModeEnabled, operationBasedRundown, currentUserId, state.items, cellEditIntegration, saveCoordination]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
+
+  // Optimized field tracking with debouncing
+  const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
+    const now = Date.now();
+    recentlyEditedFieldsRef.current.set(fieldKey, now);
+    
+    // Use debounced tracker to reduce logging overhead
+    import('@/utils/debouncedFieldTracker').then(({ debouncedFieldTracker }) => {
+      debouncedFieldTracker.trackField(fieldKey);
+    });
+  }, []);
+
+  // Simplified handlers - enhanced for per-cell save coordination
+  const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
+    console.log('🏗️ markStructuralChange called', {
+      perCellEnabled: Boolean(state.perCellSaveEnabled),
+      rundownId,
+      operationType,
+      operationData
+    });
+    
+    // For per-cell save mode, structural operations need immediate save coordination
+    if (state.perCellSaveEnabled && cellEditIntegration) {
+      console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
+      
+      // If we have operation details, use the per-cell coordination system
+      if (operationType && operationData && saveCoordination && currentUserId) {
+        console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
+          operationType,
+          operationData,
+          currentUserId
+        });
+        saveCoordination.handleStructuralOperation(operationType as any, operationData);
+      } else {
+        console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
+        // Fallback - just mark as saved for now
+        setTimeout(() => {
+          console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
+          actions.markSaved();
+        }, 100);
+      }
+    }
+    // For regular autosave mode, no action needed - autosave handles it
+  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, saveCoordination, currentUserId]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
@@ -825,9 +1126,6 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
             if (data.doc_version) {
               setLastSeenDocVersion(data.doc_version);
             }
-            
-            // Check operation mode status
-            setIsOperationModeEnabled(data.operation_mode_enabled || false);
 
             // Load content only (columns handled by useUserColumnPreferences)
             actions.loadState({
@@ -842,15 +1140,10 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
               perCellSaveEnabled: data.per_cell_save_enabled || false // Include per-cell save setting
             });
             
-            // Check operation mode status
-            setIsOperationModeEnabled(data.operation_mode_enabled || false);
-            
             console.log('🧪 PER-CELL SAVE: Loaded from database', {
               rundownId,
               per_cell_save_enabled: data.per_cell_save_enabled,
-              operation_mode_enabled: data.operation_mode_enabled,
-              willUsePerCellSave: data.per_cell_save_enabled || false,
-              willUseOperationMode: data.operation_mode_enabled || false
+              willUsePerCellSave: data.per_cell_save_enabled || false
             });
           }
         }
@@ -892,7 +1185,48 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       setLastSeenDocVersion(latestData.doc_version);
     }
     
-    // Apply latest data - operations handle sync
+    // Get currently protected fields to preserve local edits
+    const protectedFields = getProtectedFields();
+    
+    // If there are protected fields (typing/focused/recently edited), do a granular merge
+    if (protectedFields.size > 0) {
+      const mergedItems = (latestData.items || []).map((remoteItem: any) => {
+        const localItem = state.items.find(item => item.id === remoteItem.id);
+        if (!localItem) return remoteItem;
+        const merged = { ...remoteItem };
+        protectedFields.forEach(fieldKey => {
+          if (fieldKey.startsWith(remoteItem.id + '-')) {
+            const field = fieldKey.substring(remoteItem.id.length + 1);
+            if (field.startsWith('customFields.')) {
+              const customFieldKey = field.replace('customFields.', '');
+              // Ensure customFields object exists
+              merged.customFields = merged.customFields || {};
+              localItem.customFields = localItem.customFields || {};
+              // Field-by-field protection for refresh updates too
+              merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields?.[customFieldKey];
+              console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id} (refresh)`);
+            } else if (Object.prototype.hasOwnProperty.call(localItem, field)) {
+              (merged as any)[field] = (localItem as any)[field];
+              console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (refresh)`);
+            }
+          }
+        });
+        return merged;
+      });
+      
+      actions.loadState({
+        items: mergedItems,
+        title: protectedFields.has('title') ? state.title : latestData.title,
+        startTime: protectedFields.has('startTime') ? state.startTime : latestData.start_time,
+        timezone: protectedFields.has('timezone') ? state.timezone : latestData.timezone,
+        showDate: protectedFields.has('showDate') ? state.showDate : (latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null),
+        externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes,
+        docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
+      });
+      return;
+    }
+    
+    // No protected fields - safe to apply latest data
     actions.loadState({
       items: latestData.items || [],
       title: latestData.title,
@@ -902,7 +1236,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       externalNotes: latestData.external_notes,
       docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
     });
-  }, [actions, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
+  }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
   // Simplified: No tab-based refresh needed with single sessions
   // Data freshness is maintained through realtime updates only
@@ -998,24 +1332,20 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     }
   }, [rundownId, isInitialized, actions, params.id, location.state, navigate, activeTeamId, activeTeamLoading]);
 
-  // Calculate all derived values using pure functions - use operation-based items when enabled
+  // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
-    // Use operation-based items when operation mode is enabled, otherwise use state.items
-    const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
-    
-    if (!sourceItems || !Array.isArray(sourceItems)) {
+    if (!state.items || !Array.isArray(state.items)) {
       return [];
     }
     
-    const calculated = calculateItemsWithTiming(sourceItems, state.startTime);
+    const calculated = calculateItemsWithTiming(state.items, state.startTime);
     return calculated;
-  }, [isOperationModeEnabled, operationBasedRundown.items, state.items, state.startTime]);
+  }, [state.items, state.startTime]);
 
   const totalRuntime = useMemo(() => {
-    const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
-    if (!sourceItems || !Array.isArray(sourceItems)) return '00:00:00';
-    return calculateTotalRuntime(sourceItems);
-  }, [isOperationModeEnabled, operationBasedRundown.items, state.items]);
+    if (!state.items || !Array.isArray(state.items)) return '00:00:00';
+    return calculateTotalRuntime(state.items);
+  }, [state.items]);
 
   // Enhanced actions with undo state saving (content only)
   const enhancedActions = {
@@ -1035,157 +1365,81 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
-      
-      // Use latestItemsRef for rapid operations to avoid stale state
-      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
-      const newItems = currentItems.filter(item => item.id !== id);
-      
-      // Update ref immediately for next rapid operation
-      latestItemsRef.current = newItems;
-      
       actions.deleteItem(id);
       
       // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering structural coordination');
-        // Pass updated items array, not just deleted IDs
-        markStructuralChange('delete_row', { items: newItems, deletedIds: [id] });
+        markStructuralChange('delete_row', { deletedIds: [id] });
+      }
+      
+      // Broadcast row removal for immediate realtime sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:remove',
+          { id },
+          currentUserId
+        );
       }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
-    addRow: useCallback((calculateEndTime?: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
-      console.log('🟢 enhancedActions.addRow called with count:', count);
-      saveUndoState(state.items, [], state.title, `Add ${count} segment${count > 1 ? 's' : ''}`);
+    addRow: useCallback(() => {
+      saveUndoState(state.items, [], state.title, 'Add segment');
+      helpers.addRow();
       
-      // Determine insert index based on selection
-      let insertIndex = state.items.length;
-      if (selectedRowId) {
-        const selectedIndex = state.items.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          insertIndex = selectedIndex + 1;
-        }
-      } else if (selectedRows && selectedRows.size > 0) {
-        const selectedIds = Array.from(selectedRows);
-        const indices = selectedIds
-          .map(id => state.items.findIndex(item => item.id === id))
-          .filter(idx => idx !== -1);
-        if (indices.length > 0) {
-          const maxIndex = Math.max(...indices);
-          insertIndex = maxIndex + 1;
-        }
-      }
-      
-      console.log('🟢 Creating', count, 'new items at insertIndex:', insertIndex);
-      
-      // Create and add multiple items
-      const newItemsToAdd = [];
-      for (let i = 0; i < count; i++) {
-        newItemsToAdd.push({
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: 'segment' as const,
-          rowNumber: '',
-          name: 'New Segment',
-          startTime: '',
-          duration: '00:00:30',
-          endTime: '',
-          elapsedTime: '00:00:00',
-          talent: '',
-          script: '',
-          gfx: '',
-          video: '',
-          images: '',
-          notes: '',
-          color: '#000000',
-          isFloating: false
-        });
-      }
-      
-      // Insert all items at once
-      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
-      const newItems = [
-        ...currentItems.slice(0, insertIndex),
-        ...newItemsToAdd,
-        ...currentItems.slice(insertIndex)
-      ];
-      
-      latestItemsRef.current = newItems;
-      actions.setItems(newItems);
-      
-      // Trigger structural save coordination
+      // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
-        markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex });
+        markStructuralChange('add_row', { items: state.items });
       }
       
-      // Broadcasting handled by structural operations
-    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+      // Best-effort immediate hint: broadcast new order so other clients can reflect movement
+      if (rundownId && currentUserId) {
+        const order = state.items.map(i => i.id);
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
+        }, 0);
+      }
+    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
-    addHeader: useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
-      console.log('🟢 enhancedActions.addHeader called');
+    addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
+      helpers.addHeader();
       
-      // Determine insert index based on selection
-      let insertIndex = state.items.length;
-      if (selectedRowId) {
-        const selectedIndex = state.items.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          insertIndex = selectedIndex + 1;
-        }
-      } else if (selectedRows && selectedRows.size > 0) {
-        const selectedIds = Array.from(selectedRows);
-        const indices = selectedIds
-          .map(id => state.items.findIndex(item => item.id === id))
-          .filter(idx => idx !== -1);
-        if (indices.length > 0) {
-          const maxIndex = Math.max(...indices);
-          insertIndex = maxIndex + 1;
-        }
-      }
-      
-      console.log('🟢 Creating new header at insertIndex:', insertIndex);
-      
-      // Create the new header item
-      const newHeaderItem = {
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'header' as const,
-        rowNumber: 'A',
-        name: 'New Header',
-        startTime: '',
-        duration: '00:00:00',
-        endTime: '',
-        elapsedTime: '00:00:00',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: '#000000',
-        isFloating: false
-      };
-      
-      // Insert the header
-      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
-      const newItems = [
-        ...currentItems.slice(0, insertIndex),
-        newHeaderItem,
-        ...currentItems.slice(insertIndex)
-      ];
-      
-      latestItemsRef.current = newItems;
-      actions.setItems(newItems);
-      
-      // Trigger structural save coordination
+      // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
-        markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex });
+        markStructuralChange('add_header', { items: state.items });
       }
       
-      // Broadcasting handled by structural operations
-    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+      if (rundownId && currentUserId) {
+        const order = state.items.map(i => i.id);
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
+        }, 0);
+      }
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
-      // No blocking needed - operations handle sync
+      // Re-enable autosave after local edit if previously blocked
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
       if (state.title !== newTitle) {
         // Track field change for per-cell save system
         if (cellEditIntegration.isPerCellEnabled) {
@@ -1225,10 +1479,9 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   }, [columns]);
 
   const getHeaderDuration = useCallback((index: number) => {
-    const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
-    if (index === -1 || !sourceItems || index >= sourceItems.length) return '00:00:00';
-    return calculateHeaderDuration(sourceItems, index);
-  }, [isOperationModeEnabled, operationBasedRundown.items, state.items]);
+    if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
+    return calculateHeaderDuration(state.items, index);
+  }, [state.items]);
 
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
@@ -1247,52 +1500,51 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   }, []);
 
   // Fixed addRowAtIndex that properly inserts at specified index
-  const addRowAtIndex = useCallback((insertIndex: number, count: number = 1) => {
-    console.log('🔵 addRowAtIndex called with insertIndex:', insertIndex, 'count:', count);
-    // Auto-save will handle this change - no special handling needed
-    saveUndoState(state.items, [], state.title, `Add ${count} segment${count > 1 ? 's' : ''}`);
+  const addRowAtIndex = useCallback((insertIndex: number) => {
+      // Auto-save will handle this change - no special handling needed
+    saveUndoState(state.items, [], state.title, 'Add segment');
     
-    // Create multiple items
-    const newItemsToAdd = [];
-    for (let i = 0; i < count; i++) {
-      newItemsToAdd.push({
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'regular' as const,
-        rowNumber: '',
-        name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-        startTime: '00:00:00',
-        duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-        endTime: '00:30:00',
-        elapsedTime: '00:00',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: '',
-        isFloating: false,
-        customFields: {}
-      });
-    }
-    console.log('🔵 Created', newItemsToAdd.length, 'new items');
+    const newItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'regular' as const,
+      rowNumber: '',
+      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
+      startTime: '00:00:00',
+      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
+      endTime: '00:30:00',
+      elapsedTime: '00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      images: '',
+      notes: '',
+      color: '',
+      isFloating: false,
+      customFields: {}
+    };
 
-    // Use latestItemsRef for rapid operations to avoid stale state
-    const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
-    const newItems = [...currentItems];
+    const newItems = [...state.items];
     const actualIndex = Math.min(insertIndex, newItems.length);
-    newItems.splice(actualIndex, 0, ...newItemsToAdd);
-    console.log('🔵 Final array length:', newItems.length, 'added at index:', actualIndex);
-    
-    // Update ref immediately for next rapid operation
-    latestItemsRef.current = newItems;
+    newItems.splice(actualIndex, 0, newItem);
     
     actions.setItems(newItems);
+    
+    // Broadcast add at index for immediate realtime sync
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { item: newItem, index: actualIndex },
+        currentUserId
+      );
+    }
     
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex });
+      markStructuralChange('add_row', { items: state.items, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
@@ -1321,14 +1573,9 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       customFields: {}
     };
 
-    // Use latestItemsRef for rapid operations to avoid stale state
-    const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
-    const newItems = [...currentItems];
+    const newItems = [...state.items];
     const actualIndex = Math.min(insertIndex, newItems.length);
     newItems.splice(actualIndex, 0, newHeader);
-    
-    // Update ref immediately for next rapid operation
-    latestItemsRef.current = newItems;
     
     actions.setItems(newItems);
     
@@ -1346,7 +1593,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_header', { items: newItems, insertIndex: actualIndex });
+      markStructuralChange('add_header', { items: state.items, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
@@ -1403,43 +1650,42 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     totalRuntime,
     getRowNumber,
     getHeaderDuration: (id: string) => {
-      const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
-      const itemIndex = sourceItems.findIndex(item => item.id === id);
+      const itemIndex = state.items.findIndex(item => item.id === id);
       return getHeaderDuration(itemIndex);
     },
     
     updateItem: enhancedActions.updateItem,
-    rawUpdateItem: actions.updateItem, // Raw state update bypassing operation system
     deleteItem: enhancedActions.deleteRow,
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
+      // Auto-save will handle this change - no special handling needed
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
-      
-      // Use latestItemsRef for rapid operations to avoid stale state
-      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
-      const newItems = currentItems.filter(item => !itemIds.includes(item.id));
-      
-      // Update ref immediately for next rapid operation
-      latestItemsRef.current = newItems;
-      
       actions.deleteMultipleItems(itemIds);
       
-      // For per-cell saves, use structural save coordination
+      // For per-cell saves, notify the system that a structural operation completed
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: deleteMultipleItems completed - triggering structural coordination');
-        // Pass updated items array, not just deleted IDs
-        markStructuralChange('delete_row', { items: newItems, deletedIds: itemIds });
+        console.log('🧪 STRUCTURAL CHANGE: deleteMultipleItems completed - triggering per-cell save completion');
+        setTimeout(() => {
+          actions.markSaved();
+        }, 100);
       }
-    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, rundownId, currentUserId]),
+    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, actions.markSaved]),
     addItem: useCallback((item: any, targetIndex?: number) => {
-      // No blocking needed - operations handle sync
+      // Re-enable autosave after local edit if it was blocked due to teammate update
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
       actions.addItem(item, targetIndex);
     }, [actions.addItem]),
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
       console.log('🧪 SIMPLIFIED STATE: setStartTime called with:', newStartTime);
-      // No blocking needed - operations handle sync
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1456,7 +1702,10 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
     setTimezone: useCallback((newTimezone: string) => {
       console.log('🧪 SIMPLIFIED STATE: setTimezone called with:', newTimezone);
-      // No blocking needed - operations handle sync
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1473,7 +1722,10 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
     setShowDate: useCallback((newShowDate: Date | null) => {
       console.log('🧪 SIMPLIFIED STATE: setShowDate called with:', newShowDate);
-      // No blocking needed - operations handle sync
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1506,14 +1758,11 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
       setColumns(newColumns);
     },
 
-    // Undo/Redo functionality - properly expose these including saveUndoState
+    // Undo functionality - properly expose these including saveUndoState
     saveUndoState,
     undo,
-    redo,
     canUndo,
-    canRedo,
     lastAction,
-    nextAction,
     
     // Teleprompter sync callbacks (exposed globally) + track own update integration
     teleprompterSaveHandlers: {

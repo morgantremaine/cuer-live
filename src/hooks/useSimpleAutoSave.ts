@@ -10,6 +10,7 @@ import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { createContentSignature, createLightweightContentSignature } from '@/utils/contentSignature';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
+import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { getTabId } from '@/utils/tabUtils';
@@ -67,6 +68,7 @@ export const useSimpleAutoSave = (
   const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
   const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
+  const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
   // Performance-optimized keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
@@ -97,7 +99,13 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state]);
 
-  // Initial load cooldown removed - operations handle sync
+  // Set initial load cooldown to prevent false attribution
+  useEffect(() => {
+    if (isInitiallyLoaded) {
+      // Prevent saves for 3 seconds after initial load to avoid false attribution
+      initialLoadCooldownRef.current = Date.now() + 3000;
+    }
+  }, [isInitiallyLoaded]);
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
@@ -288,25 +296,34 @@ export const useSimpleAutoSave = (
   // Get current user ID from state for structural operations
   const currentUserId = (state as any).currentUserId;
 
-  // Typing tracking removed - per-cell save handles keystroke coordination
+  // Check if user is currently typing with improved logic and debugging
+  const isTypingActive = useCallback(() => {
+    const timeSinceEdit = Date.now() - lastEditAtRef.current;
+    const typingFlagActive = userTypingRef.current;
+    
+    // Check the explicit typing flag first
+    if (typingFlagActive) {
+      // If it's been too long since the last edit, clear the flag
+      if (timeSinceEdit > typingIdleMs + 500) {
+        userTypingRef.current = false;
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = undefined;
+        }
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }, [typingIdleMs]);
 
   // Create callback functions for per-cell save coordination
   const handlePerCellSaveStart = useCallback(() => {
     setIsSaving(true);
-    
-    // PHASE 1: Log to debug panel
-    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-      (window as any).realtimeDebugLogger.logSaveStart();
-    }
   }, []);
 
   const handlePerCellSaveComplete = useCallback(() => {
     setIsSaving(false);
-    
-    // PHASE 1: Log to debug panel
-    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-      (window as any).realtimeDebugLogger.logSaveComplete();
-    }
   }, []);
 
   const handlePerCellUnsavedChanges = useCallback(() => {
@@ -325,17 +342,23 @@ export const useSimpleAutoSave = (
     saveState: saveCoordinatedState,
     initializeBaseline,
     hasUnsavedChanges: hasCoordinatedUnsavedChanges,
-    handleStructuralOperation
+    handleStructuralOperation,
+    isPerCellEnabled: perCellActive
   } = usePerCellSaveCoordination({
     rundownId,
+    isPerCellEnabled,
     currentUserId,
     onSaveStart: handlePerCellSaveStart,
     onSaveComplete: handlePerCellSaveComplete,
     onUnsavedChanges: handlePerCellUnsavedChanges,
     onChangesSaved: handlePerCellChangesSaved,
+    isTypingActive,
     saveInProgressRef,
     typingIdleMs
   });
+
+  // Legacy field delta save (fallback when per-cell is disabled - no trackOwnUpdate needed)
+  const { saveDeltaState, initializeSavedState } = useFieldDeltaSave(rundownId);
 
   // Enhanced typing tracker with immediate save cancellation and proper timeout management
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -352,7 +375,10 @@ export const useSimpleAutoSave = (
     // Per-cell save will also trigger this via onUnsavedChanges callback
     hasUnsavedChangesRef.current = true;
     
-    // Initial load cooldown removed - operations handle sync
+    // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
+    if (initialLoadCooldownRef.current > now) {
+      initialLoadCooldownRef.current = 0;
+    }
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
@@ -489,7 +515,19 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Legacy protections removed - operations handle sync
+    // CRITICAL: Prevent saves during initial load period to avoid false attribution
+    if (initialLoadCooldownRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: initial load cooldown active');
+      console.log('🛑 AutoSave: blocked - initial load cooldown active');
+      return;
+    }
+
+    // IMMEDIATE TYPING CANCELLATION: Stop saving if user is typing
+    if (!isFlushSave && isTypingActive()) {
+      console.log('🛑 AutoSave: cancelled - user is actively typing');
+      // Don't reschedule here - let markActiveTyping handle it
+      return;
+    }
 
     // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
     if (shouldBlockAutoSave()) {
@@ -503,7 +541,33 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Stale tab protection removed - tabs now maintain full connectivity
+    // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
+    // Only block saves if tab has been hidden/unfocused for extended periods (indicating sleep/inactivity)
+    // OR if no recent activity and wasn't initiated while active
+    const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
+    const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
+    const hasBeenInactiveForLong = isTabCurrentlyInactive && Date.now() - lastEditAtRef.current > 30000; // 30 seconds
+    
+    // Skip tab inactivity checks for shared views since users often view them in background tabs
+    if (!isSharedView) {
+      if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
+        debugLogger.autosave('Save blocked: tab inactive for extended period');
+        console.log('🛑 AutoSave: blocked - tab inactive for extended period');
+        return;
+      }
+      
+      if (hasRecentKeystrokes && isTabCurrentlyInactive) {
+        console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
+      }
+    }
+    
+    if (isFlushSave && isTabCurrentlyInactive) {
+      console.log('🧯 AutoSave: flush save proceeding despite tab inactive - preserving keystrokes');
+    }
+    
+    if (!isFlushSave && isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
+      console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
+    }
 
     // CRITICAL: Block if explicitly flagged to wait for local edit
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
@@ -525,7 +589,21 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Typing protection removed - per-cell save handles keystroke coordination
+    // Use the single isTypingActive function as source of truth for typing state
+    // This prevents conflicting typing checks
+    const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+    const hasExceededMaxDelay = timeSinceLastEdit > maxSaveDelay;
+    
+    // Only check typing state if we haven't exceeded max delay
+    if (!hasExceededMaxDelay && isTypingActive()) {
+      debugLogger.autosave('Save deferred: user actively typing (secondary check)');
+      console.log('⌨️ AutoSave: user still typing (secondary check), waiting for idle period');
+      return; // Don't reschedule here - markActiveTyping handles it
+    }
+    
+    if (hasExceededMaxDelay && isTypingActive()) {
+      console.log('⚡ AutoSave: forcing save after max delay despite typing');
+    }
     
     // Final check before saving - cancel if save in progress
     if (saveInProgressRef.current || undoActiveRef.current) {
@@ -645,27 +723,36 @@ export const useSimpleAutoSave = (
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        console.log('⚡ AutoSave: using per-cell save for rundown', { 
+        console.log(`⚡ AutoSave: using ${perCellActive ? 'per-cell' : 'delta'} save for rundown`, { 
           rundownId, 
           itemCount: saveState.items?.length || 0,
-          isFlushSave
+          isFlushSave,
+          perCellEnabled: perCellActive
         });
         
         try {
-          // Per-cell save is always active - let the per-cell system handle persistence
-          console.log('🧪 AutoSave: per-cell save is active - per-cell system handles everything');
+          let updatedAt, docVersion;
           
-          // Per-cell saves return void, so we create mock metadata
-          const updatedAt = new Date().toISOString();
-          const docVersion = (saveState as any).docVersion || 0;
+          // When per-cell save is active, don't interfere - per-cell system handles everything
+          if (perCellActive) {
+            console.log('🧪 AutoSave: per-cell save is active - skipping main auto-save entirely');
+            // Just return success without doing anything - per-cell saves handle persistence
+            updatedAt = new Date().toISOString();
+            docVersion = (saveState as any).docVersion || 0;
+          } else {
+            // Use coordinated save system for delta saves only
+            const result = await saveCoordinatedState(saveState);
+            updatedAt = result.updatedAt;
+            docVersion = result.docVersion;
+          }
           
-          console.log('✅ AutoSave: per-cell save acknowledged', { 
+          console.log(`✅ AutoSave: ${perCellActive ? 'per-cell' : 'delta'} save response`, { 
             updatedAt,
             docVersion,
-            saveType: 'per-cell'
+            saveType: perCellActive ? 'per-cell' : 'delta'
           });
 
-          // Track the timestamp via centralized tracker
+          // Track the actual timestamp returned by the database via centralized tracker
           if (updatedAt) {
             const normalizedTs = normalizeTimestamp(updatedAt);
             const context = rundownId ? `realtime-${rundownId}` : undefined;
@@ -675,10 +762,10 @@ export const useSimpleAutoSave = (
             }
           }
 
-          // Update lastSavedRef to current state signature
+          // Update lastSavedRef to current state signature after successful save
           const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
-          console.log('📝 Setting lastSavedRef to current state after per-cell save:', currentSignatureAfterSave.length);
+          console.log(`📝 Setting lastSavedRef to current state after ${perCellActive ? 'per-cell' : 'delta'} save:`, currentSignatureAfterSave.length);
 
           // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
@@ -693,7 +780,7 @@ export const useSimpleAutoSave = (
         } catch (saveError: any) {
           // If coordinated save fails due to no changes, that's OK
           if (saveError?.message === 'No changes to save') {
-            console.log('ℹ️ Per-cell save: no changes detected');
+            console.log(`ℹ️ ${perCellActive ? 'Per-cell' : 'Delta'} save: no changes detected`);
             onSavedRef.current?.();
           } else {
             throw saveError;
@@ -953,10 +1040,24 @@ export const useSimpleAutoSave = (
       }
     };
 
-    // Only flush on actual page unload, not visibility/blur
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleFlushOnBlur();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      handleFlushOnBlur();
+    };
+
+    // Add comprehensive flush triggers
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('beforeunload', handleFlushOnBlur);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('beforeunload', handleFlushOnBlur);
     };
   }, [state.hasUnsavedChanges, rundownId, performSave]);
@@ -1001,6 +1102,7 @@ export const useSimpleAutoSave = (
     hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : (hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges), // Use reactive state for per-cell
     setUndoActive,
     markActiveTyping,
+    isTypingActive,
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,

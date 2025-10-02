@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
-import { Plus, Eye, Undo, Redo, MapPin, Search, FileText } from 'lucide-react';
+import React from 'react';
+import { Plus, Eye, Undo, MapPin, Search, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 import { ToolsMenu } from './ToolsMenu';
@@ -15,15 +14,12 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface MainActionButtonsProps {
-  onAddRow: (selectedRowId?: string | null, count?: number) => void;
+  onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
-  onRedo: () => void;
   canUndo: boolean;
-  canRedo: boolean;
   lastAction: string | null;
-  nextAction: string | null;
   rundownId: string | undefined;
   selectedRowId?: string | null;
   isMobile?: boolean;
@@ -50,11 +46,8 @@ const MainActionButtons = ({
   onAddHeader,
   onShowColumnManager,
   onUndo,
-  onRedo,
   canUndo,
-  canRedo,
   lastAction,
-  nextAction,
   rundownId,
   selectedRowId,
   isMobile = false,
@@ -74,9 +67,6 @@ const MainActionButtons = ({
   onShowFindReplace,
   onShowNotes
 }: MainActionButtonsProps) => {
-  const [rowCount, setRowCount] = useState<string>("1");
-  const [addRowCooldown, setAddRowCooldown] = useState(false);
-  const [addHeaderCooldown, setAddHeaderCooldown] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
@@ -84,40 +74,9 @@ const MainActionButtons = ({
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
-  
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
       onToggleAutoScroll();
-    }
-  };
-
-  const handleAddRows = () => {
-    if (addRowCooldown) return;
-    
-    const count = parseInt(rowCount, 10);
-    console.log('🟢 handleAddRows called with rowCount:', rowCount, 'parsed count:', count);
-    if (count > 0 && count <= 50) {
-      console.log('🟢 Calling onAddRow with count:', count);
-      onAddRow(null, count);
-      setAddRowCooldown(true);
-      setTimeout(() => setAddRowCooldown(false), 1000);
-    } else {
-      console.log('🔴 Invalid count:', count);
-    }
-  };
-
-  const handleAddHeader = () => {
-    if (addHeaderCooldown) return;
-    
-    onAddHeader();
-    setAddHeaderCooldown(true);
-    setTimeout(() => setAddHeaderCooldown(false), 1000);
-  };
-
-  const handleRowCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
-    if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 50)) {
-      setRowCount(value);
     }
   };
 
@@ -153,28 +112,11 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <div className="flex items-center gap-1">
-            <Button
-              onClick={handleAddRows}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              disabled={addRowCooldown}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              <Input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={rowCount}
-                onChange={handleRowCountChange}
-                className={`${rowCount.length === 1 ? 'w-8' : 'w-10'} h-6 px-1 text-center bg-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <span className="ml-1">Segment{parseInt(rowCount) !== 1 ? 's' : ''}</span>
-            </Button>
-          </div>
-          <Button onClick={handleAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5" disabled={addHeaderCooldown}>
+          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span>Add Segment</span>
+          </Button>
+          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Add Header</span>
           </Button>
@@ -188,17 +130,6 @@ const MainActionButtons = ({
           >
             <Undo className="h-4 w-4" />
             <span>Undo</span>
-          </Button>
-          <Button 
-            onClick={onRedo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canRedo}
-            title={nextAction ? `Redo: ${nextAction}` : 'Nothing to redo'}
-            className="flex items-center justify-start gap-1.5"
-          >
-            <span>Redo</span>
-            <Redo className="h-4 w-4" />
           </Button>
           <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Eye className="h-4 w-4" />
@@ -262,53 +193,25 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
-      <div className="flex items-center gap-1">
-        <Button
-          onClick={handleAddRows}
-          variant="outline"
-          size={buttonSize}
-          className="flex items-center gap-1"
-          disabled={addRowCooldown}
-        >
-          <Plus className="h-4 w-4" />
-          <Input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={rowCount}
-            onChange={handleRowCountChange}
-            className={`${rowCount.length === 1 ? 'w-8' : 'w-10'} h-7 px-1 text-center text-sm bg-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <span>Segment{parseInt(rowCount) !== 1 ? 's' : ''}</span>
-        </Button>
-      </div>
-      <Button onClick={handleAddHeader} variant="outline" size={buttonSize} className={buttonClass} disabled={addHeaderCooldown}>
+      <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
+        <Plus className="h-4 w-4" />
+        <span>Add Segment</span>
+      </Button>
+      <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Add Header</span>
       </Button>
-          <Button 
-            onClick={onUndo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canUndo}
-            title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-            className={buttonClass}
-          >
-            <Undo className="h-4 w-4" />
-            <span>Undo</span>
-          </Button>
-          <Button 
-            onClick={onRedo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canRedo}
-            title={nextAction ? `Redo: ${nextAction}` : 'Nothing to redo'}
-            className={buttonClass}
-          >
-            <span>Redo</span>
-            <Redo className="h-4 w-4" />
-          </Button>
+      <Button 
+        onClick={onUndo} 
+        variant="outline" 
+        size={buttonSize}
+        disabled={!canUndo}
+        title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+        className={buttonClass}
+      >
+        <Undo className="h-4 w-4" />
+        <span>Undo</span>
+      </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Eye className="h-4 w-4" />
         <span>Layouts</span>

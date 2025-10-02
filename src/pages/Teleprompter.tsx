@@ -35,6 +35,8 @@ const Teleprompter = () => {
   const [lastSeenDocVersion, setLastSeenDocVersion] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const watchdogRef = useRef<RealtimeWatchdog | null>(null);
+  const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
+  const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
 
   const {
     fontSize,
@@ -175,6 +177,13 @@ const Teleprompter = () => {
 
       // Handle script field updates and rundown-level updates for teleprompter
       if (update.itemId && update.field === 'script') {
+        // Check if actively editing this field
+        const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-script`;
+        if (isActivelyEditing) {
+          console.log('🛡️ Teleprompter skipping cell broadcast - actively editing:', update.itemId, update.field);
+          return;
+        }
+
         console.log('📱 Teleprompter applying cell broadcast script update:', update.itemId, update.value);
         setRundownData(prev => {
           if (!prev) return prev;
@@ -315,6 +324,10 @@ const Teleprompter = () => {
   const updateScriptContent = async (itemId: string, newScript: string) => {
     if (!rundownData) return;
     
+    // Track typing session for conflict protection
+    recentlyEditedFieldsRef.current.set(`${itemId}-script`, Date.now());
+    typingSessionRef.current = { fieldKey: `${itemId}-script`, startTime: Date.now() };
+    
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
       cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
@@ -329,9 +342,16 @@ const Teleprompter = () => {
       ...rundownData,
       items: updatedItems
     });
-    
+
     // Use immediate tracking - let per-cell save system handle debouncing
     debouncedSave(itemId, newScript);
+    
+    // Clear typing session after delay
+    setTimeout(() => {
+      if (typingSessionRef.current?.fieldKey === `${itemId}-script`) {
+        typingSessionRef.current = null;
+      }
+    }, 3000);
   };
 
   // Print function with improved formatting

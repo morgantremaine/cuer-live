@@ -9,7 +9,7 @@ interface RundownHeaderSectionProps {
   timezone: string;
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
-  onAddRow: (selectedRowId?: string | null, count?: number) => void;
+  onAddRow: (selectedRowId?: string | null) => void;
   onAddHeader: (selectedRowId?: string | null) => void;
   onShowColumnManager: () => void;
   selectedCount: number;
@@ -29,16 +29,6 @@ interface RundownHeaderSectionProps {
   onReset: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
-  enhancedSaveState?: {
-    isSaving: boolean;
-    hasUnsavedChanges: boolean;
-    lastSaved: Date | null;
-    saveError: string | null;
-    hasContentChanges: boolean;
-    isTyping?: boolean;
-    showSaved?: boolean;
-  };
-  handleKeystroke?: () => void;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
@@ -50,11 +40,8 @@ interface RundownHeaderSectionProps {
   items?: any[];
   visibleColumns?: any[];
   onUndo: () => void;
-  onRedo: () => void;
   canUndo: boolean;
-  canRedo: boolean;
   lastAction: string | null;
-  nextAction: string;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
   rundownData?: CSVExportData;
@@ -112,11 +99,8 @@ const RundownHeaderSection = ({
   items = [],
   visibleColumns = [],
   onUndo,
-  onRedo,
   canUndo,
-  canRedo,
   lastAction,
-  nextAction,
   isConnected,
   isProcessingRealtimeUpdate,
   rundownData,
@@ -170,7 +154,7 @@ const RundownHeaderSection = ({
         activeTeammateNames={activeTeammateNames}
       />
       <RundownToolbar
-        onAddRow={(selectedRowId, count) => onAddRow(selectedRowId, count)}
+        onAddRow={() => onAddRow(selectedRowId)}
         onAddHeader={() => onAddHeader(selectedRowId)}
         onShowColumnManager={onShowColumnManager}
         selectedRowId={selectedRowId}
@@ -185,11 +169,8 @@ const RundownHeaderSection = ({
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
         onUndo={onUndo}
-        onRedo={onRedo}
         canUndo={canUndo}
-        canRedo={canRedo}
         lastAction={lastAction}
-        nextAction={nextAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}

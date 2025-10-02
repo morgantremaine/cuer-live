@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, AlertCircle, Loader2, Users, Edit3 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface SaveState {
@@ -8,8 +8,6 @@ interface SaveState {
   hasUnsavedChanges: boolean;
   saveError: string | null;
   hasContentChanges?: boolean; // Additional flag to distinguish content vs column changes
-  isTyping?: boolean; // New typing state
-  showSaved?: boolean; // New saved flash state
 }
 
 interface RundownSaveIndicatorProps {
@@ -21,7 +19,8 @@ interface RundownSaveIndicatorProps {
 }
 
 const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false }: RundownSaveIndicatorProps) => {
-  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true, isTyping, showSaved } = saveState;
+  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
+  const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
   
@@ -35,7 +34,19 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     shouldShow: !(!hasContentChanges && !shouldShowSavedFlash && !showSaved && !isTeammateEditing)
   });
 
-  // Note: showSaved is now handled by the smart save indicator hook
+  // Show saved indicator for 3 seconds after save (when lastSaved is available)
+  useEffect(() => {
+    if (lastSaved && !hasUnsavedChanges && !isSaving) {
+      setShowSaved(true);
+      const timer = setTimeout(() => {
+        setShowSaved(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setShowSaved(false);
+    }
+  }, [lastSaved, hasUnsavedChanges, isSaving]);
 
   // Track when saving transitions from true to false to show temporary "Saved" message
   // Only show for content changes, not column-only changes
@@ -82,7 +93,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
 
   // Don't show indicators if changes are only column-related, unless we're flashing "Saved"
   // Allow teammate editing indicator to show regardless
-  if (!hasContentChanges && !showTemporarySaved && !showSaved && !isTeammateEditing && !isTyping) {
+  if (!hasContentChanges && !showTemporarySaved && !showSaved && !isTeammateEditing) {
     return null;
   }
 
@@ -96,16 +107,6 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2">
         <Users className="h-4 w-4" />
         <span>{displayText}</span>
-      </div>
-    );
-  }
-
-  // Show typing state (new enhanced state)
-  if (isTyping) {
-    return (
-      <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 text-xs ml-2">
-        <Edit3 className="h-4 w-4" />
-        <span>Unsaved changes</span>
       </div>
     );
   }
@@ -137,16 +138,14 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     );
   }
 
-  // Show enhanced "Saved" state (priority over lastSaved)
-  if (showSaved) {
+  if (showSaved && lastSaved) {
     return (
       <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs ml-2">
         <CheckCircle className="h-4 w-4" />
-        <span>Saved</span>
+        <span>Saved {formatLastSaved(lastSaved)}</span>
       </div>
     );
   }
-
 
   // Show temporary "Saved" state for auto-save systems without lastSaved tracking
   if (showTemporarySaved) {

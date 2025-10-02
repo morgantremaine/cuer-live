@@ -25,7 +25,6 @@ export interface RundownContainerProps {
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
-  onCellBlur?: (itemId: string, field: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -37,8 +36,8 @@ export interface RundownContainerProps {
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onAddRow: (selectedRowId?: string | null, count?: number) => void;
-  onAddHeader: (selectedRowId?: string | null) => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
   selectedCount: number;
   hasClipboardData: boolean;
   onCopySelectedRows: () => void;
@@ -63,16 +62,6 @@ export interface RundownContainerProps {
   resetToDefaults?: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
-  enhancedSaveState?: {
-    isSaving: boolean;
-    hasUnsavedChanges: boolean;
-    lastSaved: Date | null;
-    saveError: string | null;
-    hasContentChanges: boolean;
-    isTyping?: boolean;
-    showSaved?: boolean;
-  };
-  handleKeystroke?: () => void;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
@@ -81,13 +70,10 @@ export interface RundownContainerProps {
   onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
-  // Undo/Redo functionality
+  // Undo functionality
   onUndo: () => void;
-  onRedo: () => void;
   canUndo: boolean;
-  canRedo: boolean;
   lastAction: string | null;
-  nextAction: string | null;
   
   // Realtime collaboration props
   isConnected?: boolean;

@@ -2,12 +2,12 @@
 
 ## Overview
 
-The rundown save system implements a per-cell save architecture designed for real-time collaborative editing. This document explains the design decisions and architectural patterns.
+The rundown save system implements a sophisticated multi-layered architecture designed for real-time collaborative editing. This document explains the intentional design decisions and architectural patterns.
 
 ## System Layers
 
 ### Layer 1: Base Operations
-**Files**: `useCellLevelSave`, `useStructuralSave`
+**Files**: Individual save hooks (`useCellLevelSave`, `useFieldDeltaSave`, `useStructuralSave`)
 **Purpose**: Handle direct database interactions and edge function calls
 **Responsibilities**:
 - Execute actual save operations
@@ -21,110 +21,96 @@ The rundown save system implements a per-cell save architecture designed for rea
 **Responsibilities**:
 - Queue operations by priority
 - Prevent race conditions
+- Route between save strategies
 - Coordinate structural vs. content changes
-- Manage operation sequencing
 
-### Layer 3: Integration Layer
-**Files**: `useSimpleAutoSave`, `useRundownStateCoordination`
-**Purpose**: Integrate saves with application state
+### Layer 3: Unified Interface
+**Files**: `useUnifiedSaveCoordination`
+**Purpose**: Provide consistent interface to UI components
 **Responsibilities**:
-- Connect save system to UI
-- Manage autosave timing
-- Handle user feedback
-- Coordinate with state management
+- Present unified save state to UI
+- Abstract complexity from components
+- Handle different save types consistently
+- Manage global save indicators
 
-## Save Strategy: Per-Cell Architecture
+## Save Strategy Architecture
 
-### Current System (100% of Production)
-**All rundowns use per-cell save:** Field-level updates with no doc_version conflicts
-
+### Per-Cell Save Strategy
+**When Used**: Individual field edits in collaborative sessions
 **Benefits**:
-- ✅ Instant user feedback
-- ✅ Granular conflict resolution
-- ✅ Efficient bandwidth usage
-- ✅ Real-time collaboration support
-- ✅ No version conflicts
+- Instant user feedback
+- Granular conflict resolution
+- Efficient bandwidth usage
+- Real-time collaboration support
 
 **Process Flow**:
 ```
-User Edit → Field Tracking → Edge Function → Database Update → Real-time Broadcast
+User Edit → Field Change Tracking → Cell-Level Edge Function → Database Update → Broadcast
 ```
 
-### Cell-Level Saves
-**When Used**: Individual field edits in items
-**Implementation**: `useCellLevelSave` hook
-**Process**:
-1. Track field change in memory
-2. Debounce typing (800ms idle)
-3. Batch multiple field updates
-4. Send to `cell-field-save` edge function
-5. Update item_field_updates JSONB column
+### Delta Save Strategy
+**When Used**: Batch changes and fallback scenarios
+**Benefits**:
+- Handles complex changes
+- Backward compatibility
+- Efficient for large updates
+- Comprehensive validation
 
-### Structural Saves
+**Process Flow**:
+```
+Content Changes → Delta Detection → Traditional Save → Version Update → Broadcast
+```
+
+### Structural Save Strategy
 **When Used**: Row operations (add, delete, move, reorder)
-**Implementation**: `useStructuralSave` hook
-**Process**:
-1. Queue structural operation
-2. Use coordination to prevent conflicts
-3. Send to `structural-operation-save` edge function
-4. Apply changes atomically
-5. Broadcast to other clients
+**Benefits**:
+- Atomic operations
+- Conflict prevention
+- Proper sequencing
+- Data integrity
 
-## Dual System Architecture
+**Process Flow**:
+```
+Structural Operation → Coordination Queue → Edge Function → Database Update → State Sync
+```
 
-### Operation-Based System
-**File**: `src/hooks/useOperationBasedRundown.ts`
-**Purpose**: Core collaborative editing with Operational Transformation
-**Use Cases**:
-- Real-time multi-user editing
-- Conflict resolution
-- Operation history
-- Complex state synchronization
+## Signature System Architecture
 
-### Simplified State System
-**File**: `src/hooks/useSimplifiedRundownState.ts`
-**Purpose**: Simple features without OT complexity
-**Use Cases**:
-- Showcaller/teleprompter state
-- Column preferences
-- UI state management
-- Simple data updates
+### Multiple Signature Types Rationale
 
-### Why Two Systems?
-
-1. **Complexity Management**: Not all features need OT
-2. **Performance**: Simple features run faster without OT overhead
-3. **Maintenance**: Easier to debug and modify
-4. **Flexibility**: Choose appropriate tool for each feature
-
-## Signature System
-
-### Purpose
-Detect content changes without including UI state or calculated fields
-
-### Content Signatures
+#### Content Signatures
 ```typescript
 createContentSignature(items, title, columns, { 
   excludeUIFields: true,
   includeStructural: true 
 })
 ```
-**Purpose**: Detect actual content changes
+**Purpose**: Detect actual content changes, ignore UI state
 **Use Cases**: Change detection, autosave triggers, conflict resolution
 
-### Lightweight Signatures  
+#### Lightweight Signatures  
 ```typescript
 createLightweightSignature(items, title)
 ```
 **Purpose**: Fast computation for frequent operations
 **Use Cases**: Real-time collaboration, performance-critical paths
 
-### Why Multiple Types?
+#### Unified Signatures
+```typescript
+createUnifiedSignature(completeState, { 
+  includeMetadata: true,
+  comprehensive: true 
+})
+```
+**Purpose**: Complete state validation
+**Use Cases**: Manual saves, backup operations, debugging
 
-1. **Performance**: Different operations need different speeds
-2. **Accuracy**: Some need complete validation, others need speed
-3. **Collaboration**: Real-time features need lightweight checks
-4. **Efficiency**: Avoid recalculating when unnecessary
+### Why Multiple Approaches Are Necessary
+
+1. **Performance Optimization**: Different operations have different performance requirements
+2. **Accuracy Needs**: Some operations need complete validation, others need speed
+3. **Collaboration Support**: Real-time features need lightweight, frequent checks
+4. **Conflict Resolution**: Different signature granularities help resolve different conflict types
 
 ## Coordination Patterns
 
@@ -136,140 +122,135 @@ executeWithStructuralOperation(() => addRow())
 // Priority 2: Cell Updates (medium)  
 executeWithCellUpdate(() => updateField())
 
-// Priority 3: Showcaller Operations (lowest)
-executeWithShowcallerOperation(() => updatePlayback())
+// Priority 3: UI Operations (lowest)
+executeWithShowcallerOperation(() => updateVisualState())
 ```
 
 ### Queue Management
 - **Immediate execution**: When no conflicts exist
 - **Queued execution**: When operations would conflict
 - **Priority ordering**: Higher priority operations run first
-- **Coordination**: Proper sequencing prevents data loss
+- **Dependency tracking**: Operations wait for dependencies
 
 ### Blocking Policies
 ```typescript
 shouldBlockAutoSave() // Prevents saves during critical operations
-isAnyOperationInProgress() // Checks for active operations
+shouldBlockTeleprompterSave() // Protects teleprompter state
+shouldBlockStructuralOperation() // Prevents concurrent structural changes
 ```
 
 ## State Management Architecture
 
-### Content State
-- **Location**: `useOperationBasedRundown` (OT system)
-- **Purpose**: Core rundown data with conflict resolution
-- **Scope**: Collaborative editing
+### Distributed State Concerns
 
-### UI State  
-- **Location**: `useRundownUIState`, `useSimplifiedRundownState`
+#### Content State
+- **Location**: `usePersistedRundownState`
+- **Purpose**: Actual rundown data (items, columns, title)
+- **Scope**: Core business logic
+
+#### UI State  
+- **Location**: `useRundownUIState`
 - **Purpose**: Visual presentation state
 - **Scope**: User interface concerns
 
-### Coordination State
-- **Location**: `useCellUpdateCoordination`, `usePerCellSaveCoordination`
+#### Coordination State
+- **Location**: `useCellUpdateCoordination`, `useUnifiedSaveCoordination`
 - **Purpose**: Operation management and timing
 - **Scope**: System coordination
 
-### Playback State
-- **Location**: `useShowcallerStateCoordination`
-- **Purpose**: Teleprompter and showcaller state
-- **Scope**: Playback features
+#### Performance State
+- **Location**: `useRundownPerformanceOptimization`
+- **Purpose**: Optimization and caching
+- **Scope**: Performance enhancement
+
+### Why Separation Is Maintained
+1. **Single Responsibility**: Each state manager has a focused purpose
+2. **Performance**: UI state changes don't trigger business logic
+3. **Testing**: Individual concerns can be tested in isolation
+4. **Scalability**: Different state types can be optimized independently
 
 ## Integration Patterns
 
 ### Hook Composition
+The system uses careful hook composition to maintain separation of concerns:
+
 ```typescript
-// Layered hook composition
+// Each hook handles a specific aspect
 const coordination = useCellUpdateCoordination()
 const perCellSave = usePerCellSaveCoordination()
-const operationBased = useOperationBasedRundown()
-const simplified = useSimplifiedRundownState()
+const unifiedSave = useUnifiedSaveCoordination()
+
+// Higher-level hooks compose lower-level functionality
+const rundownState = useRundownStateCoordination()
 ```
 
 ### Event Flow
 ```
-User Action → State Update → Change Detection → Save Coordination → Database → Real-time Broadcast
+User Action → UI State Update → Content State Change → Save Coordination → Database Update → Real-time Broadcast
 ```
 
 ### Error Handling
 - **Layer isolation**: Errors in one layer don't cascade
 - **Graceful degradation**: Fallback mechanisms at each layer
-- **Recovery**: Automatic retry patterns
-- **User feedback**: Clear error messages
+- **Recovery**: Automatic retry and recovery patterns
+- **User feedback**: Appropriate error messages at UI layer
 
 ## Collaboration Features
 
 ### Real-Time Synchronization
 - **Change detection**: Signatures identify what changed
-- **Conflict resolution**: OT system handles concurrent edits
-- **Presence tracking**: Users see who's editing
-- **State reconciliation**: Automatic merging
+- **Conflict resolution**: Multiple strategies for different conflict types
+- **Presence tracking**: Users see who's editing what sections
+- **State reconciliation**: Automatic merging of compatible changes
 
 ### Multi-Tab Support
-- **Cross-tab coordination**: Changes sync between tabs
-- **Conflict prevention**: Operations coordinate
-- **State consistency**: All tabs maintain consistency
+- **Cross-tab coordination**: Changes sync between browser tabs
+- **Conflict prevention**: Operations coordinate across tabs
+- **State consistency**: All tabs maintain consistent state
 
 ## Performance Optimizations
 
 ### Debounced Operations
-- **Cell saves**: 800ms typing idle time
-- **Autosave**: Respects user typing
-- **Signature generation**: Cached when possible
+- **Autosave**: Debounced to prevent excessive saves
+- **Signature generation**: Cached and reused when possible
+- **UI updates**: Batched for performance
 
 ### Selective Updates
-- **Field-level**: Only update changed fields
-- **Batching**: Multiple changes in single request
-- **Lazy loading**: Expensive operations on demand
+- **Content-only changes**: Skip UI recalculation when possible
+- **Field-level updates**: Only update affected components
+- **Lazy loading**: Load expensive operations on demand
 
-## Best Practices
+## Common Anti-Patterns to Avoid
 
-### ✅ Using Per-Cell Saves
+### ❌ Bypassing Coordination
 ```typescript
-// Track field changes
-trackFieldChange(itemId, field, value)
+// DON'T: Direct save calls bypass coordination
+await saveDirectly(data)
 
-// System handles coordination automatically
-// No need to manage doc_version
+// DO: Use coordination layer
+await coordinatedSave('manual', saveFunction)
 ```
 
-### ✅ Structural Operations
+### ❌ Mixing State Concerns
 ```typescript
-// Use coordination for row operations
-handleStructuralOperation('add_row', { items, insertIndex })
+// DON'T: Mix UI and content state
+const [items, setItems] = useState() // Content
+const [selectedRow, setSelectedRow] = useState() // UI - should be separate
 
-// System ensures atomic execution
-// Prevents conflicts automatically
+// DO: Separate state concerns
+const { items } = useRundownContent()
+const { selectedRow } = useRundownUI()
 ```
 
-### ✅ Choosing the Right System
-- **Operation-based**: Complex collaborative editing
-- **Simplified state**: Simple features, UI preferences
-- **Per-cell saves**: All field updates
-- **Structural saves**: All row operations
+### ❌ Creating New Layers
+```typescript
+// DON'T: Add new coordination layers
+const myCustomSaveCoordination = () => { /* ... */ }
 
-## Architecture Benefits
-
-### Eliminates Version Conflicts
-- No doc_version checking needed
-- Field-level updates avoid conflicts
-- Structural coordination prevents races
-
-### Enables Real-Time Collaboration
-- Instant updates across clients
-- Granular conflict resolution
-- Efficient synchronization
-
-### Maintainable Codebase
-- Clear separation of concerns
-- Appropriate complexity for each feature
-- Well-defined coordination patterns
+// DO: Extend existing layers
+const extendedSaveCoordination = useUnifiedSaveCoordination()
+```
 
 ## Conclusion
 
-This architecture successfully implements Google Sheets-like collaborative editing with:
-- **Per-cell saves** for conflict-free updates
-- **Dual system design** balancing complexity
-- **Real-time synchronization** for collaboration
-- **Clear coordination** preventing data loss
-
-The ongoing refinements to handle edge cases are normal for enterprise-grade collaborative systems.
+This architecture enables sophisticated collaborative editing features while maintaining performance and reliability. The apparent complexity serves specific purposes and should not be simplified without understanding the collaborative editing requirements it supports.

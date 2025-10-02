@@ -1,7 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
-import { useOperationBasedRundown } from './useOperationBasedRundown';
-import { useAuth } from './useAuth';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface CellEditIntegrationProps {
@@ -10,7 +8,6 @@ interface CellEditIntegrationProps {
   onSaveComplete?: () => void;
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
-  operationSystem?: any; // Receive operation system from parent instead of creating own
 }
 
 /**
@@ -22,44 +19,16 @@ export const useCellEditIntegration = ({
   isPerCellEnabled,
   onSaveComplete,
   onSaveStart,
-  onUnsavedChanges,
-  operationSystem: providedOperationSystem
+  onUnsavedChanges
 }: CellEditIntegrationProps) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isPerCellSaving, setIsPerCellSaving] = useState(false);
   const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
-  
-  const { user } = useAuth();
-  
-  // Use provided operation system (from parent) - DO NOT create a duplicate
-  // This prevents multiple broadcast subscriptions and competing state
-  const operationSystem = providedOperationSystem || {
-    isOperationMode: false,
-    handleCellEdit: () => {},
-    isSaving: false,
-    hasUnsavedChanges: false,
-    lastSaved: null,
-    saveError: null,
-    isTyping: false,
-    showSaved: false,
-    handleKeystroke: () => {}
-  };
 
-  // Only log when realtime system changes, not on every render
-  const prevRealtimeMode = useRef(!!operationSystem.handleCellEdit);
-  if (prevRealtimeMode.current !== !!operationSystem.handleCellEdit) {
-    console.log('🚀 REALTIME SYSTEM ACTIVE:', {
-      rundownId,
-      userId: user?.id,
-      realtimeEnabled: !!operationSystem.handleCellEdit,
-      realtimeSystemEnabled: true
-    });
-    prevRealtimeMode.current = !!operationSystem.handleCellEdit;
-  }
-
-  // Get the coordinated save system (per-cell saves are always enabled)
+  // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
+    isPerCellEnabled,
     onSaveComplete: () => {
       console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
       setIsPerCellSaving(false);
@@ -90,34 +59,34 @@ export const useCellEditIntegration = ({
     fieldName: string,
     newValue: any
   ) => {
-    console.log('🎯 CELL EDIT INTEGRATION: handleCellChange called', {
+    console.log('🧪 CELL EDIT INTEGRATION: handleCellChange called', {
       itemId,
       fieldName,
       newValue: typeof newValue === 'string' ? newValue.substring(0, 50) : newValue,
-      realtimeEnabled: !!operationSystem.handleCellEdit,
-      rundownId,
-      timestamp: new Date().toISOString()
+      isPerCellEnabled,
+      rundownId
     });
     
-    // Always route through real-time system for instant updates
-    if (itemId) {
-      console.log('🚀 ROUTING THROUGH REALTIME SYSTEM:', {
-        itemId,
-        fieldName,
-        newValue,
-        realtimeActive: true
-      });
-      
-      operationSystem.handleCellEdit(itemId, fieldName, newValue);
-      debugLogger.autosave(`Realtime cell edit: ${fieldName} for item ${itemId}`);
-      
-      console.log('✅ REALTIME SYSTEM: Cell edit applied immediately');
+    if (!isPerCellEnabled) {
+      // Fallback to normal change tracking for non-per-cell rundowns
+      console.log('🧪 CELL EDIT INTEGRATION: Per-cell disabled, using normal tracking');
+      debugLogger.autosave(`Cell change (non-per-cell): ${fieldName} for item ${itemId || 'global'}`);
       return;
     }
+
+    console.log('🧪 CELL EDIT INTEGRATION: Per-cell enabled, tracking field change');
+    // Track the field change in the per-cell system
+    trackFieldChange(itemId, fieldName, newValue);
     
-    // Fallback for global fields
-    debugLogger.autosave(`Cell change (global): ${fieldName}`);
-  }, [operationSystem, trackFieldChange]);
+    debugLogger.autosave(`Per-cell change tracked: ${fieldName} for item ${itemId || 'global'}`);
+
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // The save will be handled automatically by the per-cell system's debouncing
+  }, [isPerCellEnabled, trackFieldChange]);
 
   // Handle when user starts editing a cell (for LocalShadow integration)
   const handleCellEditStart = useCallback((
@@ -151,33 +120,8 @@ export const useCellEditIntegration = ({
     handleCellChange,
     handleCellEditStart,
     handleCellEditComplete,
-    // Use real-time system save state when active
-    hasUnsavedChanges: operationSystem.handleCellEdit ? 
-      operationSystem.hasUnsavedChanges : 
-      hasPerCellUnsavedChanges,
+    hasUnsavedChanges: hasPerCellUnsavedChanges,
     isPerCellEnabled,
-    isPerCellSaving: operationSystem.handleCellEdit ? 
-      operationSystem.isSaving : 
-      isPerCellSaving,
-    
-    // Enhanced save state for smart indicators
-    saveState: {
-      isSaving: operationSystem.handleCellEdit ? operationSystem.isSaving : isPerCellSaving,
-      hasUnsavedChanges: operationSystem.handleCellEdit ? operationSystem.hasUnsavedChanges : hasPerCellUnsavedChanges,
-      lastSaved: operationSystem.lastSaved,
-      saveError: operationSystem.saveError,
-      hasContentChanges: true,
-      isTyping: false,
-      showSaved: operationSystem.lastSaved ? Date.now() - operationSystem.lastSaved < 3000 : false
-    },
-    
-    // Keystroke handler for smart save indicators
-    handleKeystroke: () => {}, // No-op for now
-    
-    // Expose real-time system state for debugging
-    operationSystemActive: !!operationSystem.handleCellEdit,
-    operationSystemSaving: operationSystem.isSaving,
-    operationSystemUnsaved: operationSystem.hasUnsavedChanges,
-    operationLastSaved: operationSystem.lastSaved
+    isPerCellSaving
   };
 };

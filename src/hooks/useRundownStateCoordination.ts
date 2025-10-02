@@ -7,7 +7,6 @@ import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
-import { useSimplifiedRealtimeRundown } from './useSimplifiedRealtimeRundown';
 import { arrayMove } from '@dnd-kit/sortable';
 import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -24,24 +23,12 @@ export const useRundownStateCoordination = () => {
   // Ref to store interactions once they're created
   const interactionsRef = useRef<any>(null);
 
-  // Single source of truth for all rundown state (with persistence)  
-  // Get rundownId first, but tell it NOT to create operation system
-  const persistedState = usePersistedRundownState('SKIP_OPERATION_SYSTEM');
+  // Single source of truth for all rundown state (with persistence)
+  const persistedState = usePersistedRundownState();
 
-  // Initialize simplified real-time system (THE PRIMARY system - always enabled)
-  // This provides instant updates with simple real-time broadcasting
-  const operationSystem = useSimplifiedRealtimeRundown({
-    rundownId: persistedState.rundownId || '',
-    userId: userId || '',
-    enabled: true // Always enabled - real-time collaboration
-  });
-
-  // Always use operation system items as the single source of truth
-  const activeItems = operationSystem.items;
-
-  // Add performance optimization layer - use operation-based items
+  // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
-    items: activeItems,
+    items: persistedState.items,
     columns: persistedState.columns,
     startTime: persistedState.rundownStartTime
   });
@@ -85,125 +72,84 @@ export const useRundownStateCoordination = () => {
   });
 
 
-  // Wrapped update handlers that route through operation system (always)
-  const wrappedUpdateItem = (id: string, field: string, value: any) => {
-    operationSystem.handleCellEdit(id, field, value);
-  };
-
-  // Pure local-only update (NO database save, NO broadcast)
-  // For text fields that handle their own server sync
-  const localOnlyUpdateItem = (id: string, field: string, value: any) => {
-    operationSystem.updateLocalState(id, field, value);
-  };
-
-  const wrappedDeleteRow = (id: string) => {
-    operationSystem.handleRowDelete(id);
-  };
-
-  // Add the missing addMultipleRows function - route through operation system
+  // Add the missing addMultipleRows function
   const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-    const itemsToAdd = newItems.map((item, index) => ({
+    const itemsToAdd = newItems.map(item => ({
       ...item,
       id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    // Add each item through operation system
-    itemsToAdd.forEach((item, index) => {
-      operationSystem.handleRowInsert(activeItems.length + index, item);
-    });
+    persistedState.setItems(itemsToAdd);
   };
 
-  // Route structural operations through operation system
-  const addRowAtIndex = (insertIndex: number, count?: number) => {
-    console.log('🟠 useRundownStateCoordination addRowAtIndex called with:', { insertIndex, count });
-    const rowsToAdd = count || 1;
-    for (let i = 0; i < rowsToAdd; i++) {
-      const newItem = {
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'regular',
-        rowNumber: '',
-        name: '',
-        startTime: '',
-        duration: '',
-        endTime: '',
-        elapsedTime: '',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: '',
-        isFloating: false,
-        customFields: {}
-      };
-      operationSystem.handleRowInsert(insertIndex + i, newItem);
+  // Add the missing functions that simplifiedState should provide
+  const addRowAtIndex = (insertIndex: number) => {
+    if (persistedState.addRowAtIndex) {
+      persistedState.addRowAtIndex(insertIndex);
+    } else {
+      persistedState.addRow();
     }
   };
 
   const addHeaderAtIndex = (insertIndex: number) => {
-    console.log('🟠 useRundownStateCoordination addHeaderAtIndex called with:', { insertIndex });
-    const newHeader = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header',
-      rowNumber: 'A',
-      name: '',
-      startTime: '',
-      duration: '',
-      endTime: '',
-      elapsedTime: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
-    operationSystem.handleRowInsert(insertIndex, newHeader);
+    if (persistedState.addHeaderAtIndex) {
+      persistedState.addHeaderAtIndex(insertIndex);
+    } else {
+      persistedState.addHeader();
+    }
   };
 
-  // Add move up/down functions for mobile context menu - route through operation system
+  // Add move up/down functions for mobile context menu
   const moveItemUp = (index: number) => {
-    console.log('🔄 Moving item up:', { index, itemsLength: activeItems.length });
+    console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
     if (index > 0) {
+      const currentItems = performanceOptimization.calculatedItems;
+      const newItems = arrayMove(currentItems, index, index - 1);
       console.log('🔄 Moving item from', index, 'to', index - 1);
-      operationSystem.handleRowMove(index, index - 1);
+      persistedState.setItems(newItems);
+      
+      // For per-cell saves, mark as saved after the structural operation
+      const state = persistedState as any;
+      if (state.perCellSaveEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
+        setTimeout(() => {
+          state.markSaved();
+        }, 100);
+      }
     }
   };
 
   const moveItemDown = (index: number) => {
-    console.log('🔄 Moving item down:', { index, itemsLength: activeItems.length });
-    if (index < activeItems.length - 1) {
+    const currentItems = performanceOptimization.calculatedItems;
+    console.log('🔄 Moving item down:', { index, itemsLength: currentItems.length });
+    if (index < currentItems.length - 1) {
+      const newItems = arrayMove(currentItems, index, index + 1);
       console.log('🔄 Moving item from', index, 'to', index + 1);
-      operationSystem.handleRowMove(index, index + 1);
+      persistedState.setItems(newItems);
+      
+      // For per-cell saves, mark as saved after the structural operation
+      const state = persistedState as any;
+      if (state.perCellSaveEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
+        setTimeout(() => {
+          state.markSaved();
+        }, 100);
+      }
     }
   };
 
   // Get header collapse functions from useHeaderCollapse
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
-  // Setup drag and drop - route through operation system
+  // Setup drag and drop with structural change integration - initialized early
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // Find what changed and route through operation system
-      const oldItems = activeItems;
-      // For drag and drop, find the moved item
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].id !== oldItems[i]?.id) {
-          // Find where the item came from
-          const movedItemId = items[i].id;
-          const oldIndex = oldItems.findIndex(item => item.id === movedItemId);
-          if (oldIndex !== -1 && oldIndex !== i) {
-            operationSystem.handleRowMove(oldIndex, i);
-            return;
-          }
-        }
-      }
+      // Update items through persisted state
+      persistedState.setItems(items);
+      // Clear structural change flag after items are set
+      setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
     () => interactionsRef.current?.selectedRows || new Set<string>(), // Get selectedRows from interactions when available
     undefined, // scrollContainerRef - placeholder for now
@@ -251,10 +197,10 @@ export const useRundownStateCoordination = () => {
         persistedState.setItems(updater);
       }
     },
-    wrappedUpdateItem, // Route through operation system
+    persistedState.updateItem,
     persistedState.addRow,
     persistedState.addHeader,
-    wrappedDeleteRow, // Route through operation system
+    persistedState.deleteRow,
     persistedState.toggleFloat,
     persistedState.deleteMultipleItems,
     addMultipleRows,
@@ -264,7 +210,7 @@ export const useRundownStateCoordination = () => {
     },
     calculateEndTime,
     (id: string, color: string) => {
-      wrappedUpdateItem(id, 'color', color); // Route through operation system
+      persistedState.updateItem(id, 'color', color);
     },
     () => {
       // markAsChanged - handled internally by persisted state
@@ -281,7 +227,6 @@ export const useRundownStateCoordination = () => {
     isHeaderCollapsed,
     persistedState.rundownId,
     userId,
-    false, // isPerCellEnabled - not used in coordination state (uses unified system)
     // Pass drag state from the primary drag instance and use the real selectedRows
     {
       draggedItemIndex: dragAndDrop.draggedItemIndex,
@@ -333,10 +278,10 @@ export const useRundownStateCoordination = () => {
       currentTime: persistedState.currentTime,
       rundownId: persistedState.rundownId,
       
-      // State flags - always use operation system
-      isLoading: operationSystem.isLoading,
-      hasUnsavedChanges: false, // Operation system handles saves automatically
-      isSaving: false, // Operation system handles saves automatically
+      // State flags (NOW with separated processing states)
+      isLoading: persistedState.isLoading,
+      hasUnsavedChanges: persistedState.hasUnsavedChanges,
+      isSaving: persistedState.isSaving,
       // Use stable connection state to prevent flickering
       isConnected: stableIsConnected,
       isProcessingRealtimeUpdate, // Clean, simple content processing indicator
@@ -364,11 +309,9 @@ export const useRundownStateCoordination = () => {
       getHeaderDuration: performanceOptimization.getHeaderDuration,
       calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
-      // Core actions - route through operation system
-      updateItem: wrappedUpdateItem,
-      updateItemLocal: localOnlyUpdateItem, // Local-only update (no operation queue/broadcast)
-      updateItemRaw: persistedState.rawUpdateItem, // Raw state update (no operation system)
-      deleteRow: wrappedDeleteRow,
+      // Core actions (NO showcaller interference)
+      updateItem: persistedState.updateItem,
+      deleteRow: persistedState.deleteRow,
       toggleFloatRow: persistedState.toggleFloat,
       deleteMultipleItems: persistedState.deleteMultipleItems,
       addItem: persistedState.addItem,
@@ -394,13 +337,10 @@ export const useRundownStateCoordination = () => {
       reset: showcallerCoordination.reset,
       jumpToSegment: showcallerCoordination.jumpToSegment,
       
-      // Undo/Redo functionality
+      // Undo functionality
       undo: persistedState.undo,
-      redo: persistedState.redo,
       canUndo: persistedState.canUndo,
-      canRedo: persistedState.canRedo,
       lastAction: persistedState.lastAction,
-      nextAction: persistedState.nextAction,
       
       // Additional functionality
       calculateEndTime,
@@ -424,10 +364,7 @@ export const useRundownStateCoordination = () => {
       
       // Move functions for mobile
       moveItemUp,
-      moveItemDown,
-      
-      // Expose operation system for child hooks (prevents duplicate instances)
-      operationSystem
+      moveItemDown
     },
     interactions,
     uiState,

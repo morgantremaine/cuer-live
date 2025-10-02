@@ -645,12 +645,36 @@ export const useTeam = () => {
       .subscribe();
     
     return () => {
-      console.log('🔔 Cleaning up realtime subscriptions on unmount');
+      console.log('🔔 Cleaning up realtime subscriptions');
       supabase.removeChannel(memberChannel);
     };
   }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam, loadAllUserTeams, switchToTeam]);
 
-  // Persistent connection - no visibility-based reloads
+  // Handle page visibility changes to prevent unnecessary reloads
+  useEffect(() => {
+    let lastVisibilityCheck = 0;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const now = Date.now();
+        // Throttle visibility checks to max once per 5 seconds
+        if (now - lastVisibilityCheck < 5000) return;
+        lastVisibilityCheck = now;
+        
+        // Only reload if we don't have team data and we should have it
+        if (user?.id && !team && !isLoadingRef.current) {
+          debugLogger.team('Reloading team data after visibility change');
+          setIsLoading(true);
+          setTimeout(() => loadTeamData(), 100);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id, team]);
 
   return {
     team,

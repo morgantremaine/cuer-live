@@ -23,12 +23,8 @@ interface UseRundownGridHandlersProps {
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[], headerGroupItemIds?: string[]) => void;
   items: RundownItem[];
   setRundownTitle: (title: string) => void;
-  addRowAtIndex: (insertIndex: number, count?: number) => void;
+  addRowAtIndex: (insertIndex: number) => void;
   addHeaderAtIndex: (insertIndex: number) => void;
-  markStructuralChange?: (operationType: string, operationData: any) => void;
-  isPerCellEnabled?: boolean;
-  rundownId?: string | null;
-  currentUserId?: string | null;
 }
 
 export const useRundownGridHandlers = ({
@@ -53,11 +49,7 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle,
   addRowAtIndex,
-  addHeaderAtIndex,
-  markStructuralChange,
-  isPerCellEnabled,
-  rundownId,
-  currentUserId
+  addHeaderAtIndex
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -65,8 +57,8 @@ export const useRundownGridHandlers = ({
   }, [updateItem]);
 
   // Enhanced addRow that considers selection state and inserts after selected rows
-  const handleAddRow = useCallback((selectedRowId?: string | null, count?: number) => {
-    debugLogger.grid('Grid handlers addRow called', { count });
+  const handleAddRow = useCallback(() => {
+    debugLogger.grid('Grid handlers addRow called');
     debugLogger.grid('Current selection state - selectedRows size:', selectedRows.size);
     
     // Check if we have any selection
@@ -80,14 +72,14 @@ export const useRundownGridHandlers = ({
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
         const insertIndex = insertAfterIndex + 1;
-        debugLogger.grid(`Inserting row at index: ${insertIndex} with count: ${count}`);
-        addRowAtIndex(insertIndex, count || 1);
+        debugLogger.grid('Inserting row at index:', insertIndex);
+        addRowAtIndex(insertIndex);
         return;
       }
     }
     
-    debugLogger.grid(`No selection, using default addRowAtIndex with count: ${count}`);
-    addRowAtIndex(items.length, count || 1);
+    debugLogger.grid('No selection, using default addRow');
+    addRow();
   }, [addRowAtIndex, addRow, selectedRows, items]);
 
   // Enhanced addHeader that considers selection state and inserts after selected rows  
@@ -137,8 +129,6 @@ export const useRundownGridHandlers = ({
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
-    console.log('🎯 PASTE: handlePasteRows called', { targetRowId, clipboardCount: clipboardItems.length, isPerCellEnabled, hasMarkStructuralChange: !!markStructuralChange });
-    
     if (clipboardItems.length > 0) {
       debugLogger.grid('Grid handlers: pasting with targetRowId:', targetRowId);
       
@@ -148,7 +138,6 @@ export const useRundownGridHandlers = ({
       }));
       
       let insertIndex: number;
-      let newItems: RundownItem[];
       
       if (targetRowId) {
         // Find the target row and insert after it
@@ -159,31 +148,15 @@ export const useRundownGridHandlers = ({
         insertIndex = items.length;
       }
       
-      console.log('🎯 PASTE: Inserting', itemsToPaste.length, 'items at index', insertIndex);
-      
       setItems(prevItems => {
-        newItems = [...prevItems];
+        const newItems = [...prevItems];
         newItems.splice(insertIndex, 0, ...itemsToPaste);
         return newItems;
       });
       
       markAsChanged();
-      
-      // Always trigger structural save coordination if available
-      if (markStructuralChange && newItems) {
-        console.log('🧪 STRUCTURAL CHANGE: Paste completed - triggering structural coordination');
-        markStructuralChange('copy_rows', { 
-          items: newItems, 
-          newItems: itemsToPaste, 
-          insertIndex 
-        });
-      } else {
-        console.log('⚠️ PASTE: No markStructuralChange available, paste will not save to database');
-      }
-    } else {
-      console.log('⚠️ PASTE: No items in clipboard');
     }
-  }, [clipboardItems, items, setItems, markAsChanged, isPerCellEnabled, markStructuralChange, rundownId, currentUserId]);
+  }, [clipboardItems, items, setItems, markAsChanged]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);
@@ -198,8 +171,44 @@ export const useRundownGridHandlers = ({
     debugLogger.grid('handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
     debugLogger.grid('Current selectedRows state:', Array.from(selectedRows));
     
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
-  }, [items, toggleRowSelection, selectedRows]);
+    // If this is a collapsed header with group items, handle group selection/deselection
+    if (headerGroupItemIds && headerGroupItemIds.length > 1 && !isShiftClick && !isCtrlClick) {
+      debugLogger.grid('Handling header group:', headerGroupItemIds);
+      
+      // Check if all items in the group are currently selected
+      const allGroupItemsSelected = headerGroupItemIds.every(id => {
+        const isSelected = selectedRows.has(id);
+        debugLogger.grid(`Checking item: ${id}, isSelected: ${isSelected}`);
+        return isSelected;
+      });
+      debugLogger.grid('Selection check result:', { 
+        headerGroupItemIds, 
+        selectedRows: Array.from(selectedRows), 
+        allGroupItemsSelected 
+      });
+      
+      if (allGroupItemsSelected) {
+        // Deselect the entire group
+        debugLogger.grid('Deselecting entire header group');
+        clearSelection();
+      } else {
+        // Select the entire group
+        debugLogger.grid('Selecting entire header group');
+        // Clear existing selection first
+        clearSelection();
+        headerGroupItemIds.forEach(id => {
+          const itemIndex = items.findIndex(item => item.id === id);
+          if (itemIndex !== -1) {
+            toggleRowSelection(id, itemIndex, false, true, items, headerGroupItemIds);
+          }
+        });
+      }
+    } else {
+      // Normal single/multi selection
+      debugLogger.grid('Calling toggleRowSelection with headerGroupItemIds:', headerGroupItemIds);
+      toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
+    }
+  }, [items, toggleRowSelection, clearSelection]);
 
   const handleTitleChange = useCallback((title: string) => {
     setRundownTitle(title);

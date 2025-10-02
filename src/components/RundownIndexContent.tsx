@@ -4,12 +4,8 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
-import { OperationCoordinationIndicator } from '@/components/coordination/OperationCoordinationIndicator';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
-import { useTextDebounce } from '@/hooks/useTextDebounce';
-import { useDirectSave } from '@/hooks/useDirectSave';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -17,7 +13,6 @@ import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
-import { isTextField } from '@/utils/fieldClassification';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
@@ -47,8 +42,6 @@ const RundownIndexContent = () => {
     getRowNumber,
     calculateHeaderDuration,
     updateItem,
-    updateItemLocal,
-    updateItemRaw,
     deleteRow,
     toggleFloatRow,
     addRow,
@@ -71,97 +64,28 @@ const RundownIndexContent = () => {
     setTimezone,
     setShowDate,
     undo,
-    redo,
     canUndo,
-    canRedo,
     lastAction,
-    nextAction,
     isConnected,
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
     toggleAutoScroll,
+    // Column management functions
     addColumn,
     updateColumnWidth,
     setColumns,
+    // Header collapse functions
     toggleHeaderCollapse,
     isHeaderCollapsed,
     getHeaderGroupItemIds,
     visibleItems,
+    // Move functions for mobile
     moveItemUp,
     moveItemDown
   } = coreState;
 
-
   // Get team data for column deletion
   const { team } = useTeam();
-
-  // Add cell edit integration for operation system
-  const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
-    rundownId,
-    isPerCellEnabled: true,
-    operationSystem: coreState.operationSystem, // Pass from parent to prevent duplicate
-    onSaveComplete: () => {
-      console.log('💾 RUNDOWN INDEX: Operation system save completed');
-    },
-    onSaveStart: () => {
-      console.log('💾 RUNDOWN INDEX: Operation system save started');
-    },
-    onUnsavedChanges: () => {
-      console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
-    }
-  });
-
-  // Add direct save hook for text fields (no operation queue)
-  const directSave = useDirectSave({
-    rundownId: rundownId || '',
-    onSuccess: () => {
-      console.log('✅ RUNDOWN INDEX: Direct save succeeded');
-    },
-    onError: (error) => {
-      console.error('❌ RUNDOWN INDEX: Direct save failed', error);
-    }
-  });
-
-  // Get user ID from Supabase
-  const [userId, setUserId] = useState<string>('');
-  const [clientId] = useState(`client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
-  
-  useEffect(() => {
-    const getUserId = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserId(user.id);
-    };
-    getUserId();
-  }, []);
-
-  // Add text debouncing with DIRECT SAVE (no operation queue)
-  const { debounceOperation, flushCell } = useTextDebounce({
-    onFlush: (itemId, field, value) => {
-      // Direct database save after debounce (no operation queue)
-      console.log('💾 RUNDOWN INDEX: Direct save after debounce', { itemId, field, value: String(value).substring(0, 30) });
-      
-      if (userId) {
-        directSave.saveCellEdit(itemId, field, value, userId, clientId);
-      }
-    },
-    debounceMs: 800 // Wait 800ms after user stops typing
-  });
-
-  // Only log significant changes, not every render
-  const prevItemsCount = useRef(items?.length || 0);
-  const hasLoggedRender = useRef(false);
-  
-  if (!hasLoggedRender.current || Math.abs((items?.length || 0) - prevItemsCount.current) > 0) {
-    console.log('🏗️ RUNDOWN INDEX: Component rendered with operation system', {
-      rundownId,
-      hasHandleCellChange: !!handleCellChange,
-      itemsCount: items?.length || 0,
-      visibleColumnsCount: visibleColumns?.length || 0,
-      timestamp: new Date().toISOString()
-    });
-    prevItemsCount.current = items?.length || 0;
-    hasLoggedRender.current = true;
-  }
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
@@ -603,7 +527,7 @@ const RundownIndexContent = () => {
         currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={handleTimezoneChange}
-        totalRuntime={totalRuntime || ''}
+        totalRuntime={totalRuntime}
         showColumnManager={showColumnManager}
         setShowColumnManager={(show: boolean) => {
           if (show) {
@@ -627,58 +551,22 @@ const RundownIndexContent = () => {
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={(id, field, value) => {
-          // SIMPLIFIED ROUTING:
-          // Text fields: Local-only update + 800ms debounced direct save (NO operation queue)
-          // Non-text fields: Operation system (immediate save + broadcast)
-          if (isTextField(field)) {
-            updateItemLocal(id, field, value); // Local state ONLY (no operation queue/broadcast)
-            debounceOperation(id, field, value); // Server sync after 800ms of silence
-          } else {
-            handleCellChange(id, field, value); // Operation system for immediate fields
-          }
-        }}
-        onCellBlur={(itemId, field) => {
-          // Flush any pending text operations when user navigates away
-          if (isTextField(field)) {
-            console.log('🔄 RUNDOWN INDEX: Cell blur - flushing pending operation', { itemId, field });
-            flushCell(itemId, field);
-          }
-        }}
+        onUpdateItem={updateItem}
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
         onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={(id, color) => {
-          console.log('🎨 RUNDOWN INDEX: Color select triggered', { id, color });
-          // For immediate UI responsiveness, update the legacy system first
-          selectColor(id, color);
-          // Then route through operation system for collaboration
-          handleCellChange(id, 'color', color);
-        }}
+        onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
-        onToggleFloat={(id) => {
-          const item = items.find(i => i.id === id);
-          console.log('🎈 RUNDOWN INDEX: Float toggle triggered', { 
-            id, 
-            currentFloating: item?.isFloating, 
-            willBeFloating: !item?.isFloating 
-          });
-          if (item) {
-            // For immediate UI responsiveness, update the legacy system first
-            toggleFloatRow(id);
-            // Then route through operation system for collaboration
-            handleCellChange(id, 'isFloating', !item.isFloating);
-          }
-        }}
+        onToggleFloat={toggleFloatRow}
         onRowSelect={handleRowSelection} // Use the proper grid row selection handler
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
         onDrop={handleDropWrapper}
-        onAddRow={(selectedRowId, count) => handleAddRow(selectedRowId, count)}
-        onAddHeader={() => handleAddHeader()}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
-        hasClipboardData={typeof hasClipboardData === 'function' ? hasClipboardData() : false}
+        hasClipboardData={hasClipboardData()}
         onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
@@ -699,10 +587,8 @@ const RundownIndexContent = () => {
         handleLoadLayout={handleLoadLayoutWrapper}
         debugColumns={debugColumns}
         resetToDefaults={resetToDefaults}
-        hasUnsavedChanges={saveState?.hasUnsavedChanges ?? hasUnsavedChanges}
-        isSaving={saveState?.isSaving ?? (isSaving || isSavingPreferences)}
-        enhancedSaveState={saveState}
-        handleKeystroke={handleKeystroke}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving || isSavingPreferences}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}
@@ -712,11 +598,8 @@ const RundownIndexContent = () => {
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={undo}
-        onRedo={redo}
         canUndo={canUndo}
-        canRedo={canRedo}
         lastAction={lastAction || ''}
-        nextAction={nextAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         hasActiveTeammates={hasActiveTeammates}
@@ -751,7 +634,7 @@ const RundownIndexContent = () => {
         />
       )}
       
-      <CuerChatButton
+      <CuerChatButton 
         rundownData={rundownData}
         modDeps={{
           items,

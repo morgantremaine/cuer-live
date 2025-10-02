@@ -19,17 +19,16 @@ export const useRundownInteractionHandlers = (
   selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void,
-  addRowAtIndex: (insertIndex: number, count?: number) => void,
+  addRowAtIndex: (insertIndex: number) => void,
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
-  markStructuralChange?: ((operationType: string, operationData: any) => void) | (() => void),
+  markStructuralChange?: () => void,
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
   isHeaderCollapsed?: (headerId: string) => boolean,
-  rundownId?: string | null,
-  currentUserId?: string | null,
-  isPerCellEnabled?: boolean,
+  rundownId?: string,
+  currentUserId?: string,
   // Accept drag state from primary drag instance
   dragState?: {
     draggedItemIndex: number | null;
@@ -88,13 +87,7 @@ export const useRundownInteractionHandlers = (
     items,
     setRundownTitle,
     addRowAtIndex,
-    addHeaderAtIndex,
-    markStructuralChange: typeof markStructuralChange === 'function' 
-      ? markStructuralChange as (operationType: string, operationData: any) => void
-      : undefined,
-    isPerCellEnabled,
-    rundownId,
-    currentUserId
+    addHeaderAtIndex
   });
 
   return {

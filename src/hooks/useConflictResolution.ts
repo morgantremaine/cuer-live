@@ -1,8 +1,7 @@
 import { useCallback, useRef } from 'react';
-import { RundownState } from './useRundownState';
+import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
-import { useConflictNotifications } from './useConflictNotifications';
 import { useAuth } from './useAuth';
 import { createContentSignature } from '@/utils/contentSignature';
 import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
@@ -30,20 +29,15 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
   const { rundownId, userId = user?.id, onResolutionApplied } = options;
   const { validateSignature, validateSignatureConsistency } = useUnifiedSignatureValidation();
   
-  const recentLocalEditsRef = useRef<Map<string, { value: any; timestamp: number; itemPosition?: number }>>(new Map());
+  const recentLocalEditsRef = useRef<Map<string, { value: any; timestamp: number }>>(new Map());
   const resolutionInProgressRef = useRef(false);
-  const queuedOperationsRef = useRef<Array<() => Promise<void>>>([]);
-  
-  // User-facing notifications
-  const notifications = useConflictNotifications();
 
-  // Track local edits with timestamps and position awareness
-  const trackLocalEdit = useCallback((field: string, value: any, itemPosition?: number) => {
+  // Track local edits with timestamps
+  const trackLocalEdit = useCallback((field: string, value: any) => {
     const key = field;
     recentLocalEditsRef.current.set(key, {
       value,
-      timestamp: Date.now(),
-      itemPosition
+      timestamp: Date.now()
     });
 
     // Clean up old edits after 30 seconds
@@ -54,30 +48,7 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
       }
     }, 30000);
 
-    console.log('📝 Conflict: Tracked local edit with position', { field, position: itemPosition, timestamp: Date.now() });
-  }, []);
-
-  // Queue operation during critical structural changes
-  const queueOperation = useCallback((operation: () => Promise<void>) => {
-    console.log('⏸️ Conflict: Queueing operation during structural change');
-    queuedOperationsRef.current.push(operation);
-  }, []);
-
-  // Process queued operations after structural changes complete
-  const processQueuedOperations = useCallback(async () => {
-    if (queuedOperationsRef.current.length === 0) return;
-
-    console.log(`▶️ Conflict: Processing ${queuedOperationsRef.current.length} queued operations`);
-    const operations = [...queuedOperationsRef.current];
-    queuedOperationsRef.current = [];
-
-    for (const operation of operations) {
-      try {
-        await operation();
-      } catch (error) {
-        console.error('❌ Conflict: Queued operation failed:', error);
-      }
-    }
+    console.log('📝 Conflict: Tracked local edit', { field, timestamp: Date.now() });
   }, []);
 
   // Check if a field was recently edited locally
@@ -92,7 +63,7 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
     return isRecent;
   }, []);
 
-  // Detect conflicts with position-aware analysis
+  // Detect conflicts between local and remote state
   const detectConflicts = useCallback((localState: any, remoteState: any): FieldConflict[] => {
     const conflicts: FieldConflict[] = [];
 
@@ -116,24 +87,9 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
       }
     }
 
-    // Check item-level conflicts with position tracking
+    // Check item-level conflicts
     const localItems = localState.items || [];
     const remoteItems = remoteState.items || [];
-    
-    // Create item ID to position mappings for both states
-    const localItemPositions = new Map(localItems.map((item: any, idx: number) => [item.id, idx]));
-    const remoteItemPositions = new Map(remoteItems.map((item: any, idx: number) => [item.id, idx]));
-    
-    // Track items that moved positions
-    const movedItems = new Set<string>();
-    localItems.forEach((item: any, localIdx: number) => {
-      const remoteIdx = remoteItemPositions.get(item.id);
-      if (remoteIdx !== undefined && remoteIdx !== localIdx) {
-        movedItems.add(item.id);
-        console.log('🔄 Conflict: Item moved', { itemId: item.id, from: localIdx, to: remoteIdx });
-      }
-    });
-
     const maxItems = Math.max(localItems.length, remoteItems.length);
 
     for (let i = 0; i < maxItems; i++) {
@@ -159,9 +115,8 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
           reason: 'Item added locally or deleted remotely'
         });
       } else if (localItem && remoteItem && localItem.id === remoteItem.id) {
-        // Same item, check field-level conflicts with position awareness
+        // Same item, check field-level conflicts
         const itemFields = ['name', 'script', 'notes', 'talent', 'duration', 'gfx', 'video', 'images'];
-        const itemMoved = movedItems.has(localItem.id);
         
         for (const itemField of itemFields) {
           const localFieldValue = localItem[itemField];
@@ -171,31 +126,14 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
             const fieldKey = `${localItem.id}-${itemField}`;
             const wasLocallyEdited = wasRecentlyEditedLocally(fieldKey);
             
-            // If item was moved remotely but edited locally, preserve local edit
-            let resolution: 'local' | 'remote' | 'merge' = wasLocallyEdited ? 'local' : 'remote';
-            let reason = wasLocallyEdited 
-              ? `${itemField} recently edited locally` 
-              : `Accept remote ${itemField} change`;
-            
-            if (itemMoved && wasLocallyEdited) {
-              resolution = 'local';
-              reason = `${itemField} edited locally while row was moved - preserving local edit`;
-              console.log('🔀 Conflict: Preserving local edit despite row move', { itemId: localItem.id, field: itemField });
-              
-              // Notify user that their edit was preserved despite row movement
-              const item = localItem;
-              notifications.notifyRowMoved(
-                item?.title || item?.name || 'Item',
-                'another user'
-              );
-            }
-            
             conflicts.push({
               field: `items[${i}].${itemField}`,
               localValue: localFieldValue,
               remoteValue: remoteFieldValue,
-              resolution,
-              reason
+              resolution: wasLocallyEdited ? 'local' : 'remote',
+              reason: wasLocallyEdited 
+                ? `${itemField} recently edited locally` 
+                : `Accept remote ${itemField} change`
             });
           }
         }
@@ -292,26 +230,8 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
         
         appliedResolutions.push(`${field}: ${reason}`);
         console.log('🔀 Conflict: Applied local resolution', { field, reason });
-        
-        // Notify user about significant field resolutions
-        if (field.includes('script') || field.includes('title') || field.includes('name')) {
-          notifications.notifyConflictResolved({
-            type: 'local-preserved',
-            field,
-            details: reason
-          });
-        }
       } else {
         console.log('🔀 Conflict: Kept remote value', { field, reason });
-        
-        // Notify user about accepted remote changes for significant fields
-        if (field.includes('script') || field.includes('title') || field.includes('name')) {
-          notifications.notifyConflictResolved({
-            type: 'remote-accepted',
-            field,
-            details: reason
-          });
-        }
       }
     }
 
@@ -441,15 +361,12 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
     resolveConflicts,
     trackLocalEdit,
     createFieldTracker,
-    queueOperation,
-    processQueuedOperations,
     
     // Utilities
     detectConflicts,
     wasRecentlyEditedLocally,
     
     // State
-    isResolutionInProgress: () => resolutionInProgressRef.current,
-    hasQueuedOperations: () => queuedOperationsRef.current.length > 0
+    isResolutionInProgress: () => resolutionInProgressRef.current
   };
 };

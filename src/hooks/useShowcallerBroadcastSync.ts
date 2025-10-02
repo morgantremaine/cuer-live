@@ -106,10 +106,24 @@ export const useShowcallerBroadcastSync = ({
       }
     }, 3000); // Check every 3 seconds
 
-    // Persistent connection - no visibility-based checks
+    // Monitor window focus to ensure connection stays active
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // When tab becomes visible, check connection after a brief delay
+        setTimeout(() => {
+          const connected = showcallerBroadcast.isChannelConnected(rundownId);
+          if (!connected) {
+            console.log('📺 🔄 Tab visible but showcaller not connected, may need reconnection');
+          }
+        }, 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      console.log('📺 Cleaning up showcaller broadcast sync on unmount');
+      console.log('📺 Cleaning up showcaller broadcast sync');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(statusInterval);
       unsubscribe();
       setIsConnected(false);

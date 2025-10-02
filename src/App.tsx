@@ -9,7 +9,6 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
-import { DebugPanelWrapper } from "@/components/debug/DebugPanelWrapper";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -36,7 +35,6 @@ import BlogPost from "./pages/BlogPost";
 import CreateBlog from "./pages/CreateBlog";
 import EditBlog from "./pages/EditBlog";
 import ArticleManager from "./pages/ArticleManager";
-import { OperationSystemTest } from '@/pages/OperationSystemTest';
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
@@ -79,9 +77,6 @@ const AppRoutes = () => {
         path="/" 
         element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
       />
-      
-      {/* Test route for operation system debugging */}
-      <Route path="/test/operations/:id" element={<OperationSystemTest />} />
       
       {/* Homepage route for authenticated users */}
       <Route path="/home" element={<LandingPage />} />
@@ -227,7 +222,6 @@ const App = () => (
             <BrowserRouter>
               <AppUpdateNotification />
               <AppRoutes />
-              <DebugPanelWrapper />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>

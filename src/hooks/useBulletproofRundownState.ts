@@ -229,7 +229,23 @@ export const useBulletproofRundownState = () => {
     }
   }, [isInitialized, isConnected, forceFocusCheck]);
 
-  // Persistent connection - no focus-based checks needed
+  // Set up focus listeners
+  useEffect(() => {
+    window.addEventListener('focus', handleTabFocus);
+    
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleTabFocus();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleTabFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [handleTabFocus]);
 
   return {
     // Core state

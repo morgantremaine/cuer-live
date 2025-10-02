@@ -204,21 +204,21 @@ export const runLiveShowSmokeTest = async (): Promise<SmokeTestResult[]> => {
     });
   }
 
-  // Test 6: Cell update coordination (structural save removed)
+  // Test 6: Structural save integration
   try {
-    const coordinationModule = await import('../hooks/useCellUpdateCoordination');
-    const hasCoordination = 'default' in coordinationModule || 'useCellUpdateCoordination' in coordinationModule;
+    const structuralSaveModule = await import('../hooks/useStructuralSave');
+    const hasStructuralSave = 'default' in structuralSaveModule || 'useStructuralSave' in structuralSaveModule;
     
     results.push({
-      test: 'Cell update coordination system',
-      passed: hasCoordination,
-      details: 'Coordination system available for concurrent operations'
+      test: 'Structural save system integration',
+      passed: hasStructuralSave,
+      details: 'Structural save hook available for database persistence'
     });
   } catch (error) {
     results.push({
-      test: 'Cell update coordination system',
+      test: 'Structural save system integration',
       passed: false,
-      details: `Coordination system not available: ${error}`
+      details: `Structural save system not available: ${error}`
     });
   }
 

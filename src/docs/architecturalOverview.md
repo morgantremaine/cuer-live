@@ -102,27 +102,27 @@ executeWithShowcallerOperation()
 - Fallback compatibility for edge cases
 - Seamless transition between edit modes
 
-## Architecture Design Benefits
+## Common Misinterpretations
 
-### "Specialized Save Strategies"
-**Benefit**: Purpose-built approaches for different operation types
-- Per-cell saves: Optimal for real-time collaboration and individual field edits
-- Delta saves: Efficient for batch operations and complex change detection
-- Structural saves: Atomic operations for row management (add/delete/move)
+### "Duplicate Save Logic"
+**Reality**: Different save strategies for different use cases
+- Per-cell saves: Real-time granular updates
+- Delta saves: Batch change detection
+- Manual saves: User-triggered full persistence
 
-### "Layered State Architecture"
-**Benefit**: Clear separation of concerns across architectural layers
-- UI state: Visual presentation and user interaction handling
-- Content state: Core rundown data and business logic
-- Coordination state: Real-time operation management and conflict resolution
-- Performance state: Optimization tracking and monitoring
+### "Overlapping State Management"
+**Reality**: Layered state concerns
+- UI state: Visual presentation
+- Content state: Actual rundown data
+- Coordination state: Operation management
+- Performance state: Optimization tracking
 
-### "Multi-stage Validation Pipeline"
-**Benefit**: Comprehensive data integrity across all system layers
-- Input validation: User data sanitization and type checking
-- Signature validation: Intelligent change detection and conflict prevention
-- Collaboration validation: Multi-user editing safety and consistency
-- Persistence validation: Database integrity and transaction management
+### "Redundant Validation"
+**Reality**: Multi-stage validation pipeline
+- Input validation: User data sanitization
+- Signature validation: Change detection
+- Conflict validation: Collaboration safety
+- Persistence validation: Database integrity
 
 ## Performance Considerations
 

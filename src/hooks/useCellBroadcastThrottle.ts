@@ -9,10 +9,12 @@ export const useCellBroadcastThrottle = (itemCount: number = 0) => {
   const broadcastTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const isThrottlingEnabled = useRef(itemCount > 100);
 
-  // Minimal throttling optimized for real-time collaboration
+  // Dynamic throttling based on rundown size
   const getThrottleDelay = useCallback(() => {
-    if (itemCount > 300) return 100; // Even large rundowns: minimal delay
-    return 50; // Small/medium rundowns: near-instant
+    if (itemCount > 200) return 1000; // Very large rundowns: 1 second
+    if (itemCount > 150) return 750;  // Large rundowns: 750ms 
+    if (itemCount > 100) return 500;  // Medium rundowns: 500ms
+    return 100; // Small rundowns: minimal delay
   }, [itemCount]);
 
   // Throttled broadcast function
@@ -64,7 +66,7 @@ export const useCellBroadcastThrottle = (itemCount: number = 0) => {
 
   // Update throttling status when item count changes
   useEffect(() => {
-    isThrottlingEnabled.current = itemCount > 200;
+    isThrottlingEnabled.current = itemCount > 100;
     
     // Clean up if rundown becomes small
     if (!isThrottlingEnabled.current) {

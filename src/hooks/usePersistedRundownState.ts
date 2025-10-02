@@ -20,15 +20,8 @@ const cleanupCache = () => {
   }
 };
 
-/**
- * CRITICAL FIX: This hook was creating a DUPLICATE operation system via useSimplifiedRundownState
- * which caused competing broadcast subscriptions and historical operation loading.
- * 
- * Pass 'SKIP_OPERATION_SYSTEM' as parameter to prevent operation system creation.
- * The operation system should come from useRundownStateCoordination.
- */
-export const usePersistedRundownState = (skipOperationSystem?: string) => {
-  const rundownState = useSimplifiedRundownState(skipOperationSystem);
+export const usePersistedRundownState = () => {
+  const rundownState = useSimplifiedRundownState();
   const { rundownId } = rundownState;
   const cacheKey = getCacheKey(rundownId);
   const isRestoringRef = useRef(false);

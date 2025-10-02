@@ -6,6 +6,7 @@ import { useNetworkStatus } from './useNetworkStatus';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { createContentSignature } from '@/utils/contentSignature';
 import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
+import { useLocalShadowSignatureIntegration } from './useLocalShadowSignatureIntegration';
 
 interface SyncState {
   lastSyncTimestamp: string | null;
@@ -29,6 +30,7 @@ export const useEnhancedDataSync = (
   onConflictResolved?: (mergedData: any) => void
 ) => {
   const { validateSignature, validateSignatureConsistency } = useUnifiedSignatureValidation();
+  const { createShadowProtectedSignature, validateShadowSignatureConsistency } = useLocalShadowSignatureIntegration();
   const [syncState, setSyncState] = useState<SyncState>({
     lastSyncTimestamp: null,
     lastKnownDocVersion: 0,
@@ -192,7 +194,16 @@ export const useEnhancedDataSync = (
       externalNotes: mergedData.external_notes || ''
     });
     
-    console.log('✅ Conflict resolution complete');
+    // Check LocalShadow integration consistency
+    const shadowConsistency = validateShadowSignatureConsistency(
+      remoteSignature,
+      mergedSignature,
+      'enhanced-data-sync conflict resolution'
+    );
+    
+    if (!shadowConsistency.isConsistent) {
+      console.warn('🚨 LocalShadow signature inconsistency during conflict resolution:', shadowConsistency.explanation);
+    }
 
     return {
       success: true,
@@ -371,7 +382,23 @@ export const useEnhancedDataSync = (
     }
   }, [isConnected, checkStaleness, syncWithServer, processQueue]);
 
-  // Persistent connection - no focus-based checks needed
+  // Set up focus and visibility event listeners
+  useEffect(() => {
+    const handleFocus = () => handleFocusCheck();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleFocusCheck();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [handleFocusCheck]);
 
   // Record offline changes when not connected
   const trackOfflineChange = useCallback((fieldKey: string, value: any) => {

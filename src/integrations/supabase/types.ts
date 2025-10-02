@@ -363,36 +363,30 @@ export type Database = {
       }
       rundown_operations: {
         Row: {
-          applied_at: string | null
           client_id: string | null
           created_at: string
           id: string
           operation_data: Json
           operation_type: string
           rundown_id: string
-          sequence_number: number
           user_id: string
         }
         Insert: {
-          applied_at?: string | null
           client_id?: string | null
           created_at?: string
           id?: string
           operation_data: Json
           operation_type: string
           rundown_id: string
-          sequence_number?: number
           user_id: string
         }
         Update: {
-          applied_at?: string | null
           client_id?: string | null
           created_at?: string
           id?: string
           operation_data?: Json
           operation_type?: string
           rundown_id?: string
-          sequence_number?: number
           user_id?: string
         }
         Relationships: []
@@ -555,7 +549,6 @@ export type Database = {
           items: Json
           last_updated_by: string | null
           logo_url: string | null
-          operation_mode_enabled: boolean | null
           per_cell_save_enabled: boolean | null
           show_date: string | null
           showcaller_state: Json | null
@@ -582,7 +575,6 @@ export type Database = {
           items: Json
           last_updated_by?: string | null
           logo_url?: string | null
-          operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
           show_date?: string | null
           showcaller_state?: Json | null
@@ -609,7 +601,6 @@ export type Database = {
           items?: Json
           last_updated_by?: string | null
           logo_url?: string | null
-          operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
           show_date?: string | null
           showcaller_state?: Json | null
@@ -1163,10 +1154,6 @@ export type Database = {
       get_member_transfer_preview: {
         Args: { member_id: string; team_id_param: string }
         Returns: Json
-      }
-      get_next_sequence_number: {
-        Args: Record<PropertyKey, never>
-        Returns: number
       }
       get_or_create_user_team: {
         Args: { user_uuid: string }
