@@ -22,13 +22,14 @@ import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 import AdminNotificationSender from '@/components/AdminNotificationSender';
 import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading } = useTeam();
+  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading, error: teamError, loadTeamData } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
@@ -62,6 +63,7 @@ const Dashboard = () => {
 
   // Simple loading state - show skeleton until we have actual rundown data
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   
   // Sidebar state - collapsed by default on mobile
   const [sidebarCollapsed, setSidebarCollapsed] = useState(isMobile);
@@ -105,6 +107,19 @@ const Dashboard = () => {
       setInitialDataLoaded(false);
     }
   }, [user?.id]);
+
+  // Add timeout protection for team loading state
+  useEffect(() => {
+    if (teamLoading) {
+      const timeout = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 15000); // Show error after 15 seconds
+
+      return () => clearTimeout(timeout);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [teamLoading]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -402,33 +417,52 @@ const Dashboard = () => {
           switchToTeam={switchToTeam}
         />
         
-        <div className="flex flex-1">
-          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-full bg-gray-700" />
-              <Skeleton className="h-6 w-3/4 bg-gray-700" />
-              <Skeleton className="h-6 w-1/2 bg-gray-700" />
-               <Skeleton className="h-6 w-2/3 bg-gray-700" />
-            </div>
+        {showLoadingTimeout || teamError ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <Card className="p-8 text-center max-w-md">
+              <h2 className="text-xl font-semibold mb-4">
+                {teamError || 'Loading is taking longer than expected'}
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                There may be a connection issue. Please try again.
+              </p>
+              <Button onClick={() => {
+                setShowLoadingTimeout(false);
+                loadTeamData();
+              }}>
+                Retry Loading
+              </Button>
+            </Card>
           </div>
-          
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-              <div className="px-4 py-6 sm:px-0 space-y-6">
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-40 bg-gray-700" />
-                  <Skeleton className="h-12 w-32 bg-gray-700" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full bg-gray-700" />
-                  ))}
-                </div>
+        ) : (
+          <div className="flex flex-1">
+            <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
+              <div className="space-y-4">
+                <Skeleton className="h-8 w-full bg-gray-700" />
+                <Skeleton className="h-6 w-3/4 bg-gray-700" />
+                <Skeleton className="h-6 w-1/2 bg-gray-700" />
+                <Skeleton className="h-6 w-2/3 bg-gray-700" />
               </div>
             </div>
-          </main>
-        </div>
+            
+            <main className="flex-1 overflow-auto">
+              <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="px-4 py-6 sm:px-0 space-y-6">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-40 bg-gray-700" />
+                    <Skeleton className="h-12 w-32 bg-gray-700" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <Skeleton key={i} className="h-32 w-full bg-gray-700" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        )}
       </div>
     );
   }

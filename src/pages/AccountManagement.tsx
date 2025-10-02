@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,7 @@ import { useTeam } from '@/hooks/useTeam'
 import { supabase } from '@/integrations/supabase/client'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -30,11 +31,25 @@ const AccountManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false)
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { subscribed, access_type, openCustomerPortal } = useSubscription()
-  const { team, allUserTeams, userRole, switchToTeam } = useTeam()
+  const { team, allUserTeams, userRole, switchToTeam, isLoading: isLoadingTeam, error: teamError, loadTeamData } = useTeam()
   const { toast } = useToast()
   const navigate = useNavigate()
+
+  // Add timeout protection for loading state
+  useEffect(() => {
+    if (isLoadingTeam) {
+      const timeout = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 15000); // Show error after 15 seconds
+
+      return () => clearTimeout(timeout);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [isLoadingTeam]);
 
   const handleSignOut = async () => {
     await signOut()
@@ -177,6 +192,49 @@ const AccountManagement = () => {
     }
     setIsDeleting(false)
     setDeletePassword('')
+  }
+
+  if (isLoadingTeam) {
+    return (
+      <div className="dark min-h-screen bg-gray-900">
+        <DashboardHeader 
+          userEmail={user?.email} 
+          onSignOut={handleSignOut}
+          showBackButton={true}
+          onBack={handleBackToDashboard}
+          team={team}
+          allUserTeams={allUserTeams}
+          userRole={userRole}
+          switchToTeam={switchToTeam}
+        />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {showLoadingTimeout || teamError ? (
+            <Card className="p-8 text-center">
+              <h2 className="text-xl font-semibold mb-4">
+                {teamError || 'Loading is taking longer than expected'}
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                There may be a connection issue. Please try again.
+              </p>
+              <Button onClick={() => {
+                setShowLoadingTimeout(false);
+                loadTeamData();
+              }}>
+                Retry Loading
+              </Button>
+            </Card>
+          ) : (
+            <>
+              <Skeleton className="h-8 w-48 mb-8" />
+              <div className="grid gap-6">
+                <Skeleton className="h-[400px] w-full" />
+                <Skeleton className="h-[200px] w-full" />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (

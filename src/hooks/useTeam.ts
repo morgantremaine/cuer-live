@@ -131,20 +131,35 @@ export const useTeam = () => {
       // Another instance is already loading this exact team
       const existingPromise = globalLoadPromises.get(loadKey);
       if (existingPromise) {
-        await existingPromise;
+        try {
+          // Wait for existing promise with timeout
+          await Promise.race([
+            existingPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Load timeout')), 10000))
+          ]);
+        } catch (error) {
+          console.error('Existing promise timeout or error:', error);
+          // Clear the hung state so we can retry
+          globalLoadingStates.delete(loadKey);
+          globalLoadPromises.delete(loadKey);
+        }
       }
       return;
     }
 
     console.log('📊 useTeam - loadTeamData called', { userId: user?.id, currentActiveTeamId });
+    const loadStartTime = Date.now();
     globalLoadingStates.set(loadKey, true);
     isLoadingRef.current = true;
 
-    // Create a promise for this load operation
+    // Create a promise for this load operation with timeout
     const loadPromise = (async () => {
       try {
-        // Load all user teams first
-        const userTeams = await loadAllUserTeams();
+        // Wrap entire load operation with 10 second timeout
+        await Promise.race([
+          (async () => {
+            // Load all user teams first
+            const userTeams = await loadAllUserTeams();
 
       let targetTeamId = currentActiveTeamId;
 
@@ -232,14 +247,28 @@ export const useTeam = () => {
         
         setError(null);
 
-        // Load additional data after setting main team state
-        loadTeamMembers(targetTeamId);
-        if (role === 'admin') {
-          loadPendingInvitations(targetTeamId);
-        }
+            // Load additional data after setting main team state
+            loadTeamMembers(targetTeamId);
+            if (role === 'admin') {
+              loadPendingInvitations(targetTeamId);
+            }
+            
+            const loadTime = Date.now() - loadStartTime;
+            if (loadTime > 5000) {
+              console.warn(`⚠️ Team load took ${loadTime}ms - consider optimization`);
+            }
+          })(),
+          // 10 second timeout
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Team load timeout after 10 seconds')), 10000)
+          )
+        ]);
       } catch (error) {
         console.error('Failed to load team data:', error);
-        setError('Failed to load team data');
+        const errorMessage = error instanceof Error && error.message.includes('timeout') 
+          ? 'Loading timed out. Please check your connection and try again.'
+          : 'Failed to load team data';
+        setError(errorMessage);
         setTeam(null);
         setUserRole(null);
       } finally {
@@ -252,8 +281,11 @@ export const useTeam = () => {
 
     // Store the promise for request deduplication
     globalLoadPromises.set(loadKey, loadPromise);
-    await loadPromise;
-    globalLoadPromises.delete(loadKey);
+    try {
+      await loadPromise;
+    } finally {
+      globalLoadPromises.delete(loadKey);
+    }
   }, [user, activeTeamId, setActiveTeam, loadAllUserTeams]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
