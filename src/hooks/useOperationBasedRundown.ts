@@ -423,6 +423,20 @@ export const useOperationBasedRundown = ({
     operationQueue.globalEdit(field, newValue);
   }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState]);
 
+  // Local-only state update (for text fields with their own debounced save)
+  // Does NOT queue to server or broadcast - caller handles that
+  const updateLocalState = useCallback((itemId: string, field: string, newValue: any) => {
+    if (!state.isOperationMode) return;
+
+    // Apply to local state only (no queue, no broadcast)
+    const localOperation = {
+      operationType: 'CELL_EDIT' as const,
+      operationData: { itemId, field, newValue },
+      sequenceNumber: state.lastSequence + 1
+    };
+    applyOperationToState(localOperation);
+  }, [state.isOperationMode, state.lastSequence, applyOperationToState]);
+
   // Log whenever items change
   useEffect(() => {
     console.log('🔧 OPERATION SYSTEM STATE CHANGED:', {
@@ -445,6 +459,7 @@ export const useOperationBasedRundown = ({
     handleRowDelete,
     handleRowMove,
     handleGlobalEdit,
+    updateLocalState, // Local-only update (no queue/broadcast)
     
     // Queue status
     isProcessingOperations: operationQueue.isProcessing,

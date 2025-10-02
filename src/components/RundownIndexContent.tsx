@@ -47,6 +47,7 @@ const RundownIndexContent = () => {
     getRowNumber,
     calculateHeaderDuration,
     updateItem,
+    updateItemLocal,
     updateItemRaw,
     deleteRow,
     toggleFloatRow,
@@ -628,13 +629,13 @@ const RundownIndexContent = () => {
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={(id, field, value) => {
           // SIMPLIFIED ROUTING:
-          // Text fields: Instant local update + 800ms debounced direct save
-          // Non-text fields: Instant local update + immediate direct save
+          // Text fields: Local-only update + 800ms debounced direct save (NO operation queue)
+          // Non-text fields: Operation system (immediate save + broadcast)
           if (isTextField(field)) {
-            updateItem(id, field, value); // Local state update (instant)
+            updateItemLocal(id, field, value); // Local state ONLY (no operation queue/broadcast)
             debounceOperation(id, field, value); // Server sync after 800ms of silence
           } else {
-            handleCellChange(id, field, value); // Direct save for immediate fields
+            handleCellChange(id, field, value); // Operation system for immediate fields
           }
         }}
         onCellBlur={(itemId, field) => {

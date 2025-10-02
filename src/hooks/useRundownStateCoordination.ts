@@ -91,6 +91,12 @@ export const useRundownStateCoordination = () => {
     operationSystem.handleCellEdit(id, field, value);
   };
 
+  // Pure local-only update (NO operation system routing)
+  // For text fields that handle their own server sync
+  const localOnlyUpdateItem = (id: string, field: string, value: any) => {
+    operationSystem.updateLocalState(id, field, value);
+  };
+
   const wrappedDeleteRow = (id: string) => {
     operationSystem.handleRowDelete(id);
   };
@@ -361,6 +367,7 @@ export const useRundownStateCoordination = () => {
       
       // Core actions - route through operation system
       updateItem: wrappedUpdateItem,
+      updateItemLocal: localOnlyUpdateItem, // Local-only update (no operation queue/broadcast)
       updateItemRaw: persistedState.rawUpdateItem, // Raw state update (no operation system)
       deleteRow: wrappedDeleteRow,
       toggleFloatRow: persistedState.toggleFloat,
