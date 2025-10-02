@@ -609,7 +609,7 @@ const RundownIndexContent = () => {
           // Route through appropriate operation system based on field type
           if (isTextField(field)) {
             // Text fields: Instant local update + debounced server sync
-            updateItemRaw(id, field, value); // Raw state update (no operation system)
+            updateItemRaw(id, { [field]: value }); // Raw state update (no operation system)
             debounceOperation(id, field, value); // Debounced server sync (300ms)
           } else {
             // Non-text fields: Immediate operation for instant collaboration

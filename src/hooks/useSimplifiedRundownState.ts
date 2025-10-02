@@ -1477,6 +1477,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     },
     
     updateItem: enhancedActions.updateItem,
+    rawUpdateItem: actions.updateItem, // Raw state update bypassing operation system
     deleteItem: enhancedActions.deleteRow,
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
