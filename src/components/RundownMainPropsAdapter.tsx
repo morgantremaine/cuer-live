@@ -24,6 +24,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onTimezoneChange,
     totalRuntime,
     onAddRow,
+    onAddMultipleRows,
     onAddHeader,
     showColumnManager,
     setShowColumnManager,
@@ -220,6 +221,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
         onAddRow={onAddRow}
+        onAddMultipleRows={onAddMultipleRows}
         onAddHeader={onAddHeader}
          onShowColumnManager={() => setShowColumnManager(true)}
         selectedCount={selectedCount}

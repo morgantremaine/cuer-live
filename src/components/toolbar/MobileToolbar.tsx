@@ -15,6 +15,7 @@ import { CSVExportData } from '@/utils/csvExport';
 
 interface MobileToolbarProps {
   onAddRow: () => void;
+  onAddMultipleRows?: (count: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
@@ -52,6 +53,7 @@ interface MobileToolbarProps {
 
 const MobileToolbar = ({
   onAddRow,
+  onAddMultipleRows,
   onAddHeader,
   onShowColumnManager,
   onUndo,
@@ -115,6 +117,7 @@ const MobileToolbar = ({
               <div className="space-y-2">
                 <MainActionButtons
                   onAddRow={onAddRow}
+                  onAddMultipleRows={onAddMultipleRows}
                   onAddHeader={onAddHeader}
                   onShowColumnManager={onShowColumnManager}
                   onUndo={onUndo}

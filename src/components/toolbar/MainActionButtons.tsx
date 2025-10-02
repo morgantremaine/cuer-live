@@ -9,11 +9,13 @@ import { CSVExportData } from '@/utils/csvExport';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import AddSegmentButton from './AddSegmentButton';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
+  onAddMultipleRows?: (count: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
@@ -45,6 +47,7 @@ interface MainActionButtonsProps {
 
 const MainActionButtons = ({
   onAddRow,
+  onAddMultipleRows,
   onAddHeader,
   onShowColumnManager,
   onUndo,
@@ -96,6 +99,17 @@ const MainActionButtons = ({
     }, 500);
   }, [addRowCooldown, onAddRow]);
 
+  const handleAddMultipleRows = useCallback((count: number) => {
+    if (addRowCooldown || !onAddMultipleRows) return;
+    
+    setAddRowCooldown(true);
+    onAddMultipleRows(count);
+    
+    setTimeout(() => {
+      setAddRowCooldown(false);
+    }, 500);
+  }, [addRowCooldown, onAddMultipleRows]);
+
   const handleAddHeaderWithCooldown = useCallback(() => {
     if (addHeaderCooldown) return;
     
@@ -144,10 +158,19 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span>Add Segment</span>
-          </Button>
+          {onAddMultipleRows ? (
+            <AddSegmentButton
+              onAddSegments={handleAddMultipleRows}
+              disabled={addRowCooldown}
+              size={buttonSize}
+              isMobile={true}
+            />
+          ) : (
+            <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
+              <Plus className="h-4 w-4" />
+              <span>Add Segment</span>
+            </Button>
+          )}
           <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Add Header</span>
@@ -236,10 +259,19 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
-      <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
-        <Plus className="h-4 w-4" />
-        <span>Add Segment</span>
-      </Button>
+      {onAddMultipleRows ? (
+        <AddSegmentButton
+          onAddSegments={handleAddMultipleRows}
+          disabled={addRowCooldown}
+          size={buttonSize}
+          className={buttonClass}
+        />
+      ) : (
+        <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
+          <Plus className="h-4 w-4" />
+          <span>Add Segment</span>
+        </Button>
+      )}
       <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Add Header</span>

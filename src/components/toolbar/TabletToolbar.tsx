@@ -14,6 +14,7 @@ import { CSVExportData } from '@/utils/csvExport';
 
 interface TabletToolbarProps {
   onAddRow: () => void;
+  onAddMultipleRows?: (count: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
@@ -51,6 +52,7 @@ interface TabletToolbarProps {
 
 const TabletToolbar = ({
   onAddRow,
+  onAddMultipleRows,
   onAddHeader,
   onShowColumnManager,
   onUndo,
@@ -106,6 +108,7 @@ const TabletToolbar = ({
             <div className="space-y-2">
               <MainActionButtons
                 onAddRow={onAddRow}
+                onAddMultipleRows={onAddMultipleRows}
                 onAddHeader={onAddHeader}
                 onShowColumnManager={onShowColumnManager}
                 onUndo={onUndo}

@@ -6,11 +6,11 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
   addRow: () => void;
+  addMultipleRows?: (count: number, calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
   deleteMultipleRows: (ids: string[]) => void;
-  addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void;
   handleDeleteColumn: (columnId: string) => void;
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
@@ -243,6 +243,7 @@ export const useRundownGridHandlers = ({
   return {
     handleUpdateItem,
     handleAddRow,
+    handleAddMultipleRows,
     handleAddHeader,
     handleDeleteRow,
     handleToggleFloat,
