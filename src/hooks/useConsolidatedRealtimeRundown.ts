@@ -49,15 +49,44 @@ export const useConsolidatedRealtimeRundown = ({
   const isInitialLoadRef = useRef(true);
   const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Track actual channel connection status from globalSubscriptions
+  // Track actual channel connection status from globalSubscriptions + browser network
   useEffect(() => {
     if (!enabled || !rundownId) {
       setIsConnected(false);
       return;
     }
 
+    // Immediate browser-level network detection
+    const handleOnline = () => {
+      console.log('📶 Browser detected network online - checking Supabase connection');
+      const state = globalSubscriptions.get(rundownId);
+      if (state?.isConnected) {
+        setIsConnected(true);
+      }
+    };
+    
+    const handleOffline = () => {
+      console.log('📵 Browser detected network offline');
+      setIsConnected(false);
+    };
+    
+    // Listen to browser network events for instant detection
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check initial browser network status
+    if (!navigator.onLine) {
+      setIsConnected(false);
+    }
+
     // Check connection status from global state
     const checkConnection = () => {
+      // If browser is offline, always show disconnected
+      if (!navigator.onLine) {
+        setIsConnected(false);
+        return;
+      }
+      
       const state = globalSubscriptions.get(rundownId);
       setIsConnected(state?.isConnected || false);
     };
@@ -65,10 +94,14 @@ export const useConsolidatedRealtimeRundown = ({
     // Initial check
     checkConnection();
 
-    // Poll for connection status updates every 500ms
+    // Poll for connection status updates every 500ms (backup)
     const interval = setInterval(checkConnection, 500);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [enabled, rundownId]);
   
   // Simplified callback refs (no tab coordination needed)

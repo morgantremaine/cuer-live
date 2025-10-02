@@ -24,6 +24,8 @@ export const useCellLevelSave = (
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const failedSavesRef = useRef<FieldUpdate[]>([]);
+  const wasOfflineRef = useRef(false);
 
   // Track individual field changes
   const trackCellChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -104,7 +106,9 @@ export const useCellLevelSave = (
 
       if (error) {
         console.error('Per-cell save error:', error);
-        pendingUpdatesRef.current.unshift(...updatesToSave);
+        
+        // Store failed saves separately for retry on reconnection
+        failedSavesRef.current.push(...updatesToSave);
         
         // Notify UI of unsaved changes so user knows there's an issue
         if (onUnsavedChanges) {
@@ -128,7 +132,8 @@ export const useCellLevelSave = (
           docVersion: data.docVersion
         };
       } else {
-        pendingUpdatesRef.current.unshift(...updatesToSave);
+        // Store failed saves for retry
+        failedSavesRef.current.push(...updatesToSave);
         if (onUnsavedChanges) {
           onUnsavedChanges();
         }
@@ -140,6 +145,48 @@ export const useCellLevelSave = (
       throw error;
     }
   }, [rundownId]);
+
+  // Retry failed saves when connection is restored
+  const retryFailedSaves = useCallback(async () => {
+    if (failedSavesRef.current.length === 0) {
+      return;
+    }
+
+    console.log('🔄 Retrying', failedSavesRef.current.length, 'failed saves after reconnection');
+    
+    const savesToRetry = [...failedSavesRef.current];
+    failedSavesRef.current = [];
+    
+    // Add them to pending updates for normal save flow
+    pendingUpdatesRef.current.push(...savesToRetry);
+    
+    // Trigger immediate save
+    await savePendingUpdates();
+  }, [savePendingUpdates]);
+
+  // Monitor browser network status for reconnection
+  useCallback(() => {
+    const handleOnline = () => {
+      if (wasOfflineRef.current) {
+        console.log('📶 Network restored - retrying failed saves');
+        wasOfflineRef.current = false;
+        retryFailedSaves();
+      }
+    };
+    
+    const handleOffline = () => {
+      console.log('📵 Network offline - saves will be queued');
+      wasOfflineRef.current = true;
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [retryFailedSaves])();
 
   // Force immediate save of all pending updates
   const flushPendingUpdates = useCallback(async () => {
@@ -157,6 +204,7 @@ export const useCellLevelSave = (
   return {
     trackCellChange,
     flushPendingUpdates,
-    hasPendingUpdates
+    hasPendingUpdates,
+    retryFailedSaves
   };
 };

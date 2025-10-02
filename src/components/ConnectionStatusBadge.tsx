@@ -20,6 +20,17 @@ const ConnectionStatusBadge = ({
   showLabel = true 
 }: ConnectionStatusBadgeProps) => {
   const getStatusConfig = () => {
+    // Priority 1: Check browser offline status first
+    if (!navigator.onLine) {
+      return {
+        color: 'text-red-500',
+        bgColor: 'bg-red-500/10',
+        label: 'Offline',
+        title: 'No internet connection'
+      };
+    }
+    
+    // Priority 2: Processing/Syncing state
     if (isProcessing) {
       return {
         color: 'text-blue-500',
@@ -27,7 +38,10 @@ const ConnectionStatusBadge = ({
         label: 'Syncing...',
         title: 'Syncing changes with team'
       };
-    } else if (isConnected && isDegraded) {
+    } 
+    
+    // Priority 3: Degraded connection
+    else if (isConnected && isDegraded) {
       return {
         icon: Wifi,
         color: 'text-yellow-500',
