@@ -1290,6 +1290,10 @@ export type Database = {
         Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      leave_team_as_member: {
+        Args: { team_id_to_leave: string; user_id_leaving: string }
+        Returns: Json
+      }
       migrate_existing_custom_columns: {
         Args: Record<PropertyKey, never>
         Returns: undefined

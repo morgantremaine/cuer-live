@@ -601,6 +601,60 @@ export const useTeam = () => {
     }
   };
 
+  const leaveCurrentTeam = async () => {
+    if (!team?.id || !user?.id) {
+      return { error: 'No team or user found' };
+    }
+
+    if (userRole === 'admin') {
+      return { error: 'Admins cannot leave the team. Please transfer admin role first.' };
+    }
+
+    try {
+      console.log('Leaving team:', { teamId: team.id, userId: user.id });
+
+      const { data, error } = await supabase.rpc('leave_team_as_member', {
+        team_id_to_leave: team.id,
+        user_id_leaving: user.id
+      });
+
+      if (error) {
+        console.error('Error leaving team:', error);
+        return { error: error.message };
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        return { error: data.error };
+      }
+
+      console.log('Successfully left team:', data);
+
+      // Load all user teams to find the personal team
+      const userTeams = await loadAllUserTeams();
+      const personalTeam = userTeams.find(t => t.id !== team.id);
+      
+      if (personalTeam) {
+        // Switch to personal team
+        await switchToTeam(personalTeam.id);
+      } else {
+        // Fallback: reload team data to get personal team
+        setActiveTeam(null);
+        loadedUserRef.current = null;
+        await loadTeamData();
+      }
+
+      return { 
+        success: true,
+        rundownsTransferred: data.rundowns_transferred || 0,
+        blueprintsTransferred: data.blueprints_transferred || 0
+      };
+    } catch (error) {
+      console.error('Exception in leaveCurrentTeam:', error);
+      return { error: 'Failed to leave team' };
+    }
+  };
+
   const acceptInvitation = async (token: string) => {
     setIsProcessingInvitation(true);
     try {
@@ -780,6 +834,7 @@ export const useTeam = () => {
     removeTeamMemberWithTransfer,
     acceptInvitation,
     updateTeamName,
+    leaveCurrentTeam,
     loadTeamData,
     loadTeamMembers,
     loadPendingInvitations,

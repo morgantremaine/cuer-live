@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +39,8 @@ const TeamManagement = () => {
   const [isEditingTeamName, setIsEditingTeamName] = useState(false);
   const [editedTeamName, setEditedTeamName] = useState('');
   const [isSavingTeamName, setIsSavingTeamName] = useState(false);
+  const [isLeavingTeam, setIsLeavingTeam] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   
   const {
     team,
@@ -51,7 +53,9 @@ const TeamManagement = () => {
     removeTeamMemberWithTransfer,
     getTransferPreview,
     revokeInvitation,
-    updateTeamName
+    updateTeamName,
+    leaveCurrentTeam,
+    allUserTeams
   } = useTeam();
   
   const { max_team_members } = useSubscription();
@@ -225,6 +229,40 @@ const TeamManagement = () => {
     setEditedTeamName('');
   };
 
+  const handleLeaveTeam = async () => {
+    setIsLeavingTeam(true);
+    const { error, rundownsTransferred, blueprintsTransferred } = await leaveCurrentTeam();
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+      setIsLeavingTeam(false);
+    } else {
+      const transferredItems = [];
+      if (rundownsTransferred && rundownsTransferred > 0) {
+        transferredItems.push(`${rundownsTransferred} rundown${rundownsTransferred > 1 ? 's' : ''}`);
+      }
+      if (blueprintsTransferred && blueprintsTransferred > 0) {
+        transferredItems.push(`${blueprintsTransferred} blueprint${blueprintsTransferred > 1 ? 's' : ''}`);
+      }
+      
+      const transferMessage = transferredItems.length > 0 
+        ? ` ${transferredItems.join(' and ')} transferred to the team admin.`
+        : '';
+      
+      toast({
+        title: 'Left Team',
+        description: `You have successfully left ${team?.name}.${transferMessage}`,
+      });
+      
+      setIsLeavingTeam(false);
+      setShowLeaveDialog(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -276,6 +314,11 @@ const TeamManagement = () => {
   const currentUsage = teamMembers.length + pendingInvitations.length;
   const isAtLimit = currentUsage >= max_team_members;
   const canInviteMore = userRole === 'admin' && !isAtLimit;
+
+  // Check if this is the user's personal team or an invited team
+  const isPersonalTeam = allUserTeams.length > 0 && 
+    allUserTeams.find(t => t.id === team?.id && t.role === 'admin' && allUserTeams.length === 1);
+  const canLeaveTeam = userRole === 'member' && !isPersonalTeam;
 
   return (
     <div className="space-y-6">
@@ -506,6 +549,86 @@ const TeamManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Leave Team Card (Members Only) */}
+      {canLeaveTeam && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <LogOut className="h-5 w-5" />
+              Leave Team
+            </CardTitle>
+            <CardDescription className="text-orange-700">
+              Leave this team and return to your personal workspace
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 bg-white border border-orange-200 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-3">
+                  <strong>What will happen when you leave:</strong>
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>• Your rundowns and blueprints will be transferred to the team admin</li>
+                  <li>• You'll keep your account and personal team</li>
+                  <li>• You'll lose access to all team data immediately</li>
+                  <li>• You can be re-invited to the team later</li>
+                </ul>
+              </div>
+              
+              <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="border-orange-600 text-orange-700 hover:bg-orange-100">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Leave {team?.name}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-orange-500" />
+                      Leave Team
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-3">
+                      <p>
+                        Are you sure you want to leave <strong>{team?.name}</strong>?
+                      </p>
+                      <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
+                        <p className="font-semibold text-orange-700 mb-2">You will:</p>
+                        <ul className="space-y-1 text-sm">
+                          <li>• Transfer all your data to {teamAdminName || 'the team admin'}</li>
+                          <li>• Keep your account and personal team</li>
+                          <li>• Lose access to team rundowns immediately</li>
+                          <li>• Need a new invitation to rejoin</li>
+                        </ul>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isLeavingTeam}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleLeaveTeam}
+                      disabled={isLeavingTeam}
+                      className="bg-orange-600 text-white hover:bg-orange-700"
+                    >
+                      {isLeavingTeam ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Leaving...
+                        </>
+                      ) : (
+                        'Leave Team'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Enhanced Remove Member Dialog */}
       <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && handleCancelRemoveMember()}>
