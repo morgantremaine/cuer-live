@@ -38,6 +38,7 @@ import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
+import SmokeTest from "./pages/SmokeTest";
 
 // Login wrapper to handle Stream Deck vs normal login flows
 const LoginWrapper = () => {
@@ -106,6 +107,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiresSubscription={true}>
             <AdminHealth />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/smoke-test" 
+        element={
+          <ProtectedRoute requiresSubscription={false}>
+            <SmokeTest />
           </ProtectedRoute>
         } 
       />
