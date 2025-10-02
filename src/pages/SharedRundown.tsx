@@ -243,7 +243,7 @@ const SharedRundown = () => {
   const columnsToUse = layoutColumns || rundownData?.columns || DEFAULT_COLUMNS;
 
   // Use local column ordering for anonymous users to persist their preferred column order
-  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
+  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse, rundownId || '');
   const visibleColumns = getVisibleColumns(orderedColumns);
 
   if (loading) {

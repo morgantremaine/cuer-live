@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Column } from '@/types/columns';
 
-const STORAGE_KEY = 'shared-rundown-column-order';
+// CRITICAL FIX: Make storage key rundown-specific to prevent column order bleeding across rundowns
+const getStorageKey = (rundownId: string) => `shared-rundown-column-order-${rundownId}`;
 
 interface UseLocalSharedColumnOrderReturn {
   orderedColumns: Column[];
@@ -10,14 +11,18 @@ interface UseLocalSharedColumnOrderReturn {
 }
 
 export const useLocalSharedColumnOrder = (
-  originalColumns: Column[]
+  originalColumns: Column[],
+  rundownId: string
 ): UseLocalSharedColumnOrderReturn => {
   const [orderedColumns, setOrderedColumns] = useState<Column[]>(originalColumns);
 
   // Load saved order from localStorage on mount
   useEffect(() => {
+    if (!rundownId) return;
+    
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const storageKey = getStorageKey(rundownId);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const savedOrder: string[] = JSON.parse(saved);
         
@@ -49,17 +54,20 @@ export const useLocalSharedColumnOrder = (
       console.error('Failed to load column order from localStorage:', error);
       setOrderedColumns(originalColumns);
     }
-  }, [originalColumns]);
+  }, [originalColumns, rundownId]);
 
   // Save column order to localStorage
   const saveColumnOrder = useCallback((columns: Column[]) => {
+    if (!rundownId) return;
+    
     try {
+      const storageKey = getStorageKey(rundownId);
       const columnOrder = columns.map(col => col.key);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(columnOrder));
+      localStorage.setItem(storageKey, JSON.stringify(columnOrder));
     } catch (error) {
       console.error('Failed to save column order to localStorage:', error);
     }
-  }, []);
+  }, [rundownId]);
 
   // Reorder columns with new column array (consistent with main rundown system)
   const reorderColumns = useCallback((newColumns: Column[]) => {
@@ -70,9 +78,12 @@ export const useLocalSharedColumnOrder = (
 
   // Reset to original column order
   const resetColumnOrder = useCallback(() => {
+    if (!rundownId) return;
+    
     setOrderedColumns(originalColumns);
-    localStorage.removeItem(STORAGE_KEY);
-  }, [originalColumns]);
+    const storageKey = getStorageKey(rundownId);
+    localStorage.removeItem(storageKey);
+  }, [originalColumns, rundownId]);
 
   return {
     orderedColumns,

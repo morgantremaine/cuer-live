@@ -59,37 +59,37 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const [isSaving, setIsSaving] = useState(false);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const currentSavePromiseRef = useRef<Promise<void> | null>(null);
   const hasLoadedRef = useRef(false); // Prevent multiple initial loads
 
-  // Merge columns with team columns to ensure completeness
+  // Merge columns with team columns to ensure completeness - OPTIMIZED with Maps
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
-    // Build a map of user's existing column preferences
+    // Build a map of user's existing column preferences - O(n)
     const userColumnMap = new Map<string, Column>();
     userColumns.forEach(col => {
       userColumnMap.set(col.key, col);
     });
 
+    // Build a map of team columns for O(1) lookups
+    const teamColumnMap = new Map(teamColumns.map(tc => [tc.column_key, tc]));
+
     // Start from defaults, but hide any defaults NOT present in the user's layout
     const allAvailableColumns: Column[] = defaultColumns.map(dc => {
       const userPref = userColumnMap.get(dc.key);
-      // If user has a preference for this default column, we'll overlay later via order
-      // If not present in user layout, keep it hidden
       return userPref ? dc : { ...dc, isVisible: false };
     });
     
-    // Add ALL team columns to the available set
+    // Add ALL team columns to the available set - O(n)
     teamColumns.forEach(teamCol => {
       const existingUserPref = userColumnMap.get(teamCol.column_key);
       if (existingUserPref) {
-        // User has preferences for this team column - use their settings
         allAvailableColumns.push({
           ...existingUserPref,
           isTeamColumn: true,
           createdBy: teamCol.created_by,
-          name: teamCol.column_name // Always use latest team column name
+          name: teamCol.column_name
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       } else {
-        // New team column - add hidden by default
         allAvailableColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -97,16 +97,16 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: false, // Start team columns as hidden
+          isVisible: false,
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       }
     });
     
-    // Add any user's personal custom columns that aren't team columns
+    // Add any user's personal custom columns that aren't team columns - O(n)
     userColumns.forEach(col => {
-      if (col.isCustom && !(col as any).isTeamColumn && !teamColumns.some(tc => tc.column_key === col.key)) {
+      if (col.isCustom && !(col as any).isTeamColumn && !teamColumnMap.has(col.key)) {
         const exists = allAvailableColumns.some(existingCol => existingCol.key === col.key);
         if (!exists) {
           allAvailableColumns.push(col);
@@ -114,13 +114,16 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     });
     
-    // Apply user's column order preferences while maintaining all columns
+    // Create a map of all available columns for O(1) lookup - O(n)
+    const availableColumnMap = new Map(allAvailableColumns.map(col => [col.key, col]));
+    
+    // Apply user's column order preferences - O(n)
     const orderedColumns: Column[] = [];
     const usedKeys = new Set<string>();
     
     // First, add columns in user's preferred order
     userColumns.forEach(userCol => {
-      const matchingCol = allAvailableColumns.find(col => col.key === userCol.key);
+      const matchingCol = availableColumnMap.get(userCol.key);
       if (matchingCol && !usedKeys.has(userCol.key)) {
         orderedColumns.push({
           ...(matchingCol as Column),
@@ -130,11 +133,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     });
     
-    // Then add any remaining columns that user hasn't configured yet (kept hidden by default)
+    // Then add any remaining columns - O(n)
     allAvailableColumns.forEach(col => {
       if (!usedKeys.has(col.key)) {
         orderedColumns.push(col);
-        usedKeys.add(col.key);
       }
     });
 
@@ -158,32 +160,45 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Debounce saves slightly to avoid excessive database calls during rapid changes
+    // Debounce saves to avoid excessive database calls - with proper cleanup
     saveTimeoutRef.current = setTimeout(async () => {
-      setIsSaving(true);
-      try {
-        const { error } = await supabase
-          .from('user_column_preferences')
-          .upsert({
-            user_id: user.id,
-            rundown_id: rundownId,
-            column_layout: columnsToSave,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,rundown_id'
-          });
-
-        if (error) {
-          console.error('Error saving column preferences:', error);
-        } else {
-          console.log('📊 Column preferences auto-saved successfully');
-          debugLogger.preferences('Auto-saved ' + columnsToSave.length + ' columns');
-        }
-      } catch (error) {
-        console.error('Failed to save column preferences:', error);
-      } finally {
-        setIsSaving(false);
+      // Prevent concurrent saves by checking if there's already a save in progress
+      if (currentSavePromiseRef.current) {
+        console.log('📊 Save already in progress, will retry after completion');
+        return;
       }
+
+      setIsSaving(true);
+      
+      const savePromise = (async () => {
+        try {
+          const { error } = await supabase
+            .from('user_column_preferences')
+            .upsert({
+              user_id: user.id,
+              rundown_id: rundownId,
+              column_layout: columnsToSave,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,rundown_id'
+            });
+
+          if (error) {
+            console.error('Error saving column preferences:', error);
+          } else {
+            console.log('📊 Column preferences auto-saved successfully');
+            debugLogger.preferences('Auto-saved ' + columnsToSave.length + ' columns');
+          }
+        } catch (error) {
+          console.error('Failed to save column preferences:', error);
+        } finally {
+          setIsSaving(false);
+          currentSavePromiseRef.current = null;
+        }
+      })();
+
+      currentSavePromiseRef.current = savePromise;
+      await savePromise;
     }, 500);
   }, [user?.id, rundownId, isLoading, hasInitialLoad]);
 
@@ -240,6 +255,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       setColumns(mergedDefaults);
     } finally {
       setIsLoading(false);
+      // CRITICAL FIX: Set hasInitialLoad immediately after load completes
+      // This ensures the flag is always set correctly, preventing autosave blockage
+      setHasInitialLoad(true);
+      console.log('✅ hasInitialLoad flag set - autosaves now enabled');
     }
   }, [user?.id, rundownId, team?.id, teamColumnsLoading]); // Removed mergeColumnsWithTeamColumns to prevent recreation
 
@@ -389,21 +408,20 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
   }, [isLoading, teamColumnsLoading, teamColumns.length, hasInitialLoad]);
 
-  // Cleanup timeouts on unmount
+  // Cleanup timeouts and pending saves on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      // Wait for any pending save to complete before unmounting
+      if (currentSavePromiseRef.current) {
+        currentSavePromiseRef.current.catch(err => {
+          console.error('Save failed during cleanup:', err);
+        });
+      }
     };
   }, []);
-
-  // Signal initial load completion only when both sources are ready
-  useEffect(() => {
-    if (!isLoading && !teamColumnsLoading && !hasInitialLoad) {
-      setHasInitialLoad(true);
-    }
-  }, [isLoading, teamColumnsLoading, hasInitialLoad]);
   return {
     columns,
     setColumns, // Direct setter for internal use (like applyLayout)

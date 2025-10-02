@@ -19,6 +19,8 @@ interface ColumnLayout {
   is_default: boolean;
   user_id: string;
   team_id?: string;
+  created_at: string;
+  updated_at: string;
   creator_profile?: {
     full_name: string | null;
     email: string;
@@ -117,12 +119,26 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
         };
       });
 
-      // Only update if the data actually changed to prevent unnecessary re-renders
+      // Only update if the data actually changed - OPTIMIZED: avoid expensive JSON.stringify
       setAvailableLayouts(prev => {
         const prevLength = prev.length;
         const newLength = mappedLayouts.length;
         
-        if (prevLength !== newLength || JSON.stringify(prev) !== JSON.stringify(mappedLayouts)) {
+        // Fast length check first
+        if (prevLength !== newLength) {
+          console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
+          return mappedLayouts;
+        }
+        
+        // Shallow comparison of id and updated_at instead of deep JSON.stringify
+        const hasChanges = mappedLayouts.some((newLayout, idx) => {
+          const oldLayout = prev[idx];
+          return !oldLayout || 
+                 oldLayout.id !== newLayout.id || 
+                 oldLayout.updated_at !== newLayout.updated_at;
+        });
+        
+        if (hasChanges) {
           console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
           return mappedLayouts;
         }
