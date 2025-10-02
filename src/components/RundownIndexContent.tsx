@@ -599,21 +599,13 @@ const RundownIndexContent = () => {
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={(id, field, value) => {
-          console.log('📝 RUNDOWN INDEX: onUpdateItem called', {
-            id,
-            field,
-            value: typeof value === 'string' ? value.substring(0, 50) : value,
-            isTextField: isTextField(field)
-          });
-          
-          // Route through appropriate operation system based on field type
+          // Text fields: Local update (instant) + debounced server sync (300ms)
+          // Non-text fields: Immediate operation for real-time collaboration
           if (isTextField(field)) {
-            // Text fields: Instant local update + debounced server sync
-            updateItemRaw(id, { [field]: value }); // Raw state update (no operation system)
+            updateItem(id, field, value); // Instant local update
             debounceOperation(id, field, value); // Debounced server sync (300ms)
           } else {
-            // Non-text fields: Immediate operation for instant collaboration
-            handleCellChange(id, field, value);
+            handleCellChange(id, field, value); // Immediate operation
           }
         }}
         onCellBlur={(itemId, field) => {

@@ -27,6 +27,7 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
+import { isTextField } from '@/utils/fieldClassification';
 
 /**
  * CRITICAL: This hook can now accept 'SKIP_OPERATION_SYSTEM' flag to prevent duplicate creation
@@ -635,7 +636,32 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
 
   // Enhanced updateItem function with OT routing and cell broadcasting
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // Route to OT system if operation mode is enabled
+    // TEXT FIELDS: Always use local state updates only
+    // Server sync is handled by debounce system in RundownIndexContent
+    if (isTextField(field)) {
+      console.log('📝 TEXT FIELD: Local update only (server sync via debounce)', { id, field, value: value?.substring(0, 20) });
+      
+      if (field.startsWith('customFields.')) {
+        const customFieldKey = field.replace('customFields.', '');
+        const item = state.items.find(i => i.id === id);
+        if (item) {
+          const currentCustomFields = item.customFields || {};
+          actions.updateItem(id, {
+            customFields: {
+              ...currentCustomFields,
+              [customFieldKey]: value
+            }
+          });
+        }
+      } else {
+        let updateField = field;
+        if (field === 'segmentName') updateField = 'name';
+        actions.updateItem(id, { [updateField]: value });
+      }
+      return;
+    }
+    
+    // NON-TEXT FIELDS: Route to OT system if operation mode is enabled
     if (isOperationModeEnabled && operationBasedRundown) {
       console.log('🎯 OT: Routing cell edit to operation system');
       operationBasedRundown.handleCellEdit(id, field, value);
