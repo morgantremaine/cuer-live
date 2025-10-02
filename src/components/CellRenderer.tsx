@@ -132,8 +132,8 @@ const CellRenderer = ({
     );
   }
 
-  // Use ExpandableScriptCell for script and notes fields (both built-in columns)
-  if (column.key === 'script' || column.key === 'notes') {
+  // Use ExpandableScriptCell for script, notes, and custom collapsible fields
+  if (column.key === 'script' || column.key === 'notes' || column.isCollapsible) {
     return (
       <ExpandableScriptCell
         value={value}
@@ -142,9 +142,15 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
-        fieldType={column.key as 'script' | 'notes'}
+        fieldType={column.key === 'script' ? 'script' : column.key === 'notes' ? 'notes' : 'custom'}
         onUpdateValue={(newValue) => {
-          onUpdateItem(item.id, column.key, newValue);
+          // Handle custom fields vs built-in fields
+          if (column.isCustom) {
+            const field = `customFields.${column.key}`;
+            onUpdateItem(item.id, field, newValue);
+          } else {
+            onUpdateItem(item.id, column.key, newValue);
+          }
         }}
         onKeyDown={onKeyDown}
       />

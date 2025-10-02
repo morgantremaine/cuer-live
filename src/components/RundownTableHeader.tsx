@@ -129,8 +129,8 @@ const RundownTableHeader = ({
   const handleAutoResize = (column: Column) => {
     if (!items.length) return;
     
-    // Disable auto-resize for script and notes columns as they have expandable cells
-    if (column.key === 'script' || column.key === 'notes') return;
+    // Disable auto-resize for script, notes, and custom collapsible columns as they have expandable cells
+    if (column.key === 'script' || column.key === 'notes' || column.isCollapsible) return;
 
     // Special handling for images column
     if (column.key === 'images' || column.id === 'images') {
@@ -271,7 +271,7 @@ const RundownTableHeader = ({
               
               const headerContent = (
                 <div className="flex items-center space-x-1">
-                  {(column.key === 'script' || column.key === 'notes') && onToggleColumnExpand && (
+                  {(column.key === 'script' || column.key === 'notes' || column.isCollapsible) && onToggleColumnExpand && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

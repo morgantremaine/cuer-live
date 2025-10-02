@@ -10,6 +10,8 @@ export interface Column {
   isCustom: boolean;
   isEditable: boolean;
   isVisible?: boolean;
+  isCollapsible?: boolean;
+  type?: 'text' | 'textarea' | 'time' | 'custom';
 }
 
 const getDefaultColumns = (): Column[] => [
@@ -36,15 +38,17 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   // Ensure columns is always an array before filtering and ensure all default columns are visible
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
 
-  const handleAddColumn = useCallback((name: string) => {
+  const handleAddColumn = useCallback((name: string, isCollapsible = false) => {
     const newColumn: Column = {
       id: `custom_${Date.now()}`,
       name,
       key: `custom_${Date.now()}`,
-      width: '150px',
+      width: isCollapsible ? '300px' : '150px',
       isCustom: true,
       isEditable: true,
-      isVisible: true
+      isVisible: true,
+      isCollapsible: isCollapsible,
+      type: isCollapsible ? 'textarea' : 'text'
     };
     
     // Insert the new column right after the segment name column (index 1)

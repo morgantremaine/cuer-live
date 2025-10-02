@@ -12,6 +12,7 @@ export interface BaseColumn {
   sortable?: boolean;
   type?: 'text' | 'textarea' | 'time' | 'custom';
   isEditable: boolean; // Made required for compatibility with existing system
+  isCollapsible?: boolean; // Flag to indicate if column can expand/collapse
 }
 
 export interface StandardColumn extends BaseColumn {
