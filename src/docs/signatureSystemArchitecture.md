@@ -42,17 +42,10 @@ The signature system provides content change detection for collaborative editing
 
 **Why Separate**: Complete validation is expensive and not needed for all operations
 
-### Shadow Signatures
-**Purpose**: Conflict detection and resolution in collaborative editing
-**Implementation**: Generated from local shadow state
-
-**Use Cases**:
-- Multi-user conflict detection
-- Local change protection
-- Cross-tab synchronization
-- Recovery after network issues
-
-**Why Separate**: Collaborative editing requires tracking both remote and local states
+### ~~Shadow Signatures~~ (REMOVED - Phase 5 Simplification)
+**Status**: Removed in Phase 5 simplification (2025)
+**Reason**: System now uses "last write wins" + state refresh instead of complex shadow tracking
+**Replaced By**: Simple conflict detection via timestamp comparison and database state refresh
 
 ## Performance Optimization Patterns
 
@@ -172,12 +165,14 @@ trackFieldChange(itemId, fieldName, fieldSignature)
 
 ### Conflict Resolution Integration
 ```typescript
-// Multiple signature types for different conflict scenarios
+// Simple "last write wins" with state refresh approach
 const localSignature = createContentSignature(localState)
 const remoteSignature = createContentSignature(remoteState)
-const shadowSignature = createShadowSignature(shadowState)
 
-const conflicts = detectConflicts(localSignature, remoteSignature, shadowSignature)
+// If signatures differ, remote state wins and local refreshes
+if (localSignature !== remoteSignature) {
+  await refreshFromDatabase()
+}
 ```
 
 ## Common Patterns & Best Practices

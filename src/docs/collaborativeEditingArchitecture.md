@@ -40,41 +40,45 @@ Receive Broadcast →
   Update UI
 ```
 
-### 2. Conflict Resolution System
+### 2. Conflict Resolution System (Simplified - Phase 5)
 
-#### Three-Way Merge
+#### Last Write Wins with State Refresh
 - **Local State**: User's current changes
-- **Remote State**: Changes from other users
-- **Shadow State**: Last known synchronized state
+- **Remote State**: Changes from other users (via broadcasts)
+- **Resolution**: Simple "last write wins" + database state refresh on conflicts
 
 #### Conflict Detection
 ```typescript
-const conflicts = detectConflicts(localState, remoteState, shadowState)
+// Simple timestamp and signature comparison
+if (remoteTimestamp > localTimestamp || remoteSignature !== localSignature) {
+  await refreshFromDatabase() // Remote wins, refresh local state
+}
 ```
 
-#### Resolution Strategies
-- **Recent Edit Priority**: Most recent edit wins
-- **User Context**: Consider which user made which change
-- **Field-Level Resolution**: Resolve conflicts per field, not per document
+#### Resolution Strategy
+- **Last Write Wins**: Most recent database write is authoritative
+- **State Refresh**: On conflict, refresh entire state from database
+- **ID-Based Saves**: Cell saves use itemId (not position) to minimize conflicts
+- **Immediate Updates**: Google Sheets-like instant broadcast application
 
-### 3. Operation Coordination
+### 3. Operation Coordination (Simplified - Phase 5)
 
-#### Priority-Based Operation Queue
+#### ~~Priority-Based Operation Queue~~ (REMOVED)
+**Status**: Queue system removed in Phase 5 simplification
+**Current Approach**: Immediate execution with dual broadcasting pattern
+
 ```typescript
-// Structural operations (highest priority)
-addRow(), deleteRow(), moveRows() 
-
-// Content operations (medium priority)
-updateField(), updateTitle()
-
-// UI operations (lowest priority)
-updateSelection(), updateScroll()
+// All operations now execute immediately
+addRow() → broadcast + parallel DB save
+updateField() → broadcast + parallel DB save  
+moveRows() → broadcast + parallel DB save
 ```
 
-#### Race Condition Prevention
-- **Operation locking**: Prevent simultaneous structural changes
-- **Sequence numbers**: Ensure operations apply in correct order
-- **Atomic operations**: Group related changes together
+#### Race Condition Prevention (Current Approach)
+- **ID-Based Operations**: Use item IDs (not positions) for cell updates
+- **Dual Broadcasting**: Immediate UI broadcast + parallel database persistence
+- **Content Snapshots**: Structural operations include content snapshot to preserve concurrent edits
+- **Timestamp Validation**: Database checks timestamps to detect conflicts
 
 ### 4. State Synchronization
 

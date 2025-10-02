@@ -32,7 +32,7 @@ Real-time multi-user editing requires complex coordination:
 - **Content Signatures**: For detecting actual content changes
 - **Lightweight Signatures**: For performance-critical operations
 - **Unified Signatures**: For comprehensive validation
-- **Shadow Signatures**: For conflict resolution
+- ~~**Shadow Signatures**~~: (REMOVED - Phase 5) Replaced by simple state refresh approach
 
 #### Why Multiple Approaches Exist
 ```typescript
@@ -147,31 +147,34 @@ executeWithShowcallerOperation()
 
 ### Data Consistency Priority Principle
 
-**CRITICAL: Structural operations prioritize database persistence before broadcasting**
+**UPDATED: Dual Broadcasting Pattern (Phase 5)**
 
-This is a conscious architectural decision that prevents race conditions and ensures all users see consistent state:
+After Phase 5 simplification, the system now uses a consistent "dual broadcasting" approach:
 
-- **Structural Operations** (row reordering, add/delete): Follow "save-then-broadcast" pattern
-  - Database persistence happens FIRST
-  - Broadcasting happens AFTER successful save
-  - The slight delay (database → broadcast) is intentional and favors reliability over instant feedback
-  - This prevents race conditions when multiple users perform structural changes simultaneously
+- **All Operations** (structural AND cell-level): Use "broadcast-parallel-save" pattern
+  - Local state update happens FIRST (optimistic)
+  - Broadcasting happens IMMEDIATELY after (instant feedback)
+  - Database save happens IN PARALLEL (doesn't block)
+  - Conflicts resolved via "last write wins" + state refresh
 
-- **Cell-Level Content Updates**: Use "broadcast-first" pattern  
-  - Real-time broadcasting for immediate feedback
-  - Less likely to cause structural conflicts
-  - Optimized for frequent edits and collaboration
+- **Why Dual Broadcasting Works**:
+  - ID-Based Operations: Uses item IDs (not positions), eliminating most race conditions
+  - Content Snapshots: Structural operations include content snapshot to preserve concurrent edits
+  - Simple Conflict Resolution: Last write wins + database state refresh on conflicts
+  - Google Sheets-Like Experience: Instant collaboration without complex queuing
 
-**Why This Matters:**
-- Row reordering with broadcast-first could cause users to see inconsistent ordering
-- Structural changes affect the document schema and must be authoritative
-- Content changes are additive and can be resolved through conflict resolution
-- This is NOT a performance issue to be "fixed" - it's intentional data consistency protection
+- **Removed Systems** (Phase 5):
+  - ❌ LocalShadow system (291 lines) - Replaced by immediate broadcasts
+  - ❌ itemDirtyQueue (117 lines) - Replaced by direct database saves
+  - ❌ Operation queue/blocking - Replaced by parallel execution
 
-### Data Consistency
-- **Version tracking**: Doc version prevents overwrite conflicts
+**See `dualBroadcastingPattern.md` for complete documentation of this pattern.**
+
+### Data Consistency (Updated - Phase 5)
+- **Timestamp validation**: Database checks timestamps to detect conflicts
 - **Signature validation**: Ensures data integrity
-- **Shadow state**: Protects against lost changes
+- **State refresh**: Simple refresh from database on conflicts (replaces shadow state)
+- **Content snapshots**: Structural operations preserve concurrent content edits
 - **Recovery mechanisms**: Handles network interruptions
 
 ## Future Considerations
