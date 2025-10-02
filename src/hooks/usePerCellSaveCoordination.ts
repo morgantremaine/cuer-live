@@ -60,27 +60,10 @@ export const usePerCellSaveCoordination = ({
 
   // Unified field tracking - routes to appropriate system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
-    console.log('🧪 SAVE COORDINATION: trackFieldChange called', {
-      itemId,
-      field,
-      value: typeof value === 'string' ? value.substring(0, 50) : value,
-      isPerCellEnabled,
-      rundownId
-    });
-    
     if (isPerCellEnabled) {
-      // Use cell-level save system
-      console.log('🧪 SAVE COORDINATION: Routing to per-cell save system');
       trackCellChange(itemId, field, value);
-      debugLogger.autosave(`Per-cell save: tracked ${field} change`);
-      
-      // NOTE: Per-cell system will manage hasUnsavedChanges via onSaveComplete callback
-      // The main state system won't set hasUnsavedChanges=true when perCellSaveEnabled=true
     } else {
-      // Use delta save system
-      console.log('🧪 SAVE COORDINATION: Routing to delta save system');
       trackDeltaFieldChange(itemId, field, value);
-      debugLogger.autosave(`Delta save: tracked ${field} change`);
     }
   }, [isPerCellEnabled, trackCellChange, trackDeltaFieldChange]);
 
@@ -104,23 +87,11 @@ export const usePerCellSaveCoordination = ({
 
   // Initialize saved state baseline
   const initializeBaseline = useCallback((state: RundownState) => {
-    console.log('🧪 SAVE COORDINATION: Initializing baseline', {
-      isPerCellEnabled,
-      rundownId,
-      itemCount: state.items?.length || 0
-    });
-    
     lastSavedStateRef.current = JSON.parse(JSON.stringify(state));
     
     if (!isPerCellEnabled) {
-      // Only initialize delta system if not using per-cell
-      console.log('🧪 SAVE COORDINATION: Initializing delta save system');
       initializeSavedState(state);
-    } else {
-      console.log('🧪 SAVE COORDINATION: Skipping delta initialization for per-cell save');
     }
-    
-    debugLogger.autosave(`Initialized baseline for ${isPerCellEnabled ? 'per-cell' : 'delta'} save`);
   }, [isPerCellEnabled, initializeSavedState]);
 
   // Handle structural operations with enhanced coordination
@@ -134,87 +105,46 @@ export const usePerCellSaveCoordination = ({
       insertIndex?: number;
     }
   ) => {
-    console.log('🧪 SAVE COORDINATION: Coordinated structural operation', {
-      operationType,
-      isPerCellEnabled,
-      currentUserId,
-      rundownId
-    });
-
     if (isPerCellEnabled && currentUserId) {
-      // Use coordination system to manage the structural operation
       coordination.executeWithStructuralOperation(async () => {
         const sequenceNumber = coordination.getNextSequenceNumber();
-        
-        console.log('🧪 SAVE COORDINATION: Executing coordinated structural operation', {
-          operationType,
-          sequenceNumber
-        });
-        
         queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
-        debugLogger.autosave(`Coordinated per-cell structural save: ${operationType} (seq: ${sequenceNumber})`);
       });
-    } else {
-      // For delta mode, structural operations fall back to full autosave
-      console.log('🧪 SAVE COORDINATION: Structural operation in delta mode - letting autosave handle it');
-      debugLogger.autosave(`Delta mode structural operation: ${operationType} (handled by autosave)`);
     }
-  }, [isPerCellEnabled, currentUserId, queueStructuralOperation, rundownId, coordination]);
+  }, [isPerCellEnabled, currentUserId, queueStructuralOperation, coordination]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useCallback(() => {
     if (isPerCellEnabled) {
-      const cellChanges = hasPendingCellUpdates();
-      const structuralChanges = hasPendingStructuralOperations();
-      console.log('🧪 SAVE COORDINATION: Checking unsaved changes', {
-        cellChanges,
-        structuralChanges,
-        total: cellChanges || structuralChanges
-      });
-      return cellChanges || structuralChanges;
-    } else {
-      // For delta system, we'd need to check if current state differs from saved
-      // This is handled by the calling autosave system
-      return false;
+      return hasPendingCellUpdates() || hasPendingStructuralOperations();
     }
+    return false;
   }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations]);
 
-  // Enhanced save function with coordination (bypasses doc_version in per-cell mode)
+  // Enhanced save function with coordination
   const enhancedSaveState = useCallback(async (currentState: RundownState) => {
     if (isPerCellEnabled) {
       const hasCellChanges = hasPendingCellUpdates();
       const hasStructuralChanges = hasPendingStructuralOperations();
-      
-      console.log('🧪 SAVE COORDINATION: Per-cell mode - bypassing doc_version logic', {
-        hasCellChanges,
-        hasStructuralChanges,
-        totalChanges: hasCellChanges || hasStructuralChanges
-      });
 
       if (!hasCellChanges && !hasStructuralChanges) {
-        debugLogger.autosave('Per-cell save: no pending changes to flush');
         throw new Error('No changes to save');
       }
 
-      // Use coordination system to ensure proper sequencing (no doc_version conflicts)
       if (hasStructuralChanges) {
         await coordination.executeWithStructuralOperation(async () => {
-          debugLogger.autosave('Per-cell save: coordinated flush of structural operations (doc_version bypass)');
           await flushStructuralOperations();
         });
       }
 
       if (hasCellChanges) {
         await coordination.executeWithCellUpdate(async () => {
-          debugLogger.autosave('Per-cell save: coordinated flush of cell updates (doc_version bypass)');
           await flushCellUpdates();
         });
       }
 
       return;
     } else {
-      // Delta save: use existing delta system with full doc_version coordination
-      debugLogger.autosave('Delta save: saving state deltas with doc_version coordination');
       return await saveDeltaState(currentState);
     }
   }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, saveDeltaState, coordination]);

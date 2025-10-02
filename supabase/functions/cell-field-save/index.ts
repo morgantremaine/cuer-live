@@ -56,20 +56,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('🧪 EDGE FUNCTION: Cell-level save request received:', {
-      rundownId,
-      fieldUpdateCount: fieldUpdates.length,
-      fields: fieldUpdates.map(u => ({ 
-        itemId: u.itemId, 
-        field: u.field, 
-        valueType: typeof u.value,
-        valueLength: typeof u.value === 'string' ? u.value.length : 'N/A'
-      })),
-      userId: user.id,
-      contentSignature
-    })
-
-    // Get current rundown state with locking for consistency
+    // Get current rundown
     const { data: currentRundown, error: fetchError } = await supabaseClient
       .from('rundowns')
       .select('*')
@@ -83,77 +70,24 @@ serve(async (req) => {
       )
     }
 
-    // Check if per-cell save is enabled
-    console.log('🧪 EDGE FUNCTION: Checking per-cell save status:', {
-      per_cell_save_enabled: currentRundown.per_cell_save_enabled,
-      rundownTitle: currentRundown.title
-    });
-    
-    if (!currentRundown.per_cell_save_enabled) {
-      console.log('🚨 EDGE FUNCTION: Per-cell save not enabled for rundown');
-      return new Response(
-        JSON.stringify({ error: 'Per-cell save not enabled for this rundown' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Apply field updates to current state
+    // Apply field updates
     const updatedItems = [...(currentRundown.items || [])]
     let updatedTitle = currentRundown.title
     let updatedStartTime = currentRundown.start_time
     let updatedTimezone = currentRundown.timezone
     let updatedShowDate = currentRundown.show_date
     let updatedExternalNotes = currentRundown.external_notes
-
-    // Track field updates in the new JSONB column
-    const itemFieldUpdates = currentRundown.item_field_updates || {}
-    const updateTimestamp = new Date().toISOString()
-
-    console.log('🧪 EDGE FUNCTION: Processing field updates...');
     
     for (const update of fieldUpdates) {
-      console.log('🧪 EDGE FUNCTION: Processing update:', {
-        itemId: update.itemId,
-        field: update.field,
-        valueType: typeof update.value,
-        timestamp: update.timestamp
-      });
-      
       if (update.itemId) {
-        // Item field update
         const itemIndex = updatedItems.findIndex(item => item.id === update.itemId)
-        console.log('🧪 EDGE FUNCTION: Item field update:', {
-          itemId: update.itemId,
-          itemIndex,
-          field: update.field,
-          found: itemIndex >= 0
-        });
-        
         if (itemIndex >= 0) {
-          // Update the item field
           updatedItems[itemIndex] = {
             ...updatedItems[itemIndex],
             [update.field]: update.value
           }
-
-          // Track in item_field_updates
-          if (!itemFieldUpdates[update.itemId]) {
-            itemFieldUpdates[update.itemId] = {}
-          }
-          itemFieldUpdates[update.itemId][update.field] = {
-            value: update.value,
-            timestamp: updateTimestamp,
-            userId: user.id
-          }
-          console.log('🧪 EDGE FUNCTION: Item field updated and tracked');
         }
       } else {
-        // Global field update
-        console.log('🧪 EDGE FUNCTION: Global field update:', {
-          field: update.field,
-          valueType: typeof update.value
-        });
-        
         switch (update.field) {
           case 'title':
             updatedTitle = update.value
@@ -166,7 +100,6 @@ serve(async (req) => {
             break
           case 'showDate':
             if (update.value) {
-              // Handle both Date objects and ISO date strings
               const dateObj = typeof update.value === 'string' ? new Date(update.value) : update.value;
               updatedShowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
             } else {
@@ -179,10 +112,8 @@ serve(async (req) => {
         }
       }
     }
-    
-    console.log('🧪 EDGE FUNCTION: All updates processed, preparing database save...');
 
-    // Build update data - NO doc_version conflicts!
+    const updateTimestamp = new Date().toISOString()
     const updateData = {
       items: updatedItems,
       title: updatedTitle,
@@ -190,12 +121,10 @@ serve(async (req) => {
       timezone: updatedTimezone,
       show_date: updatedShowDate,
       external_notes: updatedExternalNotes,
-      item_field_updates: itemFieldUpdates,
       updated_at: updateTimestamp,
       last_updated_by: user.id
     }
 
-    // Save without doc_version conflicts
     const { data: updatedRundown, error: updateError } = await supabaseClient
       .from('rundowns')
       .update(updateData)
@@ -204,21 +133,12 @@ serve(async (req) => {
       .single()
 
     if (updateError) {
-      console.error('🚨 Cell save error:', updateError)
+      console.error('Cell save error:', updateError)
       return new Response(
         JSON.stringify({ error: 'Failed to save field updates', details: updateError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    console.log('✅ EDGE FUNCTION: Cell-level save successful:', {
-      rundownId,
-      updatedFields: fieldUpdates.length,
-      updatedAt: updatedRundown.updated_at,
-      docVersion: updatedRundown.doc_version,
-      userId: user.id,
-      itemFieldUpdatesCount: Object.keys(itemFieldUpdates).length
-    })
 
     return new Response(
       JSON.stringify({
