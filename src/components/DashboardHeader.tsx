@@ -60,7 +60,7 @@ const DashboardHeader = ({
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <div className="flex items-center">
+            <div className="flex items-center ml-12">
               <CuerLogo isDark={true} />
             </div>
 
