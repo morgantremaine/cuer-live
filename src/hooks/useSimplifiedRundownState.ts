@@ -518,20 +518,7 @@ export const useSimplifiedRundownState = () => {
       applyingCellBroadcastRef.current = true;
       
       try {
-        // PROTECTION: Register cell broadcast changes in shadow store to prevent full realtime overwrites
-        if (update.itemId && update.field) {
-          const { localShadowStore } = await import('@/state/localShadows');
-          localShadowStore.setShadow(update.itemId, update.field, update.value, true); // ACTIVE shadow to protect against overwrites
-          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`, 'value:', update.value);
-          
-          // Clear this shadow after a short time to allow future legitimate updates
-          setTimeout(() => {
-            localShadowStore.markInactive(update.itemId, update.field);
-            console.log('🛡️ Cleared cell broadcast protection for:', `${update.itemId}-${update.field}`);
-          }, 2000); // 2 second protection window
-        }
-        
-        // LAST WRITER WINS: Just apply the change immediately
+        // SIMPLIFIED: No shadow protection - just apply changes immediately (Google Sheets style)
         // Use loadState to avoid triggering hasUnsavedChanges for remote data
           // Handle rundown-level property updates (no itemId)
         if (!update.itemId) {

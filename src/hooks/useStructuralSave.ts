@@ -11,6 +11,7 @@ interface StructuralOperationData {
   newItems?: RundownItem[];
   insertIndex?: number;
   sequenceNumber?: number;
+  contentSnapshot?: RundownItem[]; // Snapshot of current content to prevent race conditions
 }
 
 interface StructuralOperation {

@@ -94,7 +94,7 @@ export const usePerCellSaveCoordination = ({
     }
   }, [isPerCellEnabled, initializeSavedState]);
 
-  // Handle structural operations with enhanced coordination
+  // Handle structural operations with enhanced coordination and content snapshot
   const handleStructuralOperation = useCallback((
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: {
@@ -103,12 +103,18 @@ export const usePerCellSaveCoordination = ({
       deletedIds?: string[];
       newItems?: RundownItem[];
       insertIndex?: number;
-    }
+    },
+    currentItems?: RundownItem[] // Pass current items for snapshot
   ) => {
     if (isPerCellEnabled && currentUserId) {
       coordination.executeWithStructuralOperation(async () => {
         const sequenceNumber = coordination.getNextSequenceNumber();
-        queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
+        // Include content snapshot to prevent race conditions with concurrent edits
+        const dataWithSnapshot = {
+          ...operationData,
+          contentSnapshot: currentItems || operationData.items
+        };
+        queueStructuralOperation(operationType, dataWithSnapshot, currentUserId, sequenceNumber);
       });
     }
   }, [isPerCellEnabled, currentUserId, queueStructuralOperation, coordination]);

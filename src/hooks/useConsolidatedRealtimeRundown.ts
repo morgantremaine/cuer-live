@@ -17,7 +17,7 @@ interface UseConsolidatedRealtimeRundownProps {
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
 }
 
-// Enhanced global subscription state with better conflict prevention
+// Simplified global subscription state
 const globalSubscriptions = new Map<string, {
   subscription: any;
   callbacks: {
@@ -29,13 +29,7 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
-  gapDetectionInProgress: boolean; // New: prevent concurrent gap detection
-  itemDirtyQueue?: Array<{
-    payload: any;
-    timestamp: string;
-    docVersion: number;
-    queuedAt: number;
-  }>;
+  gapDetectionInProgress: boolean;
 }>();
 
 export const useConsolidatedRealtimeRundown = ({
@@ -121,39 +115,8 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // BULLETPROOF: Import LocalShadow for advanced field protection
-    const { localShadowStore } = await import('@/state/localShadows');
-    const activeShadows = localShadowStore.getActiveShadows();
-    
-    // Check if this update affects any actively edited items (item-level dirty protection)
-    const hasActivelyEditedItems = payload.new?.items && Array.isArray(payload.new.items) && 
-      payload.new.items.some((item: any) => activeShadows.items.has(item.id));
-    
-    if (hasActivelyEditedItems) {
-      console.log('🛡️ Realtime: Queueing update - actively editing items', {
-        activeItems: Array.from(activeShadows.items.keys()),
-        docVersion: incomingDocVersion
-      });
-      
-      // Queue the update to be processed after active editing stops
-      if (!globalState.itemDirtyQueue) {
-        globalState.itemDirtyQueue = [];
-      }
-      
-      globalState.itemDirtyQueue.push({
-        payload,
-        timestamp: normalizedTimestamp,
-        docVersion: incomingDocVersion,
-        queuedAt: Date.now()
-      });
-      
-      // Process queued updates after a brief delay (when typing stops)
-      setTimeout(() => {
-        processQueuedUpdates(globalState);
-      }, 2000);
-      
-      return; // Don't process immediately
-    }
+    // SIMPLIFIED: No queuing - just apply updates immediately (Google Sheets style)
+    // If the user is typing, the UI layer will handle conflicts with proper field focus protection
 
     // Enhanced gap detection with improved handling
     const expectedVersion = currentDocVersion + 1;
@@ -181,41 +144,14 @@ export const useConsolidatedRealtimeRundown = ({
             .eq('id', rundownId as string)
             .single();
             
-           if (!error && data) {
-             const serverVersion = data.doc_version || 0;
-             const serverTimestamp = normalizeTimestamp(data.updated_at);
-             
-             // CRITICAL FIX: Check LocalShadow protection before applying gap resolution
-             const { localShadowStore } = await import('@/state/localShadows');
-             const activeShadows = localShadowStore.getActiveShadows();
-             
-             // If user is actively editing, queue this update instead of applying immediately
-             if (activeShadows.items.size > 0 || activeShadows.globals.size > 0) {
-               console.log('🛡️ Gap resolution deferred - user actively editing', {
-                 activeItems: activeShadows.items.size,
-                 activeGlobals: activeShadows.globals.size
-               });
-               
-               if (!globalState.itemDirtyQueue) {
-                 globalState.itemDirtyQueue = [];
-               }
-               
-               globalState.itemDirtyQueue.push({
-                 payload: { new: data, table: 'rundowns' },
-                 timestamp: serverTimestamp,
-                 docVersion: serverVersion,
-                 queuedAt: Date.now()
-               });
-               
-               // Schedule processing when typing stops
-               setTimeout(() => {
-                 processQueuedUpdates(globalState);
-               }, 2000);
-               
-               return;
-             }
-             
-             // Only apply if server data is newer than what we're processing
+             if (!error && data) {
+              const serverVersion = data.doc_version || 0;
+              const serverTimestamp = normalizeTimestamp(data.updated_at);
+              
+              // SIMPLIFIED: Apply gap resolution immediately - no queuing
+              // The UI layer handles field-level protection during active typing
+              
+              // Only apply if server data is newer than what we're processing
              if (serverVersion >= incomingDocVersion) {
               globalState.lastProcessedTimestamp = serverTimestamp;
               globalState.lastProcessedDocVersion = serverVersion;
@@ -363,44 +299,7 @@ export const useConsolidatedRealtimeRundown = ({
 
   }, [rundownId, user?.id, isSharedView]);
 
-  // Process queued updates when item editing stops
-  const processQueuedUpdates = useCallback(async (globalState: any) => {
-    if (!globalState.itemDirtyQueue || globalState.itemDirtyQueue.length === 0) {
-      return;
-    }
-    
-    const { localShadowStore } = await import('@/state/localShadows');
-    const activeShadows = localShadowStore.getActiveShadows();
-    
-    // Only process if no items are actively being edited
-    if (activeShadows.items.size === 0) {
-      console.log('🛡️ Processing queued realtime updates', {
-        queueSize: globalState.itemDirtyQueue.length
-      });
-      
-      const queuedUpdates = [...globalState.itemDirtyQueue];
-      globalState.itemDirtyQueue = [];
-      
-      // Process each queued update
-      queuedUpdates.forEach((queuedUpdate: any) => {
-        try {
-          processRealtimeUpdate(queuedUpdate.payload, globalState);
-        } catch (error) {
-          console.error('❌ Error processing queued update:', error);
-        }
-      });
-    } else {
-      console.log('🛡️ Still actively editing - keeping updates queued', {
-        activeItems: Array.from(activeShadows.items.keys()),
-        queueSize: globalState.itemDirtyQueue.length
-      });
-      
-      // Re-schedule processing check
-      setTimeout(() => {
-        processQueuedUpdates(globalState);
-      }, 1000);
-    }
-  }, [processRealtimeUpdate]);
+  // REMOVED: processQueuedUpdates - no longer needed with simplified approach
 
   useEffect(() => {
     // For shared views, allow subscription without authentication
@@ -469,37 +368,7 @@ export const useConsolidatedRealtimeRundown = ({
               .eq('id', rundownId as string)
               .single();
              if (!error && data) {
-               // CRITICAL FIX: Check LocalShadow protection before applying initial catch-up
-               const { localShadowStore } = await import('@/state/localShadows');
-               const activeShadows = localShadowStore.getActiveShadows();
-               
-               // If user is actively editing, defer this initial sync
-               if (activeShadows.items.size > 0 || activeShadows.globals.size > 0) {
-                 console.log('🛡️ Initial catch-up deferred - user actively editing', {
-                   activeItems: activeShadows.items.size,
-                   activeGlobals: activeShadows.globals.size
-                 });
-                 
-                 if (!state.itemDirtyQueue) {
-                   state.itemDirtyQueue = [];
-                 }
-                 
-                 const serverDoc = data.doc_version || 0;
-                 state.itemDirtyQueue.push({
-                   payload: { new: data, table: 'rundowns' },
-                   timestamp: normalizeTimestamp(data.updated_at),
-                   docVersion: serverDoc,
-                   queuedAt: Date.now()
-                 });
-                 
-                 // Schedule processing when typing stops
-                 setTimeout(() => {
-                   processQueuedUpdates(state);
-                 }, 2000);
-                 
-                 return;
-               }
-               
+               // SIMPLIFIED: Apply initial catch-up immediately
                const serverDoc = data.doc_version || 0;
               if (serverDoc > state.lastProcessedDocVersion) {
                 state.lastProcessedDocVersion = serverDoc;
