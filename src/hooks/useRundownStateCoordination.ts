@@ -24,10 +24,12 @@ export const useRundownStateCoordination = () => {
   // Ref to store interactions once they're created
   const interactionsRef = useRef<any>(null);
 
-  // Single source of truth for all rundown state (with persistence)
-  const persistedState = usePersistedRundownState();
+  // Single source of truth for all rundown state (with persistence)  
+  // Get rundownId first, but tell it NOT to create operation system
+  const persistedState = usePersistedRundownState('SKIP_OPERATION_SYSTEM');
 
-  // Initialize operation-based system (THE system - always enabled)
+  // Initialize operation-based system (THE PRIMARY system - always enabled)
+  // This is THE ONLY operation system that should exist in the real rundown
   const operationSystem = useOperationBasedRundown({
     rundownId: persistedState.rundownId || '',
     userId: userId || '',

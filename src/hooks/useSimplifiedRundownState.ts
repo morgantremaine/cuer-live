@@ -28,7 +28,11 @@ import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
 
-export const useSimplifiedRundownState = () => {
+/**
+ * CRITICAL: This hook can now accept 'SKIP_OPERATION_SYSTEM' flag to prevent duplicate creation
+ * If this flag is provided, no internal operation system will be created
+ */
+export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   const params = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -292,10 +296,13 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Initialize OT system when operation mode is enabled
+  // CRITICAL FIX: Skip creation if flag is set to prevent duplicates
+  const shouldSkipOperationSystem = skipOperationSystemFlag === 'SKIP_OPERATION_SYSTEM';
+  
   const operationBasedRundown = useOperationBasedRundown({
     rundownId: rundownId || '',
     userId: currentUserId || '',
-    enabled: isOperationModeEnabled && !!rundownId && !!currentUserId,
+    enabled: !shouldSkipOperationSystem && isOperationModeEnabled && !!rundownId && !!currentUserId,
     skipHistoricalOperations: true // Start fresh - don't load historical operations
   });
 
