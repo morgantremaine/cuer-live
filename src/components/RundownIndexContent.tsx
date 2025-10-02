@@ -1,12 +1,11 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { OperationCoordinationIndicator } from '@/components/coordination/OperationCoordinationIndicator';
-import { useSimplifiedCoordination } from '@/hooks/useSimplifiedCoordination';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useTextDebounce } from '@/hooks/useTextDebounce';
@@ -24,7 +23,6 @@ import '@/utils/timingValidationTest';
 
 
 const RundownIndexContent = () => {
-  const { id: rundownId } = useParams<{ id: string }>();
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
@@ -32,7 +30,7 @@ const RundownIndexContent = () => {
     interactions,
     uiState,
     dragAndDrop
-  } = useSimplifiedCoordination(rundownId || '');
+  } = useRundownStateCoordination();
   
   // Extract all needed values from the unified state
   const {
@@ -41,6 +39,7 @@ const RundownIndexContent = () => {
     rundownTitle,
     rundownStartTime,
     showDate,
+    rundownId,
     items,
     columns,
     visibleColumns,
@@ -100,6 +99,7 @@ const RundownIndexContent = () => {
   const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: true,
+    operationSystem: coreState.operationSystem, // Pass from parent to prevent duplicate
     onSaveComplete: () => {
       console.log('💾 RUNDOWN INDEX: Operation system save completed');
     },
@@ -151,22 +151,11 @@ const RundownIndexContent = () => {
   const prevItemsCount = useRef(items?.length || 0);
   const hasLoggedRender = useRef(false);
   
-  // Debug log for items and visibleItems
-  useEffect(() => {
-    console.log('🐛 RundownIndexContent data update:', {
-      items: items?.length || 0,
-      visibleItems: visibleItems?.length || 0,
-      columns: visibleColumns?.length || 0,
-      isLoading
-    });
-  }, [items, visibleItems, visibleColumns, isLoading]);
-  
   if (!hasLoggedRender.current || Math.abs((items?.length || 0) - prevItemsCount.current) > 0) {
     console.log('🏗️ RUNDOWN INDEX: Component rendered with operation system', {
       rundownId,
       hasHandleCellChange: !!handleCellChange,
       itemsCount: items?.length || 0,
-      visibleItemsCount: visibleItems?.length || 0,
       visibleColumnsCount: visibleColumns?.length || 0,
       timestamp: new Date().toISOString()
     });
@@ -505,10 +494,10 @@ const RundownIndexContent = () => {
   // Create wrapper for getRowStatus that filters out "header" for components that don't expect it
   const getRowStatusForContainer = (item: any): 'upcoming' | 'current' | 'completed' => {
     const status = getRowStatus(item);
-    if (status === 'header' || !status) {
+    if (status === 'header') {
       return 'upcoming'; // Default fallback for headers
     }
-    return status as 'upcoming' | 'current' | 'completed';
+    return status;
   };
 
   // Use simplified handlers for common operations (but NOT add operations)
@@ -521,22 +510,9 @@ const RundownIndexContent = () => {
   } = useIndexHandlers({
     items,
     selectedRows,
-    rundownId: rundownId || '',
-    addRow: (calcEndTime, selectedRowId, selRows, count) => {
-      // Find the index to insert at (simplified - just add at the end for now)
-      const index = items.length;
-      const newItem: any = {
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'regular',
-        name: '',
-        duration: '00:00'
-      };
-      addRow(index, newItem);
-    },
-    addHeader: (selectedRowId) => {
-      // Simplified - just call addHeader
-      addHeader();
-    },
+    rundownId,
+    addRow: () => addRow(),
+    addHeader: () => addHeader(),
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime: setStartTime,
@@ -637,10 +613,9 @@ const RundownIndexContent = () => {
           setShowColumnManager(show);
         }}
         items={items}
-        visibleItems={visibleItems}
         visibleColumns={visibleColumns}
         columns={userColumns}
-        showColorPicker={showColorPicker as any}
+        showColorPicker={showColorPicker}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
@@ -762,8 +737,9 @@ const RundownIndexContent = () => {
         toggleHeaderCollapse={toggleHeaderCollapse}
         isHeaderCollapsed={isHeaderCollapsed}
         getHeaderGroupItemIds={getHeaderGroupItemIds}
-        onMoveItemUp={(index) => moveItemUp(index)}
-        onMoveItemDown={(index) => moveItemDown(index)}
+        visibleItems={visibleItems}
+        onMoveItemUp={moveItemUp}
+        onMoveItemDown={moveItemDown}
         dragAndDrop={dragAndDrop}
       />
       
@@ -780,13 +756,13 @@ const RundownIndexContent = () => {
         modDeps={{
           items,
           updateItem,
-          addRow: () => {},
-          addHeader: () => {},
-          addRowAtIndex: (index) => {},
-          addHeaderAtIndex: (index) => {},
+          addRow,
+          addHeader,
+          addRowAtIndex: coreState.addRowAtIndex,
+          addHeaderAtIndex: coreState.addHeaderAtIndex,
           deleteRow,
-          calculateEndTime: (start, dur) => '',
-          markAsChanged: () => {}
+          calculateEndTime: coreState.calculateEndTime,
+          markAsChanged: coreState.markAsChanged
         }}
       />
     </RealtimeConnectionProvider>

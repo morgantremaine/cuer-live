@@ -97,11 +97,6 @@ const RundownTable = ({
   onMoveItemDown,
   markActiveTyping
 }: RundownTableProps) => {
-  console.log('🐛 RundownTable render:', {
-    itemsCount: items?.length,
-    itemsType: Array.isArray(items),
-    firstItem: items?.[0]
-  });
 
   // Enhanced drag over handler that calculates drop target index
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
@@ -130,7 +125,7 @@ const RundownTable = ({
 
   return (
     <tbody className="bg-background">
-          {Array.isArray(items) && items.map((item, index) => {
+          {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
             const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
@@ -141,7 +136,7 @@ const RundownTable = ({
             const isCurrentlyPlaying = item.id === currentSegmentId;
 
             return (
-              <React.Fragment key={item.id}>
+              <>
                 {/* Drop indicator ABOVE this row */}
                 {dropTargetIndex === index && (
                   <tr key={`drop-above-${item.id}`}>
@@ -206,8 +201,8 @@ const RundownTable = ({
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
                   </tr>
-                 )}
-              </React.Fragment>
+                )}
+              </>
             );
           })}
     </tbody>

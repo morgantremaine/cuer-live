@@ -9,6 +9,7 @@ import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
+import { useOperationBasedRundown } from './useOperationBasedRundown';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
 import { RundownItem } from '@/types/rundown';
@@ -63,7 +64,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   // Track per-cell save enabled state to coordinate saving systems
   const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
   
-  // MIGRATION: Operation mode disabled - using simplified direct save system
+  // Track operation mode state
   const [isOperationModeEnabled, setIsOperationModeEnabled] = useState(false);
   
   // Track structural operation save state
@@ -296,16 +297,16 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     });
   }, []);
 
-  // MIGRATION: Operation system disabled in favor of direct save approach
-  // The operation-based sync has been replaced with simpler direct saves + realtime sync
-  const shouldSkipOperationSystem = true; // Always skip - using new simplified system
+  // Initialize OT system when operation mode is enabled
+  // CRITICAL FIX: Skip creation if flag is set to prevent duplicates
+  const shouldSkipOperationSystem = skipOperationSystemFlag === 'SKIP_OPERATION_SYSTEM';
   
-  // Stub to maintain code structure (not actually called)
-  const operationBasedRundown = {
-    items: [],
-    isLoading: false,
-    isOperationMode: false
-  };
+  const operationBasedRundown = useOperationBasedRundown({
+    rundownId: rundownId || '',
+    userId: currentUserId || '',
+    enabled: !shouldSkipOperationSystem && isOperationModeEnabled && !!rundownId && !!currentUserId,
+    skipHistoricalOperations: true // Start fresh - don't load historical operations
+  });
 
   // Cell-level broadcast system for immediate sync
   useEffect(() => {
@@ -669,11 +670,72 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     }
   }, [actions, state.items, rundownId, currentUserId, cellBroadcast]);
 
-  // MIGRATION: Structural operations now use direct saves instead of operation system
+  // Simplified handlers - route to OT system when operation mode is enabled
   const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
-    // Direct save approach - no operation system routing
-    if (cellEditIntegration.isPerCellEnabled && saveCoordination) {
-      console.log('📝 Structural operation via direct save:', { operationType, operationData });
+    if (isOperationModeEnabled && operationBasedRundown && currentUserId) {
+      console.log('🎯 OT SYSTEM: Routing structural operation', { operationType, operationData });
+      
+      // Route to appropriate OT handler
+      switch (operationType) {
+        case 'add_row':
+        case 'add_header':
+          if (operationData?.newItems && operationData?.newItems[0]) {
+            const newItem = operationData.newItems[0];
+            const insertIndex = operationData?.insertIndex ?? state.items.length;
+            operationBasedRundown.handleRowInsert(insertIndex, newItem);
+          }
+          break;
+          
+        case 'delete_row':
+          if (operationData?.deletedIds && operationData.deletedIds[0]) {
+            operationBasedRundown.handleRowDelete(operationData.deletedIds[0]);
+          }
+          break;
+          
+        case 'reorder':
+        case 'move_rows':
+          // Convert reorder to individual ROW_MOVE operations
+          if (operationData?.order && Array.isArray(operationData.order)) {
+            console.log('🎯 OT: Converting reorder to individual move operations', {
+              orderLength: operationData.order.length
+            });
+            
+            // Build index map from the target order
+            const targetOrder = operationData.order;
+            const currentItems = state.items;
+            
+            // Calculate the moves needed to transform current order to target order
+            // We need to move items one at a time from their current position to target position
+            const moves: Array<{from: number, to: number}> = [];
+            const workingOrder = currentItems.map(item => item.id);
+            
+            for (let targetIdx = 0; targetIdx < targetOrder.length; targetIdx++) {
+              const targetId = targetOrder[targetIdx];
+              const currentIdx = workingOrder.indexOf(targetId);
+              
+              if (currentIdx !== targetIdx) {
+                // Move from currentIdx to targetIdx
+                moves.push({ from: currentIdx, to: targetIdx });
+                
+                // Update working order to reflect the move
+                const [movedId] = workingOrder.splice(currentIdx, 1);
+                workingOrder.splice(targetIdx, 0, movedId);
+              }
+            }
+            
+            // Execute each move through the OT system
+            moves.forEach(move => {
+              operationBasedRundown.handleRowMove(move.from, move.to);
+            });
+          }
+          break;
+          
+        default:
+          console.warn('🚨 Unknown structural operation:', operationType);
+      }
+    } else if (cellEditIntegration.isPerCellEnabled && saveCoordination) {
+      // Fallback to per-cell coordination (deprecated path)
+      console.log('⚠️ Using deprecated per-cell structural path');
       if (operationType && operationData && currentUserId) {
         const currentOperationData = {
           ...operationData,
@@ -682,8 +744,7 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
         saveCoordination.handleStructuralOperation(operationType as any, currentOperationData);
       }
     }
-    // Auto-save will pick up the changes automatically
-  }, [cellEditIntegration, saveCoordination, currentUserId]);
+  }, [isOperationModeEnabled, operationBasedRundown, currentUserId, state.items, cellEditIntegration, saveCoordination]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
