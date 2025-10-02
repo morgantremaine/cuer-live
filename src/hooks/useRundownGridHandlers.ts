@@ -25,6 +25,9 @@ interface UseRundownGridHandlersProps {
   setRundownTitle: (title: string) => void;
   addRowAtIndex: (insertIndex: number) => void;
   addHeaderAtIndex: (insertIndex: number) => void;
+  markStructuralChange?: (operationType: string, operationData: any) => void;
+  rundownId?: string;
+  currentUserId?: string;
 }
 
 export const useRundownGridHandlers = ({
@@ -49,7 +52,10 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle,
   addRowAtIndex,
-  addHeaderAtIndex
+  addHeaderAtIndex,
+  markStructuralChange,
+  rundownId,
+  currentUserId
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -154,9 +160,16 @@ export const useRundownGridHandlers = ({
         return newItems;
       });
       
-      markAsChanged();
+      // Use structural save coordination for per-cell mode
+      if (markStructuralChange) {
+        debugLogger.grid('🧪 STRUCTURAL CHANGE: paste completed - triggering structural coordination');
+        markStructuralChange('copy_rows', { newItems: itemsToPaste, insertIndex });
+      } else {
+        // Fallback for non-per-cell mode
+        markAsChanged();
+      }
     }
-  }, [clipboardItems, items, setItems, markAsChanged]);
+  }, [clipboardItems, items, setItems, markAsChanged, markStructuralChange]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);
