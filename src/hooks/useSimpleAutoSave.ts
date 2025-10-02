@@ -19,7 +19,7 @@ import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void,
+  onSaved: (meta?: { updatedAt?: string }) => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
   isInitiallyLoaded?: boolean,
@@ -39,7 +39,6 @@ export const useSimpleAutoSave = (
   const undoActiveRef = useRef(false);
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
-  const editBaseDocVersionRef = useRef<number>(0);
   
   // Enhanced cooldown management with explicit flags (passed as parameters)
    // Simplified autosave system - reduce complexity with performance optimization
@@ -719,7 +718,7 @@ export const useSimpleAutoSave = (
           if (currentSignatureAfterSave !== finalSignature) {
             console.log('⚠️ Content changed during save - will be caught by next typing cycle');
           }
-          onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
+          onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
@@ -731,24 +730,21 @@ export const useSimpleAutoSave = (
         });
         
         try {
-          let updatedAt, docVersion;
+          let updatedAt;
           
           // When per-cell save is active, don't interfere - per-cell system handles everything
           if (perCellActive) {
             console.log('🧪 AutoSave: per-cell save is active - skipping main auto-save entirely');
             // Just return success without doing anything - per-cell saves handle persistence
             updatedAt = new Date().toISOString();
-            docVersion = (saveState as any).docVersion || 0;
           } else {
             // Use coordinated save system for delta saves only
             const result = await saveCoordinatedState(saveState);
             updatedAt = result.updatedAt;
-            docVersion = result.docVersion;
           }
           
           console.log(`✅ AutoSave: ${perCellActive ? 'per-cell' : 'delta'} save response`, { 
             updatedAt,
-            docVersion,
             saveType: perCellActive ? 'per-cell' : 'delta'
           });
 
@@ -774,8 +770,7 @@ export const useSimpleAutoSave = (
 
           // Invoke callback with metadata
           onSavedRef.current?.({ 
-            updatedAt, 
-            docVersion 
+            updatedAt
           });
         } catch (saveError: any) {
           // If coordinated save fails due to no changes, that's OK

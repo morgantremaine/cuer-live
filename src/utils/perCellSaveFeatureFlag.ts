@@ -5,7 +5,6 @@
 
 export interface PerCellSaveConfig {
   isEnabled: boolean;
-  shouldBypassDocVersion: boolean;
   shouldSkipRealtimeValidation: boolean;
   coordinationMode: 'immediate' | 'queued' | 'disabled';
 }
@@ -22,7 +21,6 @@ export const getPerCellSaveConfig = (rundownData?: {
   if (rundownData?.per_cell_save_enabled === true) {
     return {
       isEnabled: true,
-      shouldBypassDocVersion: true, // Per-cell saves don't need doc_version conflicts
       shouldSkipRealtimeValidation: false, // Still validate for consistency
       coordinationMode: 'immediate'
     };
@@ -31,18 +29,9 @@ export const getPerCellSaveConfig = (rundownData?: {
   // Default to delta save mode
   return {
     isEnabled: false,
-    shouldBypassDocVersion: false,
     shouldSkipRealtimeValidation: false,
     coordinationMode: 'queued'
   };
-};
-
-/**
- * Checks if doc_version logic should be bypassed for save operations
- */
-export const shouldBypassDocVersion = (rundownData?: { per_cell_save_enabled?: boolean }): boolean => {
-  const config = getPerCellSaveConfig(rundownData);
-  return config.isEnabled && config.shouldBypassDocVersion;
 };
 
 /**
@@ -58,7 +47,7 @@ export const getSaveCoordinationStrategy = (rundownData?: { per_cell_save_enable
   if (config.isEnabled) {
     return {
       strategy: 'per-cell',
-      requiresStructuralCoordination: true, // Still coordinate structural operations
+      requiresStructuralCoordination: true,
       allowsConcurrentSaves: true
     };
   }
@@ -66,6 +55,6 @@ export const getSaveCoordinationStrategy = (rundownData?: { per_cell_save_enable
   return {
     strategy: 'delta',
     requiresStructuralCoordination: true,
-    allowsConcurrentSaves: false
+    allowsConcurrentSaves: true // SIMPLIFIED: Both modes now allow concurrent saves
   };
 };

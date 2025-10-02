@@ -134,8 +134,7 @@ serve(async (req) => {
         );
     }
 
-    // Check if per-cell save is enabled to bypass doc_version logic
-    const isPerCellEnabled = currentRundown.per_cell_save_enabled === true;
+    // SIMPLIFIED: No doc_version logic - just save directly (last write wins)
     
     // Update the rundown with the new items
     const updateData: any = {
@@ -143,14 +142,6 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
       last_updated_by: operation.userId
     };
-    
-    // Only increment doc_version for delta save mode
-    if (!isPerCellEnabled) {
-      updateData.doc_version = currentRundown.doc_version + 1;
-      console.log('📊 Delta save mode: incrementing doc_version to', updateData.doc_version);
-    } else {
-      console.log('🔄 Per-cell save mode: bypassing doc_version increment');
-    }
     
     const { data: updatedRundown, error: updateError } = await supabase
       .from('rundowns')
@@ -188,19 +179,15 @@ serve(async (req) => {
     console.log('✅ Structural operation completed successfully:', {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
-      itemCount: updatedItems.length,
-      docVersion: updatedRundown.doc_version,
-      perCellMode: isPerCellEnabled
+      itemCount: updatedItems.length
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        docVersion: updatedRundown.doc_version,
         updatedAt: updatedRundown.updated_at,
         itemCount: updatedItems.length,
-        operation: actionDescription,
-        perCellMode: isPerCellEnabled
+        operation: actionDescription
       }),
       { 
         status: 200,

@@ -129,7 +129,7 @@ serve(async (req) => {
       .from('rundowns')
       .update(updateData)
       .eq('id', rundownId)
-      .select('updated_at, doc_version')
+      .select('updated_at')
       .single()
 
     if (updateError) {
@@ -144,7 +144,6 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         updatedAt: updatedRundown.updated_at,
-        docVersion: updatedRundown.doc_version,
         fieldsUpdated: fieldUpdates.length,
         contentSignature
       }),

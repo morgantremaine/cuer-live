@@ -152,8 +152,8 @@ export const useFieldDeltaSave = (
     return deltas;
   }, []);
 
-  // Apply deltas to database using optimized updates
-  const saveDeltasToDatabase = useCallback(async (deltas: FieldDelta[], currentState: RundownState, retryCount: number = 0): Promise<{ updatedAt: string; docVersion: number }> => {
+  // Apply deltas to database using optimized updates - SIMPLIFIED: No OCC, just last write wins
+  const saveDeltasToDatabase = useCallback(async (deltas: FieldDelta[], currentState: RundownState, retryCount: number = 0): Promise<{ updatedAt: string }> => {
     if (!rundownId) {
       throw new Error('No rundown ID provided');
     }
@@ -200,7 +200,8 @@ export const useFieldDeltaSave = (
       }
     });
 
-    // CRITICAL: Read latest server state for OCC conflict detection
+    // SIMPLIFIED: Read latest server state only to merge our changes onto it
+    // No version checking - just "last write wins" (Google Sheets style)
     const { data: latestRow, error: latestErr } = await supabase
       .from('rundowns')
       .select('*')
@@ -212,61 +213,13 @@ export const useFieldDeltaSave = (
       return await performFullUpdate(currentState, updateTimestamp);
     }
 
-    // OCC: Check for concurrent changes that would conflict with our edits
-    const serverDocVersion = latestRow?.doc_version || 0;
-    const expectedDocVersion = (currentState as any)?.docVersion || 0;
-    
-    if (serverDocVersion > expectedDocVersion) {
-      console.warn('🚨 OCC Conflict detected:', { 
-        serverVersion: serverDocVersion, 
-        expectedVersion: expectedDocVersion,
-        delta: 'Refreshing local state and recomputing deltas'
-      });
-      
-      // SIMPLIFIED: Just use server state and recompute deltas - last write wins
-      // The UI layer handles field-level protection during active typing
-      
-      // Start from server state
-      const refreshedState = {
-        ...currentState,
-        docVersion: serverDocVersion,
-        items: Array.isArray(latestRow?.items) ? latestRow.items : currentState.items,
-        title: latestRow?.title || currentState.title,
-        startTime: latestRow?.start_time || currentState.startTime,
-        timezone: latestRow?.timezone || currentState.timezone,
-        showDate: latestRow?.show_date ? new Date(latestRow.show_date) : currentState.showDate,
-        externalNotes: latestRow?.external_notes || currentState.externalNotes
-      };
-      
-      // Update the saved state reference
-      initializeSavedState(refreshedState);
-      
-      // Re-extract deltas based on refreshed state
-      const recomputedDeltas = extractDeltas(currentState, refreshedState);
-      
-      if (recomputedDeltas.length === 0) {
-        console.log('✅ No conflicts after state refresh - changes already applied');
-        return { updatedAt: latestRow.updated_at, docVersion: serverDocVersion };
-      }
-      
-      // Prevent infinite recursion 
-      if (retryCount >= 2) {
-        console.warn('⚠️ Max OCC retry attempts reached, falling back to full update');
-        return await performFullUpdate(currentState, updateTimestamp);
-      }
-      
-      console.log('🔄 Retrying save with refreshed state and recomputed deltas');
-      return await saveDeltasToDatabase(recomputedDeltas, refreshedState, retryCount + 1);
-    }
-
-    console.log('✅ OCC Check passed, merging deltas onto latest server state');
+    console.log('📝 Merging deltas onto latest server state (last write wins)');
 
     // Start with latest server items
     const baseItems: any[] = Array.isArray(latestRow?.items) ? latestRow.items : [];
     const baseMap = new Map<string, any>(baseItems.map((it: any) => [it.id, it]));
 
-    // Apply only our deltas to the server state - CONFLICT PROTECTION
-    // Skip deltas for items that might be actively edited by others via realtime
+    // Apply our deltas to the server state
     itemDeltas.forEach(delta => {
       if (!delta.itemId) return;
       if (delta.field === 'deleted') {
@@ -284,7 +237,6 @@ export const useFieldDeltaSave = (
     updateData.items = Array.from(baseMap.values());
     
     // Merge global fields from server, applying only our deltas
-    // CONFLICT PROTECTION: Preserve any concurrent changes from other users
     if (globalDeltas.length === 0) {
       // No global changes from us, keep server values
       updateData.title = latestRow.title;
@@ -293,7 +245,7 @@ export const useFieldDeltaSave = (
       updateData.show_date = latestRow.show_date;
       updateData.external_notes = latestRow.external_notes;
     } else {
-      // We have global changes, but preserve server values for fields we didn't change
+      // We have global changes, apply them
       updateData.title = globalDeltas.find(d => d.field === 'title')?.value ?? latestRow.title;
       updateData.start_time = globalDeltas.find(d => d.field === 'startTime')?.value ?? latestRow.start_time;
       updateData.timezone = globalDeltas.find(d => d.field === 'timezone')?.value ?? latestRow.timezone;
@@ -302,8 +254,6 @@ export const useFieldDeltaSave = (
         latestRow.show_date;
       updateData.external_notes = globalDeltas.find(d => d.field === 'externalNotes')?.value ?? latestRow.external_notes;
     }
-    
-    updateData.doc_version = serverDocVersion + 1;
 
     // Add metadata
     updateData.updated_at = updateTimestamp;
@@ -330,14 +280,13 @@ export const useFieldDeltaSave = (
       console.warn('tab_id not yet in schema cache, skipping:', error);
     }
 
-    // OCC: Use expected doc_version in WHERE clause to ensure atomic update
+    // SIMPLIFIED: No OCC - just write directly (last write wins)
     console.log('💾 Field delta save: executing update for rundown', rundownId, 'with user', userData.user.id);
     const { data, error } = await supabase
       .from('rundowns')
       .update(updateData)
       .eq('id', rundownId)
-      .eq('doc_version', serverDocVersion) // OCC: Only update if doc_version hasn't changed
-      .select('updated_at, doc_version')
+      .select('updated_at')
       .single();
 
     if (error) {
@@ -347,21 +296,14 @@ export const useFieldDeltaSave = (
         errorMessage: error.message,
         rundownId,
         userId: userData.user.id,
-        serverDocVersion,
         updateDataKeys: Object.keys(updateData)
       });
-      
-      // Check if OCC conflict occurred (no rows updated)
-      if (error.code === 'PGRST116' || (error.message && error.message.includes('No rows found'))) {
-        console.warn('🚨 OCC Conflict: Document was modified by another user during save');
-        throw new Error('Document was modified by another user. Please refresh and try again.');
-      }
       throw error;
     }
 
     if (!data) {
-      console.warn('🚨 OCC Conflict: No data returned (likely version mismatch)');
-      throw new Error('Document was modified by another user. Please refresh and try again.');
+      console.warn('🚨 No data returned from save');
+      throw new Error('Save failed - no data returned');
     }
 
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
@@ -376,8 +318,7 @@ export const useFieldDeltaSave = (
     console.log('⚡ Delta update completed successfully with tab_id:', getTabId());
 
     return {
-      updatedAt: normalizedTimestamp,
-      docVersion: data.doc_version
+      updatedAt: normalizedTimestamp
     };
   }, [rundownId]);
 
@@ -409,7 +350,7 @@ export const useFieldDeltaSave = (
       .from('rundowns')
       .update(updateData)
       .eq('id', rundownId)
-      .select('updated_at, doc_version')
+      .select('updated_at')
       .single();
 
     if (error) {
@@ -428,13 +369,12 @@ export const useFieldDeltaSave = (
     console.log('💾 Full update completed successfully with tab_id:', getTabId());
 
     return {
-      updatedAt: normalizedTimestamp,
-      docVersion: data.doc_version
+      updatedAt: normalizedTimestamp
     };
   }, [rundownId]);
 
   // Main save function using deltas
-  const saveDeltaState = useCallback(async (currentState: RundownState): Promise<{ updatedAt: string; docVersion: number }> => {
+  const saveDeltaState = useCallback(async (currentState: RundownState): Promise<{ updatedAt: string }> => {
     console.log('🔍 DEBUG: Field delta save called', {
       rundownId,
       hasCurrentState: !!currentState,

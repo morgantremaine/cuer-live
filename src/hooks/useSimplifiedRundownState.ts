@@ -41,7 +41,6 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   const [lastKnownTimestamp, setLastKnownTimestamp] = useState<string | null>(null);
-  const [lastSeenDocVersion, setLastSeenDocVersion] = useState<number>(0);
   
   
   // Connection state will come from realtime hook
@@ -156,16 +155,12 @@ export const useSimplifiedRundownState = () => {
       startTime: mergedData.start_time || state.startTime,
       timezone: mergedData.timezone || state.timezone,
       showDate: mergedData.show_date ? new Date(mergedData.show_date + 'T00:00:00') : state.showDate,
-      externalNotes: mergedData.external_notes !== undefined ? mergedData.external_notes : state.externalNotes,
-      docVersion: mergedData.doc_version || 0 // CRITICAL: Include docVersion for OCC
+      externalNotes: mergedData.external_notes !== undefined ? mergedData.external_notes : state.externalNotes
     });
     
-    // Update timestamp and docVersion tracking
+    // Update timestamp tracking
     if (mergedData.updated_at) {
       setLastKnownTimestamp(mergedData.updated_at);
-    }
-    if (mergedData.doc_version) {
-      setLastSeenDocVersion(mergedData.doc_version);
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
@@ -176,17 +171,13 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    (meta?: { updatedAt?: string; docVersion?: number }) => {
+    (meta?: { updatedAt?: string }) => {
       actions.markSaved();
       
       // Track save time for race condition detection in cell broadcasts
       lastSaveTimeRef.current = Date.now();
       
-      // Update our doc version and timestamp tracking
-      if (meta?.docVersion) {
-        setLastSeenDocVersion(meta.docVersion);
-        actions.setDocVersion(meta.docVersion); // CRITICAL: Update state docVersion
-      }
+      // Update our timestamp tracking
       if (meta?.updatedAt) {
         setLastKnownTimestamp(meta.updatedAt);
       }
@@ -273,7 +264,6 @@ export const useSimplifiedRundownState = () => {
   
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
-    lastSeenDocVersion,
     blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
       // SIMPLIFIED: Remove initial load gating - just apply updates immediately
@@ -283,16 +273,7 @@ export const useSimplifiedRundownState = () => {
         initialLoadGateRef.current = false;
       }
       
-      // Monotonic doc version guard: ignore stale updates
-      if (updatedRundown.doc_version && updatedRundown.doc_version <= lastSeenDocVersion) {
-        console.log('⏭️ Stale doc_version ignored:', {
-          incoming: updatedRundown.doc_version,
-          lastSeen: lastSeenDocVersion
-        });
-        return;
-      }
-      
-      // Monotonic timestamp guard as fallback
+      // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
         const incomingTime = new Date(updatedRundown.updated_at).getTime();
         const knownTime = new Date(lastKnownTimestamp).getTime();
@@ -341,12 +322,9 @@ export const useSimplifiedRundownState = () => {
       });
       
       // SIMPLIFIED: Remove complex structural change detection and cooldowns
-      // Just update timestamps and versions
+      // Just update timestamps
       if (updatedRundown.updated_at) {
         setLastKnownTimestamp(updatedRundown.updated_at);
-      }
-      if (updatedRundown.doc_version) {
-        setLastSeenDocVersion(updatedRundown.doc_version);
       }
       
       // Apply granular merge only if actively typing in a specific field
@@ -444,12 +422,6 @@ export const useSimplifiedRundownState = () => {
         
         // Add external notes to update data
         if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
-        
-        // CRITICAL: Update docVersion for OCC if present
-        if (updatedRundown.hasOwnProperty('doc_version')) {
-          updateData.docVersion = updatedRundown.doc_version;
-          setLastSeenDocVersion(updatedRundown.doc_version); // Also update tracking
-        }
         
         // Only apply if we have fields to update
         if (Object.keys(updateData).length > 0) {
@@ -816,12 +788,9 @@ export const useSimplifiedRundownState = () => {
         cooldownUntilRef.current = Date.now() + 800;
       }
       
-      // Update our known timestamp and doc version
+      // Update our known timestamp
       if (deferredUpdate.updated_at) {
         setLastKnownTimestamp(deferredUpdate.updated_at);
-      }
-      if (deferredUpdate.doc_version) {
-        setLastSeenDocVersion(deferredUpdate.doc_version);
       }
       
       // Get currently protected fields for granular merging
@@ -1108,11 +1077,6 @@ export const useSimplifiedRundownState = () => {
               updateTimeFromServer(data.updated_at);
               setLastKnownTimestamp(data.updated_at);
             }
-            
-            // CRITICAL: Set docVersion for OCC
-            if (data.doc_version) {
-              setLastSeenDocVersion(data.doc_version);
-            }
 
             // Load content only (columns handled by useUserColumnPreferences)
             actions.loadState({
@@ -1165,11 +1129,6 @@ export const useSimplifiedRundownState = () => {
     if (latestData.updated_at) {
       setLastKnownTimestamp(latestData.updated_at);
       updateTimeFromServer(latestData.updated_at);
-    }
-    
-    // CRITICAL: Update docVersion for OCC
-    if (latestData.doc_version) {
-      setLastSeenDocVersion(latestData.doc_version);
     }
     
     // Get currently protected fields to preserve local edits
@@ -1278,12 +1237,10 @@ export const useSimplifiedRundownState = () => {
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
             timezone: data.timezone || 'America/New_York',
-            showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
-            docVersion: data.doc_version || 0 // CRITICAL: Include docVersion for OCC
+            showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null
           });
           
           setLastKnownTimestamp(data.updated_at);
-          setLastSeenDocVersion(data.doc_version || 0);
           setIsInitialized(true);
           setIsLoading(false);
           
