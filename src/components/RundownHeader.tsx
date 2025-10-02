@@ -16,6 +16,7 @@ import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import { useBroadcastHealthMonitor } from '@/hooks/useBroadcastHealthMonitor';
+import { useRealtimeConnection } from './RealtimeConnectionProvider';
 import RundownSaveIndicator from './header/RundownSaveIndicator';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -293,13 +294,21 @@ const RundownHeader = ({
     }
   };
 
+  // Get reconnection status from context
+  const { isReconnecting } = useRealtimeConnection();
+
   // Helper function to render connection status icon - shows connection quality only
   const renderConnectionIcon = () => {
     let icon;
     let tooltip;
     
+    // Yellow spinner for reconnecting
+    if (isReconnecting) {
+      icon = <LoaderCircle className="h-4 w-4 text-yellow-500 animate-spin" />;
+      tooltip = "Reconnecting...";
+    }
     // Yellow for degraded connection
-    if (isDegraded) {
+    else if (isDegraded) {
       icon = <Wifi className="h-4 w-4 text-yellow-500" />;
       tooltip = "Connection issues - may be slower";
     }

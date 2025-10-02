@@ -13,6 +13,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
@@ -93,6 +94,20 @@ const RundownIndexContent = () => {
     enabled: true,
     hasUnsavedChanges,
   });
+
+  // Track reconnection status
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  
+  useEffect(() => {
+    const checkReconnecting = () => {
+      setIsReconnecting(realtimeReconnectionCoordinator.isCurrentlyReconnecting());
+    };
+    
+    // Poll for reconnection status every 100ms
+    const interval = setInterval(checkReconnecting, 100);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Show teammate editing when any teammate is active and has unsaved changes
   const activeTeammates = otherUsers.filter(user => {
@@ -522,6 +537,7 @@ const RundownIndexContent = () => {
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
+      isReconnecting={isReconnecting}
     >
       <RundownContainer
         currentTime={currentTime}

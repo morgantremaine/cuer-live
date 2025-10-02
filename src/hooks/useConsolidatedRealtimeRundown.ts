@@ -49,13 +49,26 @@ export const useConsolidatedRealtimeRundown = ({
   const isInitialLoadRef = useRef(true);
   const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Set connected immediately when rundown is enabled (ready for editing)
+  // Track actual channel connection status from globalSubscriptions
   useEffect(() => {
-    if (enabled && rundownId) {
-      setIsConnected(true);
-    } else {
+    if (!enabled || !rundownId) {
       setIsConnected(false);
+      return;
     }
+
+    // Check connection status from global state
+    const checkConnection = () => {
+      const state = globalSubscriptions.get(rundownId);
+      setIsConnected(state?.isConnected || false);
+    };
+
+    // Initial check
+    checkConnection();
+
+    // Poll for connection status updates every 500ms
+    const interval = setInterval(checkConnection, 500);
+
+    return () => clearInterval(interval);
   }, [enabled, rundownId]);
   
   // Simplified callback refs (no tab coordination needed)

@@ -66,6 +66,13 @@ class RealtimeReconnectionCoordinatorService {
   }
 
   /**
+   * Check if currently reconnecting
+   */
+  isCurrentlyReconnecting(): boolean {
+    return this.isReconnecting;
+  }
+
+  /**
    * Handle auth state changes from AuthMonitor
    */
   private handleAuthChange(session: Session | null) {
