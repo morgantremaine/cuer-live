@@ -31,15 +31,12 @@ export const usePerCellSaveCoordination = ({
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
 
-  // Cell-level save system without typing awareness (operations handle sync)
+  // Cell-level save system with direct database saves
   const {
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
   } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, undefined, saveInProgressRef, typingIdleMs);
-
-  // Note: Structural operations now handled by useOperationBasedRundown
-  // This hook only manages cell-level saves
 
   // Field change tracking - routes to per-cell save system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -76,8 +73,8 @@ export const usePerCellSaveCoordination = ({
     debugLogger.autosave('Initialized baseline for per-cell save');
   }, [rundownId]);
 
-  // Structural operations are now handled by useOperationBasedRundown
-  // This placeholder maintains API compatibility but does nothing
+  // Structural operations are handled by the direct save system
+  // This placeholder maintains API compatibility
   const handleStructuralOperation = useCallback(async (
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: {
@@ -88,9 +85,8 @@ export const usePerCellSaveCoordination = ({
       insertIndex?: number;
     }
   ) => {
-    // Structural operations now flow through useOperationBasedRundown
-    // This function is kept for backwards compatibility but does nothing
-    console.log('⚠️ Structural operation called on deprecated path - should use OT system', {
+    // Structural operations handled by direct save system in parent components
+    console.log('⚠️ Structural operation called on deprecated path', {
       operationType,
       rundownId
     });

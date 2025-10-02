@@ -9,7 +9,6 @@ import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
-import { useOperationBasedRundown } from './useOperationBasedRundown';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
 import { RundownItem } from '@/types/rundown';
