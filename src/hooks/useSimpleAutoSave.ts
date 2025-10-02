@@ -1077,7 +1077,7 @@ export const useSimpleAutoSave = (
     trackFieldChange,
     handleStructuralOperation,
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
-    hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : (hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges), // Use reactive state for per-cell
+    hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : (hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges()), // Use reactive state for per-cell
     setUndoActive,
     markActiveTyping,
     isTypingActive,
