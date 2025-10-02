@@ -10,14 +10,12 @@ export interface Column {
   isCustom: boolean;
   isEditable: boolean;
   isVisible?: boolean;
-  isCollapsible?: boolean;
-  type?: 'text' | 'textarea' | 'time' | 'custom';
 }
 
 const getDefaultColumns = (): Column[] => [
   { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true, isCollapsible: true, type: 'textarea' },
+  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -25,7 +23,7 @@ const getDefaultColumns = (): Column[] => [
   { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
   { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true, isCollapsible: true, type: 'textarea' }
+  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
 ];
 
 export const useColumnsManager = (markAsChanged?: () => void) => {
@@ -38,27 +36,23 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   // Ensure columns is always an array before filtering and ensure all default columns are visible
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
 
-  const handleAddColumn = useCallback((name: string, isCollapsible = false) => {
-    console.log('🔧 handleAddColumn called with:', { name, isCollapsible });
+  const handleAddColumn = useCallback((name: string) => {
     const newColumn: Column = {
       id: `custom_${Date.now()}`,
       name,
       key: `custom_${Date.now()}`,
-      width: isCollapsible ? '300px' : '150px',
+      width: '150px',
       isCustom: true,
       isEditable: true,
-      isVisible: true,
-      isCollapsible: isCollapsible,
-      type: isCollapsible ? 'textarea' : 'text'
+      isVisible: true
     };
-    console.log('🔧 Created new column:', newColumn);
     
     // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
       if (!Array.isArray(prev)) return [newColumn];
       const newColumns = [...prev];
       newColumns.splice(1, 0, newColumn);
-      console.log('🔧 Updated columns array, new length:', newColumns.length);
+      
       return newColumns;
     });
     

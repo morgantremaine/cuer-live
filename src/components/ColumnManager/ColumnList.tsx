@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, EyeOff, GripVertical, Trash2, Edit2, Users, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, Trash2, Edit2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useRef } from 'react';
@@ -16,7 +16,6 @@ interface Column {
   isVisible?: boolean;
   isTeamColumn?: boolean;
   createdBy?: string;
-  isCollapsible?: boolean;
 }
 
 interface ColumnListProps {
@@ -40,12 +39,7 @@ const ColumnList = ({
     defaultColumns: columns.filter(col => !col.isCustom).length,
     customColumns: columns.filter(col => col.isCustom && !(col as any).isTeamColumn).length,
     teamColumns: columns.filter(col => (col as any).isTeamColumn).length,
-    collapsibleColumns: columns.filter(col => col.isCollapsible).length,
-    columnNames: columns.map(col => ({ 
-      name: col.name, 
-      isTeamColumn: (col as any).isTeamColumn || false,
-      isCollapsible: col.isCollapsible || false
-    }))
+    columnNames: columns.map(col => ({ name: col.name, isTeamColumn: (col as any).isTeamColumn || false }))
   });
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -201,12 +195,6 @@ const ColumnList = ({
               onDragEnd={handleDragEnd}
             >
               <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
-              
-              {column.isCollapsible && (
-                <div title="Collapsible column">
-                  <ChevronDown className="h-4 w-4 text-blue-500" />
-                </div>
-              )}
               
               <div className="flex-1 flex items-center space-x-2">
                 {editingColumnId === column.id ? (

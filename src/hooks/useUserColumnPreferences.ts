@@ -19,7 +19,7 @@ interface UserColumnPreferences {
 const defaultColumns: Column[] = [
   { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true, isCollapsible: true, type: 'textarea' },
+  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
@@ -27,8 +27,8 @@ const defaultColumns: Column[] = [
   { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
   { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true, isCollapsible: true, type: 'textarea' }
-];
+  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+]; 
 
 // Derived helpers for normalization
 const defaultKeys: Set<string> = new Set(defaultColumns.map((c) => c.key));
@@ -47,8 +47,6 @@ const normalizeColumns = (cols: any[]): Column[] => {
       isEditable:
         typeof col.isEditable === 'boolean' ? col.isEditable : true,
       isVisible: typeof col.isVisible === 'boolean' ? col.isVisible : true,
-      isCollapsible: typeof col.isCollapsible === 'boolean' ? col.isCollapsible : undefined,
-      type: col.type || undefined,
     }));
 };
 
@@ -78,13 +76,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Start from defaults, but hide any defaults NOT present in the user's layout
     const allAvailableColumns: Column[] = defaultColumns.map(dc => {
       const userPref = userColumnMap.get(dc.key);
-      return userPref ? {
-        ...dc,
-        ...userPref,
-        // Preserve default properties if not explicitly set in user preferences
-        isCollapsible: userPref.isCollapsible ?? dc.isCollapsible,
-        type: userPref.type ?? dc.type,
-      } : { ...dc, isVisible: false };
+      return userPref ? dc : { ...dc, isVisible: false };
     });
     
     // Add ALL team columns to the available set - O(n)

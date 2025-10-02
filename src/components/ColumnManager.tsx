@@ -10,7 +10,7 @@ import { Column } from '@/types/columns';
 
 interface ColumnManagerProps {
   columns: Column[];
-  onAddColumn: (name: string, isCollapsible?: boolean) => void;
+  onAddColumn: (name: string) => void;
   onReorderColumns: (columns: Column[]) => void;
   onDeleteColumn: (columnId: string) => void;
   onToggleColumnVisibility: (columnId: string) => void;
