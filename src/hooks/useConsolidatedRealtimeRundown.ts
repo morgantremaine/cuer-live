@@ -6,6 +6,7 @@ import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { toast } from 'sonner';
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -30,6 +31,7 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
+  offlineSince?: number;
 }>();
 
 export const useConsolidatedRealtimeRundown = ({
@@ -49,6 +51,65 @@ export const useConsolidatedRealtimeRundown = ({
   const isInitialLoadRef = useRef(true);
   const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Define performCatchupSync before it's used in handleOnline
+  const performCatchupSync = useCallback(async () => {
+    const state = globalSubscriptions.get(rundownId || '');
+    if (!rundownId || !state) return;
+    try {
+      // Manual catch-up sync should show processing indicator (not initial load)
+      setIsProcessingUpdate(true);
+      
+      const knownDocVersion = state.lastProcessedDocVersion;
+      const offlineDuration = state.offlineSince ? Date.now() - state.offlineSince : 0;
+      
+      console.log('🔄 Catch-up sync: fetching latest rundown data', {
+        lastKnownVersion: knownDocVersion,
+        offlineDurationMs: offlineDuration
+      });
+      
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
+        .eq('id', rundownId)
+        .single();
+        
+      if (!error && data) {
+        const serverDoc = data.doc_version || 0;
+        const missedUpdates = Math.max(0, serverDoc - knownDocVersion);
+        
+        console.log('🔄 Catch-up sync result:', {
+          serverVersion: serverDoc,
+          lastKnownVersion: knownDocVersion,
+          missedUpdates
+        });
+        
+        if (serverDoc > knownDocVersion) {
+          state.lastProcessedDocVersion = serverDoc;
+          state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+          state.offlineSince = undefined; // Clear offline timestamp
+          
+          state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+            try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+          });
+          
+          // Show user notification if updates were synced
+          if (missedUpdates > 0) {
+            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} made while offline`);
+          }
+        } else {
+          console.log('✅ No missed updates - already up to date');
+        }
+      } else if (error) {
+        console.warn('❌ Manual catch-up fetch failed:', error);
+      }
+    } finally {
+      // Keep processing indicator active briefly for UI feedback  
+      setTimeout(() => {
+        setIsProcessingUpdate(false);
+      }, 500);
+    }
+  }, [rundownId]);
+
   // Track actual channel connection status from globalSubscriptions + browser network
   useEffect(() => {
     if (!enabled || !rundownId) {
@@ -56,12 +117,26 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Immediate browser-level network detection
-    const handleOnline = () => {
-      console.log('📶 Browser detected network online - checking Supabase connection');
+    // Immediate browser-level network detection with catch-up sync
+    const handleOnline = async () => {
+      console.log('📶 Browser detected network online - waiting for Supabase reconnection...');
+      
+      // Wait 1.5s for Supabase channels to reconnect
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       const state = globalSubscriptions.get(rundownId);
       if (state?.isConnected) {
+        console.log('📶 Supabase connected - performing catch-up sync');
+        
+        // FIRST: Fetch latest data from server (catch-up sync)
+        await performCatchupSync();
+        
+        // SECOND: Set connected to trigger offline queue processing
         setIsConnected(true);
+        
+        console.log('✅ Reconnection complete: catch-up synced + offline queue will process');
+      } else {
+        console.log('⏳ Supabase not yet reconnected, will retry...');
       }
     };
     
@@ -69,10 +144,12 @@ export const useConsolidatedRealtimeRundown = ({
       console.log('📵 Browser detected network offline');
       setIsConnected(false);
       
-      // Also update global subscription state immediately
+      // Also update global subscription state immediately and track offline timestamp
       const state = globalSubscriptions.get(rundownId);
       if (state) {
         state.isConnected = false;
+        state.offlineSince = Date.now();
+        console.log('📵 Marked offline at:', new Date(state.offlineSince).toISOString());
       }
     };
     
@@ -583,35 +660,6 @@ export const useConsolidatedRealtimeRundown = ({
     // Legacy compatibility methods (no-ops maintained)
     setTypingChecker: (checker: any) => {},
     setUnsavedChecker: (checker: any) => {},
-    performCatchupSync: async () => {
-      const state = globalSubscriptions.get(rundownId || '');
-      if (!rundownId || !state) return;
-      try {
-        // Manual catch-up sync should show processing indicator (not initial load)
-        setIsProcessingUpdate(true);
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
-          .eq('id', rundownId)
-          .single();
-        if (!error && data) {
-          const serverDoc = data.doc_version || 0;
-          if (serverDoc >= state.lastProcessedDocVersion) {
-            state.lastProcessedDocVersion = serverDoc;
-            state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
-            state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-              try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
-            });
-          }
-        } else if (error) {
-          console.warn('Manual catch-up fetch failed:', error);
-        }
-        } finally {
-          // Keep processing indicator active briefly for UI feedback  
-          setTimeout(() => {
-            setIsProcessingUpdate(false);
-          }, 500);
-        }
-    }
+    performCatchupSync
   };
 };
