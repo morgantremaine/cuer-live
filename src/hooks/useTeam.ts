@@ -651,7 +651,7 @@ export const useTeam = () => {
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
-    // If data is already loaded, restore from cache and skip loading
+    // If data is already loaded, restore from cache and load related data
     if (globalLoadedKeys.get(currentKey)) {
       const cachedTeam = globalTeamCache.get(currentKey);
       const cachedRole = globalRoleCache.get(currentKey);
@@ -660,6 +660,15 @@ export const useTeam = () => {
         setTeam(cachedTeam);
         setUserRole(cachedRole);
         setError(null);
+        
+        // Load all user teams for the dropdown
+        loadAllUserTeams();
+        
+        // Load team members and invitations for this cached team
+        loadTeamMembers(cachedTeam.id);
+        if (cachedRole === 'admin') {
+          loadPendingInvitations(cachedTeam.id);
+        }
       }
       setIsLoading(false);
       return;
