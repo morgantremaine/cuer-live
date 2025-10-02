@@ -541,6 +541,16 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
+            case 'structural:copy_rows': {
+              // Handle structural copy row operations
+              const operationData = update.value?.operationData;
+              if (operationData?.newItems?.length > 0) {
+                console.log('📡 Received structural copy_rows broadcast:', { newItemsCount: operationData.newItems.length });
+                // For copy operations, the consolidated realtime system will handle the full refresh
+                console.log('📡 Structural copy_rows broadcast received - consolidated realtime will handle refresh');
+              }
+              break;
+            }
             case 'items:add': {
               const payload = update.value || {};
               const item = payload.item;
