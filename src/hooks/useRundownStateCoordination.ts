@@ -361,6 +361,7 @@ export const useRundownStateCoordination = () => {
       
       // Core actions - route through operation system
       updateItem: wrappedUpdateItem,
+      updateItemRaw: persistedState.updateItem, // Raw state update (no operation system)
       deleteRow: wrappedDeleteRow,
       toggleFloatRow: persistedState.toggleFloat,
       deleteMultipleItems: persistedState.deleteMultipleItems,
