@@ -1,5 +1,11 @@
 import { useCallback, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  getPriorityConfig, 
+  canBatchTogether, 
+  sortOperationsByPriority,
+  EMERGENCY_FLUSH_THRESHOLD 
+} from '@/config/operationPriority';
 
 export interface Operation {
   id: string;
@@ -33,17 +39,14 @@ export const useOperationQueue = ({
   const queueRef = useRef<Operation[]>([]);
   const processingRef = useRef(false);
   const batchTimeoutRef = useRef<NodeJS.Timeout>();
-  
-  // Batch configuration
-  const BATCH_WINDOW_MS = 50; // Collect operations for 50ms before sending
-  const MAX_BATCH_SIZE = 20; // Send up to 20 operations at once
+  const batchTimeoutsByType = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Generate unique operation ID
   const generateOperationId = useCallback(() => {
     return `${clientId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }, [clientId]);
 
-  // Queue an operation with batching
+  // Queue an operation with SMART BATCHING based on priority
   const queueOperation = useCallback((
     operationType: Operation['operationType'],
     operationData: any
@@ -59,35 +62,70 @@ export const useOperationQueue = ({
       status: 'pending'
     };
 
-    console.log('🔄 QUEUING OPERATION:', {
+    // Get priority config for this operation type
+    const priorityConfig = getPriorityConfig(operationType);
+
+    console.log('🔄 QUEUING OPERATION (Smart Batch):', {
       id: operation.id,
       type: operationType,
+      priority: priorityConfig.priority,
+      batchWindow: priorityConfig.batchWindowMs,
       data: operationData
     });
 
     queueRef.current.push(operation);
     
-    // Clear existing timeout
-    if (batchTimeoutRef.current) {
-      clearTimeout(batchTimeoutRef.current);
+    // EMERGENCY FLUSH: If queue is too large, process immediately regardless of type
+    if (queueRef.current.length >= EMERGENCY_FLUSH_THRESHOLD) {
+      console.log('🚨 EMERGENCY FLUSH - queue too large:', queueRef.current.length);
+      clearAllBatchTimeouts();
+      processQueue();
+      return operation.id;
     }
     
-    // If queue is large enough, process immediately
-    if (queueRef.current.length >= MAX_BATCH_SIZE) {
-      console.log('📦 BATCH SIZE REACHED - processing immediately');
+    // Check if we should batch with existing operations of same priority
+    const existingTimeout = batchTimeoutsByType.current.get(operationType);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+    
+    // If queue reached max batch size for this priority, process immediately
+    if (queueRef.current.length >= priorityConfig.maxBatchSize) {
+      console.log('📦 PRIORITY BATCH SIZE REACHED:', {
+        type: operationType,
+        priority: priorityConfig.priority,
+        size: queueRef.current.length
+      });
+      clearAllBatchTimeouts();
       processQueue();
     } else {
-      // Otherwise, wait for batch window
-      batchTimeoutRef.current = setTimeout(() => {
-        console.log('⏱️ BATCH WINDOW ELAPSED - processing batch');
+      // Set priority-specific timeout
+      const timeout = setTimeout(() => {
+        console.log('⏱️ PRIORITY BATCH WINDOW ELAPSED:', {
+          type: operationType,
+          priority: priorityConfig.priority,
+          window: priorityConfig.batchWindowMs
+        });
+        batchTimeoutsByType.current.delete(operationType);
         processQueue();
-      }, BATCH_WINDOW_MS);
+      }, priorityConfig.batchWindowMs);
+      
+      batchTimeoutsByType.current.set(operationType, timeout);
     }
 
     return operation.id;
   }, [rundownId, userId, clientId, generateOperationId]);
 
-  // Process the operation queue by sending batched operations
+  // Helper to clear all batch timeouts
+  const clearAllBatchTimeouts = useCallback(() => {
+    batchTimeoutsByType.current.forEach(timeout => clearTimeout(timeout));
+    batchTimeoutsByType.current.clear();
+    if (batchTimeoutRef.current) {
+      clearTimeout(batchTimeoutRef.current);
+    }
+  }, []);
+
+  // Process the operation queue with SMART PRIORITIZATION
   const processQueue = useCallback(async () => {
     if (processingRef.current || queueRef.current.length === 0) {
       return;
@@ -102,13 +140,24 @@ export const useOperationQueue = ({
         throw new Error('No auth token available');
       }
 
-      // Get batch of operations to send
-      const batchSize = Math.min(queueRef.current.length, MAX_BATCH_SIZE);
-      const batch = queueRef.current.slice(0, batchSize);
+      // SMART BATCHING: Sort operations by priority (HOT first)
+      const sortedQueue = sortOperationsByPriority(queueRef.current);
       
-      console.log('📤 PROCESSING BATCH:', {
+      // Get the highest priority operation type to determine batch
+      const firstOp = sortedQueue[0];
+      const priorityConfig = getPriorityConfig(firstOp.operationType);
+      
+      // Batch operations of same priority together
+      const batch = sortedQueue
+        .filter(op => canBatchTogether(firstOp.operationType, op.operationType))
+        .slice(0, priorityConfig.maxBatchSize);
+      
+      console.log('📤 PROCESSING SMART BATCH:', {
         batchSize: batch.length,
         totalQueued: queueRef.current.length,
+        priority: priorityConfig.priority,
+        batchWindow: priorityConfig.batchWindowMs,
+        types: [...new Set(batch.map(op => op.operationType))],
         rundownId
       });
 
