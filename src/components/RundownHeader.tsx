@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz/formatInTimeZone';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,7 @@ import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
-import AnimatedWifiIcon from './AnimatedWifiIcon';
+import { useBroadcastHealthMonitor } from '@/hooks/useBroadcastHealthMonitor';
 import RundownSaveIndicator from './header/RundownSaveIndicator';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -105,6 +106,10 @@ const RundownHeader = ({
   
   // Check if this is a demo rundown
   const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
+
+  // Monitor broadcast health for connection quality
+  const broadcastHealth = useBroadcastHealthMonitor(rundownId || '', !!rundownId);
+  const isDegraded = isConnected && !broadcastHealth.isHealthy;
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
@@ -288,25 +293,41 @@ const RundownHeader = ({
     }
   };
 
-  // Helper function to render connection status icon with improved state handling
+  // Helper function to render connection status icon - shows connection quality only
   const renderConnectionIcon = () => {
-    // Priority 1: Show saving spinner if actively saving
-    if (isSaving) {
-      return <LoaderCircle className="h-4 w-4 text-green-500 animate-spin" />;
+    let icon;
+    let tooltip;
+    
+    // Yellow for degraded connection
+    if (isDegraded) {
+      icon = <Wifi className="h-4 w-4 text-yellow-500" />;
+      tooltip = "Connection issues - may be slower";
+    }
+    // Green for good connection
+    else if (isConnected) {
+      icon = <Wifi className="h-4 w-4 text-green-500" />;
+      tooltip = "Connection healthy";
+    }
+    // Red for disconnected
+    else {
+      icon = <WifiOff className="h-4 w-4 text-red-500" />;
+      tooltip = "Disconnected - reconnecting...";
     }
     
-    // Priority 2: Show processing animation if processing realtime update
-    if (isProcessingRealtimeUpdate) {
-      return <AnimatedWifiIcon className="text-blue-500" isAnimating={true} />;
-    }
-    
-    // Priority 3: Show connected state if connected
-    if (isConnected) {
-      return <Wifi className="h-4 w-4 text-green-500" />;
-    }
-    
-    // Only show disconnect if actually disconnected
-    return <WifiOff className="h-4 w-4 text-red-500" />;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center">
+              {icon}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-sm">{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   if (isMobile) {
