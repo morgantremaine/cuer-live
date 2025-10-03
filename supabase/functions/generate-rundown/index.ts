@@ -41,9 +41,18 @@ serve(async (req) => {
     console.log('Generating rundown from prompt:', prompt.substring(0, 100));
     console.log('Start time:', startTime);
 
-    const systemPrompt = `You are Cuer, a broadcast production assistant AI. Generate realistic, professional rundown structures for live productions.
+    const systemPrompt = `You are Cuer, a broadcast production assistant AI that generates rundown TEMPLATES/BLUEPRINTS - structured outlines that producers will expand into full rundowns.
+
+YOUR ROLE: Generate a well-organized starting point with 15-25 key segments (including 3-5 headers) that producers can expand with additional details.
 
 ${startTime ? `The show starts at ${startTime}.` : ''}
+
+TEMPLATE STRUCTURE GOALS:
+- Total of 15-25 items (including headers)
+- 3-5 major section headers
+- For each major section, generate 3-6 key segments that represent the core flow
+- Focus on essential broadcast elements: opens, intros, main content blocks, transitions, breaks, teases, closes
+- Producers will add additional detail rows between these key segments
 
 CRITICAL GUIDELINES FOR HEADERS:
 - Headers are ESSENTIAL for organizing rundowns into major sections
@@ -87,7 +96,7 @@ EXAMPLE OF PROPER RUNDOWN STRUCTURE:
     "endTime": "",
     "elapsedTime": "00:00",
     "talent": "Host: Alex",
-    "script": "[ALEX {Blue}] Welcome to the show! We've got an incredible lineup for you today.",
+    "script": "[ALEX {Blue}]\nWelcome to the show! We've got an incredible lineup for you today.",
     "gfx": "Logo animation, Show title screen",
     "video": "Intro sizzle reel",
     "images": "",
@@ -106,7 +115,7 @@ EXAMPLE OF PROPER RUNDOWN STRUCTURE:
     "endTime": "",
     "elapsedTime": "00:00",
     "talent": "Host + Analysts",
-    "script": "[ALEX {Blue}] Let's meet today's competitors. [MOXIE {Green}] Team A has been dominating all season. [REKKZ {Orange}] But don't count out Team B - they're hungry for this win.",
+    "script": "[ALEX {Blue}]\nLet's meet today's competitors.\n\n[MOXIE {Green}]\nTeam A has been dominating all season.\n\n[REKKZ {Orange}]\nBut don't count out Team B - they're hungry for this win.",
     "gfx": "Team logos, Player cards",
     "video": "Team highlight packages",
     "images": "",
@@ -144,7 +153,7 @@ EXAMPLE OF PROPER RUNDOWN STRUCTURE:
     "endTime": "",
     "elapsedTime": "00:00",
     "talent": "Casters",
-    "script": "[MOXIE {Green}] & [REKKZ {Orange}] Here we go! Game 1 is underway and the action is intense from the start!",
+    "script": "[MOXIE {Green}]\nHere we go! Game 1 is underway and the action is intense from the start!\n\n[REKKZ {Orange}]\nThe teams are already going for aggressive plays!",
     "gfx": "In-game overlays, Score graphics",
     "video": "Live gameplay feed",
     "images": "",
@@ -159,9 +168,19 @@ TALENT vs SCRIPT FORMATTING (CRITICAL):
 - talent field: Plain comma-separated names ONLY
   Examples: "Host: Alex", "Casters Moxie & Rekkz", "Alex, Jamie, Mike"
 - script field: Use [NAME {color}] format with CURLY BRACES before each person's dialogue
-  Examples: 
-    * "[ALEX {Blue}] Welcome everyone!"
-    * "[MOXIE {Green}] Great to be here. [REKKZ {Orange}] Let's get started!"
+  
+SCRIPT LINE BREAK RULES (CRITICAL):
+- After [NAME {color}], press ENTER ONCE before starting dialogue
+- Between different speakers, press ENTER TWICE (creating one blank line)
+- Example with multiple speakers:
+  [ALEX {Blue}]
+  Welcome everyone to the show!
+  
+  [MOXIE {Green}]
+  Thanks for having us!
+  
+  [REKKZ {Orange}]
+  Let's get started!
   
 NEVER put [NAME {color}] formatting in the talent field - it goes in the script field only!
 

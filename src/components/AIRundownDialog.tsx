@@ -28,7 +28,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
   const [generatedItems, setGeneratedItems] = useState<RundownItem[]>([]);
   const { toast } = useToast();
 
-  const examplePrompt = "Cuer, create a rundown for an esports best-of-three tournament with sections for TOP OF SHOW, GAME 1, GAME 2, GAME 3, and BOTTOM OF SHOW. Include segments like Show Open, Team Intros, Live Gameplay, Recaps, and Winner Interview. Cast members: Host Alex, Casters Moxie and Rekkz.";
+  const examplePrompt = "Cuer, create a rundown template for an esports best-of-three tournament. I need sections for TOP OF SHOW, GAME 1, GAME 2, GAME 3, and BOTTOM OF SHOW. Include key segments like Show Open, Team Intros, Live Gameplay, Post-Game Analysis, Recaps, and Winner Interview. Cast members: Host Alex, Casters Moxie and Rekkz.";
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -156,19 +156,24 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
           }`}
         >
           <Sparkles className="h-5 w-5" />
-          Create with Cuer AI
+          Create Template with Cuer AI
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-600" />
-            Create Rundown with AI
+            Create Rundown Template with AI
           </DialogTitle>
         </DialogHeader>
 
         {state === 'input' && (
           <div className="space-y-6 py-4">
+            <div className="rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 p-4 mb-4">
+              <p className="text-sm text-purple-900 dark:text-purple-100">
+                <strong>Template Generator:</strong> Cuer AI will generate a rundown template with 15-25 key segments organized into major sections. You can then expand and customize this blueprint to fit your exact needs.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="prompt">Describe your rundown</Label>
               <Textarea
