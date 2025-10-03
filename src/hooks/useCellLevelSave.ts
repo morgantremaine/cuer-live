@@ -4,6 +4,7 @@ import { RundownState } from './useRundownState';
 import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
+import { saveWithTimeout } from '@/utils/saveTimeout';
 
 interface FieldUpdate {
   itemId?: string;
@@ -99,13 +100,17 @@ export const useCellLevelSave = (
         externalNotes: ''
       });
 
-      const { data, error } = await supabase.functions.invoke('cell-field-save', {
-        body: {
-          rundownId,
-          fieldUpdates: updatesToSave,
-          contentSignature
-        }
-      });
+      const { data, error } = await saveWithTimeout(
+        () => supabase.functions.invoke('cell-field-save', {
+          body: {
+            rundownId,
+            fieldUpdates: updatesToSave,
+            contentSignature
+          }
+        }),
+        'per-cell-save',
+        10000
+      );
 
       if (error) {
         console.error('Per-cell save error:', error);

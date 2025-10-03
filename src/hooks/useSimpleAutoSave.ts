@@ -1040,6 +1040,54 @@ export const useSimpleAutoSave = (
     };
   }, [state.hasUnsavedChanges, rundownId, performSave]);
 
+  // Paranoid save timer - ensures old unsaved changes get persisted
+  // Runs every 30 seconds and force-saves if changes are sitting unsaved
+  useEffect(() => {
+    if (!rundownId || !isInitiallyLoaded || rundownId === DEMO_RUNDOWN_ID) return;
+
+    const paranoidSaveInterval = setInterval(() => {
+      // Only trigger if:
+      // 1. There are unsaved changes (either flag)
+      // 2. Not currently typing (respect user input)
+      // 3. Not in the middle of a save operation
+      
+      const hasChanges = state.hasUnsavedChanges || hasUnsavedChangesRef.current || perCellHasUnsavedChanges;
+      const isTyping = isTypingActive();
+      const isSavingNow = saveInProgressRef.current || isSaving;
+      
+      if (hasChanges && !isTyping && !isSavingNow) {
+        console.log('⏰ PARANOID SAVE: Forcing save for unsaved changes (30s timer)');
+        
+        // Trigger immediate save, bypassing normal debouncing
+        if (isPerCellEnabled) {
+          // For per-cell mode, use coordinated save
+          saveCoordinatedState(state).catch(error => {
+            console.error('⏰ PARANOID SAVE: Per-cell save failed:', error);
+          });
+        } else {
+          // For delta mode, use performSave
+          performSave(true, isSharedView).catch(error => {
+            console.error('⏰ PARANOID SAVE: Delta save failed:', error);
+          });
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(paranoidSaveInterval);
+  }, [
+    rundownId, 
+    isInitiallyLoaded, 
+    state.hasUnsavedChanges, 
+    perCellHasUnsavedChanges,
+    isTypingActive, 
+    isSaving,
+    isPerCellEnabled,
+    saveCoordinatedState,
+    performSave,
+    isSharedView,
+    state
+  ]);
+
   // Flush any pending changes on unmount/view switch to prevent reverts
   useEffect(() => {
     return () => {

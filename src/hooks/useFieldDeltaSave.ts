@@ -1,10 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownState } from './useRundownState';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { registerRecentSave } from './useRundownResumption';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
+import { saveWithTimeout } from '@/utils/saveTimeout';
 
 // Field delta tracking for granular saves
 interface FieldDelta {
@@ -19,6 +20,10 @@ export const useFieldDeltaSave = (
 ) => {
   const pendingDeltasRef = useRef<FieldDelta[]>([]);
   const lastSavedStateRef = useRef<RundownState | null>(null);
+  const authFailedSavesRef = useRef<Array<{
+    state: RundownState;
+    timestamp: string;
+  }>>([]);
 
   // Optimized field change tracking
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -261,13 +266,20 @@ export const useFieldDeltaSave = (
     // CRITICAL: Ensure user is authenticated before save
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user?.id) {
-      console.error('🚨 AUTHENTICATION ERROR: User not authenticated during save', {
+      console.warn('⚠️ Auth check failed during save - queuing for retry', {
         userError,
         hasUser: !!userData.user,
-        userId: userData.user?.id,
         rundownId
       });
-      throw new Error('User not authenticated. Please refresh and log in again.');
+      
+      // Queue for retry instead of failing immediately
+      authFailedSavesRef.current.push({
+        state: currentState,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Still throw to trigger existing error handling, but we've queued it
+      throw new Error('Auth check failed - save queued for retry');
     }
     
     updateData.last_updated_by = userData.user.id;
@@ -282,12 +294,19 @@ export const useFieldDeltaSave = (
 
     // SIMPLIFIED: No OCC - just write directly (last write wins)
     console.log('💾 Field delta save: executing update for rundown', rundownId, 'with user', userData.user.id);
-    const { data, error } = await supabase
-      .from('rundowns')
-      .update(updateData)
-      .eq('id', rundownId)
-      .select('updated_at')
-      .single();
+    
+    const { data, error } = await saveWithTimeout(
+      async () => {
+        return await supabase
+          .from('rundowns')
+          .update(updateData)
+          .eq('id', rundownId)
+          .select('updated_at')
+          .single();
+      },
+      'field-delta-save',
+      10000
+    );
 
     if (error) {
       console.error('🚨 Field delta save database error:', {
@@ -417,6 +436,39 @@ export const useFieldDeltaSave = (
   const initializeSavedState = useCallback((state: RundownState) => {
     lastSavedStateRef.current = JSON.parse(JSON.stringify(state));
   }, []);
+
+  // Monitor auth state and retry queued saves when auth recovers
+  useEffect(() => {
+    if (authFailedSavesRef.current.length === 0) return;
+    
+    const checkAuthAndRetry = async () => {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (!userError && userData.user?.id) {
+        console.log('✅ Auth recovered - retrying queued saves:', authFailedSavesRef.current.length);
+        
+        const queuedSaves = [...authFailedSavesRef.current];
+        authFailedSavesRef.current = [];
+        
+        for (const queuedSave of queuedSaves) {
+          try {
+            await saveDeltasToDatabase(
+              extractDeltas(queuedSave.state, lastSavedStateRef.current),
+              queuedSave.state
+            );
+          } catch (error) {
+            console.error('Failed to retry auth-failed save:', error);
+            // Re-queue if it fails again
+            authFailedSavesRef.current.push(queuedSave);
+          }
+        }
+      }
+    };
+    
+    // Check every 5 seconds if there are queued saves
+    const retryInterval = setInterval(checkAuthAndRetry, 5000);
+    return () => clearInterval(retryInterval);
+  }, [saveDeltasToDatabase, extractDeltas]);
 
   return {
     saveDeltaState,

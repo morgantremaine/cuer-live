@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
+import { saveWithTimeout } from '@/utils/saveTimeout';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -70,9 +71,13 @@ export const useStructuralSave = (
         }
         
         // PHASE 2: DATABASE PERSISTENCE (parallel/after broadcast)
-        const { data, error } = await supabase.functions.invoke('structural-operation-save', {
-          body: operation
-        });
+        const { data, error } = await saveWithTimeout(
+          () => supabase.functions.invoke('structural-operation-save', {
+            body: operation
+          }),
+          `structural-save-${operation.operationType}`,
+          10000
+        );
 
         if (error) {
           console.error('Structural save error:', error);
