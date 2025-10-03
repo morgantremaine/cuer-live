@@ -66,12 +66,12 @@ const SharedRundown = () => {
     if (titleToUse && titleToUse !== 'Untitled Rundown') {
       document.title = titleToUse;
     } else {
-      document.title = 'Cuer Live';
+      document.title = 'Cuer';
     }
 
     // Cleanup: reset title when component unmounts
     return () => {
-      document.title = 'Cuer Live';
+      document.title = 'Cuer';
     };
   }, [rundownData?.title]);
 

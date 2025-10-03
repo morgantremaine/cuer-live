@@ -80,12 +80,12 @@ const Teleprompter = () => {
     if (rundownData?.title && rundownData.title !== 'Untitled Rundown') {
       document.title = `${rundownData.title} - Teleprompter`;
     } else {
-      document.title = 'Cuer Live';
+      document.title = 'Cuer';
     }
 
     // Cleanup: reset title when component unmounts
     return () => {
-      document.title = 'Cuer Live';
+      document.title = 'Cuer';
     };
   }, [rundownData?.title]);
 
