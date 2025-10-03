@@ -350,7 +350,7 @@ const TeamManagement = () => {
   // Calculate current team usage (members + pending invitations)
   const currentUsage = teamMembers.length + pendingInvitations.length;
   const isAtLimit = currentUsage >= max_team_members;
-  const canInviteMore = userRole === 'admin' && !isAtLimit;
+  const canInviteMore = (userRole === 'admin' || userRole === 'manager') && !isAtLimit;
 
   // Check if this is the user's personal team or an invited team
   const isPersonalTeam = allUserTeams.length > 0 && 
@@ -419,8 +419,8 @@ const TeamManagement = () => {
         </CardHeader>
       </Card>
 
-      {/* Invite Members (Admin Only) */}
-      {userRole === 'admin' && (
+      {/* Invite Members Section - Only for Admins and Managers */}
+      {(userRole === 'admin' || userRole === 'manager') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -478,8 +478,8 @@ const TeamManagement = () => {
         </Card>
       )}
 
-      {/* Pending Invitations (Admin Only) */}
-      {userRole === 'admin' && pendingInvitations.length > 0 && (
+      {/* Pending Invitations - Only for Admins and Managers */}
+      {(userRole === 'admin' || userRole === 'manager') && pendingInvitations.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
