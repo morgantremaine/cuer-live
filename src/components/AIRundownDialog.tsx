@@ -162,15 +162,15 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
+            <Sparkles className="h-5 w-5 text-blue-500" />
             Create Rundown Template with AI
           </DialogTitle>
         </DialogHeader>
 
         {state === 'input' && (
           <div className="space-y-6 py-4">
-            <div className="rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 p-4 mb-4">
-              <p className="text-sm text-purple-900 dark:text-purple-100">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4 mb-4">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
                 <strong>Template Generator:</strong> Cuer AI will generate a rundown template with 15-25 key segments organized into major sections. You can then expand and customize this blueprint to fit your exact needs.
               </p>
             </div>
@@ -246,7 +246,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
 
         {state === 'loading' && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
             <p className="text-lg font-medium">Cuer is generating your rundown...</p>
             <p className="text-sm text-muted-foreground">This may take a few seconds</p>
           </div>
