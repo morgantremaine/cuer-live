@@ -54,7 +54,7 @@ Guidelines:
 - Use rowNumber starting from "1" for regular items, leave empty for headers
 
 Return a structured array of rundown items with these fields:
-- id: generate unique IDs using timestamp pattern like "item_${Date.now()}_${randomString}"
+- id: generate unique IDs using pattern like "item_1234567890_abc123" (timestamp + random string)
 - type: "regular" or "header"
 - rowNumber: sequential numbers "1", "2", "3" for regular items, empty string for headers
 - name: segment/section name
