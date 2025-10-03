@@ -1574,7 +1574,7 @@ export const useSimplifiedRundownState = () => {
       state.hasUnsavedChanges,
     isSaving: perCellEnabled ? 
       (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
-      (isSaving || isSavingColumns),
+      isSaving,
     showcallerActivity,
     
     // Realtime connection status
