@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield, UserX } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -627,17 +627,19 @@ const TeamManagement = () => {
                   <AlertTriangle className="h-5 w-5 text-orange-500" />
                   Leave Team
                 </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-3">
-                  <p>
-                    Are you sure you want to leave <strong>{team?.name}</strong>?
-                  </p>
-                  <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
-                    <p className="font-semibold text-orange-700 mb-2">You will:</p>
-                    <ul className="space-y-1 text-sm">
-                      <li>• Lose access to all team rundowns</li>
-                      <li>• Keep your account and personal team</li>
-                      <li>• Need a new invitation to rejoin</li>
-                    </ul>
+                <AlertDialogDescription>
+                  <div className="space-y-3">
+                    <div>
+                      Are you sure you want to leave <strong>{team?.name}</strong>?
+                    </div>
+                    <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
+                      <div className="font-semibold text-orange-700 mb-2">You will:</div>
+                      <ul className="space-y-1 text-sm">
+                        <li>• Lose access to all team rundowns</li>
+                        <li>• Keep your account and personal team</li>
+                        <li>• Need a new invitation to rejoin</li>
+                      </ul>
+                    </div>
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -667,7 +669,64 @@ const TeamManagement = () => {
 
       {/* Enhanced Remove Member Dialog */}
       <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && handleCancelRemoveMember()}>
-...
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <UserX className="h-5 w-5 text-destructive" />
+              Remove Team Member
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isLoadingPreview ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2">Loading transfer preview...</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    Are you sure you want to remove <strong>{memberToRemove?.name}</strong> from the team?
+                  </div>
+                  
+                  {transferPreview && (
+                    <div className="bg-muted p-3 rounded space-y-2">
+                      <div className="font-semibold">Transfer Summary:</div>
+                      <ul className="space-y-1 text-sm">
+                        <li>• {transferPreview.rundown_count} rundown(s) will be transferred to you</li>
+                        <li>• {transferPreview.blueprint_count} blueprint(s) will be transferred to you</li>
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <div className="bg-destructive/10 p-3 rounded border-l-4 border-destructive">
+                    <div className="font-semibold text-destructive mb-2">Warning:</div>
+                    <div className="text-sm">
+                      The member's account will be permanently deleted. This action cannot be undone.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRemoving || isLoadingPreview}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmRemoveMember}
+              disabled={isRemoving || isLoadingPreview}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isRemoving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Removing...
+                </>
+              ) : (
+                'Remove Member'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
 
       {/* Role Change Confirmation Dialog */}
@@ -677,15 +736,15 @@ const TeamManagement = () => {
             <AlertDialogTitle>
               {roleChangeDialog?.newRole === 'manager' ? 'Promote to Manager' : 'Demote to Member'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
+            <AlertDialogDescription>
               {roleChangeDialog?.newRole === 'manager' ? (
-                <p>
+                <div>
                   <strong>{roleChangeDialog.memberName}</strong> will be promoted to Manager and will now have the ability to manage team members (invite and remove).
-                </p>
+                </div>
               ) : (
-                <p>
+                <div>
                   <strong>{roleChangeDialog?.memberName}</strong> will be demoted to Member and will lose the ability to manage team members.
-                </p>
+                </div>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
