@@ -89,15 +89,23 @@ const MainActionButtons = ({
   const handleSegmentCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Allow empty string or valid numbers
-    if (value === '' || /^\d+$/.test(value)) {
-      setSegmentCountInput(value);
+    // Allow empty string or valid numbers (including partial input like just typing digits)
+    if (value === '') {
+      setSegmentCountInput('');
+    } else if (/^\d+$/.test(value)) {
+      const num = parseInt(value);
+      // Only accept if within valid range
+      if (num >= 1 && num <= 50) {
+        setSegmentCountInput(value);
+      } else if (num > 50) {
+        setSegmentCountInput('50');
+      }
     }
   };
 
   // Validate and clamp on blur
   const handleSegmentCountBlur = () => {
-    if (segmentCountInput === '') {
+    if (segmentCountInput === '' || segmentCountInput === '0') {
       setSegmentCountInput('1');
     } else {
       const num = parseInt(segmentCountInput);
@@ -176,15 +184,13 @@ const MainActionButtons = ({
           >
             <Plus className="h-4 w-4 flex-shrink-0" />
             <input
-              type="number"
-              min="1"
-              max="50"
+              type="text"
+              inputMode="numeric"
               value={segmentCountInput}
               onChange={handleSegmentCountChange}
               onBlur={handleSegmentCountBlur}
               onClick={(e) => e.stopPropagation()}
-              placeholder="1"
-              className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
             />
             <span className="flex-shrink-0">Segment</span>
           </Button>
@@ -285,15 +291,13 @@ const MainActionButtons = ({
       >
         <Plus className="h-4 w-4 flex-shrink-0" />
         <input
-          type="number"
-          min="1"
-          max="50"
+          type="text"
+          inputMode="numeric"
           value={segmentCountInput}
           onChange={handleSegmentCountChange}
           onBlur={handleSegmentCountBlur}
           onClick={(e) => e.stopPropagation()}
-          placeholder="1"
-          className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
         />
         <span className="flex-shrink-0">Segment</span>
       </Button>
