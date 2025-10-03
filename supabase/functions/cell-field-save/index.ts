@@ -47,7 +47,18 @@ serve(async (req) => {
       )
     }
 
-    const { rundownId, fieldUpdates, contentSignature }: CellSaveRequest = await req.json()
+    const body = await req.json()
+    
+    // Check for pre-warming request
+    if (body.prewarm === true) {
+      console.log('🔥 Pre-warming request received - responding immediately');
+      return new Response(
+        JSON.stringify({ success: true, prewarmed: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { rundownId, fieldUpdates, contentSignature }: CellSaveRequest = body
 
     if (!rundownId || !fieldUpdates || !Array.isArray(fieldUpdates)) {
       return new Response(

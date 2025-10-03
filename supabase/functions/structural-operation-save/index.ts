@@ -42,7 +42,18 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const operation: StructuralOperation = await req.json();
+    const body = await req.json();
+    
+    // Check for pre-warming request
+    if (body.prewarm === true) {
+      console.log('🔥 Pre-warming request received - responding immediately');
+      return new Response(
+        JSON.stringify({ success: true, prewarmed: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const operation: StructuralOperation = body;
     console.log('🏗️ Processing structural operation:', {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
