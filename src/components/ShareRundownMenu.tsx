@@ -539,18 +539,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={handleExportCSV}>
-          <Download className="h-4 w-4 mr-2" />
-          Export as CSV
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handlePrint}>
-          <Printer className="h-4 w-4 mr-2" />
-          Print/PDF
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        
         <DropdownMenuItem onClick={copyToClipboard}>
           <Copy className="h-4 w-4 mr-2" />
           Copy Read-Only Link
@@ -592,6 +580,18 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
             )}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={handleExportCSV}>
+          <Download className="h-4 w-4 mr-2" />
+          Export as CSV
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={handlePrint}>
+          <Printer className="h-4 w-4 mr-2" />
+          Print/PDF
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
