@@ -152,11 +152,11 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
           className={`border-0 flex items-center gap-2 ${
             disabled 
               ? 'bg-purple-400 text-white opacity-60 cursor-pointer' 
-              : 'bg-purple-600 hover:bg-purple-700 text-white'
+              : 'bg-purple-800 hover:bg-purple-900 text-white'
           }`}
         >
           <Sparkles className="h-5 w-5" />
-          Create with AI
+          Create with Cuer AI
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
