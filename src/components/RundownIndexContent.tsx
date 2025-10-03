@@ -325,8 +325,10 @@ const RundownIndexContent = () => {
   
   // Override add handlers to support count parameter
   const handleAddRow = useCallback((count: number = 1) => {
+    console.log('🔢 HANDLE ADD ROW: count parameter received:', count);
     // Call addRow multiple times for the count
     for (let i = 0; i < count; i++) {
+      console.log(`🔢 Adding row ${i + 1} of ${count}`);
       interactions.handleAddRow();
     }
   }, [interactions]);
