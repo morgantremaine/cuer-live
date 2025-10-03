@@ -132,6 +132,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onMoveItemUp,
   onMoveItemDown,
   markActiveTyping,
+  onCellFocusChange,
   // Header collapse functions
   toggleHeaderCollapse,
   isHeaderCollapsed,
