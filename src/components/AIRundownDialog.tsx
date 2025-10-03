@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +28,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
   const [generatedItems, setGeneratedItems] = useState<RundownItem[]>([]);
   const { toast } = useToast();
 
-  const examplePrompt = "Cuer, create a rundown for an esports broadcast with the following segments: Show Open, Analyst Desk Intro, Team A Introduction, Team B Introduction, Game 1, Game 1 Recap, Game 2, Game 2 Recap, Winner Interview. Include cast members: Host Alex, Casters Moxie and Rekkz.";
+  const examplePrompt = "Cuer, create a rundown for an esports best-of-three tournament with sections for TOP OF SHOW, GAME 1, GAME 2, GAME 3, and BOTTOM OF SHOW. Include segments like Show Open, Team Intros, Live Gameplay, Recaps, and Winner Interview. Cast members: Host Alex, Casters Moxie and Rekkz.";
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -43,7 +44,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-rundown', {
-        body: { prompt }
+        body: { prompt, startTime }
       });
 
       if (error) {
@@ -207,11 +208,22 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
 
               <div className="space-y-2">
                 <Label htmlFor="timezone">Timezone</Label>
-                <Input
-                  id="timezone"
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                />
+                <Select value={timezone} onValueChange={setTimezone}>
+                  <SelectTrigger id="timezone">
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="America/New_York">Eastern (America/New_York)</SelectItem>
+                    <SelectItem value="America/Chicago">Central (America/Chicago)</SelectItem>
+                    <SelectItem value="America/Denver">Mountain (America/Denver)</SelectItem>
+                    <SelectItem value="America/Los_Angeles">Pacific (America/Los_Angeles)</SelectItem>
+                    <SelectItem value="America/Phoenix">Arizona (America/Phoenix)</SelectItem>
+                    <SelectItem value="Europe/London">London (Europe/London)</SelectItem>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                    <SelectItem value="Asia/Tokyo">Tokyo (Asia/Tokyo)</SelectItem>
+                    <SelectItem value="Australia/Sydney">Sydney (Australia/Sydney)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -26,7 +26,7 @@ serve(async (req) => {
       );
     }
 
-    const { prompt } = await req.json();
+    const { prompt, startTime } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return new Response(
@@ -39,19 +39,141 @@ serve(async (req) => {
     }
 
     console.log('Generating rundown from prompt:', prompt.substring(0, 100));
+    console.log('Start time:', startTime);
 
     const systemPrompt = `You are Cuer, a broadcast production assistant AI. Generate realistic, professional rundown structures for live productions.
 
-Guidelines:
-- Create headers to organize segments (use type: "header")
+${startTime ? `The show starts at ${startTime}.` : ''}
+
+CRITICAL GUIDELINES FOR HEADERS:
+- Headers are ESSENTIAL for organizing rundowns into major sections
+- ALWAYS start your rundown with a header
+- Use headers to separate major sections like:
+  * "TOP OF SHOW" - opening segments
+  * "GAME 1", "GAME 2", "GAME 3" - for esports/sports
+  * "ACT 1", "ACT 2", "ACT 3" - for narrative content
+  * "BOTTOM OF SHOW" - closing segments
+- Headers have type: "header", rowNumber: "A" (or letters), and ALL time/content fields must be EMPTY strings
+- Headers are organizational markers, NOT segments with durations
+
+EXAMPLE OF PROPER RUNDOWN STRUCTURE:
+[
+  {
+    "id": "header_1751939845425_cy79eacen",
+    "type": "header",
+    "rowNumber": "A",
+    "name": "TOP OF SHOW",
+    "startTime": "",
+    "duration": "",
+    "endTime": "",
+    "elapsedTime": "",
+    "talent": "",
+    "script": "",
+    "gfx": "",
+    "video": "",
+    "images": "",
+    "notes": "",
+    "color": "",
+    "isFloating": false,
+    "customFields": {}
+  },
+  {
+    "id": "item_1751939846001_abc123",
+    "type": "regular",
+    "rowNumber": "1",
+    "name": "Show Open",
+    "startTime": "",
+    "duration": "02:00",
+    "endTime": "",
+    "elapsedTime": "00:00",
+    "talent": "Host: Alex",
+    "script": "[ALEX {Blue}] Welcome to the show! We've got an incredible lineup for you today.",
+    "gfx": "Logo animation, Show title screen",
+    "video": "Intro sizzle reel",
+    "images": "",
+    "notes": "",
+    "color": "",
+    "isFloating": false,
+    "customFields": {"music": "Energetic Theme"}
+  },
+  {
+    "id": "item_1751939846002_def456",
+    "type": "regular",
+    "rowNumber": "2",
+    "name": "Team Introductions",
+    "startTime": "",
+    "duration": "03:00",
+    "endTime": "",
+    "elapsedTime": "00:00",
+    "talent": "Host + Analysts",
+    "script": "[ALEX {Blue}] Let's meet today's competitors. [MOXIE {Green}] Team A has been dominating all season. [REKKZ {Orange}] But don't count out Team B - they're hungry for this win.",
+    "gfx": "Team logos, Player cards",
+    "video": "Team highlight packages",
+    "images": "",
+    "notes": "",
+    "color": "",
+    "isFloating": false,
+    "customFields": {}
+  },
+  {
+    "id": "header_1751939988191_bdyoqqh5l",
+    "type": "header",
+    "rowNumber": "B",
+    "name": "GAME 1",
+    "startTime": "",
+    "duration": "",
+    "endTime": "",
+    "elapsedTime": "",
+    "talent": "",
+    "script": "",
+    "gfx": "",
+    "video": "",
+    "images": "",
+    "notes": "",
+    "color": "",
+    "isFloating": false,
+    "customFields": {}
+  },
+  {
+    "id": "item_1751939988192_ghi789",
+    "type": "regular",
+    "rowNumber": "3",
+    "name": "Game 1 - Live",
+    "startTime": "",
+    "duration": "30:00",
+    "endTime": "",
+    "elapsedTime": "00:00",
+    "talent": "Casters",
+    "script": "[MOXIE {Green}] & [REKKZ {Orange}] Here we go! Game 1 is underway and the action is intense from the start!",
+    "gfx": "In-game overlays, Score graphics",
+    "video": "Live gameplay feed",
+    "images": "",
+    "notes": "",
+    "color": "",
+    "isFloating": false,
+    "customFields": {}
+  }
+]
+
+TALENT vs SCRIPT FORMATTING (CRITICAL):
+- talent field: Plain comma-separated names ONLY
+  Examples: "Host: Alex", "Casters Moxie & Rekkz", "Alex, Jamie, Mike"
+- script field: Use [NAME {color}] format with CURLY BRACES before each person's dialogue
+  Examples: 
+    * "[ALEX {Blue}] Welcome everyone!"
+    * "[MOXIE {Green}] Great to be here. [REKKZ {Orange}] Let's get started!"
+  
+NEVER put [NAME {color}] formatting in the talent field - it goes in the script field only!
+
+Additional Guidelines:
 - Include realistic durations in MM:SS format (e.g., "02:00", "05:30")
-- Populate talent names from the user's description
-- Write professional broadcast scripts with [TALENT {color}] formatting for on-air talent
+- Write professional broadcast scripts with proper talent color formatting
 - Include realistic GFX, video, and notes when relevant
 - Use segment names that match broadcast terminology
 - Ensure logical flow and pacing
 - Total runtime should be reasonable for the show type described
-- Use rowNumber starting from "1" for regular items, leave empty for headers
+- Use rowNumber starting from "1" for regular items, use letters like "A", "B", "C" for headers
+- Use customFields for things like music cues when appropriate
 
 Return a structured array of rundown items with these fields:
 - id: generate unique IDs using pattern like "item_1234567890_abc123" (timestamp + random string)
