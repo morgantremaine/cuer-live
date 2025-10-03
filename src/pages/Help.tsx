@@ -318,14 +318,6 @@ const Help = () => {
                 </div>
 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                  <AnimatedWifiIcon className="text-blue-500 flex-shrink-0" isAnimating={true} />
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Syncing (Blue Animated Wifi)</h3>
-                    <p className="text-sm">Changes are being synced with your team. This appears during active collaboration.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                   <Wifi className="h-5 w-5 text-yellow-500 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Poor (Yellow Wifi)</h3>
@@ -336,8 +328,8 @@ const Help = () => {
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                   <WifiOff className="h-5 w-5 text-gray-500 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Offline (Gray Wifi Off)</h3>
-                    <p className="text-sm">Disconnected from server. Changes will sync automatically when connection is restored.</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Server Disconnected (Gray Wifi Off)</h3>
+                    <p className="text-sm">Lost connection to the server, but your device has internet. Changes will sync when reconnected.</p>
                   </div>
                 </div>
 
