@@ -17,7 +17,7 @@ interface RundownContentProps {
   allColumns?: Column[];
   currentTime: Date;
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
@@ -59,7 +59,6 @@ interface RundownContentProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
-  onCellFocusChange?: (element: HTMLDivElement | null) => void;
   // Header collapse functions
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
@@ -132,7 +131,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   onMoveItemUp,
   onMoveItemDown,
   markActiveTyping,
-  onCellFocusChange,
   // Header collapse functions
   toggleHeaderCollapse,
   isHeaderCollapsed,
@@ -458,7 +456,6 @@ const RundownContent = React.memo<RundownContentProps>(({
               onMoveItemUp={onMoveItemUp}
               onMoveItemDown={onMoveItemDown}
               markActiveTyping={markActiveTyping}
-              onCellFocusChange={onCellFocusChange}
               // Header collapse functions
               toggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
@@ -508,7 +505,6 @@ const RundownContent = React.memo<RundownContentProps>(({
               onMoveItemUp={onMoveItemUp}
               onMoveItemDown={onMoveItemDown}
               markActiveTyping={markActiveTyping}
-              onCellFocusChange={onCellFocusChange}
               // Header collapse functions
               toggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}

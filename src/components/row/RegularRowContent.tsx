@@ -10,7 +10,7 @@ interface RegularRowContentProps {
   item: RundownItem;
   rowNumber: string;
   columns: Column[];
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
   status?: 'upcoming' | 'current' | 'completed';
@@ -24,7 +24,6 @@ interface RegularRowContentProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   markActiveTyping?: () => void;
   getColumnWidth: (column: Column) => string;
-  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }
 
 const RegularRowContent = ({
@@ -43,8 +42,7 @@ const RegularRowContent = ({
   onCellClick,
   onKeyDown,
   markActiveTyping,
-  getColumnWidth,
-  onCellFocusChange
+  getColumnWidth
 }: RegularRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -105,7 +103,6 @@ const RegularRowContent = ({
               onKeyDown={onKeyDown}
               markActiveTyping={markActiveTyping}
               width={normalizedWidth}
-              onCellFocusChange={onCellFocusChange}
             />
           </td>
         );

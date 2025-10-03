@@ -11,7 +11,7 @@ interface HeaderRowProps {
   item: RundownItem;
   index: number;
   rowNumber: string;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
   headerDuration: string;
   selectedRowsCount?: number;

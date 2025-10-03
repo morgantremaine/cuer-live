@@ -13,7 +13,7 @@ export interface RundownContainerProps {
   visibleColumns: Column[];
   columns: Column[];
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
@@ -124,7 +124,4 @@ export interface RundownContainerProps {
     activeId: any;
     resetDragState: () => void;
   };
-  
-  // Rich text formatting toolbar
-  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }

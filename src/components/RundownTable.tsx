@@ -9,7 +9,7 @@ interface RundownTableProps {
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
@@ -49,7 +49,6 @@ interface RundownTableProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
-  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }
 
 const RundownTable = ({
@@ -96,8 +95,7 @@ const RundownTable = ({
   onJumpToHere,
   onMoveItemUp,
   onMoveItemDown,
-  markActiveTyping,
-  onCellFocusChange
+  markActiveTyping
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -194,7 +192,6 @@ const RundownTable = ({
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}
                    allItems={items}
-                   onCellFocusChange={onCellFocusChange}
                 />
                 
                 {/* Drop indicator AFTER the last row */}

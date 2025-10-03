@@ -11,7 +11,7 @@ interface RundownRowProps {
   rowNumber: string;
   status: 'upcoming' | 'current' | 'completed';
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
@@ -49,7 +49,6 @@ interface RundownRowProps {
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
-  onCellFocusChange?: (element: HTMLDivElement | null) => void;
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -118,7 +117,6 @@ const RundownRow = (props: RundownRowProps) => {
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
       allItems={props.allItems}
-      onCellFocusChange={props.onCellFocusChange}
     />
   );
 };

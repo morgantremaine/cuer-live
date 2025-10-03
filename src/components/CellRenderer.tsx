@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
-import RichTextCell, { FormatStates } from './cells/RichTextCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
 import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
@@ -16,7 +15,7 @@ interface CellRendererProps {
     calculatedElapsedTime?: string;
     calculatedRowNumber?: string;
   };
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
@@ -26,8 +25,6 @@ interface CellRendererProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   markActiveTyping?: () => void;
   width?: string;
-  onFormatStateChange?: (itemId: string, field: string, states: FormatStates) => void;
-  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }
 
 const CellRenderer = ({
@@ -42,9 +39,7 @@ const CellRenderer = ({
   onCellClick,
   onKeyDown,
   markActiveTyping,
-  width,
-  onFormatStateChange,
-  onCellFocusChange
+  width
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -136,7 +131,7 @@ const CellRenderer = ({
         value={value}
         itemId={item.id}
         cellRefKey={column.key}
-        cellRefs={cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>}
+        cellRefs={cellRefs}
         textColor={showcallerTextColor}
         backgroundColor={showcallerBackgroundColor}
         onUpdateValue={(newValue) => {
@@ -158,7 +153,7 @@ const CellRenderer = ({
         value={value}
         itemId={item.id}
         cellRefKey={column.key}
-        cellRefs={cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>}
+        cellRefs={cellRefs}
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
@@ -173,45 +168,13 @@ const CellRenderer = ({
   // Check if this is a time-related field that should be centered
   const isTimeField = column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime';
 
-  // Fields that support rich text formatting
-  const supportsRichText = ['name', 'talent', 'gfx', 'video'];
-  
-  if (supportsRichText.includes(column.key) || (column.isCustom && !isTimeField)) {
-    return (
-      <RichTextCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={textColor}
-        backgroundColor={backgroundColor}
-        fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
-        onUpdateValue={(newValue) => {
-          if (column.isCustom) {
-            const field = `customFields.${column.key}`;
-            onUpdateItem(item.id, field, newValue);
-          } else {
-            const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
-            onUpdateItem(item.id, field, newValue);
-          }
-        }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
-        onKeyDown={onKeyDown}
-        onFormatStateChange={(states) => {
-          onFormatStateChange?.(item.id, column.key, states);
-        }}
-        onFocusChange={onCellFocusChange}
-      />
-    );
-  }
-
   // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
   return (
     <TextAreaCell
       value={value}
       itemId={item.id}
       cellRefKey={column.key}
-      cellRefs={cellRefs as React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>}
+      cellRefs={cellRefs}
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={isTimeField}
