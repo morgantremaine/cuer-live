@@ -96,8 +96,22 @@ const CellRenderer = ({
   const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
   const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
 
-  // Use TimeDisplayCell for calculated time fields
-  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
+  // Elapsed time is a duration, not time-of-day, so render it directly
+  if (column.key === 'elapsedTime') {
+    return (
+      <div className="w-full h-full p-1" style={{ backgroundColor: showcallerBackgroundColor }}>
+        <span 
+          className="inline-block w-full text-sm font-mono px-1 py-1 rounded-sm text-center border-0"
+          style={{ color: showcallerTextColor || 'inherit' }}
+        >
+          {value || '00:00:00'}
+        </span>
+      </div>
+    );
+  }
+
+  // Use TimeDisplayCell for time-of-day fields (startTime, endTime)
+  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime')) {
     return (
       <TimeDisplayCell 
         value={value} 
