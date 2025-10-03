@@ -18,7 +18,7 @@ interface DashboardHeaderProps {
   onBack?: () => void
   team?: Team | null
   allUserTeams?: UserTeam[]
-  userRole?: 'admin' | 'member'
+  userRole?: 'admin' | 'member' | 'manager'
   switchToTeam?: (teamId: string) => Promise<void>
 }
 

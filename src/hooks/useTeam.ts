@@ -13,7 +13,7 @@ const globalLoadPromises = new Map<string, Promise<void>>();
 const globalRealtimeChannels = new Map<string, any>();
 // Global cache for team data and roles to share across hook instances
 const globalTeamCache = new Map<string, Team>();
-const globalRoleCache = new Map<string, 'admin' | 'member'>();
+const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager'>();
 
 export interface Team {
   id: string;
@@ -25,7 +25,7 @@ export interface Team {
 export interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'member' | 'manager';
   joined_at: string;
   profiles?: {
     email: string;
@@ -42,7 +42,7 @@ export interface PendingInvitation {
 export interface UserTeam {
   id: string;
   name: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'member' | 'manager';
   joined_at: string;
 }
 
@@ -55,7 +55,7 @@ export const useTeam = () => {
   const [allUserTeams, setAllUserTeams] = useState<UserTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'member' | 'manager' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
@@ -107,7 +107,7 @@ export const useTeam = () => {
         return {
           id: membership.team_id,
           name: teamData?.name || 'Unknown Team',
-          role: membership.role as 'admin' | 'member',
+          role: membership.role as 'admin' | 'member' | 'manager',
           joined_at: membership.joined_at
         };
       });
@@ -256,7 +256,7 @@ export const useTeam = () => {
 
             // Load additional data after setting main team state
             loadTeamMembers(targetTeamId);
-            if (role === 'admin') {
+            if (role === 'admin' || role === 'manager') {
               loadPendingInvitations(targetTeamId);
             }
             
@@ -695,6 +695,30 @@ export const useTeam = () => {
     }
   };
 
+  const updateMemberRole = async (memberId: string, newRole: 'member' | 'manager') => {
+    if (!team?.id) {
+      return { error: 'No team found' };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ role: newRole })
+        .eq('id', memberId)
+        .eq('team_id', team.id);
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // Reload team members after successful role change
+      await loadTeamMembers(team.id);
+      return { success: true };
+    } catch (error) {
+      return { error: 'Failed to update member role' };
+    }
+  };
+
   // Load team data when user or activeTeamId changes
   useEffect(() => {
     if (!user?.id) {
@@ -721,7 +745,7 @@ export const useTeam = () => {
         
         // Load team members and invitations for this cached team
         loadTeamMembers(cachedTeam.id);
-        if (cachedRole === 'admin') {
+        if (cachedRole === 'admin' || cachedRole === 'manager') {
           loadPendingInvitations(cachedTeam.id);
         }
       }
@@ -890,6 +914,7 @@ export const useTeam = () => {
     removeTeamMemberWithTransfer,
     acceptInvitation,
     updateTeamName,
+    updateMemberRole,
     leaveCurrentTeam,
     loadTeamData,
     loadTeamMembers,

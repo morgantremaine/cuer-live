@@ -29,7 +29,7 @@ import { useRundownSorting } from '@/hooks/useRundownSorting'
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'member' | 'manager';
   joined_at: string;
   profiles?: {
     email: string;

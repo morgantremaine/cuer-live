@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TransferPreview {
   member_email: string;
@@ -42,6 +49,8 @@ const TeamManagement = () => {
   const [isLeavingTeam, setIsLeavingTeam] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [isMounting, setIsMounting] = useState(true);
+  const [roleChangeDialog, setRoleChangeDialog] = useState<{ memberId: string; memberName: string; newRole: 'member' | 'manager' } | null>(null);
+  const [isChangingRole, setIsChangingRole] = useState(false);
   
   const {
     team,
@@ -55,6 +64,7 @@ const TeamManagement = () => {
     getTransferPreview,
     revokeInvitation,
     updateTeamName,
+    updateMemberRole,
     leaveCurrentTeam,
     allUserTeams
   } = useTeam();
@@ -262,6 +272,38 @@ const TeamManagement = () => {
       setIsLeavingTeam(false);
       setShowLeaveDialog(false);
     }
+  };
+
+  const handleRoleChangeClick = (memberId: string, memberName: string, newRole: 'member' | 'manager') => {
+    setRoleChangeDialog({ memberId, memberName, newRole });
+  };
+
+  const handleConfirmRoleChange = async () => {
+    if (!roleChangeDialog) return;
+    
+    setIsChangingRole(true);
+    const { error } = await updateMemberRole(roleChangeDialog.memberId, roleChangeDialog.newRole);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      const action = roleChangeDialog.newRole === 'manager' ? 'promoted to Manager' : 'demoted to Member';
+      toast({
+        title: 'Role Updated',
+        description: `${roleChangeDialog.memberName} has been ${action}.`,
+      });
+    }
+    
+    setIsChangingRole(false);
+    setRoleChangeDialog(null);
+  };
+
+  const handleCancelRoleChange = () => {
+    setRoleChangeDialog(null);
   };
 
   // Clear mounting state after a brief delay to prevent flash
@@ -515,6 +557,9 @@ const TeamManagement = () => {
                         {member.role === 'admin' && (
                           <Crown className="h-4 w-4 text-yellow-500" />
                         )}
+                        {member.role === 'manager' && (
+                          <Shield className="h-4 w-4 text-blue-500" />
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {member.profiles?.email}
@@ -522,10 +567,31 @@ const TeamManagement = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
-                      {member.role}
-                    </Badge>
-                    {userRole === 'admin' && member.role !== 'admin' && (
+                    {userRole === 'admin' && member.role !== 'admin' ? (
+                      <Select
+                        value={member.role}
+                        onValueChange={(newRole: 'member' | 'manager') => 
+                          handleRoleChangeClick(
+                            member.id, 
+                            member.profiles?.full_name || member.profiles?.email || 'Unknown User',
+                            newRole
+                          )
+                        }
+                      >
+                        <SelectTrigger className="w-[130px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge variant={member.role === 'admin' ? 'default' : member.role === 'manager' ? 'secondary' : 'outline'}>
+                        {member.role}
+                      </Badge>
+                    )}
+                    {(userRole === 'admin' || userRole === 'manager') && member.role !== 'admin' && (
                       <Button 
                         variant="ghost" 
                         size="sm"
@@ -601,66 +667,43 @@ const TeamManagement = () => {
 
       {/* Enhanced Remove Member Dialog */}
       <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && handleCancelRemoveMember()}>
-        <AlertDialogContent className="max-w-md">
+...
+      </AlertDialog>
+
+      {/* Role Change Confirmation Dialog */}
+      <AlertDialog open={!!roleChangeDialog} onOpenChange={(open) => !open && handleCancelRoleChange()}>
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              Remove Team Member
+            <AlertDialogTitle>
+              {roleChangeDialog?.newRole === 'manager' ? 'Promote to Manager' : 'Demote to Member'}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              {isLoadingPreview ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading transfer details...
-                </div>
-              ) : transferPreview ? (
-                <div className="space-y-3">
-                  <p>
-                    <strong>⚠️ This action cannot be undone.</strong>
-                  </p>
-                  <p>
-                    You are about to remove <strong>{transferPreview.member_name || transferPreview.member_email}</strong> from the team.
-                  </p>
-                  
-                  <div className="bg-red-50 p-3 rounded border-l-4 border-red-500">
-                    <p className="font-semibold text-red-700 mb-2">What will happen:</p>
-                    <ul className="space-y-1 text-sm">
-                      <li>• Their account will be permanently deleted</li>
-                      {transferPreview.rundown_count > 0 && (
-                        <li>• {transferPreview.rundown_count} rundown{transferPreview.rundown_count > 1 ? 's' : ''} will be transferred to you</li>
-                      )}
-                      {transferPreview.blueprint_count > 0 && (
-                        <li>• {transferPreview.blueprint_count} blueprint{transferPreview.blueprint_count > 1 ? 's' : ''} will be transferred to you</li>
-                      )}
-                      <li>• They will lose access to all team data</li>
-                    </ul>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground">
-                    All their rundowns and blueprints will be safely transferred to you before their account is deleted.
-                  </p>
-                </div>
-              ) : null}
+              {roleChangeDialog?.newRole === 'manager' ? (
+                <p>
+                  <strong>{roleChangeDialog.memberName}</strong> will be promoted to Manager and will now have the ability to manage team members (invite and remove).
+                </p>
+              ) : (
+                <p>
+                  <strong>{roleChangeDialog?.memberName}</strong> will be demoted to Member and will lose the ability to manage team members.
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
-              disabled={isRemoving}
-            >
+            <AlertDialogCancel disabled={isChangingRole}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleConfirmRemoveMember}
-              disabled={isLoadingPreview || isRemoving || !transferPreview}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmRoleChange}
+              disabled={isChangingRole}
             >
-              {isRemoving ? (
+              {isChangingRole ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Removing...
+                  Updating...
                 </>
               ) : (
-                'Remove Member & Delete Account'
+                'Confirm'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
