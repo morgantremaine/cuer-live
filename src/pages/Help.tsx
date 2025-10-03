@@ -210,7 +210,7 @@ const Help = () => {
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Adding Content</h3>
                 <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                  <li>Click "Add Item" to create new rundown entries</li>
+                  <li>Click "Add Segment" to create new rundown entries</li>
                   <li>Use "Add Header" for section dividers</li>
                   <li>Drag and drop to reorder items</li>
                 </ul>
@@ -401,6 +401,11 @@ const Help = () => {
               <p>Blueprint mode transforms your rundown into a comprehensive pre-production planning tool:</p>
               
               <div className="space-y-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Rundown Summary</h3>
+                  <p className="text-sm">Generate intelligent summaries of your rundown with one click. The AI analyzes your entire rundown and creates a comprehensive overview including key segments, timing, and important notes.</p>
+                </div>
+
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Dynamic Lists</h3>
                   <p className="text-sm">Auto-generate checklists from rundown columns with real-time updates and progress tracking.</p>
