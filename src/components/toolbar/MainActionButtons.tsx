@@ -93,7 +93,7 @@ const MainActionButtons = ({
     
     setTimeout(() => {
       setAddRowCooldown(false);
-    }, 500);
+    }, 1000);
   }, [addRowCooldown, onAddRow]);
 
   const handleAddHeaderWithCooldown = useCallback(() => {
@@ -104,7 +104,7 @@ const MainActionButtons = ({
     
     setTimeout(() => {
       setAddHeaderCooldown(false);
-    }, 500);
+    }, 1000);
   }, [addHeaderCooldown, onAddHeader]);
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
