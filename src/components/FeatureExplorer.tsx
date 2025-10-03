@@ -9,6 +9,7 @@ interface Feature {
   title: string;
   description: string;
   image: string;
+  secondaryImage?: string;
   alt: string;
   details: string[];
   icon: React.ComponentType<any>;
@@ -32,16 +33,17 @@ const workflowStages: WorkflowStage[] = [
     color: 'from-blue-500 to-purple-600',
     features: [
       {
-        id: 'ai-assistant',
-        title: 'AI Assistant',
-        description: 'Catch problems before they happen with intelligent analysis and suggestions.',
+        id: 'cuer-ai',
+        title: 'Cuer AI',
+        description: 'Intelligent AI assistant that helps you build better rundowns faster with template generation and real-time optimization.',
         image: '/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png',
-        alt: 'Cuer AI Assistant Interface',
+        secondaryImage: '/uploads/cuer-ai-template.jpg',
+        alt: 'Cuer AI Assistant and Template Generator',
         details: [
-          'Real-time rundown analysis',
-          'Issue detection and solutions',
-          'Content and timing suggestions',
-          'Show flow optimization'
+          'Generate complete rundown templates instantly',
+          'Real-time rundown analysis and optimization',
+          'Intelligent issue detection and solutions',
+          'Smart content and timing suggestions'
         ],
         icon: Bot
       },
@@ -186,7 +188,7 @@ const workflowStages: WorkflowStage[] = [
 
 export const FeatureExplorer: React.FC = () => {
   const [activeStage, setActiveStage] = useState<string>('planning');
-  const [activeFeature, setActiveFeature] = useState<string>('ai-assistant');
+  const [activeFeature, setActiveFeature] = useState<string>('cuer-ai');
 
   // Preload all feature images for faster switching
   useEffect(() => {
@@ -338,12 +340,29 @@ export const FeatureExplorer: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <div className="group fade-up">
-                <img 
-                  src={currentFeature.image}
-                  alt={currentFeature.alt}
-                  className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-                />
+              <div className={`
+                ${currentFeature.secondaryImage 
+                  ? 'grid grid-cols-1 md:grid-cols-2 gap-4' 
+                  : 'flex justify-center'
+                }
+              `}>
+                <div className="group fade-up">
+                  <img 
+                    src={currentFeature.image}
+                    alt={currentFeature.alt}
+                    className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+                  />
+                </div>
+                
+                {currentFeature.secondaryImage && (
+                  <div className="group fade-up">
+                    <img 
+                      src={currentFeature.secondaryImage}
+                      alt={`${currentFeature.alt} - Template Generation`}
+                      className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
