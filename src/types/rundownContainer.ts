@@ -13,7 +13,7 @@ export interface RundownContainerProps {
   visibleColumns: Column[];
   columns: Column[];
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;

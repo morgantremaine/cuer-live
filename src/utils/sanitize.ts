@@ -45,3 +45,19 @@ export const sanitizeRichText = (dirty: string): string => {
     ALLOW_DATA_ATTR: false
   });
 };
+
+// Sanitize for cell content with rich text formatting
+export const sanitizeCellRichText = (dirty: string): string => {
+  if (!dirty) return '';
+  
+  const sanitizer = createSanitizer();
+  return sanitizer(dirty, {
+    ALLOWED_TAGS: [
+      'b', 'i', 'u', 's', 'strong', 'em', 'span', 'br'
+    ],
+    ALLOWED_ATTR: [
+      'style'
+    ],
+    ALLOW_DATA_ATTR: false
+  });
+};

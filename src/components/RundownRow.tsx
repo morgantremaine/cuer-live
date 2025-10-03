@@ -11,7 +11,7 @@ interface RundownRowProps {
   rowNumber: string;
   status: 'upcoming' | 'current' | 'completed';
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
   columns: Column[];
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;

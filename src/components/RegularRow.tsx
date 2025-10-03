@@ -13,7 +13,7 @@ interface RegularRowProps {
   index: number;
   rowNumber: string;
   status: 'upcoming' | 'current' | 'completed';
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
   columns: Column[];
   selectedRowsCount?: number;
   selectedRows?: Set<string>;

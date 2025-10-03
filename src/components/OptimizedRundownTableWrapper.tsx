@@ -9,7 +9,7 @@ interface OptimizedRundownTableWrapperProps {
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;

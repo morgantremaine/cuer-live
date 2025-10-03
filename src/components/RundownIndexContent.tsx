@@ -4,6 +4,8 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
+import FormattingToolbarManager from '@/components/rundown/FormattingToolbarManager';
+import { FormatStates } from '@/components/cells/RichTextCell';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
@@ -19,7 +21,16 @@ import '@/utils/timingValidationTest';
 
 
 const RundownIndexContent = () => {
-  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>({});
+  
+  // State for formatting toolbar
+  const [activeCell, setActiveCell] = useState<HTMLDivElement | null>(null);
+  const [formatStates, setFormatStates] = useState<FormatStates>({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false
+  });
   
   const {
     coreState,
@@ -652,6 +663,12 @@ const RundownIndexContent = () => {
           onClose={() => setShowNotesWindow(false)}
         />
       )}
+      
+      {/* Formatting Toolbar Manager */}
+      <FormattingToolbarManager
+        activeCell={activeCell}
+        formatStates={formatStates}
+      />
       
       <CuerChatButton 
         rundownData={rundownData}
