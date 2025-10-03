@@ -16,6 +16,7 @@ interface TeleprompterSaveIndicatorProps {
 const TeleprompterSaveIndicator = ({ saveState }: TeleprompterSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError } = saveState;
   const [showSaved, setShowSaved] = useState(false);
+  const [isLongSave, setIsLongSave] = useState(false);
 
   // Show saved indicator for 3 seconds after save
   useEffect(() => {
@@ -31,6 +32,19 @@ const TeleprompterSaveIndicator = ({ saveState }: TeleprompterSaveIndicatorProps
     }
   }, [lastSaved, hasUnsavedChanges, isSaving]);
 
+  // Show "Still saving..." after 3 seconds for user confidence
+  useEffect(() => {
+    if (isSaving) {
+      const timer = setTimeout(() => {
+        setIsLongSave(true);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setIsLongSave(false);
+    }
+  }, [isSaving]);
+
   const formatLastSaved = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -45,7 +59,7 @@ const TeleprompterSaveIndicator = ({ saveState }: TeleprompterSaveIndicatorProps
     return (
       <div className="flex items-center gap-2 text-blue-400 text-sm">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Saving...</span>
+        <span>{isLongSave ? 'Still saving...' : 'Saving...'}</span>
       </div>
     );
   }

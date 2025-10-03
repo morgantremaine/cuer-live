@@ -76,7 +76,7 @@ export const useStructuralSave = (
             body: operation
           }),
           `structural-save-${operation.operationType}`,
-          10000
+          20000
         );
 
         if (error) {

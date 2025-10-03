@@ -23,6 +23,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
+  const [isLongSave, setIsLongSave] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   debugLogger.autosave('RundownSaveIndicator render:', {
@@ -93,6 +94,19 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     }
   }, [showTemporarySaved]);
 
+  // Show "Still saving..." after 3 seconds for user confidence
+  useEffect(() => {
+    if (isSaving) {
+      const timer = setTimeout(() => {
+        setIsLongSave(true);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      setIsLongSave(false);
+    }
+  }, [isSaving]);
+
   const formatLastSaved = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -127,7 +141,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     return (
       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Saving...</span>
+        <span>{isLongSave ? 'Still saving...' : 'Saving...'}</span>
       </div>
     );
   }

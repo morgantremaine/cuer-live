@@ -109,7 +109,7 @@ export const useCellLevelSave = (
           }
         }),
         'per-cell-save',
-        10000
+        20000
       );
 
       if (error) {
