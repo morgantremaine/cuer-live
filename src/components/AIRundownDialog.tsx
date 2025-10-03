@@ -170,7 +170,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
         {state === 'input' && (
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="prompt">Describe your rundown</Label>
+              <Label htmlFor="prompt">Describe your show</Label>
               <Textarea
                 id="prompt"
                 placeholder="Enter a detailed description of your rundown..."
