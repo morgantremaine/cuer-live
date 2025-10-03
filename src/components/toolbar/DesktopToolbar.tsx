@@ -7,7 +7,7 @@ import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface DesktopToolbarProps {
-  onAddRow: () => void;
+  onAddRow: (count?: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;

@@ -7,7 +7,7 @@ import DesktopToolbar from './toolbar/DesktopToolbar';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownToolbarProps {
-  onAddRow: () => void;
+  onAddRow: (count?: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   // Playback controls
