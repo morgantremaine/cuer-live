@@ -146,11 +146,11 @@ const MainActionButtons = ({
         <div className="grid grid-cols-2 gap-2 w-full">
           <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
-            <span>Add Segment</span>
+            <span>Segment</span>
           </Button>
           <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
-            <span>Add Header</span>
+            <span>Header</span>
           </Button>
           <Button 
             onClick={onUndo} 
@@ -238,11 +238,11 @@ const MainActionButtons = ({
     <>
       <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />
-        <span>Add Segment</span>
+        <span>Segment</span>
       </Button>
       <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />
-        <span>Add Header</span>
+        <span>Header</span>
       </Button>
       <Button 
         onClick={onUndo} 
