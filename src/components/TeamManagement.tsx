@@ -578,7 +578,7 @@ const TeamManagement = () => {
                           )
                         }
                       >
-                        <SelectTrigger className="w-[130px]">
+                        <SelectTrigger className="w-[130px] bg-muted">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
