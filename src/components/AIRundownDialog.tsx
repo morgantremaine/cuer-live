@@ -163,17 +163,12 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-500" />
-            Create Rundown Template with AI
+            Create Rundown Template with Cuer AI
           </DialogTitle>
         </DialogHeader>
 
         {state === 'input' && (
           <div className="space-y-6 py-4">
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 p-4 mb-4">
-              <p className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>Template Generator:</strong> Cuer AI will generate a rundown template with 15-25 key segments organized into major sections. You can then expand and customize this blueprint to fit your exact needs.
-              </p>
-            </div>
             <div className="space-y-2">
               <Label htmlFor="prompt">Describe your rundown</Label>
               <Textarea
