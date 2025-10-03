@@ -41,6 +41,7 @@ const TeamManagement = () => {
   const [isSavingTeamName, setIsSavingTeamName] = useState(false);
   const [isLeavingTeam, setIsLeavingTeam] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [isMounting, setIsMounting] = useState(true);
   
   const {
     team,
@@ -263,11 +264,23 @@ const TeamManagement = () => {
     }
   };
 
-  if (isLoading || !team) {
+  // Clear mounting state after a brief delay to prevent flash
+  useEffect(() => {
+    if (team && !isLoading) {
+      const timer = setTimeout(() => {
+        setIsMounting(false);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [team, isLoading]);
+
+  if (isLoading || !team || isMounting) {
     return (
-      <div className="space-y-6">
-        <div className="h-32 bg-muted rounded-lg animate-pulse" />
-        <div className="h-64 bg-muted rounded-lg animate-pulse" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-sm text-muted-foreground">Loading team information...</p>
+        </div>
       </div>
     );
   }
