@@ -236,7 +236,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button onClick={handleGenerate} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleGenerate} className="bg-green-600 hover:bg-green-700 text-white">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generate Rundown
               </Button>
