@@ -25,27 +25,7 @@ export const useRundownItems = (
     });
   }, [markAsChanged]);
 
-  const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    const newItem: RundownItem = {
-      id: uuidv4(),
-      type: 'regular',
-      rowNumber: '',
-      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-      startTime: '',
-      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-      endTime: '',
-      elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-      isFloating: false,
-      customFields: {}
-    };
-
+  const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
     setItems(prevItems => {
       let insertIndex = prevItems.length; // Default to end
 
@@ -67,13 +47,37 @@ export const useRundownItems = (
         }
       }
 
+      // Create multiple items based on count
+      const newItemsToAdd: RundownItem[] = [];
+      for (let i = 0; i < count; i++) {
+        newItemsToAdd.push({
+          id: uuidv4(),
+          type: 'regular',
+          rowNumber: '',
+          name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
+          startTime: '',
+          duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
+          endTime: '',
+          elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
+          talent: '',
+          script: '',
+          gfx: '',
+          video: '',
+          images: '',
+          notes: '',
+          color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
+          isFloating: false,
+          customFields: {}
+        });
+      }
+
       const newItems = [...prevItems];
-      newItems.splice(insertIndex, 0, newItem);
+      newItems.splice(insertIndex, 0, ...newItemsToAdd);
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('add_row', {
-          newItems: [newItem],
+          newItems: newItemsToAdd,
           insertIndex
         });
       }
@@ -81,7 +85,7 @@ export const useRundownItems = (
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [markAsChanged, handleStructuralOperation]);
 
   const addHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     setItems(prevItems => {
