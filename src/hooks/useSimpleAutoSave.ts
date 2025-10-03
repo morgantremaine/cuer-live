@@ -699,7 +699,7 @@ export const useSimpleAutoSave = (
 
           // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
-            console.log('⚠️ Content changed during save - will be caught by next typing cycle');
+            console.log('📝 Content continued to change during save - next save cycle will capture changes');
           }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
@@ -748,7 +748,7 @@ export const useSimpleAutoSave = (
 
           // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
-            console.log('⚠️ Content changed during save - will be caught by next typing cycle');
+            console.log('📝 Content continued to change during save - next save cycle will capture changes');
           }
 
           // Invoke callback with metadata

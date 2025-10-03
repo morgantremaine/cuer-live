@@ -26,13 +26,27 @@ export async function saveWithTimeout<T>(
   operationName: string,
   timeoutMs: number = 20000
 ): Promise<T> {
-  return Promise.race([
-    operation(),
-    new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        console.error(`⏱️ TIMEOUT: Save operation '${operationName}' exceeded ${timeoutMs}ms`);
-        reject(new SaveTimeoutError(operationName, timeoutMs));
-      }, timeoutMs);
-    })
-  ]);
+  let timeoutId: NodeJS.Timeout;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      console.error(`⏱️ TIMEOUT: Save operation '${operationName}' exceeded ${timeoutMs}ms`);
+      reject(new SaveTimeoutError(operationName, timeoutMs));
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([
+      operation(),
+      timeoutPromise
+    ]);
+    
+    // Clear the timeout if operation completes first
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    // Clear timeout on error as well
+    clearTimeout(timeoutId);
+    throw error;
+  }
 }

@@ -47,6 +47,7 @@ serve(async (req) => {
       )
     }
 
+    const requestStartTime = Date.now();
     const body = await req.json()
     
     // Check for pre-warming request
@@ -59,6 +60,12 @@ serve(async (req) => {
     }
 
     const { rundownId, fieldUpdates, contentSignature }: CellSaveRequest = body
+    
+    console.log('📥 Cell save request received:', {
+      rundownId,
+      fieldUpdateCount: fieldUpdates.length,
+      userId: user.id
+    })
 
     if (!rundownId || !fieldUpdates || !Array.isArray(fieldUpdates)) {
       return new Response(
@@ -68,6 +75,9 @@ serve(async (req) => {
     }
 
     // Get current rundown
+    const fetchStartTime = Date.now();
+    console.log('🔍 Fetching current rundown from database...');
+    
     const { data: currentRundown, error: fetchError } = await supabaseClient
       .from('rundowns')
       .select('*')
@@ -80,8 +90,22 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    
+    const fetchDuration = Date.now() - fetchStartTime;
+    console.log('✅ Rundown fetched:', {
+      fetchDuration: `${fetchDuration}ms`,
+      itemCount: currentRundown.items?.length || 0
+    })
 
     // Apply field updates
+    console.log('⚙️ Processing field updates:', {
+      updates: fieldUpdates.map(u => ({
+        itemId: u.itemId || 'rundown-level',
+        field: u.field,
+        valueLength: typeof u.value === 'string' ? u.value.length : 'non-string'
+      }))
+    });
+    
     const updatedItems = [...(currentRundown.items || [])]
     let updatedTitle = currentRundown.title
     let updatedStartTime = currentRundown.start_time
@@ -136,6 +160,9 @@ serve(async (req) => {
       last_updated_by: user.id
     }
 
+    const updateStartTime = Date.now();
+    console.log('💾 Writing updates to database...');
+    
     const { data: updatedRundown, error: updateError } = await supabaseClient
       .from('rundowns')
       .update(updateData)
@@ -144,12 +171,27 @@ serve(async (req) => {
       .single()
 
     if (updateError) {
-      console.error('Cell save error:', updateError)
+      const errorDuration = Date.now() - requestStartTime;
+      console.error('❌ Cell save failed:', {
+        error: updateError.message,
+        duration: `${errorDuration}ms`,
+        rundownId,
+        fieldCount: fieldUpdates.length
+      });
       return new Response(
         JSON.stringify({ error: 'Failed to save field updates', details: updateError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+    
+    const updateDuration = Date.now() - updateStartTime;
+    const totalDuration = Date.now() - requestStartTime;
+    console.log('✅ Cell save completed successfully:', {
+      updateDuration: `${updateDuration}ms`,
+      totalDuration: `${totalDuration}ms`,
+      fieldsUpdated: fieldUpdates.length,
+      updatedAt: updatedRundown.updated_at
+    })
 
     return new Response(
       JSON.stringify({
