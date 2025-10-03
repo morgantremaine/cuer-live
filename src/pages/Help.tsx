@@ -306,38 +306,46 @@ const Help = () => {
               Connection Status Icons
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>The wifi icon in your rundown header shows the current connection and sync status, helping you understand when your changes are being saved and when you're receiving updates from teammates for smooth collaboration:</p>
+              <p>The wifi icon in your rundown header shows the current connection and sync status, helping you understand your network connectivity and real-time collaboration state:</p>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                   <Wifi className="h-5 w-5 text-green-500 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Connected (Green Wifi)</h3>
-                    <p className="text-sm">You're connected to the server and can collaborate with your team in real-time.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                  <LoaderCircle className="h-5 w-5 text-green-500 animate-spin flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Saving Changes (Green Spinning Circle)</h3>
-                    <p className="text-sm">Your changes are being saved to the server. This appears when you make edits.</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Live (Green Wifi)</h3>
+                    <p className="text-sm">Connected with real-time collaboration active. You're fully synced with your team.</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                   <AnimatedWifiIcon className="text-blue-500 flex-shrink-0" isAnimating={true} />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Teammate Autosave (Blue Animated Wifi)</h3>
-                    <p className="text-sm">A teammate made a change that resulted in an autosave. This ensures everyone stays in sync.</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Syncing (Blue Animated Wifi)</h3>
+                    <p className="text-sm">Changes are being synced with your team. This appears during active collaboration.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <Wifi className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Poor (Yellow Wifi)</h3>
+                    <p className="text-sm">Connected but with degraded performance. Syncing may be slower than normal.</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                   <WifiOff className="h-5 w-5 text-gray-500 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Disconnected (Gray Wifi Off)</h3>
-                    <p className="text-sm">Connection to the server has been lost. Your changes will be saved when reconnected.</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Offline (Gray Wifi Off)</h3>
+                    <p className="text-sm">Disconnected from server. Changes will sync automatically when connection is restored.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <WifiOff className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">No Internet (Red Wifi Off)</h3>
+                    <p className="text-sm">Your device has no internet connection. Check your network settings.</p>
                   </div>
                 </div>
               </div>
