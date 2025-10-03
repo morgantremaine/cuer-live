@@ -13,7 +13,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface MainActionButtonsProps {
-  onAddRow: (count?: number) => void;
+  onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
@@ -79,53 +79,22 @@ const MainActionButtons = ({
   // Cooldown states for Add buttons
   const [addRowCooldown, setAddRowCooldown] = useState(false);
   const [addHeaderCooldown, setAddHeaderCooldown] = useState(false);
-  const [segmentCountInput, setSegmentCountInput] = useState('1');
 
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
-
-  // Handle segment count change - allow empty or valid numbers
-  const handleSegmentCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // Allow empty string or valid numbers (including partial input like just typing digits)
-    if (value === '') {
-      setSegmentCountInput('');
-    } else if (/^\d+$/.test(value)) {
-      const num = parseInt(value);
-      // Only accept if within valid range
-      if (num >= 1 && num <= 50) {
-        setSegmentCountInput(value);
-      } else if (num > 50) {
-        setSegmentCountInput('50');
-      }
-    }
-  };
-
-  // Validate and clamp on blur
-  const handleSegmentCountBlur = () => {
-    if (segmentCountInput === '' || segmentCountInput === '0') {
-      setSegmentCountInput('1');
-    } else {
-      const num = parseInt(segmentCountInput);
-      const clamped = Math.max(1, Math.min(50, num));
-      setSegmentCountInput(clamped.toString());
-    }
-  };
 
   // Wrapper functions with cooldown logic
   const handleAddRowWithCooldown = useCallback(() => {
     if (addRowCooldown) return;
     
     setAddRowCooldown(true);
-    const count = segmentCountInput === '' ? 1 : parseInt(segmentCountInput);
-    onAddRow(Math.max(1, Math.min(50, count)));
+    onAddRow();
     
     setTimeout(() => {
       setAddRowCooldown(false);
     }, 500);
-  }, [addRowCooldown, onAddRow, segmentCountInput]);
+  }, [addRowCooldown, onAddRow]);
 
   const handleAddHeaderWithCooldown = useCallback(() => {
     if (addHeaderCooldown) return;
@@ -175,24 +144,9 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <Button 
-            onClick={handleAddRowWithCooldown} 
-            variant="outline" 
-            size={buttonSize} 
-            disabled={addRowCooldown} 
-            className="flex items-center justify-start gap-1.5 px-2"
-          >
-            <Plus className="h-4 w-4 flex-shrink-0" />
-            <input
-              type="text"
-              inputMode="numeric"
-              value={segmentCountInput}
-              onChange={handleSegmentCountChange}
-              onBlur={handleSegmentCountBlur}
-              onClick={(e) => e.stopPropagation()}
-              className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
-            />
-            <span className="flex-shrink-0">Segment</span>
+          <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span>Segment</span>
           </Button>
           <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
@@ -282,24 +236,9 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
-      <Button 
-        onClick={handleAddRowWithCooldown} 
-        variant="outline" 
-        size={buttonSize} 
-        disabled={addRowCooldown} 
-        className="flex items-center gap-1 px-2"
-      >
-        <Plus className="h-4 w-4 flex-shrink-0" />
-        <input
-          type="text"
-          inputMode="numeric"
-          value={segmentCountInput}
-          onChange={handleSegmentCountChange}
-          onBlur={handleSegmentCountBlur}
-          onClick={(e) => e.stopPropagation()}
-          className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
-        />
-        <span className="flex-shrink-0">Segment</span>
+      <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
+        <Plus className="h-4 w-4" />
+        <span>Segment</span>
       </Button>
       <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />

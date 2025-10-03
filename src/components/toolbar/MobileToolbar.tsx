@@ -14,7 +14,7 @@ import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface MobileToolbarProps {
-  onAddRow: (count?: number) => void;
+  onAddRow: () => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;

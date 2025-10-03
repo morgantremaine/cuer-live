@@ -47,7 +47,6 @@ const RundownIndexContent = () => {
     toggleFloatRow,
     addRow,
     addHeader,
-    addMultipleRows,
     isPlaying,
     timeRemaining,
     play,
@@ -321,46 +320,10 @@ const RundownIndexContent = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows,
-    handleRowSelection
+    handleRowSelection,
+    handleAddRow,
+    handleAddHeader
   } = interactions;
-  
-  // Override add handlers to support count parameter via addMultipleRows
-  const handleAddRow = useCallback((count: number = 1) => {
-    console.log('🔢 HANDLE ADD ROW: count parameter received:', count);
-    
-    if (count === 1) {
-      // Single row - use normal add
-      interactions.handleAddRow();
-    } else {
-      // Multiple rows - create them all at once using addMultipleRows
-      const newItems = Array.from({ length: count }, () => ({
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'regular' as const,
-        rowNumber: '',
-        name: '',
-        startTime: '00:00:00',
-        duration: '00:00',
-        endTime: '00:30:00',
-        elapsedTime: '00:00',
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: '',
-        isFloating: false,
-        customFields: {}
-      }));
-      
-      console.log(`🔢 Adding ${count} rows in a single batch operation`);
-      addMultipleRows(newItems, calculateEndTime);
-    }
-  }, [interactions, addMultipleRows, calculateEndTime]);
-  
-  const handleAddHeader = useCallback(() => {
-    interactions.handleAddHeader();
-  }, [interactions]);
 
   const { 
     showColorPicker, 
@@ -476,7 +439,7 @@ const RundownIndexContent = () => {
     return status;
   };
 
-  // Use simplified handlers for common operations
+  // Use simplified handlers for common operations (but NOT add operations)
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
