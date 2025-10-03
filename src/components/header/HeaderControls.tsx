@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useClockFormat } from '@/hooks/useClockFormat';
 
 interface HeaderControlsProps {
   currentTime: Date;
@@ -33,18 +33,19 @@ const HeaderControls = ({
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { formatTime: formatClockTime, clockFormat } = useClockFormat();
 
   const formatTime = (time: Date, tz: string) => {
     try {
       // Map Las Vegas to Los Angeles timezone for display
       const actualTimezone = tz === 'America/Las_Vegas' ? 'America/Los_Angeles' : tz;
       const timeString = time.toLocaleTimeString('en-US', { 
-        hour12: false,
+        hour12: clockFormat === '12',
         timeZone: actualTimezone
       });
       return timeString;
     } catch {
-      return time.toLocaleTimeString('en-US', { hour12: false });
+      return time.toLocaleTimeString('en-US', { hour12: clockFormat === '12' });
     }
   };
 

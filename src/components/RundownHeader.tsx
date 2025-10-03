@@ -18,6 +18,7 @@ import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import { useBroadcastHealthMonitor } from '@/hooks/useBroadcastHealthMonitor';
 import { useRealtimeConnection } from './RealtimeConnectionProvider';
 import RundownSaveIndicator from './header/RundownSaveIndicator';
+import { useClockFormat } from '@/hooks/useClockFormat';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -92,6 +93,7 @@ const RundownHeader = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isBrowserOnline, setIsBrowserOnline] = useState(navigator.onLine);
+  const { clockFormat } = useClockFormat();
 
   // Listen to browser network events for immediate WiFi icon updates
   useEffect(() => {
@@ -241,10 +243,12 @@ const RundownHeader = ({
     try {
       // Map Las Vegas to Los Angeles timezone for display
       const actualTimezone = tz === 'America/Las_Vegas' ? 'America/Los_Angeles' : tz;
-      return formatInTimeZone(time, actualTimezone, 'HH:mm:ss');
+      const timeFormat = clockFormat === '12' ? 'hh:mm:ss a' : 'HH:mm:ss';
+      return formatInTimeZone(time, actualTimezone, timeFormat);
     } catch {
       // Fallback to local time if timezone is invalid
-      return format(time, 'HH:mm:ss');
+      const timeFormat = clockFormat === '12' ? 'hh:mm:ss a' : 'HH:mm:ss';
+      return format(time, timeFormat);
     }
   };
 
@@ -527,7 +531,7 @@ const RundownHeader = ({
                   value={rundownStartTime}
                   onChange={handleTimeInputChange}
                   onBlur={handleTimeInputBlur}
-                  placeholder="HH:MM:SS"
+                  placeholder={clockFormat === '12' ? "HH:MM:SS (24h)" : "HH:MM:SS"}
                   className="w-20 text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0"
                 />
                 {onShowDateChange && (
@@ -652,7 +656,7 @@ const RundownHeader = ({
                 value={rundownStartTime}
                 onChange={handleTimeInputChange}
                 onBlur={handleTimeInputBlur}
-                placeholder="HH:MM:SS"
+                placeholder={clockFormat === '12' ? "HH:MM:SS (24h)" : "HH:MM:SS"}
                 className="w-24 bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0"
               />
               {onShowDateChange && (

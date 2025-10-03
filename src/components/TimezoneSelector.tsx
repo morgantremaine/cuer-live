@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Clock, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -9,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useClockFormat } from '@/hooks/useClockFormat';
 
 interface TimezoneSelectorProps {
   currentTimezone: string;
@@ -43,6 +46,7 @@ const TimezoneSelector = ({
   large = false 
 }: TimezoneSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { clockFormat, toggleClockFormat } = useClockFormat();
 
   const handleTimezoneChange = (value: string) => {
     console.log('TimezoneSelector: Changing timezone from', currentTimezone, 'to', value);
@@ -66,9 +70,22 @@ const TimezoneSelector = ({
       </Button>
       
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 z-[60]">
+        <div className="absolute top-full right-0 mt-1 z-[60] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[200px]">
+          {/* Clock Format Toggle */}
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+            <Label htmlFor="clock-format" className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
+              12-hour clock
+            </Label>
+            <Switch
+              id="clock-format"
+              checked={clockFormat === '12'}
+              onCheckedChange={() => toggleClockFormat()}
+            />
+          </div>
+
+          {/* Timezone Selector */}
           <Select value={currentTimezone} onValueChange={handleTimezoneChange}>
-            <SelectTrigger className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <SelectTrigger className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-[60] shadow-lg">
