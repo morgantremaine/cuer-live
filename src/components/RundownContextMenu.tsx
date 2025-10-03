@@ -203,7 +203,7 @@ const RundownContextMenu = memo(({
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Segment
+              Segment
             </ContextMenuItem>
           )}
           
@@ -213,7 +213,7 @@ const RundownContextMenu = memo(({
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Header
+              Header
             </ContextMenuItem>
           )}
           
