@@ -10,6 +10,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalList
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { timeToSeconds, secondsToTime, calculateEndTime } from '@/utils/rundownCalculations';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -98,6 +99,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   isDark = false,
   onReorderColumns
 }, ref) => {
+  const { formatTime } = useClockFormat();
+  
   // State for active dragged column
   const [activeColumn, setActiveColumn] = useState<any | null>(null);
   
@@ -662,6 +665,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     // Use expandable cell for script and notes columns
     if (column.key === 'script' || column.key === 'notes') {
       return renderExpandableCell(value, item.id, column.key);
+    }
+    
+    // Format time columns with clock format
+    if (column.key === 'startTime' || column.key === 'endTime') {
+      return formatTime(value);
     }
     
     // For all other text content, render with clickable URLs

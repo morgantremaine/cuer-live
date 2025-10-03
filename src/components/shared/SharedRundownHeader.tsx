@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import CuerLogo from '@/components/common/CuerLogo';
 import { handleSharedRundownPrint } from '@/utils/sharedRundownPrint';
 import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -35,6 +37,9 @@ export const SharedRundownHeader = ({
   onToggleAutoScroll,
   items = []
 }: SharedRundownHeaderProps) => {
+  const { clockFormat, formatTime, toggleClockFormat } = useClockFormat();
+  const [isClockPopoverOpen, setIsClockPopoverOpen] = useState(false);
+  
   // Calculate total runtime (excluding floated items)
   const calculateTotalRuntime = () => {
 
@@ -89,6 +94,52 @@ export const SharedRundownHeader = ({
             </div>
             
             <div className="flex items-center space-x-2 print:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Use the same print logic as the main rundown
+                  handleSharedRundownPrint(title, items);
+                }}
+                className={`${
+                  isDark 
+                    ? 'border-gray-600 hover:bg-gray-700' 
+                    : 'border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
+              
+              {/* Clock Format Toggle */}
+              <Popover open={isClockPopoverOpen} onOpenChange={setIsClockPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`${
+                      isDark 
+                        ? 'border-gray-600 hover:bg-gray-700' 
+                        : 'border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Clock className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48" align="end">
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Time Format</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">12h</span>
+                      <Switch
+                        checked={clockFormat === '24'}
+                        onCheckedChange={toggleClockFormat}
+                      />
+                      <span className="text-sm text-muted-foreground">24h</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
               {/* Autoscroll Toggle */}
               {onToggleAutoScroll && (
                 <div 
@@ -120,22 +171,6 @@ export const SharedRundownHeader = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  // Use the same print logic as the main rundown
-                  handleSharedRundownPrint(title, items);
-                }}
-                className={`${
-                  isDark 
-                    ? 'border-gray-600 hover:bg-gray-700' 
-                    : 'border-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                <Printer className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={onToggleTheme}
                 className={`${
                   isDark 
@@ -155,7 +190,7 @@ export const SharedRundownHeader = ({
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 <Play className="h-4 w-4" />
-                <span>Start: {startTime}</span>
+                <span>Start: {formatTime(startTime)}</span>
               </div>
               <div className={`flex items-center space-x-1 ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
