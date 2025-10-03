@@ -20,10 +20,6 @@ class ShowcallerBroadcastManager {
   private channels: Map<string, any> = new Map();
   private callbacks: Map<string, Set<(state: ShowcallerBroadcastState) => void>> = new Map();
   private connectionStatus: Map<string, string> = new Map();
-  private isReconnecting: Map<string, boolean> = new Map();
-  private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
-  private reconnectAttempts: Map<string, number> = new Map();
-  private lastReconnectTime: Map<string, number> = new Map();
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -47,16 +43,12 @@ class ShowcallerBroadcastManager {
         
         if (status === 'SUBSCRIBED') {
           console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
-          // Reset reconnection attempts on successful connection
-          this.reconnectAttempts.delete(rundownId);
         } else if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
-          // Attempt reconnection after error with delay
-          this.scheduleReconnection(rundownId);
+          // Coordinator will handle reconnection
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
-          // Attempt reconnection after close with delay
-          this.scheduleReconnection(rundownId);
+          // Coordinator will handle reconnection
         }
       });
 
@@ -64,95 +56,11 @@ class ShowcallerBroadcastManager {
     return channel;
   }
 
-  // Schedule reconnection with exponential backoff and debouncing
-  private scheduleReconnection(rundownId: string): void {
-    const now = Date.now();
-    const lastReconnect = this.lastReconnectTime.get(rundownId) || 0;
-    
-    // Debounce rapid reconnection attempts (within 1 second)
-    if (now - lastReconnect < 1000) {
-      console.log('📺 🔄 Debouncing reconnection attempt for:', rundownId);
-      return;
-    }
-
-    // Prevent recursive reconnections
-    if (this.isReconnecting.get(rundownId)) {
-      console.log('📺 🔄 Reconnection already in progress for:', rundownId);
-      return;
-    }
-
-    this.lastReconnectTime.set(rundownId, now);
-    this.reconnectChannel(rundownId);
-  }
-
-  // Reconnect channel after error or close
-  private async reconnectChannel(rundownId: string): Promise<void> {
-    this.isReconnecting.set(rundownId, true);
-    
-    // Check auth status before reconnecting
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
-      console.warn('📺 ⚠️ Auth session invalid, waiting for token refresh before reconnecting:', rundownId);
-      this.isReconnecting.set(rundownId, false);
-      return; // Coordinator will trigger reconnection after token refresh
-    }
-    
-    // Calculate exponential backoff delay
-    const attempts = this.reconnectAttempts.get(rundownId) || 0;
-    const baseDelay = 1000; // 1 second
-    const maxDelay = 30000; // 30 seconds max
-    const delay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
-    
-    console.log(`📺 🔄 Scheduling reconnection attempt ${attempts + 1} for ${rundownId} in ${delay}ms`);
-    
-    // Clear any existing timeout
-    const existingTimeout = this.reconnectTimeouts.get(rundownId);
-    if (existingTimeout) {
-      clearTimeout(existingTimeout);
-    }
-    
-    // Clean up existing channel immediately
-    const existingChannel = this.channels.get(rundownId);
-    if (existingChannel) {
-      try {
-        supabase.removeChannel(existingChannel);
-      } catch (error) {
-        console.warn('📺 Error removing channel during reconnect:', error);
-      }
-      this.channels.delete(rundownId);
-    }
-    
-    // Schedule reconnection with exponential backoff
-    const timeout = setTimeout(() => {
-      this.reconnectTimeouts.delete(rundownId);
-      this.isReconnecting.set(rundownId, false);
-      
-      // Only reconnect if still needed
-      if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
-        // Increment attempts before trying
-        this.reconnectAttempts.set(rundownId, attempts + 1);
-        console.log('📺 🔄 Executing reconnection for:', rundownId);
-        this.ensureChannel(rundownId);
-      } else {
-        console.log('📺 🔄 Skipping reconnection - no active callbacks for:', rundownId);
-      }
-    }, delay);
-
-    this.reconnectTimeouts.set(rundownId, timeout);
-  }
-  
   // Force reconnection (called by RealtimeReconnectionCoordinator)
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
     
-    // Check auth first
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
-      console.warn('📺 ⚠️ Cannot reconnect - invalid auth session');
-      return;
-    }
-    
-    // Clean up and reconnect immediately
+    // Clean up and reconnect immediately (coordinator validates auth)
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
@@ -163,7 +71,6 @@ class ShowcallerBroadcastManager {
     }
     
     this.channels.delete(rundownId);
-    this.reconnectAttempts.set(rundownId, 0); // Reset attempts
     
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);
@@ -240,16 +147,6 @@ class ShowcallerBroadcastManager {
     const channel = this.channels.get(rundownId);
     if (channel) {
       console.log('📺 Cleaning up showcaller broadcast channel:', rundownId);
-      
-      // Clear all reconnection state
-      this.isReconnecting.delete(rundownId);
-      this.reconnectAttempts.delete(rundownId);
-      this.lastReconnectTime.delete(rundownId);
-      const timeout = this.reconnectTimeouts.get(rundownId);
-      if (timeout) {
-        clearTimeout(timeout);
-        this.reconnectTimeouts.delete(rundownId);
-      }
       
       // Prevent recursive cleanup
       this.channels.delete(rundownId);

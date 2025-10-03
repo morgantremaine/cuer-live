@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
 interface BroadcastHealthStatus {
   isHealthy: boolean;
@@ -7,6 +8,8 @@ interface BroadcastHealthStatus {
   successRate: number;
   totalAttempts: number;
   lastChecked: number;
+  circuitState?: 'closed' | 'open' | 'half-open';
+  retryIn?: number;
 }
 
 export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => {
@@ -23,13 +26,21 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
 
     const checkHealth = () => {
       const metrics = cellBroadcast.getHealthMetrics(rundownId);
+      const coordinatorStatus = realtimeReconnectionCoordinator.getStatus();
+      
+      // Find circuit state for cell connections related to this rundown
+      const cellConnection = coordinatorStatus.connections.find(c => 
+        c.id === `cell-${rundownId}` || c.id === `showcaller-${rundownId}`
+      );
       
       setHealthStatus({
-        isHealthy: metrics.isHealthy,
+        isHealthy: metrics.isHealthy && (!cellConnection || cellConnection.circuitState === 'closed'),
         isConnected: metrics.isConnected,
         successRate: metrics.successRate,
         totalAttempts: metrics.total,
-        lastChecked: Date.now()
+        lastChecked: Date.now(),
+        circuitState: cellConnection?.circuitState || 'closed',
+        retryIn: cellConnection?.retryIn || 0
       });
     };
 

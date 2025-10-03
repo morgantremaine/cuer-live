@@ -7,7 +7,9 @@ import AnimatedWifiIcon from './AnimatedWifiIcon';
 interface ConnectionStatusBadgeProps {
   isConnected: boolean;
   isProcessing?: boolean;
-  isDegraded?: boolean; // New prop for degraded connection (poor broadcast health)
+  isDegraded?: boolean;
+  circuitState?: 'closed' | 'open' | 'half-open';
+  retryIn?: number;
   className?: string;
   showLabel?: boolean;
 }
@@ -16,6 +18,8 @@ const ConnectionStatusBadge = ({
   isConnected, 
   isProcessing = false,
   isDegraded = false,
+  circuitState = 'closed',
+  retryIn = 0,
   className,
   showLabel = true 
 }: ConnectionStatusBadgeProps) => {
@@ -23,6 +27,7 @@ const ConnectionStatusBadge = ({
     // Priority 1: Check browser offline status first
     if (!navigator.onLine) {
       return {
+        icon: WifiOff,
         color: 'text-red-500',
         bgColor: 'bg-red-500/10',
         label: 'Offline',
@@ -30,7 +35,29 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 2: Processing/Syncing state
+    // Priority 2: Circuit breaker open - connection failed
+    if (circuitState === 'open') {
+      const seconds = Math.ceil(retryIn / 1000);
+      return {
+        icon: WifiOff,
+        color: 'text-red-500',
+        bgColor: 'bg-red-500/10',
+        label: seconds > 0 ? `Retrying in ${seconds}s` : 'Connection Failed',
+        title: 'Connection failed. Retrying shortly...'
+      };
+    }
+    
+    // Priority 3: Circuit breaker half-open - testing connection
+    if (circuitState === 'half-open') {
+      return {
+        color: 'text-yellow-500',
+        bgColor: 'bg-yellow-500/10',
+        label: 'Testing...',
+        title: 'Testing connection...'
+      };
+    }
+    
+    // Priority 4: Processing/Syncing state
     if (isProcessing) {
       return {
         color: 'text-blue-500',
@@ -40,8 +67,8 @@ const ConnectionStatusBadge = ({
       };
     } 
     
-    // Priority 3: Degraded connection
-    else if (isConnected && isDegraded) {
+    // Priority 5: Degraded connection
+    if (isConnected && isDegraded) {
       return {
         icon: Wifi,
         color: 'text-yellow-500',
@@ -49,7 +76,10 @@ const ConnectionStatusBadge = ({
         label: 'Poor',
         title: 'Poor connection - slower sync'
       };
-    } else if (isConnected) {
+    }
+    
+    // Priority 6: Connected
+    if (isConnected) {
       return {
         icon: Wifi,
         color: 'text-green-500',
@@ -57,15 +87,16 @@ const ConnectionStatusBadge = ({
         label: 'Live',
         title: 'Connected - real-time collaboration active'
       };
-    } else {
-      return {
-        icon: WifiOff,
-        color: 'text-gray-500',
-        bgColor: 'bg-gray-500/10',
-        label: 'Offline',
-        title: 'Disconnected - changes will not sync in real-time'
-      };
     }
+    
+    // Default: Offline
+    return {
+      icon: WifiOff,
+      color: 'text-gray-500',
+      bgColor: 'bg-gray-500/10',
+      label: 'Offline',
+      title: 'Disconnected - changes will not sync in real-time'
+    };
   };
 
   const { icon: Icon, color, bgColor, label, title } = getStatusConfig();

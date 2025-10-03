@@ -1,5 +1,6 @@
 import { authMonitor } from './AuthMonitor';
 import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 type ReconnectionHandler = () => Promise<void>;
 
@@ -8,6 +9,9 @@ interface RegisteredConnection {
   type: 'showcaller' | 'cell' | 'consolidated';
   reconnect: ReconnectionHandler;
   lastReconnect: number;
+  failedAttempts: number;
+  circuitState: 'closed' | 'open' | 'half-open';
+  lastFailureTime: number;
 }
 
 /**
@@ -21,8 +25,12 @@ class RealtimeReconnectionCoordinatorService {
   private isReconnecting: boolean = false;
   private reconnectionDebounceTimer: NodeJS.Timeout | null = null;
   private readonly RECONNECTION_DEBOUNCE_MS = 2000; // 2 seconds
-  private readonly MIN_RECONNECTION_INTERVAL_MS = 5000; // 5 seconds minimum between reconnections
+  private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
   private readonly STAGGER_DELAY_MS = 100; // Delay between individual reconnections
+  private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
+  private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
+  private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
+  private readonly MAX_BACKOFF_DELAY_MS = 30000; // 30 seconds
 
   constructor() {
     // Register with auth monitor
@@ -38,7 +46,10 @@ class RealtimeReconnectionCoordinatorService {
       id,
       type,
       reconnect,
-      lastReconnect: 0
+      lastReconnect: 0,
+      failedAttempts: 0,
+      circuitState: 'closed',
+      lastFailureTime: 0
     });
   }
 
@@ -60,7 +71,12 @@ class RealtimeReconnectionCoordinatorService {
       connections: Array.from(this.connections.values()).map(c => ({
         id: c.id,
         type: c.type,
-        lastReconnect: c.lastReconnect
+        lastReconnect: c.lastReconnect,
+        failedAttempts: c.failedAttempts,
+        circuitState: c.circuitState,
+        retryIn: c.circuitState === 'open' 
+          ? Math.max(0, this.CIRCUIT_OPEN_DURATION_MS - (Date.now() - c.lastFailureTime))
+          : 0
       }))
     };
   }
@@ -115,6 +131,13 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
 
+    // Validate auth session before attempting any reconnections
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      console.warn('🔄 ReconnectionCoordinator: Invalid auth session, waiting for refresh');
+      return;
+    }
+
     console.log(`🔄 ReconnectionCoordinator: Starting reconnection for ${connectionCount} connections`);
     this.isReconnecting = true;
 
@@ -122,6 +145,20 @@ class RealtimeReconnectionCoordinatorService {
       // Stagger reconnections to prevent overwhelming the system
       let delay = 0;
       for (const [id, connection] of this.connections.entries()) {
+        // Check circuit breaker state
+        if (connection.circuitState === 'open') {
+          const timeSinceFailure = Date.now() - connection.lastFailureTime;
+          if (timeSinceFailure < this.CIRCUIT_OPEN_DURATION_MS) {
+            const retryIn = Math.ceil((this.CIRCUIT_OPEN_DURATION_MS - timeSinceFailure) / 1000);
+            console.log(`🔄 ReconnectionCoordinator: Circuit open for ${id}, retrying in ${retryIn}s`);
+            continue;
+          } else {
+            // Transition to half-open to test recovery
+            console.log(`🔄 ReconnectionCoordinator: Circuit transitioning to half-open for ${id}`);
+            connection.circuitState = 'half-open';
+          }
+        }
+
         // Check if this connection was recently reconnected
         const timeSinceLastReconnect = Date.now() - connection.lastReconnect;
         if (timeSinceLastReconnect < this.MIN_RECONNECTION_INTERVAL_MS) {
@@ -129,17 +166,39 @@ class RealtimeReconnectionCoordinatorService {
           continue;
         }
 
-        // Schedule staggered reconnection
+        // Calculate exponential backoff delay
+        const backoffDelay = Math.min(
+          this.BASE_BACKOFF_DELAY_MS * Math.pow(2, connection.failedAttempts),
+          this.MAX_BACKOFF_DELAY_MS
+        );
+
+        // Schedule staggered reconnection with backoff
         setTimeout(async () => {
           try {
-            console.log(`🔄 ReconnectionCoordinator: Reconnecting ${connection.type}: ${id}`);
+            console.log(`🔄 ReconnectionCoordinator: Reconnecting ${connection.type}: ${id} (attempt ${connection.failedAttempts + 1})`);
             await connection.reconnect();
             connection.lastReconnect = Date.now();
+            
+            // Success: Reset circuit breaker
+            connection.failedAttempts = 0;
+            connection.circuitState = 'closed';
+            connection.lastFailureTime = 0;
+            
             console.log(`✅ ReconnectionCoordinator: Successfully reconnected ${id}`);
           } catch (error) {
             console.error(`❌ ReconnectionCoordinator: Failed to reconnect ${id}:`, error);
+            
+            // Track failure
+            connection.failedAttempts++;
+            connection.lastFailureTime = Date.now();
+            
+            // Check if circuit breaker should trip
+            if (connection.failedAttempts >= this.MAX_FAILED_ATTEMPTS) {
+              connection.circuitState = 'open';
+              console.warn(`🔄 ReconnectionCoordinator: Circuit opened for ${id} after ${connection.failedAttempts} failures`);
+            }
           }
-        }, delay);
+        }, delay + backoffDelay);
 
         delay += this.STAGGER_DELAY_MS;
       }
