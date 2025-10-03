@@ -320,10 +320,20 @@ const RundownIndexContent = () => {
     handleCopySelectedRows,
     handlePasteRows,
     handleDeleteSelectedRows,
-    handleRowSelection,
-    handleAddRow,
-    handleAddHeader
+    handleRowSelection
   } = interactions;
+  
+  // Override add handlers to support count parameter
+  const handleAddRow = useCallback((count: number = 1) => {
+    // Call addRow multiple times for the count
+    for (let i = 0; i < count; i++) {
+      interactions.handleAddRow();
+    }
+  }, [interactions]);
+  
+  const handleAddHeader = useCallback(() => {
+    interactions.handleAddHeader();
+  }, [interactions]);
 
   const { 
     showColorPicker, 
@@ -439,7 +449,7 @@ const RundownIndexContent = () => {
     return status;
   };
 
-  // Use simplified handlers for common operations (but NOT add operations)
+  // Use simplified handlers for common operations
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
