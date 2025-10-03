@@ -7,7 +7,9 @@ import DashboardFolderBreadcrumb from '@/components/DashboardFolderBreadcrumb';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
+import { AIRundownDialog } from '@/components/AIRundownDialog';
 import { CSVImportResult } from '@/utils/csvImport';
+import { RundownItem } from '@/types/rundown';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -137,6 +139,20 @@ const Dashboard = () => {
     // Pass current folder info to the new rundown creation
     const targetFolder = folderType === 'custom' ? selectedFolder : null;
     navigate('/rundown/new', { state: { folderId: targetFolder } });
+  };
+
+  const handleCreateRundown = async (title: string, items: RundownItem[], timezone: string, startTime: string) => {
+    try {
+      let folderId: string | null = null;
+      if (folderType === 'custom' && selectedFolder) {
+        folderId = typeof selectedFolder === 'string' ? selectedFolder : (selectedFolder as any).id;
+      }
+      const id = await createRundown(title, items, folderId);
+      navigate(`/rundown/${id}`);
+    } catch (error) {
+      console.error('Failed to create AI rundown:', error);
+      throw error;
+    }
   };
 
   const handleDisabledCreateClick = () => {
@@ -500,6 +516,11 @@ const Dashboard = () => {
                   disabled={!rundownLimits.canCreateNew}
                   disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
                   onDisabledClick={handleDisabledCreateClick}
+                />
+                <AIRundownDialog 
+                  onCreateRundown={handleCreateRundown}
+                  disabled={!rundownLimits.canCreateNew}
+                  disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
                 />
                 {!isMobile && (
                   rundownLimits.canImport ? (
