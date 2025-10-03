@@ -508,7 +508,7 @@ const RundownHeader = ({
                   onChange={handleTimeInputChange}
                   onBlur={handleTimeInputBlur}
                   placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                  className={`${clockFormat === '12' ? 'w-28' : 'w-20'} text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
+                  className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
                 />
                 {onShowDateChange && (
                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
@@ -633,7 +633,7 @@ const RundownHeader = ({
                 onChange={handleTimeInputChange}
                 onBlur={handleTimeInputBlur}
                 placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                className={`${clockFormat === '12' ? 'w-32' : 'w-24'} bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
+                className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
               />
               {onShowDateChange && (
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
