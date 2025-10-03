@@ -59,7 +59,7 @@ const TeamManagement = () => {
     allUserTeams
   } = useTeam();
   
-  const { max_team_members } = useSubscription();
+  const { max_team_members, loading: subscriptionLoading } = useSubscription();
   const { toast } = useToast();
 
   // Get the admin's name from team members
@@ -274,7 +274,7 @@ const TeamManagement = () => {
     }
   }, [team, isLoading]);
 
-  if (isLoading || !team || isMounting) {
+  if (isLoading || !team || isMounting || subscriptionLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
