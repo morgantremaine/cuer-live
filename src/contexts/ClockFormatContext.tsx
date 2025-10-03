@@ -13,10 +13,10 @@ const ClockFormatContext = createContext<ClockFormatContextType | undefined>(und
 const CLOCK_FORMAT_KEY = 'rundown-clock-format';
 
 export const ClockFormatProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize from localStorage or default to 24-hour
+  // Initialize from localStorage or default to 12-hour
   const [clockFormat, setClockFormat] = useState<ClockFormat>(() => {
     const saved = localStorage.getItem(CLOCK_FORMAT_KEY);
-    return (saved === '12' || saved === '24') ? saved : '24';
+    return (saved === '12' || saved === '24') ? saved : '12';
   });
 
   // Persist to localStorage when format changes
