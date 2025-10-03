@@ -507,12 +507,6 @@ const RundownHeader = ({
                   value={displayedStartTime}
                   onChange={handleTimeInputChange}
                   onBlur={handleTimeInputBlur}
-                  onFocus={(e) => {
-                    // When focusing, if in 12-hour mode, show the raw 24-hour value for easier editing
-                    if (clockFormat === '12') {
-                      e.target.value = rundownStartTime;
-                    }
-                  }}
                   placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
                   className="w-20 text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0"
                 />
@@ -638,12 +632,6 @@ const RundownHeader = ({
                 value={displayedStartTime}
                 onChange={handleTimeInputChange}
                 onBlur={handleTimeInputBlur}
-                onFocus={(e) => {
-                  // When focusing, if in 12-hour mode, show the raw 24-hour value for easier editing
-                  if (clockFormat === '12') {
-                    e.target.value = rundownStartTime;
-                  }
-                }}
                 placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
                 className="w-24 bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0"
               />
