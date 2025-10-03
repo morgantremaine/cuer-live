@@ -50,17 +50,17 @@ const DashboardHeader = ({
       <div className="px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-32">
-            {showBackButton && onBack && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
+              {showBackButton && onBack && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onBack}
+                  className="text-gray-300 hover:text-white hover:bg-gray-700"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
               <CuerLogo isDark={true} />
             </div>
 
