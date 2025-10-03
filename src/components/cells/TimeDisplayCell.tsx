@@ -1,5 +1,5 @@
 import React from 'react';
-import { useClockFormat } from '@/hooks/useClockFormat';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface TimeDisplayCellProps {
   value: string;

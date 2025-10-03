@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useClockFormat } from '@/hooks/useClockFormat';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface TimezoneSelectorProps {
   currentTimezone: string;

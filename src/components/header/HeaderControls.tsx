@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import { useAuth } from '@/hooks/useAuth';
-import { useClockFormat } from '@/hooks/useClockFormat';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface HeaderControlsProps {
   currentTime: Date;

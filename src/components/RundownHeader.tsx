@@ -18,7 +18,8 @@ import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import { useBroadcastHealthMonitor } from '@/hooks/useBroadcastHealthMonitor';
 import { useRealtimeConnection } from './RealtimeConnectionProvider';
 import RundownSaveIndicator from './header/RundownSaveIndicator';
-import { useClockFormat } from '@/hooks/useClockFormat';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
+import { parseTimeInput, isValidTimeInput } from '@/utils/timeInputParser';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -93,7 +94,10 @@ const RundownHeader = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isBrowserOnline, setIsBrowserOnline] = useState(navigator.onLine);
-  const { clockFormat } = useClockFormat();
+  const { clockFormat, formatTime: formatClockTime } = useClockFormat();
+  
+  // Format the displayed start time value based on clock format
+  const displayedStartTime = clockFormat === '12' ? formatClockTime(rundownStartTime) : rundownStartTime;
 
   // Listen to browser network events for immediate WiFi icon updates
   useEffect(() => {
@@ -255,9 +259,8 @@ const RundownHeader = ({
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Allow natural typing - only restrict clearly invalid characters
-    // Allow digits, colons, and common separators
-    if (!/^[0-9:]*$/.test(value)) {
+    // Use the time input validator which allows 12-hour format characters (A, M, P, space)
+    if (!isValidTimeInput(value)) {
       return;
     }
     
@@ -268,37 +271,10 @@ const RundownHeader = ({
   const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Only format and validate on blur
-    let formattedTime = value;
+    // Use the smart parser that handles both 12-hour and 24-hour formats
+    const formattedTime = parseTimeInput(value);
     
-    // Remove any non-digit, non-colon characters
-    formattedTime = formattedTime.replace(/[^0-9:]/g, '');
-    
-    // Split by colon and pad/validate each part
-    const parts = formattedTime.split(':');
-    
-    if (parts.length >= 1) {
-      // Hours
-      let hours = parts[0] || '00';
-      if (hours.length === 1) hours = '0' + hours;
-      if (parseInt(hours) > 23) hours = '23';
-      
-      // Minutes
-      let minutes = parts[1] || '00';
-      if (minutes.length === 1) minutes = '0' + minutes;
-      if (parseInt(minutes) > 59) minutes = '59';
-      
-      // Seconds
-      let seconds = parts[2] || '00';
-      if (seconds.length === 1) seconds = '0' + seconds;
-      if (parseInt(seconds) > 59) seconds = '59';
-      
-      formattedTime = `${hours}:${minutes}:${seconds}`;
-    } else {
-      // If no valid format, default to current time or 00:00:00
-      formattedTime = rundownStartTime || '00:00:00';
-    }
-    
+    // Update with the parsed 24-hour format
     onRundownStartTimeChange(formattedTime);
   };
 
@@ -528,10 +504,16 @@ const RundownHeader = ({
                 <input
                   ref={timeInputRef}
                   type="text"
-                  value={rundownStartTime}
+                  value={displayedStartTime}
                   onChange={handleTimeInputChange}
                   onBlur={handleTimeInputBlur}
-                  placeholder={clockFormat === '12' ? "HH:MM:SS (24h)" : "HH:MM:SS"}
+                  onFocus={(e) => {
+                    // When focusing, if in 12-hour mode, show the raw 24-hour value for easier editing
+                    if (clockFormat === '12') {
+                      e.target.value = rundownStartTime;
+                    }
+                  }}
+                  placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
                   className="w-20 text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0"
                 />
                 {onShowDateChange && (
@@ -653,10 +635,16 @@ const RundownHeader = ({
               <input
                 ref={timeInputRef}
                 type="text"
-                value={rundownStartTime}
+                value={displayedStartTime}
                 onChange={handleTimeInputChange}
                 onBlur={handleTimeInputBlur}
-                placeholder={clockFormat === '12' ? "HH:MM:SS (24h)" : "HH:MM:SS"}
+                onFocus={(e) => {
+                  // When focusing, if in 12-hour mode, show the raw 24-hour value for easier editing
+                  if (clockFormat === '12') {
+                    e.target.value = rundownStartTime;
+                  }
+                }}
+                placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
                 className="w-24 bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0"
               />
               {onShowDateChange && (

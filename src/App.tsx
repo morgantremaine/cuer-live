@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ClockFormatProvider } from "@/contexts/ClockFormatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
 import Index from "./pages/Index";
@@ -217,14 +218,16 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppUpdateNotification />
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
+          <ClockFormatProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppUpdateNotification />
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </ClockFormatProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
