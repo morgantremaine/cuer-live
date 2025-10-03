@@ -10,7 +10,7 @@ interface RegularRowContentProps {
   item: RundownItem;
   rowNumber: string;
   columns: Column[];
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
   textColor?: string;
   backgroundColor?: string;
   status?: 'upcoming' | 'current' | 'completed';

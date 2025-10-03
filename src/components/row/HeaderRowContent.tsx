@@ -13,7 +13,7 @@ interface HeaderRowContentProps {
   rowNumber: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement | HTMLDivElement }>;
   isCollapsed?: boolean;
   isDragging?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
