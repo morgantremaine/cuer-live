@@ -79,16 +79,31 @@ const MainActionButtons = ({
   // Cooldown states for Add buttons
   const [addRowCooldown, setAddRowCooldown] = useState(false);
   const [addHeaderCooldown, setAddHeaderCooldown] = useState(false);
-  const [segmentCount, setSegmentCount] = useState(1);
+  const [segmentCountInput, setSegmentCountInput] = useState('1');
 
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
 
-  // Handle segment count change with validation
+  // Handle segment count change - allow empty or valid numbers
   const handleSegmentCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 1;
-    setSegmentCount(Math.max(1, Math.min(50, value)));
+    const value = e.target.value;
+    
+    // Allow empty string or valid numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      setSegmentCountInput(value);
+    }
+  };
+
+  // Validate and clamp on blur
+  const handleSegmentCountBlur = () => {
+    if (segmentCountInput === '') {
+      setSegmentCountInput('1');
+    } else {
+      const num = parseInt(segmentCountInput);
+      const clamped = Math.max(1, Math.min(50, num));
+      setSegmentCountInput(clamped.toString());
+    }
   };
 
   // Wrapper functions with cooldown logic
@@ -96,12 +111,13 @@ const MainActionButtons = ({
     if (addRowCooldown) return;
     
     setAddRowCooldown(true);
-    onAddRow(segmentCount);
+    const count = segmentCountInput === '' ? 1 : parseInt(segmentCountInput);
+    onAddRow(Math.max(1, Math.min(50, count)));
     
     setTimeout(() => {
       setAddRowCooldown(false);
     }, 500);
-  }, [addRowCooldown, onAddRow, segmentCount]);
+  }, [addRowCooldown, onAddRow, segmentCountInput]);
 
   const handleAddHeaderWithCooldown = useCallback(() => {
     if (addHeaderCooldown) return;
@@ -163,9 +179,11 @@ const MainActionButtons = ({
               type="number"
               min="1"
               max="50"
-              value={segmentCount}
+              value={segmentCountInput}
               onChange={handleSegmentCountChange}
+              onBlur={handleSegmentCountBlur}
               onClick={(e) => e.stopPropagation()}
+              placeholder="1"
               className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <span className="flex-shrink-0">Segment</span>
@@ -270,9 +288,11 @@ const MainActionButtons = ({
           type="number"
           min="1"
           max="50"
-          value={segmentCount}
+          value={segmentCountInput}
           onChange={handleSegmentCountChange}
+          onBlur={handleSegmentCountBlur}
           onClick={(e) => e.stopPropagation()}
+          placeholder="1"
           className="w-10 text-center bg-transparent border-none outline-none focus:ring-0 p-0 [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <span className="flex-shrink-0">Segment</span>
