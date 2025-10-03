@@ -124,4 +124,7 @@ export interface RundownContainerProps {
     activeId: any;
     resetDragState: () => void;
   };
+  
+  // Rich text formatting toolbar
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }

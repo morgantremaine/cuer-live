@@ -49,6 +49,7 @@ interface RegularRowProps {
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -284,6 +285,7 @@ const RegularRow = (props: RegularRowProps) => {
           onKeyDown={props.onKeyDown}
           markActiveTyping={props.markActiveTyping}
           getColumnWidth={props.getColumnWidth}
+          onCellFocusChange={props.onCellFocusChange}
         />
       </tr>
     </RundownContextMenu>

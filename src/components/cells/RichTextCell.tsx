@@ -20,6 +20,7 @@ interface RichTextCellProps {
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onFormatStateChange?: (states: FormatStates) => void;
+  onFocusChange?: (element: HTMLDivElement | null) => void;
   fieldKeyForProtection?: string;
 }
 
@@ -34,6 +35,7 @@ const RichTextCell = ({
   onCellClick,
   onKeyDown,
   onFormatStateChange,
+  onFocusChange,
   fieldKeyForProtection
 }: RichTextCellProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -218,6 +220,7 @@ const RichTextCell = ({
 
   const handleFocus = () => {
     setIsFocused(true);
+    onFocusChange?.(editorRef.current);
     const row = editorRef.current?.closest('tr');
     if (row) {
       row.setAttribute('draggable', 'false');
@@ -226,6 +229,7 @@ const RichTextCell = ({
 
   const handleBlur = () => {
     setIsFocused(false);
+    onFocusChange?.(null);
     const row = editorRef.current?.closest('tr');
     if (row) {
       setTimeout(() => {

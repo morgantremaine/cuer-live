@@ -44,6 +44,7 @@ interface OptimizedRundownTableWrapperProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
   // Header collapse functions (to ensure same state as drag system)
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;

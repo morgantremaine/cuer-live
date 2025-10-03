@@ -32,6 +32,20 @@ const RundownIndexContent = () => {
     strikethrough: false
   });
   
+  // Handler for when a rich text cell gains or loses focus
+  const handleCellFocusChange = useCallback((element: HTMLDivElement | null) => {
+    setActiveCell(element);
+    if (!element) {
+      // Reset format states when no cell is focused
+      setFormatStates({
+        bold: false,
+        italic: false,
+        underline: false,
+        strikethrough: false
+      });
+    }
+  }, []);
+  
   const {
     coreState,
     interactions,
@@ -654,6 +668,7 @@ const RundownIndexContent = () => {
         onMoveItemUp={moveItemUp}
         onMoveItemDown={moveItemDown}
         dragAndDrop={dragAndDrop}
+        onCellFocusChange={handleCellFocusChange}
       />
       
       {/* Floating Notes Window */}

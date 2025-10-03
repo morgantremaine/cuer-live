@@ -59,6 +59,7 @@ interface RundownContentProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
   // Header collapse functions
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
@@ -456,6 +457,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               onMoveItemUp={onMoveItemUp}
               onMoveItemDown={onMoveItemDown}
               markActiveTyping={markActiveTyping}
+              onCellFocusChange={onCellFocusChange}
               // Header collapse functions
               toggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
@@ -505,6 +507,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               onMoveItemUp={onMoveItemUp}
               onMoveItemDown={onMoveItemDown}
               markActiveTyping={markActiveTyping}
+              onCellFocusChange={onCellFocusChange}
               // Header collapse functions
               toggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}

@@ -27,6 +27,7 @@ interface CellRendererProps {
   markActiveTyping?: () => void;
   width?: string;
   onFormatStateChange?: (itemId: string, field: string, states: FormatStates) => void;
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }
 
 const CellRenderer = ({
@@ -42,7 +43,8 @@ const CellRenderer = ({
   onKeyDown,
   markActiveTyping,
   width,
-  onFormatStateChange
+  onFormatStateChange,
+  onCellFocusChange
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -198,6 +200,7 @@ const CellRenderer = ({
         onFormatStateChange={(states) => {
           onFormatStateChange?.(item.id, column.key, states);
         }}
+        onFocusChange={onCellFocusChange}
       />
     );
   }

@@ -49,6 +49,7 @@ interface RundownRowProps {
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -117,6 +118,7 @@ const RundownRow = (props: RundownRowProps) => {
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
       allItems={props.allItems}
+      onCellFocusChange={props.onCellFocusChange}
     />
   );
 };

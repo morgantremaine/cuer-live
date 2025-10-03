@@ -49,6 +49,7 @@ interface RundownTableProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
+  onCellFocusChange?: (element: HTMLDivElement | null) => void;
 }
 
 const RundownTable = ({
@@ -95,7 +96,8 @@ const RundownTable = ({
   onJumpToHere,
   onMoveItemUp,
   onMoveItemDown,
-  markActiveTyping
+  markActiveTyping,
+  onCellFocusChange
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -192,6 +194,7 @@ const RundownTable = ({
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}
                    allItems={items}
+                   onCellFocusChange={onCellFocusChange}
                 />
                 
                 {/* Drop indicator AFTER the last row */}
