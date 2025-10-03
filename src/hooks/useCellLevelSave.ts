@@ -12,6 +12,10 @@ interface FieldUpdate {
   timestamp: number;
 }
 
+// Fields that should save quickly (non-typing interactions like dropdowns/pickers)
+const QUICK_SAVE_FIELDS = ['timezone', 'startTime', 'showDate', 'title'];
+const QUICK_SAVE_DELAY = 300; // 300ms for quick-save fields
+
 export const useCellLevelSave = (
   rundownId: string | null,
   onSaveComplete?: (savedUpdates?: FieldUpdate[]) => void,
@@ -49,10 +53,13 @@ export const useCellLevelSave = (
     }
 
     const scheduleTypingAwareSave = () => {
-      const delay = typingIdleMs || 1500;
+      // Use quick delay for non-typing fields, normal delay for content fields
+      const isQuickSaveField = QUICK_SAVE_FIELDS.includes(field);
+      const delay = isQuickSaveField ? QUICK_SAVE_DELAY : (typingIdleMs || 1500);
       
       saveTimeoutRef.current = setTimeout(() => {
-        if (isTypingActive && isTypingActive()) {
+        // Skip typing check for quick-save fields
+        if (!isQuickSaveField && isTypingActive && isTypingActive()) {
           scheduleTypingAwareSave();
           return;
         }
