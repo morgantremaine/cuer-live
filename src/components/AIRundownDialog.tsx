@@ -151,8 +151,8 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
           disabled={disabled}
           className={`border-0 flex items-center gap-2 ${
             disabled 
-              ? 'bg-purple-400 text-white opacity-60 cursor-pointer' 
-              : 'bg-purple-800 hover:bg-purple-900 text-white'
+              ? 'bg-green-400 text-white opacity-60 cursor-pointer' 
+              : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
         >
           <Sparkles className="h-5 w-5" />
@@ -236,7 +236,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button onClick={handleGenerate} className="bg-purple-600 hover:bg-purple-700">
+              <Button onClick={handleGenerate} className="bg-green-600 hover:bg-green-700">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generate Rundown
               </Button>
@@ -307,7 +307,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
                 <Button variant="outline" onClick={handleCancel}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreate} className="bg-purple-600 hover:bg-purple-700">
+                <Button onClick={handleCreate} className="bg-green-600 hover:bg-green-700">
                   Create Rundown
                 </Button>
               </div>
