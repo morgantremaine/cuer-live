@@ -252,59 +252,53 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      // LOCKED NUMBERING MODE
+      // LOCKED NUMBERING MODE - iNews/ENPS style
       if (numberingLocked && lockedRowNumbers && item.type !== 'header') {
         if (lockedRowNumbers[item.id]) {
-          // This item has a locked number, use it
+          // This item has a BASE LOCKED number, use it
           calculatedRowNumber = lockedRowNumbers[item.id];
-          
-          // Extract base number for suffix tracking
-          const match = calculatedRowNumber.match(/^(\d+)/);
-          if (match) {
-            lastBaseNumber = parseInt(match[1]);
-          }
+          lastBaseNumber = parseInt(calculatedRowNumber);
         } else {
-          // NEW ITEM ADDED AFTER LOCKING - DECIMAL NUMBERING SYSTEM
-          let prevLockedNumber: string | null = null;
-          let nextLockedNumber: string | null = null;
+          // NEW ITEM - Calculate sequential decimal based on position between base locks
+          let prevBaseItemId: string | null = null;
+          let nextBaseItemId: string | null = null;
           let baseNumber = lastBaseNumber || 1;
           
-          // Search backward for previous locked row number
+          // Search backward for previous base locked item
           for (let i = index - 1; i >= 0; i--) {
             const prevItem = itemsWithClearedHeaders[i];
             if (prevItem.type === 'regular' && lockedRowNumbers[prevItem.id]) {
-              prevLockedNumber = lockedRowNumbers[prevItem.id];
-              // Extract base number from previous locked number
-              const prevParts = parseDecimalNumber(prevLockedNumber);
-              baseNumber = prevParts[0];
+              prevBaseItemId = prevItem.id;
+              baseNumber = parseInt(lockedRowNumbers[prevItem.id]);
               break;
             }
           }
           
-          // Search forward for next locked row number
+          // Search forward for next base locked item
           for (let i = index + 1; i < itemsWithClearedHeaders.length; i++) {
             const nextItem = itemsWithClearedHeaders[i];
             if (nextItem.type === 'regular' && lockedRowNumbers[nextItem.id]) {
-              nextLockedNumber = lockedRowNumbers[nextItem.id];
-              // If no previous number, extract base from next
-              if (!prevLockedNumber) {
-                const nextParts = parseDecimalNumber(nextLockedNumber);
-                baseNumber = nextParts[0];
-              }
+              nextBaseItemId = nextItem.id;
               break;
             }
           }
           
-          // Calculate decimal row number based on position
-          calculatedRowNumber = calculateDecimalRowNumber(
-            prevLockedNumber,
-            nextLockedNumber,
-            baseNumber
-          );
+          // Count position between base locks to assign sequential decimal
+          let positionAfterBase = 0;
+          if (prevBaseItemId) {
+            const prevBaseIndex = itemsWithClearedHeaders.findIndex(it => it.id === prevBaseItemId);
+            // Count regular items between the base and current item
+            for (let i = prevBaseIndex + 1; i < index; i++) {
+              if (itemsWithClearedHeaders[i].type === 'regular') {
+                positionAfterBase++;
+              }
+            }
+            positionAfterBase++; // Current item's position
+          }
           
-          // Update lastBaseNumber for next iteration
-          const parts = parseDecimalNumber(calculatedRowNumber);
-          lastBaseNumber = parts[0];
+          // Assign sequential decimal: 3.1, 3.2, 3.3, etc.
+          calculatedRowNumber = `${baseNumber}.${positionAfterBase}`;
+          lastBaseNumber = baseNumber;
         }
       } else {
         // NORMAL SEQUENTIAL NUMBERING MODE

@@ -249,12 +249,15 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
     case 'TOGGLE_LOCK': {
       if (!state.numberingLocked) {
-        // Locking: snapshot current calculated numbers
+        // Locking: snapshot ONLY BASE NUMBERS (no decimals) - iNews/ENPS style
         const snapshot: { [itemId: string]: string } = {};
         if (action.payload?.calculatedItems) {
           action.payload.calculatedItems.forEach((item: any) => {
             if (item.type === 'regular' && item.calculatedRowNumber) {
-              snapshot[item.id] = item.calculatedRowNumber;
+              // Only store if it's a whole number (no decimal point)
+              if (!item.calculatedRowNumber.includes('.')) {
+                snapshot[item.id] = item.calculatedRowNumber;
+              }
             }
           });
         }
