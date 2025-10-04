@@ -1506,11 +1506,12 @@ export const useSimplifiedRundownState = () => {
     if (state.numberingLocked && state.lockedRowNumbers) {
       console.log('🔒 addRowAtIndex: Auto-locking new item in locked mode');
       // Calculate what the new item's row number will be
+      // Use stateRef to get the absolute latest locked numbers, even during rapid additions
       const calculatedItems = calculateItemsWithTiming(
         newItems,
         state.startTime,
         state.numberingLocked,
-        state.lockedRowNumbers
+        stateRef.current.lockedRowNumbers || state.lockedRowNumbers
       );
       
       console.log('🔒 addRowAtIndex: Calculated items count:', calculatedItems.length);
