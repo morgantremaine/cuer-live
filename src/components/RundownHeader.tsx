@@ -251,7 +251,7 @@ const RundownHeader = ({
       return formatInTimeZone(time, actualTimezone, timeFormat);
     } catch {
       // Fallback to local time if timezone is invalid
-      const timeFormat = clockFormat === '12' ? 'hh:mm:ss a' : 'HH:mm:ss';
+      const timeFormat = clockFormat === '12' ? 'hh:mm:ss a' : 'H:mm:ss';
       return format(time, timeFormat);
     }
   };
