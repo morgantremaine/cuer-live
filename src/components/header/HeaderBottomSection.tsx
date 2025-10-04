@@ -49,7 +49,8 @@ const HeaderBottomSection = ({
     if (!isFocused) {
       setLocalStartTime(formatTime(rundownStartTime));
     }
-  }, [rundownStartTime, isFocused, formatTime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rundownStartTime, isFocused]);
 
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
@@ -98,7 +99,7 @@ const HeaderBottomSection = ({
             onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-32 focus:outline-none focus:border-blue-500"
+            className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-40 focus:outline-none focus:border-blue-500"
             placeholder="00:00:00"
           />
         </div>
