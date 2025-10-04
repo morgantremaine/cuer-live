@@ -96,8 +96,18 @@ const RundownHeader = ({
   const [isBrowserOnline, setIsBrowserOnline] = useState(navigator.onLine);
   const { clockFormat, formatTime: formatClockTime } = useClockFormat();
   
-  // Format the displayed start time value based on clock format
-  const displayedStartTime = clockFormat === '12' ? formatClockTime(rundownStartTime) : rundownStartTime;
+  // Local state for time input to prevent reformatting during typing
+  const [isEditingStartTime, setIsEditingStartTime] = useState(false);
+  const [localStartTime, setLocalStartTime] = useState('');
+
+  // Initialize local time state when rundownStartTime changes (but not while editing)
+  useEffect(() => {
+    if (!isEditingStartTime) {
+      const formattedTime = clockFormat === '12' ? formatClockTime(rundownStartTime) : rundownStartTime;
+      setLocalStartTime(formattedTime);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rundownStartTime, clockFormat, isEditingStartTime]);
 
   // Listen to browser network events for immediate WiFi icon updates
   useEffect(() => {
@@ -256,16 +266,14 @@ const RundownHeader = ({
     }
   };
 
+  const handleTimeInputFocus = () => {
+    setIsEditingStartTime(true);
+  };
+
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
-    // Use the time input validator which allows 12-hour format characters (A, M, P, space)
-    if (!isValidTimeInput(value)) {
-      return;
-    }
-    
-    // Update the value directly without aggressive formatting
-    onRundownStartTimeChange(value);
+    // Just update local state during typing - no validation or formatting
+    setLocalStartTime(value);
   };
 
   const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -276,6 +284,12 @@ const RundownHeader = ({
     
     // Update with the parsed 24-hour format
     onRundownStartTimeChange(formattedTime);
+    
+    // Update local state with formatted version
+    const displayFormatted = clockFormat === '12' ? formatClockTime(formattedTime) : formattedTime;
+    setLocalStartTime(displayFormatted);
+    
+    setIsEditingStartTime(false);
   };
 
   const handleTitleEdit = () => {
@@ -504,8 +518,9 @@ const RundownHeader = ({
                 <input
                   ref={timeInputRef}
                   type="text"
-                  value={displayedStartTime}
+                  value={localStartTime}
                   onChange={handleTimeInputChange}
+                  onFocus={handleTimeInputFocus}
                   onBlur={handleTimeInputBlur}
                   placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
                   className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
@@ -629,8 +644,9 @@ const RundownHeader = ({
               <input
                 ref={timeInputRef}
                 type="text"
-                value={displayedStartTime}
+                value={localStartTime}
                 onChange={handleTimeInputChange}
+                onFocus={handleTimeInputFocus}
                 onBlur={handleTimeInputBlur}
                 placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
                 className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
