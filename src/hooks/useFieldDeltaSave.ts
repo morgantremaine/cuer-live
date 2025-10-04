@@ -56,8 +56,8 @@ export const useFieldDeltaSave = (
       });
     }
 
-    // Check global fields
-    const globalFields = ['startTime', 'timezone', 'showDate', 'externalNotes'];
+    // Check global fields including lock state
+    const globalFields = ['startTime', 'timezone', 'showDate', 'externalNotes', 'numberingLocked', 'lockedRowNumbers'];
     globalFields.forEach(field => {
       const currentValue = (currentState as any)[field];
       const previousValue = (previousState as any)[field];
@@ -202,6 +202,12 @@ export const useFieldDeltaSave = (
         case 'externalNotes':
           updateData.external_notes = delta.value;
           break;
+        case 'numberingLocked':
+          updateData.numbering_locked = delta.value;
+          break;
+        case 'lockedRowNumbers':
+          updateData.locked_row_numbers = delta.value;
+          break;
       }
     });
 
@@ -249,6 +255,8 @@ export const useFieldDeltaSave = (
       updateData.timezone = latestRow.timezone;
       updateData.show_date = latestRow.show_date;
       updateData.external_notes = latestRow.external_notes;
+      updateData.numbering_locked = latestRow.numbering_locked;
+      updateData.locked_row_numbers = latestRow.locked_row_numbers;
     } else {
       // We have global changes, apply them
       updateData.title = globalDeltas.find(d => d.field === 'title')?.value ?? latestRow.title;
@@ -258,6 +266,8 @@ export const useFieldDeltaSave = (
         `${globalDeltas.find(d => d.field === 'showDate')!.value.getFullYear()}-${String(globalDeltas.find(d => d.field === 'showDate')!.value.getMonth() + 1).padStart(2, '0')}-${String(globalDeltas.find(d => d.field === 'showDate')!.value.getDate()).padStart(2, '0')}` : 
         latestRow.show_date;
       updateData.external_notes = globalDeltas.find(d => d.field === 'externalNotes')?.value ?? latestRow.external_notes;
+      updateData.numbering_locked = globalDeltas.find(d => d.field === 'numberingLocked')?.value ?? latestRow.numbering_locked;
+      updateData.locked_row_numbers = globalDeltas.find(d => d.field === 'lockedRowNumbers')?.value ?? latestRow.locked_row_numbers;
     }
 
     // Add metadata
@@ -354,6 +364,8 @@ export const useFieldDeltaSave = (
       timezone: currentState.timezone,
       show_date: currentState.showDate ? `${currentState.showDate.getFullYear()}-${String(currentState.showDate.getMonth() + 1).padStart(2, '0')}-${String(currentState.showDate.getDate()).padStart(2, '0')}` : null,
       external_notes: currentState.externalNotes,
+      numbering_locked: currentState.numberingLocked,
+      locked_row_numbers: currentState.lockedRowNumbers,
       updated_at: updateTimestamp,
       last_updated_by: (await supabase.auth.getUser()).data.user?.id
     };

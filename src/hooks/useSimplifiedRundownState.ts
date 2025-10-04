@@ -1083,7 +1083,9 @@ export const useSimplifiedRundownState = () => {
               showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
               externalNotes: data.external_notes,
               docVersion: data.doc_version || 0, // CRITICAL: Include docVersion for OCC
-              perCellSaveEnabled: data.per_cell_save_enabled || false // Include per-cell save setting
+              perCellSaveEnabled: data.per_cell_save_enabled || false, // Include per-cell save setting
+              numberingLocked: data.numbering_locked || false, // Load lock state
+              lockedRowNumbers: data.locked_row_numbers || {} // Load locked numbers
             });
             
             console.log('🧪 PER-CELL SAVE: Loaded from database', {

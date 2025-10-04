@@ -124,7 +124,35 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       } else {
         items = [...state.items, item];
       }
-      return markChanged({ items: clearHeaderNumbers(items) }, 'ADD_ITEM');
+      
+      // AUTO-LOCK NEW ITEM IF IN LOCKED MODE
+      let updatedLockedNumbers = state.lockedRowNumbers;
+      if (state.numberingLocked && item.type === 'regular') {
+        // Calculate what the new item's row number will be
+        // Import calculateItemsWithTiming at the top if needed
+        const { calculateItemsWithTiming } = require('@/utils/rundownCalculations');
+        const calculatedItems = calculateItemsWithTiming(
+          items,
+          state.startTime,
+          state.numberingLocked,
+          state.lockedRowNumbers
+        );
+        
+        // Find the newly added item in the calculated results
+        const calculatedNewItem = calculatedItems.find((ci: any) => ci.id === item.id);
+        if (calculatedNewItem?.calculatedRowNumber) {
+          // Add to locked numbers
+          updatedLockedNumbers = {
+            ...state.lockedRowNumbers,
+            [item.id]: calculatedNewItem.calculatedRowNumber
+          };
+        }
+      }
+      
+      return markChanged({ 
+        items: clearHeaderNumbers(items),
+        lockedRowNumbers: updatedLockedNumbers
+      }, 'ADD_ITEM');
     }
 
     case 'DELETE_ITEM': {

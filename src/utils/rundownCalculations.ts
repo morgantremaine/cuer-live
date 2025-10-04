@@ -166,16 +166,64 @@ export const calculateItemsWithTiming = (
             lastBaseNumber = parseInt(match[1]);
           }
         } else {
-          // New item added after locking - generate suffix
-          const baseNumber = lastBaseNumber.toString();
+          // NEW ITEM ADDED AFTER LOCKING - IMPROVED LOGIC
+          // Determine base number from previous regular item
+          let baseNumber = lastBaseNumber;
           
-          if (!suffixCounters[baseNumber]) {
-            suffixCounters[baseNumber] = 0;
+          // Look backward to find the previous regular item with a number
+          if (index > 0) {
+            for (let i = index - 1; i >= 0; i--) {
+              const prevItem = itemsWithClearedHeaders[i];
+              if (prevItem.type === 'regular') {
+                // Check if this previous item has a locked number
+                if (lockedRowNumbers[prevItem.id]) {
+                  const prevNumber = lockedRowNumbers[prevItem.id];
+                  // Extract numeric base (handles both "5" and "5A" formats)
+                  const match = prevNumber.match(/^(\d+)/);
+                  if (match) {
+                    baseNumber = parseInt(match[1]);
+                  }
+                  break;
+                } else {
+                  // Previous item is also new, continue searching
+                  continue;
+                }
+              }
+            }
           }
           
-          const suffix = generateLetterSuffix(suffixCounters[baseNumber]);
-          calculatedRowNumber = `${baseNumber}${suffix}`;
-          suffixCounters[baseNumber]++;
+          // If no previous item found, look forward to next locked item
+          if (baseNumber === 0 && index < itemsWithClearedHeaders.length - 1) {
+            for (let i = index + 1; i < itemsWithClearedHeaders.length; i++) {
+              const nextItem = itemsWithClearedHeaders[i];
+              if (nextItem.type === 'regular' && lockedRowNumbers[nextItem.id]) {
+                const nextNumber = lockedRowNumbers[nextItem.id];
+                const match = nextNumber.match(/^(\d+)/);
+                if (match) {
+                  baseNumber = parseInt(match[1]);
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If still no base number, start at 1
+          if (baseNumber === 0) {
+            baseNumber = 1;
+          }
+          
+          const baseNumberStr = baseNumber.toString();
+          
+          if (!suffixCounters[baseNumberStr]) {
+            suffixCounters[baseNumberStr] = 0;
+          }
+          
+          const suffix = generateLetterSuffix(suffixCounters[baseNumberStr]);
+          calculatedRowNumber = `${baseNumberStr}${suffix}`;
+          suffixCounters[baseNumberStr]++;
+          
+          // Update lastBaseNumber for next iteration
+          lastBaseNumber = baseNumber;
         }
       } else {
         // NORMAL SEQUENTIAL NUMBERING MODE

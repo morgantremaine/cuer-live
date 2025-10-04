@@ -22,7 +22,9 @@ export class RundownOperations {
     startTime?: string,
     icon?: string,
     undoHistory?: any[],
-    teamId?: string
+    teamId?: string,
+    numberingLocked?: boolean,
+    lockedRowNumbers?: { [itemId: string]: string }
   ) {
     if (!this.user) {
       throw new Error('User not authenticated');
@@ -39,7 +41,9 @@ export class RundownOperations {
         icon,
         undo_history: undoHistory,
         team_id: teamId,
-        user_id: this.user.id
+        user_id: this.user.id,
+        numbering_locked: numberingLocked,
+        locked_row_numbers: lockedRowNumbers
       };
 
       const { data, error } = await supabase
