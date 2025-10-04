@@ -214,8 +214,20 @@ export const calculateItemsWithTiming = (
           
           const baseNumberStr = baseNumber.toString();
           
+          // Initialize counter by counting existing items with this base number UP TO this position
           if (!suffixCounters[baseNumberStr]) {
-            suffixCounters[baseNumberStr] = 0;
+            let existingCount = 0;
+            for (let i = 0; i < index; i++) {
+              const checkItem = itemsWithClearedHeaders[i];
+              if (checkItem.type === 'regular' && lockedRowNumbers[checkItem.id]) {
+                const checkNumber = lockedRowNumbers[checkItem.id];
+                const match = checkNumber.match(/^(\d+)/);
+                if (match && parseInt(match[1]) === baseNumber) {
+                  existingCount++;
+                }
+              }
+            }
+            suffixCounters[baseNumberStr] = existingCount;
           }
           
           const suffix = generateLetterSuffix(suffixCounters[baseNumberStr]);
