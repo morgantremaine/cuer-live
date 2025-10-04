@@ -42,10 +42,8 @@ const workflowStages: WorkflowStage[] = [
         details: [
           'Generate complete, production-ready rundown templates instantly with customizable show formats',
           'Chat with AI directly in your rundown for on-demand assistance and expert guidance',
-          'Get intelligent analysis of timing conflicts, gaps, and optimization opportunities when you ask',
-          'Receive actionable solutions and best practice recommendations for any production challenge',
-          'Smart content and timing suggestions based on your specific show format and workflow',
-          'Context-aware help that understands your production needs and preferences'
+          'Identify timing conflicts, gaps, and optimization opportunities with intelligent analysis',
+          'Get actionable solutions and smart suggestions tailored to your specific show format'
         ],
         icon: Bot
       },
