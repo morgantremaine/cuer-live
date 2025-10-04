@@ -103,6 +103,8 @@ export const usePerCellSaveCoordination = ({
       deletedIds?: string[];
       newItems?: RundownItem[];
       insertIndex?: number;
+      lockedRowNumbers?: { [itemId: string]: string };
+      numberingLocked?: boolean;
     },
     currentItems?: RundownItem[] // Pass current items for snapshot
   ) => {

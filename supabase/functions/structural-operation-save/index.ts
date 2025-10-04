@@ -60,7 +60,10 @@ serve(async (req) => {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
       userId: operation.userId,
-      timestamp: operation.timestamp
+      timestamp: operation.timestamp,
+      hasLockedNumbers: !!operation.operationData.lockedRowNumbers,
+      lockedNumbersCount: Object.keys(operation.operationData.lockedRowNumbers || {}).length,
+      numberingLocked: operation.operationData.numberingLocked
     });
 
     // Start coordination - acquire advisory lock for rundown

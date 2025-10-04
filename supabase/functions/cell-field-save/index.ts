@@ -112,6 +112,8 @@ serve(async (req) => {
     let updatedTimezone = currentRundown.timezone
     let updatedShowDate = currentRundown.show_date
     let updatedExternalNotes = currentRundown.external_notes
+    let updatedNumberingLocked = currentRundown.numbering_locked
+    let updatedLockedRowNumbers = currentRundown.locked_row_numbers
     
     for (const update of fieldUpdates) {
       if (update.itemId) {
@@ -144,6 +146,14 @@ serve(async (req) => {
           case 'externalNotes':
             updatedExternalNotes = update.value
             break
+          case 'numberingLocked':
+            updatedNumberingLocked = update.value
+            console.log('🔒 Updating numbering_locked:', update.value);
+            break
+          case 'lockedRowNumbers':
+            updatedLockedRowNumbers = update.value
+            console.log('🔒 Updating locked_row_numbers:', Object.keys(update.value || {}).length, 'items');
+            break
         }
       }
     }
@@ -156,6 +166,8 @@ serve(async (req) => {
       timezone: updatedTimezone,
       show_date: updatedShowDate,
       external_notes: updatedExternalNotes,
+      numbering_locked: updatedNumberingLocked,
+      locked_row_numbers: updatedLockedRowNumbers,
       updated_at: updateTimestamp,
       last_updated_by: user.id
     }
