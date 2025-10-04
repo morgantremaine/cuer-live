@@ -271,33 +271,35 @@ export async function runDatabaseTests(): Promise<TestResult[]> {
       
       if (!teams || teams.length === 0) throw new Error('No team found');
 
-      const testId = `${TEST_PREFIX}db_test_${Date.now()}`;
+      const testTitle = `${TEST_PREFIX}db_test_${Date.now()}`;
       
       // Write
-      const { error: writeError } = await supabase
+      const { data: writeData, error: writeError } = await supabase
         .from('rundowns')
         .insert({
-          id: testId,
-          title: testId,
+          title: testTitle,
           user_id: data.session.user.id,
           team_id: teams[0].team_id,
           items: []
-        });
+        })
+        .select('id')
+        .single();
       
       if (writeError) throw writeError;
+      if (!writeData) throw new Error('No data returned from insert');
 
       // Read
       const { data: readData, error: readError } = await supabase
         .from('rundowns')
         .select('id')
-        .eq('id', testId)
-        .single();
+        .eq('id', writeData.id)
+        .maybeSingle();
       
       if (readError) throw readError;
       if (!readData) throw new Error('Written data not found');
 
       // Cleanup
-      await supabase.from('rundowns').delete().eq('id', testId);
+      await supabase.from('rundowns').delete().eq('id', writeData.id);
     }
   ));
 
