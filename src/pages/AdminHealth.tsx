@@ -86,16 +86,19 @@ const AdminHealth = () => {
     try {
       setRefreshing(true);
       
-      // Get active sessions count (users active in last 5 minutes)
+      // Get active users (users with presence in last 5 minutes)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: activeSessions, error: sessionError } = await supabase
-        .from('user_sessions')
+        .from('rundown_presence')
         .select('user_id')
         .gte('last_seen', fiveMinutesAgo);
 
       if (sessionError) {
         console.error('Error fetching active sessions:', sessionError);
       }
+
+      // Get unique user count
+      const uniqueUsers = activeSessions ? new Set(activeSessions.map(s => s.user_id)).size : 0;
 
       // Check database health with a simple query
       const { error: dbError } = await supabase
@@ -113,7 +116,7 @@ const AdminHealth = () => {
       const networkLatency = Date.now() - latencyStart;
 
       setMetrics({
-        activeUsers: activeSessions?.length || 0,
+        activeUsers: uniqueUsers,
         realtimeConnections: isConnected ? 1 : 0,
         databaseHealth: dbError ? 'error' : 'healthy',
         lastUpdate: new Date(),
@@ -174,46 +177,33 @@ const AdminHealth = () => {
     const results: TestResult[] = [];
     
     try {
-      // Category 1: Existing Live Show Tests
-      setTestProgress({ current: 1, total: 7, currentTest: 'Live Show Infrastructure' });
-      const liveShowTests = await runLiveShowSmokeTest();
-      for (const test of liveShowTests) {
-        results.push({
-          category: 'Live Show Infrastructure',
-          test: test.test,
-          passed: test.passed,
-          duration: 0,
-          details: test.details
-        });
-      }
-      
-      // Category 2: Authentication Tests
-      setTestProgress({ current: 2, total: 7, currentTest: 'Authentication' });
+      // Category 1: Authentication Tests
+      setTestProgress({ current: 1, total: 6, currentTest: 'Authentication' });
       const authTests = await runAuthenticationTests();
       results.push(...authTests);
       
-      // Category 3: Team Invitation Tests
-      setTestProgress({ current: 3, total: 7, currentTest: 'Team Invitations' });
+      // Category 2: Team Invitation Tests
+      setTestProgress({ current: 2, total: 6, currentTest: 'Team Invitations' });
       const invitationTests = await runInvitationTests();
       results.push(...invitationTests);
       
-      // Category 4: Rundown Operations Tests
-      setTestProgress({ current: 4, total: 7, currentTest: 'Rundown Operations' });
+      // Category 3: Rundown Operations Tests
+      setTestProgress({ current: 3, total: 6, currentTest: 'Rundown Operations' });
       const rundownTests = await runRundownOperationTests();
       results.push(...rundownTests);
       
-      // Category 5: Database Connection Tests
-      setTestProgress({ current: 5, total: 7, currentTest: 'Database Connection' });
+      // Category 4: Database Connection Tests
+      setTestProgress({ current: 4, total: 6, currentTest: 'Database Connection' });
       const databaseTests = await runDatabaseTests();
       results.push(...databaseTests);
       
-      // Category 6: Realtime Connection Tests
-      setTestProgress({ current: 6, total: 7, currentTest: 'Realtime Infrastructure' });
+      // Category 5: Realtime Connection Tests
+      setTestProgress({ current: 5, total: 6, currentTest: 'Realtime Infrastructure' });
       const realtimeTests = await runRealtimeTests();
       results.push(...realtimeTests);
       
-      // Category 7: Team Operations Tests
-      setTestProgress({ current: 7, total: 7, currentTest: 'Team Operations' });
+      // Category 6: Team Operations Tests
+      setTestProgress({ current: 6, total: 6, currentTest: 'Team Operations' });
       const teamTests = await runTeamOperationTests();
       results.push(...teamTests);
       

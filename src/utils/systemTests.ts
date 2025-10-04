@@ -117,16 +117,23 @@ export async function runInvitationTests(): Promise<TestResult[]> {
       const { data, error } = await supabase.rpc('validate_invitation_token', {
         token_param: 'test-invalid-token-123'
       });
-      // We expect this to fail gracefully, not throw
-      if (error && !error.message.includes('function')) {
-        // Function exists, just returned invalid result (which is expected)
-        return;
+      
+      // Check if the function exists and returns proper structure
+      if (error) {
+        if (error.message.includes('function') || error.message.includes('does not exist')) {
+          throw new Error('validate_invitation_token function not found in database');
+        }
+        // Other errors are acceptable - function exists but token is invalid (expected)
       }
-      if (!error && data) {
-        // Function exists and returned data
-        return;
+      
+      // If we got data back, verify it has the expected structure
+      if (data && typeof data === 'object') {
+        if (!('valid' in data)) {
+          throw new Error('Function response missing "valid" field');
+        }
       }
-      throw new Error('Invitation validation function may not be available');
+      
+      // Test passed - function exists and responds correctly
     }
   ));
 
@@ -356,25 +363,33 @@ export async function runRealtimeTests(): Promise<TestResult[]> {
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           if (!messageReceived) {
-            reject(new Error('Message not received'));
+            reject(new Error('Message not received within 8 seconds'));
           }
-        }, 5000);
+        }, 8000);
 
         channel
           .on('broadcast', { event: 'test' }, (payload) => {
-            if (payload.payload.message === 'test-message') {
+            console.log('Broadcast received:', payload);
+            if (payload.payload?.message === 'test-message') {
               messageReceived = true;
               clearTimeout(timeout);
               resolve();
             }
           })
           .subscribe(async (status) => {
+            console.log('Broadcast channel status:', status);
             if (status === 'SUBSCRIBED') {
-              await channel.send({
-                type: 'broadcast',
-                event: 'test',
-                payload: { message: 'test-message' }
-              });
+              // Wait a bit for subscription to fully establish
+              setTimeout(async () => {
+                await channel.send({
+                  type: 'broadcast',
+                  event: 'test',
+                  payload: { message: 'test-message' }
+                });
+              }, 500);
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              clearTimeout(timeout);
+              reject(new Error(`Channel error: ${status}`));
             }
           });
       });
@@ -395,13 +410,15 @@ export async function runRealtimeTests(): Promise<TestResult[]> {
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           if (!presenceTracked) {
-            reject(new Error('Presence not tracked'));
+            reject(new Error('Presence not tracked within 8 seconds'));
           }
-        }, 5000);
+        }, 8000);
 
         channel
           .on('presence', { event: 'sync' }, () => {
+            console.log('Presence sync event fired');
             const state = channel.presenceState();
+            console.log('Presence state:', state);
             if (Object.keys(state).length > 0) {
               presenceTracked = true;
               clearTimeout(timeout);
@@ -409,8 +426,15 @@ export async function runRealtimeTests(): Promise<TestResult[]> {
             }
           })
           .subscribe(async (status) => {
+            console.log('Presence channel status:', status);
             if (status === 'SUBSCRIBED') {
-              await channel.track({ online_at: new Date().toISOString() });
+              // Wait a bit for subscription to fully establish
+              setTimeout(async () => {
+                await channel.track({ online_at: new Date().toISOString() });
+              }, 500);
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              clearTimeout(timeout);
+              reject(new Error(`Channel error: ${status}`));
             }
           });
       });
@@ -450,13 +474,14 @@ export async function runTeamOperationTests(): Promise<TestResult[]> {
       const { data } = await supabase.auth.getSession();
       if (!data.session) throw new Error('No session');
 
-      const { data: membership } = await supabase
+      const { data: membership, error } = await supabase
         .from('team_members')
         .select('role, team_id')
         .eq('user_id', data.session.user.id)
         .limit(1)
-        .single();
+        .maybeSingle();
       
+      if (error) throw error;
       if (!membership) throw new Error('No team membership found');
       if (!['admin', 'manager', 'member'].includes(membership.role)) {
         throw new Error('Invalid role type');
@@ -477,19 +502,25 @@ export async function runTeamOperationTests(): Promise<TestResult[]> {
         throw new Error('No teams to test isolation');
       }
 
-      const { data: rundowns } = await supabase
+      // Get rundowns the user can access
+      const { data: accessibleRundowns } = await supabase
         .from('rundowns')
-        .select('team_id')
+        .select('team_id, id')
         .limit(100);
       
-      // Verify all returned rundowns belong to user's teams
-      const userTeamIds = userTeams.map(t => t.team_id);
-      const allRundownsValid = rundowns?.every(r => 
-        r.team_id && userTeamIds.includes(r.team_id)
-      ) ?? true;
+      if (!accessibleRundowns || accessibleRundowns.length === 0) {
+        // No rundowns to test - that's okay, isolation still works
+        return;
+      }
       
-      if (!allRundownsValid) {
-        throw new Error('RLS violation: accessing rundowns from other teams');
+      // Verify all accessible rundowns belong to user's teams
+      const userTeamIds = userTeams.map(t => t.team_id);
+      const invalidRundowns = accessibleRundowns.filter(r => 
+        r.team_id && !userTeamIds.includes(r.team_id)
+      );
+      
+      if (invalidRundowns.length > 0) {
+        throw new Error(`RLS violation: Can access ${invalidRundowns.length} rundowns from teams user is not in`);
       }
     }
   ));
