@@ -35,15 +35,17 @@ const workflowStages: WorkflowStage[] = [
       {
         id: 'cuer-ai',
         title: 'Cuer AI',
-        description: 'Intelligent AI assistant that helps you build better rundowns faster with template generation and real-time optimization.',
+        description: 'Your intelligent production partner that revolutionizes rundown creation and management. Cuer AI combines powerful template generation with real-time analysis to help you build better shows faster. Whether you\'re starting from scratch or optimizing an existing rundown, Cuer AI provides instant insights, catches potential issues before they happen, and suggests improvements that enhance your production workflow.',
         image: '/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png',
         secondaryImage: '/uploads/cuer-ai-template.jpg',
         alt: 'Cuer AI Assistant and Template Generator',
         details: [
-          'Generate complete rundown templates instantly',
-          'Real-time rundown analysis and optimization',
-          'Intelligent issue detection and solutions',
-          'Smart content and timing suggestions'
+          'Generate complete, production-ready rundown templates in seconds with customizable formats',
+          'Real-time rundown analysis that identifies timing conflicts, gaps, and optimization opportunities',
+          'Intelligent issue detection with actionable solutions and best practice recommendations',
+          'Smart content suggestions based on your show format and historical production data',
+          'Automated timing calculations and duration estimates to keep your show on schedule',
+          'Context-aware assistance that learns from your workflow and production preferences'
         ],
         icon: Bot
       },
