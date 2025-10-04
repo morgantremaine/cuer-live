@@ -71,16 +71,33 @@ const TimezoneSelector = ({
       
       {isOpen && (
         <div className="absolute top-full right-0 mt-1 z-[60] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[200px]">
-          {/* Clock Format Toggle */}
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-            <Label htmlFor="clock-format" className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
-              12-hour clock
+          {/* Clock Format Selector */}
+          <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+            <Label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block">
+              Time Format
             </Label>
-            <Switch
-              id="clock-format"
-              checked={clockFormat === '12'}
-              onCheckedChange={() => toggleClockFormat()}
-            />
+            <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-700 rounded-md">
+              <button
+                onClick={() => clockFormat !== '12' && toggleClockFormat()}
+                className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                  clockFormat === '12'
+                    ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                12h
+              </button>
+              <button
+                onClick={() => clockFormat !== '24' && toggleClockFormat()}
+                className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                  clockFormat === '24'
+                    ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                24h
+              </button>
+            </div>
           </div>
 
           {/* Timezone Selector */}
