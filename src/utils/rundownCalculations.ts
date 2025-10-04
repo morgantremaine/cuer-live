@@ -72,20 +72,119 @@ export const isFloated = (item: RundownItem): boolean => {
 };
 
 /**
- * Generates letter suffix for locked row numbering
- * 0 -> A, 1 -> B, ..., 25 -> Z, 26 -> AA, 27 -> AB, etc.
+ * Parses a decimal row number string into an array of numeric parts
+ * "3" -> [3], "3.1" -> [3, 1], "3.1.2" -> [3, 1, 2]
  */
-export const generateLetterSuffix = (index: number): string => {
-  let suffix = '';
-  let num = index;
+export const parseDecimalNumber = (numberStr: string): number[] => {
+  return numberStr.split('.').map(part => {
+    // Handle leading zeros like "01" by parsing as integer
+    return parseInt(part, 10);
+  });
+};
+
+/**
+ * Compares two decimal row numbers numerically
+ * Returns: negative if a < b, 0 if equal, positive if a > b
+ * Examples: "3.01" < "3.1" < "3.2" < "3.10"
+ */
+export const compareDecimalNumbers = (a: string, b: string): number => {
+  const aParts = parseDecimalNumber(a);
+  const bParts = parseDecimalNumber(b);
   
-  while (num >= 0) {
-    suffix = String.fromCharCode(65 + (num % 26)) + suffix;
-    num = Math.floor(num / 26) - 1;
-    if (num < 0) break;
+  const maxLength = Math.max(aParts.length, bParts.length);
+  
+  for (let i = 0; i < maxLength; i++) {
+    const aVal = aParts[i] || 0;
+    const bVal = bParts[i] || 0;
+    
+    if (aVal !== bVal) {
+      return aVal - bVal;
+    }
   }
   
-  return suffix;
+  return 0;
+};
+
+/**
+ * Calculates the decimal row number for a new item inserted between two existing items
+ * Rules:
+ * - Between 3 and 3.1 → 3.01
+ * - Between 3.1 and 3.2 → 3.1.1
+ * - After 3.1.1 → 3.1.2
+ * - Max depth: 3 levels (blocks with error at max depth)
+ */
+export const calculateDecimalRowNumber = (
+  prevNumber: string | null,
+  nextNumber: string | null,
+  baseNumber: number
+): string => {
+  console.log('🔢 calculateDecimalRowNumber:', { prevNumber, nextNumber, baseNumber });
+  
+  // Case 1: No previous number (first in segment or rundown)
+  if (!prevNumber) {
+    const result = baseNumber.toString();
+    console.log('🔢 No prev → returning base:', result);
+    return result;
+  }
+  
+  const prevParts = parseDecimalNumber(prevNumber);
+  
+  // Case 2: No next number (append at end)
+  if (!nextNumber) {
+    if (prevParts.length === 1) {
+      const result = `${prevNumber}.1`;
+      console.log('🔢 After integer → .1:', result);
+      return result;
+    }
+    if (prevParts.length === 2) {
+      const result = `${prevParts[0]}.${prevParts[1] + 1}`;
+      console.log('🔢 After 2-level → increment:', result);
+      return result;
+    }
+    if (prevParts.length === 3) {
+      const result = `${prevParts[0]}.${prevParts[1]}.${prevParts[2] + 1}`;
+      console.log('🔢 After 3-level → increment:', result);
+      return result;
+    }
+  }
+  
+  const nextParts = parseDecimalNumber(nextNumber);
+  
+  // Case 3: Between two numbers
+  // Special case: Between integer and .1 (e.g., 3 and 3.1)
+  if (prevParts.length === 1 && nextParts.length === 2 && 
+      prevParts[0] === nextParts[0] && nextParts[1] === 1) {
+    const result = `${prevNumber}.01`;
+    console.log('🔢 Between integer and .1 → .01:', result);
+    return result;
+  }
+  
+  // Check if we're between same-depth decimals at the same base
+  if (prevParts.length === nextParts.length && prevParts[0] === nextParts[0]) {
+    // At max depth (3 levels) - cannot nest further
+    if (prevParts.length >= 3) {
+      const error = `Cannot insert between ${prevNumber} and ${nextNumber} - maximum nesting depth (3 levels) reached. Please unlock numbering, reorganize items, and lock again.`;
+      console.error('🚫', error);
+      throw new Error(error);
+    }
+    
+    // Nest one level deeper under the previous number
+    const result = `${prevNumber}.1`;
+    console.log('🔢 Between same-depth → nest:', result);
+    return result;
+  }
+  
+  // Different bases or depths - nest under previous if possible
+  if (prevParts.length < 3) {
+    const result = `${prevNumber}.1`;
+    console.log('🔢 Different structure, nest under prev:', result);
+    return result;
+  }
+  
+  // At max depth and can't determine position - error
+  const error = `Cannot insert at position - maximum nesting depth (3 levels) reached at ${prevNumber}. Please unlock numbering, reorganize items, and lock again.`;
+  console.error('🚫', error);
+  throw new Error(error);
 };
 
 // Helper function to remove row numbers from headers
@@ -112,9 +211,8 @@ export const calculateItemsWithTiming = (
   let regularRowCount = 0; // Always start from 0 - this is the authoritative calculation
   let cumulativeDurationSeconds = 0;
   
-  // Track last base number for suffix generation
+  // Track last base number for decimal generation
   let lastBaseNumber = 0;
-  const suffixCounters: { [baseNumber: string]: number } = {};
 
   return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
@@ -166,78 +264,47 @@ export const calculateItemsWithTiming = (
             lastBaseNumber = parseInt(match[1]);
           }
         } else {
-          // NEW ITEM ADDED AFTER LOCKING - IMPROVED LOGIC
-          // Determine base number from previous regular item
-          let baseNumber = lastBaseNumber;
+          // NEW ITEM ADDED AFTER LOCKING - DECIMAL NUMBERING SYSTEM
+          let prevLockedNumber: string | null = null;
+          let nextLockedNumber: string | null = null;
+          let baseNumber = lastBaseNumber || 1;
           
-          // Look backward to find the previous regular item with a number
-          if (index > 0) {
-            for (let i = index - 1; i >= 0; i--) {
-              const prevItem = itemsWithClearedHeaders[i];
-              if (prevItem.type === 'regular') {
-                // Check if this previous item has a locked number
-                if (lockedRowNumbers[prevItem.id]) {
-                  const prevNumber = lockedRowNumbers[prevItem.id];
-                  // Extract numeric base (handles both "5" and "5A" formats)
-                  const match = prevNumber.match(/^(\d+)/);
-                  if (match) {
-                    baseNumber = parseInt(match[1]);
-                  }
-                  break;
-                } else {
-                  // Previous item is also new, continue searching
-                  continue;
-                }
-              }
+          // Search backward for previous locked row number
+          for (let i = index - 1; i >= 0; i--) {
+            const prevItem = itemsWithClearedHeaders[i];
+            if (prevItem.type === 'regular' && lockedRowNumbers[prevItem.id]) {
+              prevLockedNumber = lockedRowNumbers[prevItem.id];
+              // Extract base number from previous locked number
+              const prevParts = parseDecimalNumber(prevLockedNumber);
+              baseNumber = prevParts[0];
+              break;
             }
           }
           
-          // If no previous item found, look forward to next locked item
-          if (baseNumber === 0 && index < itemsWithClearedHeaders.length - 1) {
-            for (let i = index + 1; i < itemsWithClearedHeaders.length; i++) {
-              const nextItem = itemsWithClearedHeaders[i];
-              if (nextItem.type === 'regular' && lockedRowNumbers[nextItem.id]) {
-                const nextNumber = lockedRowNumbers[nextItem.id];
-                const match = nextNumber.match(/^(\d+)/);
-                if (match) {
-                  baseNumber = parseInt(match[1]);
-                  break;
-                }
+          // Search forward for next locked row number
+          for (let i = index + 1; i < itemsWithClearedHeaders.length; i++) {
+            const nextItem = itemsWithClearedHeaders[i];
+            if (nextItem.type === 'regular' && lockedRowNumbers[nextItem.id]) {
+              nextLockedNumber = lockedRowNumbers[nextItem.id];
+              // If no previous number, extract base from next
+              if (!prevLockedNumber) {
+                const nextParts = parseDecimalNumber(nextLockedNumber);
+                baseNumber = nextParts[0];
               }
+              break;
             }
           }
           
-          // If still no base number, start at 1
-          if (baseNumber === 0) {
-            baseNumber = 1;
-          }
-          
-          const baseNumberStr = baseNumber.toString();
-          
-          // Initialize counter by counting existing items with this base number AND A SUFFIX UP TO this position
-          // Don't count the base item "3" itself, only "3A", "3B", etc.
-          if (!suffixCounters[baseNumberStr]) {
-            let existingCount = 0;
-            for (let i = 0; i < index; i++) {
-              const checkItem = itemsWithClearedHeaders[i];
-              if (checkItem.type === 'regular' && lockedRowNumbers[checkItem.id]) {
-                const checkNumber = lockedRowNumbers[checkItem.id];
-                // Only count items with a suffix (e.g., "3A", "3B"), not just "3"
-                const matchWithSuffix = checkNumber.match(/^(\d+)([A-Z]+)$/);
-                if (matchWithSuffix && parseInt(matchWithSuffix[1]) === baseNumber) {
-                  existingCount++;
-                }
-              }
-            }
-            suffixCounters[baseNumberStr] = existingCount;
-          }
-          
-          const suffix = generateLetterSuffix(suffixCounters[baseNumberStr]);
-          calculatedRowNumber = `${baseNumberStr}${suffix}`;
-          suffixCounters[baseNumberStr]++;
+          // Calculate decimal row number based on position
+          calculatedRowNumber = calculateDecimalRowNumber(
+            prevLockedNumber,
+            nextLockedNumber,
+            baseNumber
+          );
           
           // Update lastBaseNumber for next iteration
-          lastBaseNumber = baseNumber;
+          const parts = parseDecimalNumber(calculatedRowNumber);
+          lastBaseNumber = parts[0];
         }
       } else {
         // NORMAL SEQUENTIAL NUMBERING MODE
