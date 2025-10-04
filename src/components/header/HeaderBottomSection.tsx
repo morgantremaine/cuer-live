@@ -47,22 +47,20 @@ const HeaderBottomSection = ({
   // Update local state only when not focused and external value changes
   useEffect(() => {
     if (!isFocused) {
-      setLocalStartTime(rundownStartTime);
+      setLocalStartTime(formatTime(rundownStartTime));
     }
-  }, [rundownStartTime, isFocused]);
+  }, [rundownStartTime, isFocused, formatTime]);
 
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
-    // Only allow valid time input characters while typing
-    if (isValidTimeInput(newStartTime)) {
-      setLocalStartTime(newStartTime);
-    }
+    // Allow free typing - parseTimeInput will handle validation on blur
+    setLocalStartTime(newStartTime);
   };
 
   const handleFocus = () => {
     setIsFocused(true);
-    // When focused, show raw 24-hour format for editing
-    setLocalStartTime(rundownStartTime);
+    // When focused, set to formatted time so user can edit in current format
+    setLocalStartTime(formatTime(rundownStartTime));
   };
 
   const handleBlur = () => {
@@ -70,9 +68,10 @@ const HeaderBottomSection = ({
     // Parse the input (handles both 12-hour and 24-hour formats)
     const validatedTime = parseTimeInput(localStartTime);
     
-    // Always call the parent handler with validated time (24-hour format)
+    // Update parent with validated 24-hour format
     onRundownStartTimeChange(validatedTime);
-    setLocalStartTime(validatedTime);
+    // Update local state with formatted version for display
+    setLocalStartTime(formatTime(validatedTime));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -94,7 +93,7 @@ const HeaderBottomSection = ({
           <span className="opacity-75">Start Time:</span>
           <input
             type="text"
-            value={isFocused ? localStartTime : formatTime(localStartTime)}
+            value={localStartTime}
             onChange={handleStartTimeChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
