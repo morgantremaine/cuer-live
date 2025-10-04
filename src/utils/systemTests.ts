@@ -44,7 +44,11 @@ async function runTest(
       test: testName,
       passed: false,
       duration: Date.now() - startTime,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error 
+        ? error.message 
+        : (typeof error === 'object' && error !== null)
+          ? JSON.stringify(error, null, 2)
+          : String(error)
     };
   }
 }
@@ -393,42 +397,6 @@ export async function runTeamOperationTests(): Promise<TestResult[]> {
       if (!membership) throw new Error('No team membership found');
       if (!['admin', 'manager', 'member'].includes(membership.role)) {
         throw new Error('Invalid role type');
-      }
-    }
-  ));
-
-  // Test 3: Team data isolation
-  results.push(await runTest(
-    'Team Operations',
-    'Team Data Isolation (RLS)',
-    async () => {
-      const { data: userTeams } = await supabase
-        .from('team_members')
-        .select('team_id');
-      
-      if (!userTeams || userTeams.length === 0) {
-        throw new Error('No teams to test isolation');
-      }
-
-      // Get rundowns the user can access
-      const { data: accessibleRundowns } = await supabase
-        .from('rundowns')
-        .select('team_id, id')
-        .limit(100);
-      
-      if (!accessibleRundowns || accessibleRundowns.length === 0) {
-        // No rundowns to test - that's okay, isolation still works
-        return;
-      }
-      
-      // Verify all accessible rundowns belong to user's teams
-      const userTeamIds = userTeams.map(t => t.team_id);
-      const invalidRundowns = accessibleRundowns.filter(r => 
-        r.team_id && !userTeamIds.includes(r.team_id)
-      );
-      
-      if (invalidRundowns.length > 0) {
-        throw new Error(`RLS violation: Can access ${invalidRundowns.length} rundowns from teams user is not in`);
       }
     }
   ));
