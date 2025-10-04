@@ -1481,6 +1481,8 @@ export const useSimplifiedRundownState = () => {
       lockedCount: Object.keys(state.lockedRowNumbers || {}).length
     });
     
+    let finalLockedNumbers = state.lockedRowNumbers;
+    
     if (state.numberingLocked && state.lockedRowNumbers) {
       console.log('🔒 addRowAtIndex: Auto-locking new item in locked mode');
       // Calculate what the new item's row number will be
@@ -1514,6 +1516,8 @@ export const useSimplifiedRundownState = () => {
         
         // Update the locked numbers in state
         actions.setLockedRowNumbers(updatedLockedNumbers);
+        // Store for structural save
+        finalLockedNumbers = updatedLockedNumbers;
       } else {
         console.warn('🔒 addRowAtIndex: Failed to calculate row number for new item');
       }
@@ -1534,11 +1538,14 @@ export const useSimplifiedRundownState = () => {
     
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
-      console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
+      console.log('🔒 STRUCTURAL: Saving with locked numbers', {
+        totalLockedNumbers: Object.keys(finalLockedNumbers || {}).length,
+        numberingLocked: state.numberingLocked
+      });
       markStructuralChange('add_row', { 
         newItems: [newItem], 
         insertIndex: actualIndex,
-        lockedRowNumbers: state.lockedRowNumbers,
+        lockedRowNumbers: finalLockedNumbers,
         numberingLocked: state.numberingLocked
       });
     }
