@@ -16,6 +16,8 @@ interface StructuralOperation {
     newItems?: any[];
     insertIndex?: number;
     sequenceNumber?: number;
+    lockedRowNumbers?: { [itemId: string]: string };
+    numberingLocked?: boolean;
   };
   userId: string;
   timestamp: string;
@@ -153,6 +155,18 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
       last_updated_by: operation.userId
     };
+    
+    // Include locked row numbers if provided
+    if (operation.operationData.lockedRowNumbers !== undefined) {
+      updateData.locked_row_numbers = operation.operationData.lockedRowNumbers;
+      console.log('🔒 Saving locked row numbers:', Object.keys(operation.operationData.lockedRowNumbers).length);
+    }
+    
+    // Include numbering locked state if provided
+    if (operation.operationData.numberingLocked !== undefined) {
+      updateData.numbering_locked = operation.operationData.numberingLocked;
+      console.log('🔒 Saving numbering locked state:', operation.operationData.numberingLocked);
+    }
     
     const { data: updatedRundown, error: updateError } = await supabase
       .from('rundowns')

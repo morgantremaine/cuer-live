@@ -1535,7 +1535,12 @@ export const useSimplifiedRundownState = () => {
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_row', { newItems: [newItem], insertIndex: actualIndex });
+      markStructuralChange('add_row', { 
+        newItems: [newItem], 
+        insertIndex: actualIndex,
+        lockedRowNumbers: state.lockedRowNumbers,
+        numberingLocked: state.numberingLocked
+      });
     }
   }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, saveUndoState, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
