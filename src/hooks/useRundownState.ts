@@ -293,6 +293,11 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     }
 
     case 'LOAD_STATE': {
+      console.log('📥 LOAD_STATE action received:', {
+        numberingLocked: action.payload.numberingLocked,
+        lockedRowNumbersCount: Object.keys(action.payload.lockedRowNumbers || {}).length,
+        hasLockedData: !!action.payload.lockedRowNumbers
+      });
       debugLogger.autosave('LOAD_STATE applied; resetting hasUnsavedChanges=false');
       return {
         ...state,

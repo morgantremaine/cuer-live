@@ -1074,6 +1074,12 @@ export const useSimplifiedRundownState = () => {
             }
 
             // Load content only (columns handled by useUserColumnPreferences)
+            console.log('📥 Loading rundown state from database:', {
+              numberingLocked: data.numbering_locked,
+              lockedRowNumbersCount: Object.keys(data.locked_row_numbers || {}).length,
+              hasLockedData: !!data.locked_row_numbers
+            });
+            
             actions.loadState({
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
