@@ -1474,6 +1474,51 @@ export const useSimplifiedRundownState = () => {
     const actualIndex = Math.min(insertIndex, newItems.length);
     newItems.splice(actualIndex, 0, newItem);
     
+    // AUTO-LOCK NEW ITEM IF IN LOCKED MODE
+    console.log('🔒 addRowAtIndex: Checking if should auto-lock', {
+      numberingLocked: state.numberingLocked,
+      hasLockedNumbers: !!state.lockedRowNumbers,
+      lockedCount: Object.keys(state.lockedRowNumbers || {}).length
+    });
+    
+    if (state.numberingLocked && state.lockedRowNumbers) {
+      console.log('🔒 addRowAtIndex: Auto-locking new item in locked mode');
+      // Calculate what the new item's row number will be
+      const calculatedItems = calculateItemsWithTiming(
+        newItems,
+        state.startTime,
+        state.numberingLocked,
+        state.lockedRowNumbers
+      );
+      
+      console.log('🔒 addRowAtIndex: Calculated items count:', calculatedItems.length);
+      
+      // Find the newly added item in the calculated results
+      const calculatedNewItem = calculatedItems.find((ci: any) => ci.id === newItem.id);
+      console.log('🔒 addRowAtIndex: Found calculated new item', {
+        found: !!calculatedNewItem,
+        calculatedRowNumber: calculatedNewItem?.calculatedRowNumber
+      });
+      
+      if (calculatedNewItem?.calculatedRowNumber) {
+        // Update locked numbers with the new item's calculated number
+        const updatedLockedNumbers = {
+          ...state.lockedRowNumbers,
+          [newItem.id]: calculatedNewItem.calculatedRowNumber
+        };
+        console.log('🔒 addRowAtIndex: Updating locked numbers', {
+          newItemId: newItem.id,
+          newRowNumber: calculatedNewItem.calculatedRowNumber,
+          totalLockedNumbers: Object.keys(updatedLockedNumbers).length
+        });
+        
+        // Update the locked numbers in state
+        actions.setLockedRowNumbers(updatedLockedNumbers);
+      } else {
+        console.warn('🔒 addRowAtIndex: Failed to calculate row number for new item');
+      }
+    }
+    
     actions.setItems(newItems);
     
     // Broadcast add at index for immediate realtime sync
@@ -1492,7 +1537,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
       markStructuralChange('add_row', { newItems: [newItem], insertIndex: actualIndex });
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
+  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, saveUndoState, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {

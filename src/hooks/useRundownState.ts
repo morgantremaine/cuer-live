@@ -574,6 +574,15 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
       }
     },
     
+    setLockedRowNumbers: (lockedRowNumbers: { [itemId: string]: string }) => {
+      dispatch({ type: 'SET_LOCKED_ROW_NUMBERS', payload: lockedRowNumbers });
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
+    },
+    
     loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState }),
     
     loadRemoteState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_REMOTE_STATE', payload: newState })
