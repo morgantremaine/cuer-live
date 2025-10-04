@@ -31,7 +31,9 @@ export const useRundownStateCoordination = () => {
   const performanceOptimization = useRundownPerformanceOptimization({
     items: persistedState.items,
     columns: persistedState.columns,
-    startTime: persistedState.rundownStartTime
+    startTime: persistedState.rundownStartTime,
+    numberingLocked: persistedState.numberingLocked,
+    lockedRowNumbers: persistedState.lockedRowNumbers
   });
 
   // Add performance monitoring for large rundowns

@@ -9,12 +9,16 @@ interface UseRundownPerformanceOptimizationProps {
   items: RundownItem[];
   columns: Column[];
   startTime: string;
+  numberingLocked?: boolean;
+  lockedRowNumbers?: { [itemId: string]: string };
 }
 
 export const useRundownPerformanceOptimization = ({
   items,
   columns,
-  startTime
+  startTime,
+  numberingLocked,
+  lockedRowNumbers
 }: UseRundownPerformanceOptimizationProps) => {
   
   // Performance monitoring for large rundowns
@@ -46,8 +50,8 @@ export const useRundownPerformanceOptimization = ({
     if (isVeryLargeRundown) {
       // Silently using performance-optimized calculations
     }
-    return calculateItemsWithTiming(items, startTime || '00:00:00');
-  }, [items, startTime, isVeryLargeRundown, itemCount]);
+    return calculateItemsWithTiming(items, startTime || '00:00:00', numberingLocked, lockedRowNumbers);
+  }, [items, startTime, numberingLocked, lockedRowNumbers, isVeryLargeRundown, itemCount]);
 
   // Calculate visible columns (memoized to prevent unnecessary re-renders)
   const visibleColumns = useMemo(() => {
