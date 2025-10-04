@@ -1509,6 +1509,14 @@ export const useSimplifiedRundownState = () => {
       });
       
       if (calculatedNewItem?.calculatedRowNumber) {
+        // Set the rowNumber on the actual item
+        newItem.rowNumber = calculatedNewItem.calculatedRowNumber;
+        // Also update it in the newItems array
+        const itemIndex = newItems.findIndex(i => i.id === newItem.id);
+        if (itemIndex !== -1) {
+          newItems[itemIndex] = { ...newItems[itemIndex], rowNumber: calculatedNewItem.calculatedRowNumber };
+        }
+        
         // Update locked numbers with the new item's calculated number
         const updatedLockedNumbers = {
           ...state.lockedRowNumbers,
