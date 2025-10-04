@@ -4,6 +4,8 @@ import { Clock } from 'lucide-react';
 import ShowcallerTimingIndicator from '../showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { RundownItem } from '@/types/rundown';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
+import { parseTimeInput, isValidTimeInput } from '@/utils/timeInputParser';
 
 interface HeaderBottomSectionProps {
   totalRuntime: string;
@@ -26,6 +28,8 @@ const HeaderBottomSection = ({
   currentSegmentId = null,
   timeRemaining = 0
 }: HeaderBottomSectionProps) => {
+  const { formatTime } = useClockFormat();
+  
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
   const [isFocused, setIsFocused] = useState(false);
@@ -47,38 +51,26 @@ const HeaderBottomSection = ({
     }
   }, [rundownStartTime, isFocused]);
 
-  // Validate time format
-  const validateTimeInput = (timeString: string): string => {
-    // Remove any non-time characters
-    let cleanTime = timeString.replace(/[^0-9:]/g, '');
-    
-    // If it's a valid time format, return it
-    if (/^\d{1,2}:\d{1,2}:\d{1,2}$/.test(cleanTime)) {
-      const parts = cleanTime.split(':');
-      const hours = Math.min(23, Math.max(0, parseInt(parts[0]) || 0)).toString().padStart(2, '0');
-      const minutes = Math.min(59, Math.max(0, parseInt(parts[1]) || 0)).toString().padStart(2, '0');
-      const seconds = Math.min(59, Math.max(0, parseInt(parts[2]) || 0)).toString().padStart(2, '0');
-      return `${hours}:${minutes}:${seconds}`;
-    }
-    
-    // Return original if not valid
-    return cleanTime;
-  };
-
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
-    setLocalStartTime(newStartTime);
+    // Only allow valid time input characters while typing
+    if (isValidTimeInput(newStartTime)) {
+      setLocalStartTime(newStartTime);
+    }
   };
 
   const handleFocus = () => {
     setIsFocused(true);
+    // When focused, show raw 24-hour format for editing
+    setLocalStartTime(rundownStartTime);
   };
 
   const handleBlur = () => {
     setIsFocused(false);
-    const validatedTime = validateTimeInput(localStartTime);
+    // Parse the input (handles both 12-hour and 24-hour formats)
+    const validatedTime = parseTimeInput(localStartTime);
     
-    // Always call the parent handler with validated time
+    // Always call the parent handler with validated time (24-hour format)
     onRundownStartTimeChange(validatedTime);
     setLocalStartTime(validatedTime);
   };
@@ -102,12 +94,12 @@ const HeaderBottomSection = ({
           <span className="opacity-75">Start Time:</span>
           <input
             type="text"
-            value={localStartTime}
+            value={isFocused ? localStartTime : formatTime(localStartTime)}
             onChange={handleStartTimeChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-24 focus:outline-none focus:border-blue-500"
+            className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-32 focus:outline-none focus:border-blue-500"
             placeholder="00:00:00"
           />
         </div>
