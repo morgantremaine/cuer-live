@@ -41,6 +41,9 @@ interface DesktopToolbarProps {
   canZoomIn?: boolean;
   canZoomOut?: boolean;
   isDefaultZoom?: boolean;
+  // Row number locking
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const DesktopToolbar = ({
@@ -77,7 +80,10 @@ const DesktopToolbar = ({
   onResetZoom,
   canZoomIn = true,
   canZoomOut = true,
-  isDefaultZoom = true
+  isDefaultZoom = true,
+  // Lock props
+  numberingLocked = false,
+  onToggleLock
 }: DesktopToolbarProps) => {
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -99,6 +105,8 @@ const DesktopToolbar = ({
           rundownData={rundownData}
           onShowFindReplace={onShowFindReplace}
           onShowNotes={onShowNotes}
+          numberingLocked={numberingLocked}
+          onToggleLock={onToggleLock}
         />
       </div>
 

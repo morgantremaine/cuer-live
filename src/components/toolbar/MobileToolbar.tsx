@@ -48,6 +48,9 @@ interface MobileToolbarProps {
   canZoomIn?: boolean;
   canZoomOut?: boolean;
   isDefaultZoom?: boolean;
+  // Row number locking
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const MobileToolbar = ({
@@ -84,7 +87,10 @@ const MobileToolbar = ({
   onResetZoom,
   canZoomIn,
   canZoomOut,
-  isDefaultZoom
+  isDefaultZoom,
+  // Lock props
+  numberingLocked = false,
+  onToggleLock
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -139,6 +145,8 @@ const MobileToolbar = ({
                   onReset={onReset}
                   onShowFindReplace={onShowFindReplace}
                   onShowNotes={onShowNotes}
+                  numberingLocked={numberingLocked}
+                  onToggleLock={onToggleLock}
                 />
               </div>
             </DropdownMenuContent>

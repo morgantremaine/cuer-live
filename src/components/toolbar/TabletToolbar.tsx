@@ -47,6 +47,9 @@ interface TabletToolbarProps {
   canZoomIn?: boolean;
   canZoomOut?: boolean;
   isDefaultZoom?: boolean;
+  // Row number locking
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const TabletToolbar = ({
@@ -83,7 +86,10 @@ const TabletToolbar = ({
   onResetZoom,
   canZoomIn = true,
   canZoomOut = true,
-  isDefaultZoom = true
+  isDefaultZoom = true,
+  // Lock props
+  numberingLocked = false,
+  onToggleLock
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -121,6 +127,8 @@ const TabletToolbar = ({
                 rundownData={rundownData}
                 onShowFindReplace={onShowFindReplace}
                 onShowNotes={onShowNotes}
+                numberingLocked={numberingLocked}
+                onToggleLock={onToggleLock}
               />
             </div>
           </DropdownMenuContent>
