@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 export type ClockFormat = '12' | '24';
 
@@ -24,7 +24,7 @@ export const ClockFormatProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(CLOCK_FORMAT_KEY, clockFormat);
   }, [clockFormat]);
 
-  const formatTime = (timeString: string) => {
+  const formatTime = useCallback((timeString: string) => {
     if (!timeString || timeString === '00:00:00') return timeString;
     
     // Handle both HH:MM:SS and HH:MM formats
@@ -58,7 +58,7 @@ export const ClockFormatProvider = ({ children }: { children: ReactNode }) => {
     return seconds 
       ? `${hour24}:${minutes}:${seconds}`
       : `${hour24}:${minutes}`;
-  };
+  }, [clockFormat]);
 
   const toggleClockFormat = () => {
     setClockFormat(prev => prev === '12' ? '24' : '12');
