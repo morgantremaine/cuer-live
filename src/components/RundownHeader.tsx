@@ -247,7 +247,7 @@ const RundownHeader = ({
     try {
       // Map Las Vegas to Los Angeles timezone for display
       const actualTimezone = tz === 'America/Las_Vegas' ? 'America/Los_Angeles' : tz;
-      const timeFormat = clockFormat === '12' ? 'hh:mm:ss a' : 'HH:mm:ss';
+        const timeFormat = clockFormat === '12' ? 'hh:mm:ss a' : 'H:mm:ss';
       return formatInTimeZone(time, actualTimezone, timeFormat);
     } catch {
       // Fallback to local time if timezone is invalid

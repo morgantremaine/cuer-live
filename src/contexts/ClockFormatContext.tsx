@@ -43,11 +43,21 @@ export const ClockFormatProvider = ({ children }: { children: ReactNode }) => {
       const ampm = hour24 >= 12 ? 'PM' : 'AM';
       
       return seconds 
-        ? `${hour12.toString().padStart(2, '0')}:${minutes}:${seconds} ${ampm}`
-        : `${hour12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+        ? `${hour12}:${minutes}:${seconds} ${ampm}`
+        : `${hour12}:${minutes} ${ampm}`;
     }
     
-    return timeString;
+    // For 24-hour format, remove leading zero from hours
+    const hours = parts[0];
+    const hour24 = parseInt(hours, 10);
+    if (isNaN(hour24)) return timeString;
+    
+    const minutes = parts[1];
+    const seconds = parts[2];
+    
+    return seconds 
+      ? `${hour24}:${minutes}:${seconds}`
+      : `${hour24}:${minutes}`;
   };
 
   const toggleClockFormat = () => {
