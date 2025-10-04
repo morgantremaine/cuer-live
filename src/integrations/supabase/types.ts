@@ -554,7 +554,9 @@ export type Database = {
           item_field_updates: Json | null
           items: Json
           last_updated_by: string | null
+          locked_row_numbers: Json | null
           logo_url: string | null
+          numbering_locked: boolean | null
           operation_mode_enabled: boolean | null
           per_cell_save_enabled: boolean | null
           show_date: string | null
@@ -581,7 +583,9 @@ export type Database = {
           item_field_updates?: Json | null
           items: Json
           last_updated_by?: string | null
+          locked_row_numbers?: Json | null
           logo_url?: string | null
+          numbering_locked?: boolean | null
           operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
           show_date?: string | null
@@ -608,7 +612,9 @@ export type Database = {
           item_field_updates?: Json | null
           items?: Json
           last_updated_by?: string | null
+          locked_row_numbers?: Json | null
           logo_url?: string | null
+          numbering_locked?: boolean | null
           operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
           show_date?: string | null

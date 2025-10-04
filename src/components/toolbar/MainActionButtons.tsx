@@ -9,6 +9,7 @@ import { CSVExportData } from '@/utils/csvExport';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { NumberLockButton } from './NumberLockButton';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -41,6 +42,9 @@ interface MainActionButtonsProps {
   onReset?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  // Row number locking
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const MainActionButtons = ({
@@ -70,7 +74,9 @@ const MainActionButtons = ({
   onBackward,
   onReset,
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  numberingLocked = false,
+  onToggleLock
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -144,6 +150,16 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
+          {onToggleLock && (
+            <div className="col-span-2">
+              <NumberLockButton 
+                isLocked={numberingLocked} 
+                onToggle={onToggleLock}
+                size={buttonSize}
+                className="w-full justify-start"
+              />
+            </div>
+          )}
           <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Segment</span>
@@ -236,6 +252,13 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
+      {onToggleLock && (
+        <NumberLockButton 
+          isLocked={numberingLocked} 
+          onToggle={onToggleLock}
+          size={buttonSize}
+        />
+      )}
       <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Segment</span>

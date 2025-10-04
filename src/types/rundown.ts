@@ -25,6 +25,12 @@ export interface RundownItem {
   status?: 'upcoming' | 'current' | 'completed';
 }
 
+// Row number locking types for database
+export interface RundownNumberingState {
+  numbering_locked?: boolean;
+  locked_row_numbers?: { [itemId: string]: string };
+}
+
 // Helper type guards for better type safety
 export const isHeaderItem = (item: RundownItem): boolean => item.type === 'header';
 export const isRegularItem = (item: RundownItem): boolean => item.type === 'regular';

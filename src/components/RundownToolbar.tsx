@@ -50,6 +50,9 @@ interface RundownToolbarProps {
   canZoomIn?: boolean;
   canZoomOut?: boolean;
   isDefaultZoom?: boolean;
+  // Row number locking
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const RundownToolbar = ({
@@ -87,7 +90,10 @@ const RundownToolbar = ({
   onResetZoom,
   canZoomIn,
   canZoomOut,
-  isDefaultZoom
+  isDefaultZoom,
+  // Lock props
+  numberingLocked,
+  onToggleLock
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -113,20 +119,22 @@ const RundownToolbar = ({
     onBackward,
     onReset,
     rundownTitle,
-      rundownData,
-      autoScrollEnabled,
-      onToggleAutoScroll,
-      onJumpToCurrentSegment,
-      onShowFindReplace,
-      onShowNotes,
-      zoomLevel,
-      onZoomIn,
-      onZoomOut,
-      onResetZoom,
-      canZoomIn,
-      canZoomOut,
-      isDefaultZoom
-    };
+    rundownData,
+    autoScrollEnabled,
+    onToggleAutoScroll,
+    onJumpToCurrentSegment,
+    onShowFindReplace,
+    onShowNotes,
+    zoomLevel,
+    onZoomIn,
+    onZoomOut,
+    onResetZoom,
+    canZoomIn,
+    canZoomOut,
+    isDefaultZoom,
+    numberingLocked,
+    onToggleLock
+  };
 
   if (isMobile) {
     return <MobileToolbar {...commonProps} />;

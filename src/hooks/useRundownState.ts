@@ -21,6 +21,8 @@ export interface RundownState {
   lastChanged: number;
   docVersion?: number; // Add docVersion to track server version for OCC
   perCellSaveEnabled?: boolean; // Add per-cell save enabled flag
+  numberingLocked?: boolean; // Row number locking state
+  lockedRowNumbers?: { [itemId: string]: string }; // Locked row number snapshot
 }
 
 type RundownAction = 
@@ -41,6 +43,9 @@ type RundownAction =
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'MARK_SAVED' }
   | { type: 'SET_DOC_VERSION'; payload: number } // Add action to set docVersion
+  | { type: 'TOGGLE_LOCK'; payload?: { calculatedItems: any[] } } // Toggle row number lock with optional snapshot
+  | { type: 'SET_NUMBERING_LOCKED'; payload: boolean } // Set lock state
+  | { type: 'SET_LOCKED_ROW_NUMBERS'; payload: { [itemId: string]: string } } // Set locked numbers
   | { type: 'LOAD_STATE'; payload: Partial<RundownState> }
   | { type: 'LOAD_REMOTE_STATE'; payload: Partial<RundownState> }; // Silent load for remote updates
 
@@ -57,7 +62,9 @@ const initialState: RundownState = {
   hasUnsavedChanges: false,
   lastChanged: 0,
   docVersion: 0, // Initialize docVersion
-  perCellSaveEnabled: false // Initialize per-cell save as disabled by default
+  perCellSaveEnabled: false, // Initialize per-cell save as disabled by default
+  numberingLocked: false, // Initialize lock as off
+  lockedRowNumbers: {} // Initialize empty locked numbers
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
@@ -190,6 +197,51 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     case 'SET_DOC_VERSION':
       return { ...state, docVersion: action.payload };
 
+    case 'TOGGLE_LOCK': {
+      if (!state.numberingLocked) {
+        // Locking: snapshot current calculated numbers
+        const snapshot: { [itemId: string]: string } = {};
+        if (action.payload?.calculatedItems) {
+          action.payload.calculatedItems.forEach((item: any) => {
+            if (item.type === 'regular' && item.calculatedRowNumber) {
+              snapshot[item.id] = item.calculatedRowNumber;
+            }
+          });
+        }
+        return markChanged({
+          numberingLocked: true,
+          lockedRowNumbers: snapshot
+        }, 'TOGGLE_LOCK (locking)');
+      } else {
+        // Unlocking: clear locked numbers
+        return markChanged({
+          numberingLocked: false,
+          lockedRowNumbers: {}
+        }, 'TOGGLE_LOCK (unlocking)');
+      }
+    }
+
+    case 'SET_NUMBERING_LOCKED':
+      return markChanged({ numberingLocked: action.payload }, 'SET_NUMBERING_LOCKED');
+
+    case 'SET_LOCKED_ROW_NUMBERS':
+      return markChanged({ lockedRowNumbers: action.payload }, 'SET_LOCKED_ROW_NUMBERS');
+
+    case 'DELETE_ITEM': {
+      const filtered = state.items.filter(item => item.id !== action.payload);
+      // If locked, also remove from locked numbers
+      const newLockedNumbers = state.numberingLocked && state.lockedRowNumbers
+        ? Object.fromEntries(
+            Object.entries(state.lockedRowNumbers).filter(([id]) => id !== action.payload)
+          )
+        : state.lockedRowNumbers;
+      
+      return markChanged({
+        items: filtered,
+        lockedRowNumbers: newLockedNumbers
+      }, 'DELETE_ITEM');
+    }
+
     case 'LOAD_STATE': {
       debugLogger.autosave('LOAD_STATE applied; resetting hasUnsavedChanges=false');
       return {
@@ -296,24 +348,52 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
 
   // OPTIMIZED: Lazy calculation of row numbers
   const itemsWithRowNumbers = useMemo(() => {
-    // This is used when useRundownState is used standalone (not in main rundown)
-    // For main rundown, calculateItemsWithTiming handles row numbering
     let regularRowCount = 0;
+    let lastBaseNumber = 0;
+    const suffixCounters: { [baseNumber: string]: number } = {};
+
     return itemsWithCalculatedTimes.map((item) => {
       if (isHeaderItem(item)) {
-        return { ...item, rowNumber: item.rowNumber || '' };
+        return { ...item, rowNumber: '' };
       }
-      
-      // Use existing rowNumber if it exists and is not empty (preserves drag operation results)
-      // Otherwise assign sequential number for new items
-      if (item.rowNumber && item.rowNumber.trim() !== '') {
-        return { ...item };
-      } else {
+
+      // LOCKED NUMBERING MODE
+      if (state.numberingLocked && state.lockedRowNumbers) {
+        if (state.lockedRowNumbers[item.id]) {
+          const lockedNumber = state.lockedRowNumbers[item.id];
+          const match = lockedNumber.match(/^(\d+)/);
+          if (match) {
+            lastBaseNumber = parseInt(match[1]);
+          }
+          return { ...item, rowNumber: lockedNumber };
+        } else {
+          // New item - generate suffix
+          const baseNumber = lastBaseNumber.toString();
+          if (!suffixCounters[baseNumber]) {
+            suffixCounters[baseNumber] = 0;
+          }
+          let suffix = '';
+          let num = suffixCounters[baseNumber];
+          while (num >= 0) {
+            suffix = String.fromCharCode(65 + (num % 26)) + suffix;
+            num = Math.floor(num / 26) - 1;
+            if (num < 0) break;
+          }
+          suffixCounters[baseNumber]++;
+          return { ...item, rowNumber: `${baseNumber}${suffix}` };
+        }
+      }
+
+      // NORMAL SEQUENTIAL NUMBERING
+      if (!item.isFloating && !item.isFloated) {
         regularRowCount++;
+        lastBaseNumber = regularRowCount;
         return { ...item, rowNumber: regularRowCount.toString() };
       }
+
+      return { ...item, rowNumber: 'F' };
     });
-  }, [itemsWithCalculatedTimes]);
+  }, [itemsWithCalculatedTimes, state.numberingLocked, state.lockedRowNumbers]);
 
   // OPTIMIZED: Lazy calculation of totals
   const totalRuntime = useMemo(() => {
@@ -435,10 +515,19 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     
     setDocVersion: (version: number) => dispatch({ type: 'SET_DOC_VERSION', payload: version }),
     
+    toggleLock: (calculatedItems?: any[]) => {
+      dispatch({ type: 'TOGGLE_LOCK', payload: calculatedItems ? { calculatedItems } : undefined });
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
+    },
+    
     loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState }),
     
     loadRemoteState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_REMOTE_STATE', payload: newState })
-  }), [state.items, rundownId, broadcastLiveUpdate]);
+  }), [state.items, state.numberingLocked, state.lockedRowNumbers, rundownId, broadcastLiveUpdate]);
 
   // Helper functions for common operations
   const helpers = useMemo(() => ({

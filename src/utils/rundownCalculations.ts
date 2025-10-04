@@ -71,6 +71,23 @@ export const isFloated = (item: RundownItem): boolean => {
   return item.isFloating || item.isFloated || false;
 };
 
+/**
+ * Generates letter suffix for locked row numbering
+ * 0 -> A, 1 -> B, ..., 25 -> Z, 26 -> AA, 27 -> AB, etc.
+ */
+export const generateLetterSuffix = (index: number): string => {
+  let suffix = '';
+  let num = index;
+  
+  while (num >= 0) {
+    suffix = String.fromCharCode(65 + (num % 26)) + suffix;
+    num = Math.floor(num / 26) - 1;
+    if (num < 0) break;
+  }
+  
+  return suffix;
+};
+
 // Helper function to remove row numbers from headers
 const clearHeaderNumbers = (items: RundownItem[]): RundownItem[] => {
   return items.map(item => {
@@ -84,7 +101,9 @@ const clearHeaderNumbers = (items: RundownItem[]): RundownItem[] => {
 // Pure function to calculate all items with timing and row numbers
 export const calculateItemsWithTiming = (
   items: RundownItem[],
-  rundownStartTime: string
+  rundownStartTime: string,
+  numberingLocked?: boolean,
+  lockedRowNumbers?: { [itemId: string]: string }
 ): CalculatedRundownItem[] => {
   // Clear header row numbers
   const itemsWithClearedHeaders = clearHeaderNumbers(items);
@@ -92,6 +111,10 @@ export const calculateItemsWithTiming = (
   let currentTime = rundownStartTime;
   let regularRowCount = 0; // Always start from 0 - this is the authoritative calculation
   let cumulativeDurationSeconds = 0;
+  
+  // Track last base number for suffix generation
+  let lastBaseNumber = 0;
+  const suffixCounters: { [baseNumber: string]: number } = {};
 
   return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
@@ -131,10 +154,36 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      // ALWAYS recalculate row numbers sequentially (authoritative source)
-      if (item.type !== 'header') {
-        regularRowCount++;
-        calculatedRowNumber = regularRowCount.toString();
+      // LOCKED NUMBERING MODE
+      if (numberingLocked && lockedRowNumbers && item.type !== 'header') {
+        if (lockedRowNumbers[item.id]) {
+          // This item has a locked number, use it
+          calculatedRowNumber = lockedRowNumbers[item.id];
+          
+          // Extract base number for suffix tracking
+          const match = calculatedRowNumber.match(/^(\d+)/);
+          if (match) {
+            lastBaseNumber = parseInt(match[1]);
+          }
+        } else {
+          // New item added after locking - generate suffix
+          const baseNumber = lastBaseNumber.toString();
+          
+          if (!suffixCounters[baseNumber]) {
+            suffixCounters[baseNumber] = 0;
+          }
+          
+          const suffix = generateLetterSuffix(suffixCounters[baseNumber]);
+          calculatedRowNumber = `${baseNumber}${suffix}`;
+          suffixCounters[baseNumber]++;
+        }
+      } else {
+        // NORMAL SEQUENTIAL NUMBERING MODE
+        if (item.type !== 'header') {
+          regularRowCount++;
+          calculatedRowNumber = regularRowCount.toString();
+          lastBaseNumber = regularRowCount;
+        }
       }
       
       // Elapsed time INCLUDING this item's duration (where we'll be after this item completes)

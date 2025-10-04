@@ -1277,9 +1277,14 @@ export const useSimplifiedRundownState = () => {
       return [];
     }
     
-    const calculated = calculateItemsWithTiming(state.items, state.startTime);
+    const calculated = calculateItemsWithTiming(
+      state.items, 
+      state.startTime,
+      state.numberingLocked,
+      state.lockedRowNumbers
+    );
     return calculated;
-  }, [state.items, state.startTime]);
+  }, [state.items, state.startTime, state.numberingLocked, state.lockedRowNumbers]);
 
   const totalRuntime = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) return '00:00:00';
