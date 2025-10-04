@@ -85,8 +85,7 @@ const RundownIndexContent = () => {
     moveItemDown,
     // Numbering lock
     numberingLocked,
-    toggleLock,
-    calculatedItems
+    toggleLock
   } = coreState;
 
   // Get team data for column deletion
@@ -648,7 +647,7 @@ const RundownIndexContent = () => {
         onMoveItemDown={moveItemDown}
         dragAndDrop={dragAndDrop}
         numberingLocked={numberingLocked}
-        onToggleLock={() => toggleLock(calculatedItems)}
+        onToggleLock={toggleLock}
       />
       
       {/* Floating Notes Window */}

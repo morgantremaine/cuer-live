@@ -111,6 +111,10 @@ export interface RundownContainerProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   
+  // Row numbering lock
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
+  
   // @dnd-kit integration
   dragAndDrop?: {
     DndContext: React.ComponentType<any>;

@@ -301,6 +301,10 @@ export const useRundownStateCoordination = () => {
       currentTime: persistedState.currentTime,
       rundownId: persistedState.rundownId,
       
+      // Row numbering lock state
+      numberingLocked: persistedState.numberingLocked,
+      lockedRowNumbers: persistedState.lockedRowNumbers,
+      
       // State flags (NOW with separated processing states)
       isLoading: persistedState.isLoading,
       hasUnsavedChanges: persistedState.hasUnsavedChanges,
@@ -378,6 +382,9 @@ export const useRundownStateCoordination = () => {
       // Autoscroll state with enhanced debugging
       autoScrollEnabled,
       toggleAutoScroll,
+      
+      // Row numbering lock toggle
+      toggleLock: persistedState.toggleLock,
       
       // Header collapse functions
       toggleHeaderCollapse,

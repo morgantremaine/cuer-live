@@ -1571,6 +1571,10 @@ export const useSimplifiedRundownState = () => {
     showDate: state.showDate,
     lastKnownTimestamp,
     
+    // Row numbering lock state
+    numberingLocked: state.numberingLocked,
+    lockedRowNumbers: state.lockedRowNumbers,
+    
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
@@ -1697,6 +1701,11 @@ export const useSimplifiedRundownState = () => {
     addHeader: enhancedActions.addHeader,
     addRowAtIndex,
     addHeaderAtIndex,
+    
+    // Row numbering lock toggle with calculated items
+    toggleLock: useCallback(() => {
+      actions.toggleLock(calculatedItems);
+    }, [actions.toggleLock, calculatedItems]),
     
     addColumn: (column: Column) => {
       saveUndoState(state.items, [], state.title, 'Add column');
