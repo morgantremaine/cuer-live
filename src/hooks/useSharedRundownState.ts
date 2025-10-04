@@ -82,7 +82,12 @@ export const useSharedRundownState = () => {
         const startTime = data.start_time || '09:00:00';
         
         // Calculate timing and row numbers using the same logic as main rundown
-        const itemsWithCalculations = calculateItemsWithTiming(rawItems, startTime);
+        const itemsWithCalculations = calculateItemsWithTiming(
+          rawItems, 
+          startTime,
+          data.numbering_locked || false,
+          data.locked_row_numbers || {}
+        );
         
         const normalizedRundownData = {
           id: data.id,
@@ -157,7 +162,12 @@ export const useSharedRundownState = () => {
           const startTime = data.start_time || '09:00:00';
           
           // Calculate timing and row numbers using the same logic as main rundown
-          const itemsWithCalculations = calculateItemsWithTiming(rawItems, startTime);
+          const itemsWithCalculations = calculateItemsWithTiming(
+            rawItems, 
+            startTime,
+            data.numbering_locked || false,
+            data.locked_row_numbers || {}
+          );
           
           const normalizedRundownData = {
             id: data.id,
