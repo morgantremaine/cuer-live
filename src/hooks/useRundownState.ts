@@ -127,7 +127,15 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       
       // AUTO-LOCK NEW ITEM IF IN LOCKED MODE
       let updatedLockedNumbers = state.lockedRowNumbers;
+      console.log('🔒 ADD_ITEM: Checking if should auto-lock', {
+        numberingLocked: state.numberingLocked,
+        itemType: item.type,
+        itemId: item.id,
+        currentLockedNumbers: Object.keys(state.lockedRowNumbers || {}).length
+      });
+      
       if (state.numberingLocked && item.type === 'regular') {
+        console.log('🔒 ADD_ITEM: Auto-locking new item in locked mode');
         // Calculate what the new item's row number will be
         // Import calculateItemsWithTiming at the top if needed
         const { calculateItemsWithTiming } = require('@/utils/rundownCalculations');
@@ -138,14 +146,28 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
           state.lockedRowNumbers
         );
         
+        console.log('🔒 ADD_ITEM: Calculated items count:', calculatedItems.length);
+        
         // Find the newly added item in the calculated results
         const calculatedNewItem = calculatedItems.find((ci: any) => ci.id === item.id);
+        console.log('🔒 ADD_ITEM: Found calculated new item', {
+          found: !!calculatedNewItem,
+          calculatedRowNumber: calculatedNewItem?.calculatedRowNumber
+        });
+        
         if (calculatedNewItem?.calculatedRowNumber) {
           // Add to locked numbers
           updatedLockedNumbers = {
             ...state.lockedRowNumbers,
             [item.id]: calculatedNewItem.calculatedRowNumber
           };
+          console.log('🔒 ADD_ITEM: Updated locked numbers', {
+            newItemId: item.id,
+            newRowNumber: calculatedNewItem.calculatedRowNumber,
+            totalLockedNumbers: Object.keys(updatedLockedNumbers).length
+          });
+        } else {
+          console.warn('🔒 ADD_ITEM: Failed to calculate row number for new item');
         }
       }
       
