@@ -214,15 +214,17 @@ export const calculateItemsWithTiming = (
           
           const baseNumberStr = baseNumber.toString();
           
-          // Initialize counter by counting existing items with this base number UP TO this position
+          // Initialize counter by counting existing items with this base number AND A SUFFIX UP TO this position
+          // Don't count the base item "3" itself, only "3A", "3B", etc.
           if (!suffixCounters[baseNumberStr]) {
             let existingCount = 0;
             for (let i = 0; i < index; i++) {
               const checkItem = itemsWithClearedHeaders[i];
               if (checkItem.type === 'regular' && lockedRowNumbers[checkItem.id]) {
                 const checkNumber = lockedRowNumbers[checkItem.id];
-                const match = checkNumber.match(/^(\d+)/);
-                if (match && parseInt(match[1]) === baseNumber) {
+                // Only count items with a suffix (e.g., "3A", "3B"), not just "3"
+                const matchWithSuffix = checkNumber.match(/^(\d+)([A-Z]+)$/);
+                if (matchWithSuffix && parseInt(matchWithSuffix[1]) === baseNumber) {
                   existingCount++;
                 }
               }
