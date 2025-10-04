@@ -7,9 +7,9 @@
 
 import { RundownItem } from '@/types/rundown';
 
-export type StructuralOperationType = 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header';
+export type StructuralOperationType = 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
 
-export type BroadcastFieldName = 'items:add' | 'items:remove' | 'items:remove-multiple' | 'items:copy' | 'items:reorder';
+export type BroadcastFieldName = 'items:add' | 'items:remove' | 'items:remove-multiple' | 'items:copy' | 'items:reorder' | 'lock_state';
 
 /**
  * Maps database operation types to broadcast field names
@@ -22,7 +22,8 @@ export function mapOperationToBroadcastField(operationType: StructuralOperationT
     'delete_row': 'items:remove-multiple',
     'copy_rows': 'items:copy',
     'move_rows': 'items:reorder',
-    'reorder': 'items:reorder'
+    'reorder': 'items:reorder',
+    'toggle_lock': 'lock_state'
   };
   
   return mapping[operationType];
@@ -41,6 +42,8 @@ export function mapOperationDataToPayload(
     newItems?: RundownItem[];
     insertIndex?: number;
     sequenceNumber?: number;
+    numberingLocked?: boolean;
+    lockedRowNumbers?: { [itemId: string]: string };
   }
 ): any {
   switch (operationType) {
@@ -72,6 +75,13 @@ export function mapOperationDataToPayload(
         order: operationData.order
       };
     
+    case 'toggle_lock':
+      // For lock operations: { numberingLocked, lockedRowNumbers }
+      return {
+        numberingLocked: operationData.numberingLocked,
+        lockedRowNumbers: operationData.lockedRowNumbers
+      };
+    
     default:
       console.warn('Unknown operation type:', operationType);
       return {};
@@ -99,6 +109,9 @@ export function validateOperationData(
     case 'reorder':
     case 'move_rows':
       return !!(operationData.order?.length > 0);
+    
+    case 'toggle_lock':
+      return operationData.numberingLocked !== undefined;
     
     default:
       return false;

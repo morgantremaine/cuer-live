@@ -1770,7 +1770,35 @@ export const useSimplifiedRundownState = () => {
     // Row numbering lock toggle with calculated items
     toggleLock: useCallback(() => {
       actions.toggleLock(calculatedItems);
-    }, [actions.toggleLock, calculatedItems]),
+      
+      // In per-cell mode, trigger structural save to persist lock state
+      if (cellEditIntegration.isPerCellEnabled && rundownId && currentUserId) {
+        console.log('🔒 TOGGLE_LOCK: Triggering structural save', {
+          willBeLocked: !state.numberingLocked,
+          currentLockedCount: Object.keys(state.lockedRowNumbers).length
+        });
+        
+        // Calculate the new state based on current lock status
+        const newLockState = !state.numberingLocked;
+        const newLockedNumbers = newLockState 
+          ? (() => {
+              const snapshot: { [itemId: string]: string } = {};
+              calculatedItems.forEach((item: any) => {
+                if (item.type === 'regular' && item.calculatedRowNumber) {
+                  snapshot[item.id] = item.calculatedRowNumber;
+                }
+              });
+              return snapshot;
+            })()
+          : {};
+        
+        markStructuralChange('toggle_lock', {
+          numberingLocked: newLockState,
+          lockedRowNumbers: newLockedNumbers,
+          items: state.items
+        });
+      }
+    }, [actions.toggleLock, calculatedItems, cellEditIntegration.isPerCellEnabled, rundownId, currentUserId, state.numberingLocked, state.lockedRowNumbers, state.items, markStructuralChange]),
     
     addColumn: (column: Column) => {
       saveUndoState(state.items, [], state.title, 'Add column');

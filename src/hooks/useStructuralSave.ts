@@ -13,11 +13,13 @@ interface StructuralOperationData {
   insertIndex?: number;
   sequenceNumber?: number;
   contentSnapshot?: RundownItem[]; // Snapshot of current content to prevent race conditions
+  lockedRowNumbers?: { [itemId: string]: string }; // For lock operations
+  numberingLocked?: boolean; // For lock operations
 }
 
 interface StructuralOperation {
   rundownId: string;
-  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header';
+  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;

@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface StructuralOperation {
   rundownId: string;
-  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header';
+  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
   operationData: {
     items?: any[];
     order?: string[];
@@ -140,6 +140,14 @@ serve(async (req) => {
           actionDescription = `Copied ${operation.operationData.newItems.length} item(s)`;
           console.log(`🏗️ Copied ${operation.operationData.newItems.length} items at index ${insertIndex}`);
         }
+        break;
+
+      case 'toggle_lock':
+        // Lock state changes don't modify items, only update lock fields
+        actionDescription = operation.operationData.numberingLocked 
+          ? `Locked row numbering (${Object.keys(operation.operationData.lockedRowNumbers || {}).length} rows)` 
+          : 'Unlocked row numbering';
+        console.log(`🔒 ${actionDescription}`);
         break;
 
       default:
