@@ -35,17 +35,17 @@ const workflowStages: WorkflowStage[] = [
       {
         id: 'cuer-ai',
         title: 'Cuer AI',
-        description: 'Your intelligent production partner that revolutionizes rundown creation and management. Cuer AI combines powerful template generation with real-time analysis to help you build better shows faster. Whether you\'re starting from scratch or optimizing an existing rundown, Cuer AI provides instant insights, catches potential issues before they happen, and suggests improvements that enhance your production workflow.',
+        description: 'Your intelligent production partner powered by AI. Cuer AI includes both a powerful template generator to jumpstart your rundowns and an interactive assistant available throughout your workflow to provide guidance, catch issues, and optimize your show.',
         image: '/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png',
         secondaryImage: '/uploads/cuer-ai-template.jpg',
         alt: 'Cuer AI Assistant and Template Generator',
         details: [
-          'Generate complete, production-ready rundown templates in seconds with customizable formats',
-          'Real-time rundown analysis that identifies timing conflicts, gaps, and optimization opportunities',
-          'Intelligent issue detection with actionable solutions and best practice recommendations',
-          'Smart content suggestions based on your show format and historical production data',
-          'Automated timing calculations and duration estimates to keep your show on schedule',
-          'Context-aware assistance that learns from your workflow and production preferences'
+          'Generate complete, production-ready rundown templates instantly with customizable show formats',
+          'Chat with AI directly in your rundown for on-demand assistance and expert guidance',
+          'Get intelligent analysis of timing conflicts, gaps, and optimization opportunities when you ask',
+          'Receive actionable solutions and best practice recommendations for any production challenge',
+          'Smart content and timing suggestions based on your specific show format and workflow',
+          'Context-aware help that understands your production needs and preferences'
         ],
         icon: Bot
       },
