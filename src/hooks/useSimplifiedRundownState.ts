@@ -1509,9 +1509,7 @@ export const useSimplifiedRundownState = () => {
       });
       
       if (calculatedNewItem?.calculatedRowNumber) {
-        // Set the rowNumber on the actual item
-        newItem.rowNumber = calculatedNewItem.calculatedRowNumber;
-        // Also update it in the newItems array
+        // Update the item in the newItems array with the calculated row number
         const itemIndex = newItems.findIndex(i => i.id === newItem.id);
         if (itemIndex !== -1) {
           newItems[itemIndex] = { ...newItems[itemIndex], rowNumber: calculatedNewItem.calculatedRowNumber };
@@ -1539,13 +1537,14 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast add at index for immediate realtime sync
+    // Broadcast add at index for immediate realtime sync (use the updated item from array)
     if (rundownId && currentUserId) {
+      const itemToBroadcast = newItems.find(i => i.id === newItem.id) || newItem;
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
         'items:add',
-        { item: newItem, index: actualIndex },
+        { item: itemToBroadcast, index: actualIndex },
         currentUserId
       );
     }
