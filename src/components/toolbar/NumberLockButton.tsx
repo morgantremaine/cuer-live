@@ -39,7 +39,6 @@ export const NumberLockButton = ({
             ) : (
               <Unlock className="h-4 w-4 text-muted-foreground" />
             )}
-            <span>{isLocked ? 'Locked' : 'Lock'}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
