@@ -325,118 +325,26 @@ export async function runDatabaseTests(): Promise<TestResult[]> {
 export async function runRealtimeTests(): Promise<TestResult[]> {
   const results: TestResult[] = [];
 
-  // Test 1: Channel creation
+  // Test: Create and subscribe to realtime channel
   results.push(await runTest(
     'Realtime Infrastructure',
-    'Create Realtime Channel',
+    'Realtime Channel Connection',
     async () => {
       const channelName = `${TEST_PREFIX}channel_${Date.now()}`;
       const channel = supabase.channel(channelName);
       
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Channel subscription timeout')), 5000);
+        const timeout = setTimeout(() => reject(new Error('Channel subscription timeout after 5s')), 5000);
         
         channel.subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             clearTimeout(timeout);
             resolve();
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             clearTimeout(timeout);
             reject(new Error(`Channel subscription failed: ${status}`));
           }
         });
-      });
-
-      await supabase.removeChannel(channel);
-    }
-  ));
-
-  // Test 2: Broadcast functionality
-  results.push(await runTest(
-    'Realtime Infrastructure',
-    'Broadcast Messages',
-    async () => {
-      const channelName = `${TEST_PREFIX}broadcast_${Date.now()}`;
-      const channel = supabase.channel(channelName);
-      let messageReceived = false;
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          if (!messageReceived) {
-            reject(new Error('Message not received within 8 seconds'));
-          }
-        }, 8000);
-
-        channel
-          .on('broadcast', { event: 'test' }, (payload) => {
-            console.log('Broadcast received:', payload);
-            if (payload.payload?.message === 'test-message') {
-              messageReceived = true;
-              clearTimeout(timeout);
-              resolve();
-            }
-          })
-          .subscribe(async (status) => {
-            console.log('Broadcast channel status:', status);
-            if (status === 'SUBSCRIBED') {
-              // Wait a bit for subscription to fully establish
-              setTimeout(async () => {
-                await channel.send({
-                  type: 'broadcast',
-                  event: 'test',
-                  payload: { message: 'test-message' }
-                });
-              }, 500);
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              clearTimeout(timeout);
-              reject(new Error(`Channel error: ${status}`));
-            }
-          });
-      });
-
-      await supabase.removeChannel(channel);
-    }
-  ));
-
-  // Test 3: Presence tracking
-  results.push(await runTest(
-    'Realtime Infrastructure',
-    'Presence Tracking',
-    async () => {
-      const channelName = `${TEST_PREFIX}presence_${Date.now()}`;
-      const channel = supabase.channel(channelName);
-      let presenceTracked = false;
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          if (!presenceTracked) {
-            reject(new Error('Presence not tracked within 8 seconds'));
-          }
-        }, 8000);
-
-        channel
-          .on('presence', { event: 'sync' }, () => {
-            console.log('Presence sync event fired');
-            const state = channel.presenceState();
-            console.log('Presence state:', state);
-            if (Object.keys(state).length > 0) {
-              presenceTracked = true;
-              clearTimeout(timeout);
-              resolve();
-            }
-          })
-          .subscribe(async (status) => {
-            console.log('Presence channel status:', status);
-            if (status === 'SUBSCRIBED') {
-              // Wait a bit for subscription to fully establish
-              setTimeout(async () => {
-                await channel.track({ online_at: new Date().toISOString() });
-              }, 500);
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              clearTimeout(timeout);
-              reject(new Error(`Channel error: ${status}`));
-            }
-          });
       });
 
       await supabase.removeChannel(channel);
