@@ -96,6 +96,9 @@ export const useSimplifiedRundownState = () => {
   // Track last save time for race condition detection
   const lastSaveTimeRef = useRef<number>(0);
   
+  // Track pending locked numbers during rapid row additions
+  const pendingLockedNumbersRef = useRef<Record<string, string>>({});
+  
   // =================================================================================
   // ULTRA-SIMPLE FIELD PROTECTION
   //
@@ -1505,13 +1508,24 @@ export const useSimplifiedRundownState = () => {
     
     if (state.numberingLocked && state.lockedRowNumbers) {
       console.log('🔒 addRowAtIndex: Auto-locking new item in locked mode');
-      // Calculate what the new item's row number will be
-      // Use stateRef to get the absolute latest locked numbers, even during rapid additions
+      // Merge current locked numbers with pending ones (for rapid additions)
+      const currentLockedNumbers = {
+        ...state.lockedRowNumbers,
+        ...pendingLockedNumbersRef.current
+      };
+      
+      console.log('🔒 addRowAtIndex: Using merged locked numbers', {
+        stateCount: Object.keys(state.lockedRowNumbers).length,
+        pendingCount: Object.keys(pendingLockedNumbersRef.current).length,
+        mergedCount: Object.keys(currentLockedNumbers).length
+      });
+      
+      // Calculate what the new item's row number will be using merged numbers
       const calculatedItems = calculateItemsWithTiming(
         newItems,
         state.startTime,
         state.numberingLocked,
-        stateRef.current.lockedRowNumbers || state.lockedRowNumbers
+        currentLockedNumbers
       );
       
       console.log('🔒 addRowAtIndex: Calculated items count:', calculatedItems.length);
@@ -1530,6 +1544,9 @@ export const useSimplifiedRundownState = () => {
           newItems[itemIndex] = { ...newItems[itemIndex], rowNumber: calculatedNewItem.calculatedRowNumber };
         }
         
+        // Immediately store in pending ref for next rapid addition
+        pendingLockedNumbersRef.current[newItem.id] = calculatedNewItem.calculatedRowNumber;
+        
         // Update locked numbers with the new item's calculated number
         const updatedLockedNumbers = {
           ...state.lockedRowNumbers,
@@ -1538,7 +1555,8 @@ export const useSimplifiedRundownState = () => {
         console.log('🔒 addRowAtIndex: Updating locked numbers', {
           newItemId: newItem.id,
           newRowNumber: calculatedNewItem.calculatedRowNumber,
-          totalLockedNumbers: Object.keys(updatedLockedNumbers).length
+          totalLockedNumbers: Object.keys(updatedLockedNumbers).length,
+          pendingCount: Object.keys(pendingLockedNumbersRef.current).length
         });
         
         // Update the locked numbers in state
@@ -1576,6 +1594,13 @@ export const useSimplifiedRundownState = () => {
         lockedRowNumbers: finalLockedNumbers,
         numberingLocked: state.numberingLocked
       });
+      
+      // Clear pending locked numbers after structural save completes
+      // This ensures the next addition starts fresh from the saved state
+      setTimeout(() => {
+        console.log('🔒 Clearing pending locked numbers after save');
+        pendingLockedNumbersRef.current = {};
+      }, 100);
     }
   }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, saveUndoState, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
