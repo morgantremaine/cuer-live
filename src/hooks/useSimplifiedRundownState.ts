@@ -583,6 +583,20 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
+            case 'lock_state': {
+              const { numberingLocked, lockedRowNumbers } = update.value || {};
+              if (numberingLocked !== undefined) {
+                console.log('🔒 Lock state broadcast received:', {
+                  numberingLocked,
+                  lockedRowNumbersCount: Object.keys(lockedRowNumbers || {}).length
+                });
+                actionsRef.current.loadState({
+                  numberingLocked,
+                  lockedRowNumbers: lockedRowNumbers || {}
+                });
+              }
+              break;
+            }
             default:
               console.warn('🚨 Unknown rundown-level field:', update.field);
           }
