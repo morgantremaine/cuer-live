@@ -104,6 +104,9 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     canZoomIn,
     canZoomOut,
     isDefaultZoom,
+    // Row number locking
+    numberingLocked,
+    onToggleLock,
     dragAndDrop
   } = props;
 
@@ -274,6 +277,9 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         canZoomIn={canZoomIn}
         canZoomOut={canZoomOut}
         isDefaultZoom={isDefaultZoom}
+        // Row number locking
+        numberingLocked={numberingLocked}
+        onToggleLock={onToggleLock}
       />
 
       {/* Main Content */}

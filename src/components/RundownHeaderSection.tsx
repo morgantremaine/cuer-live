@@ -64,6 +64,9 @@ interface RundownHeaderSectionProps {
   canZoomIn?: boolean;
   canZoomOut?: boolean;
   isDefaultZoom?: boolean;
+  // Row number locking
+  numberingLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const RundownHeaderSection = ({
@@ -125,7 +128,10 @@ const RundownHeaderSection = ({
   onResetZoom,
   canZoomIn,
   canZoomOut,
-  isDefaultZoom
+  isDefaultZoom,
+  // Row number locking
+  numberingLocked,
+  onToggleLock
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -198,6 +204,9 @@ const RundownHeaderSection = ({
         canZoomIn={canZoomIn}
         canZoomOut={canZoomOut}
         isDefaultZoom={isDefaultZoom}
+        // Row number locking
+        numberingLocked={numberingLocked}
+        onToggleLock={onToggleLock}
       />
     </div>
   );

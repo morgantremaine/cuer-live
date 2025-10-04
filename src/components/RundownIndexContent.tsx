@@ -88,9 +88,6 @@ const RundownIndexContent = () => {
     toggleLock
   } = coreState;
 
-  // Debug lock state
-  console.log('🔒 Lock state:', { numberingLocked, hasToggleLock: !!toggleLock });
-
   // Get team data for column deletion
   const { team } = useTeam();
 
