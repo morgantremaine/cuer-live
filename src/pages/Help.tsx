@@ -217,28 +217,44 @@ const Help = () => {
               <MousePointer className="h-6 w-6 mr-2 text-green-600" />
               Basic Operations
             </h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Adding Content</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm ml-4">
                   <li>Click "Add Segment" to create new rundown entries</li>
                   <li>Use "Add Header" for section dividers</li>
                   <li>Drag and drop to reorder items</li>
                 </ul>
               </div>
+              
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Editing</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm ml-4">
                   <li>Click any cell to edit content</li>
                   <li>Press Tab to move to next cell</li>
                   <li>Use Enter to save and move down</li>
                   <li>Use Cmd+Enter (Mac) or Ctrl+Enter (Windows) to insert line breaks in cells</li>
-                  <li>Right-click rows to color them or float/unfloat items</li>
                 </ul>
               </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Right-Click Row Options</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Right-click on any row to access additional options:</p>
+                <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm ml-4">
+                  <li><strong>Color Rows:</strong> Assign colors to rows for visual organization (e.g., highlight important segments or group related content)</li>
+                  <li><strong>Float/Unfloat Rows:</strong> Floating a row removes it from timing calculations and teleprompter display
+                    <ul className="list-disc list-inside mt-1 ml-6 space-y-1">
+                      <li>Floated rows appear with a different visual indicator</li>
+                      <li>Use for contingency segments, backup content, or items that may not air</li>
+                      <li>Unfloat to restore the row to normal timing and teleprompter visibility</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Undo & Redo</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm ml-4">
                   <li>Use the Undo/Redo buttons in the toolbar to revert or reapply changes</li>
                   <li>Undo history tracks all major editing actions across the rundown</li>
                   <li>Hover over buttons to see what action will be undone/redone</li>
