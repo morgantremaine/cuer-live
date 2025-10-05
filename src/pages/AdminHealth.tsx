@@ -20,7 +20,9 @@ import {
   runRundownOperationTests,
   runDatabaseTests,
   runRealtimeTests,
-  runTeamOperationTests
+  runTeamOperationTests,
+  runPerCellSaveTests,
+  runDataIntegrityTests
 } from '@/utils/systemTests';
 
 interface TestProgress {
@@ -47,29 +49,37 @@ const AdminHealth = () => {
     const results: TestResult[] = [];
     
     try {
-      setTestProgress({ current: 1, total: 6, currentTest: 'Authentication' });
+      setTestProgress({ current: 1, total: 8, currentTest: 'Authentication' });
       const authTests = await runAuthenticationTests();
       results.push(...authTests);
       
-      setTestProgress({ current: 2, total: 6, currentTest: 'Team Invitations' });
+      setTestProgress({ current: 2, total: 8, currentTest: 'Team Invitations' });
       const invitationTests = await runInvitationTests();
       results.push(...invitationTests);
       
-      setTestProgress({ current: 3, total: 6, currentTest: 'Rundown Operations' });
+      setTestProgress({ current: 3, total: 8, currentTest: 'Rundown Operations' });
       const rundownTests = await runRundownOperationTests();
       results.push(...rundownTests);
       
-      setTestProgress({ current: 4, total: 6, currentTest: 'Database Connection' });
+      setTestProgress({ current: 4, total: 8, currentTest: 'Database Connection' });
       const databaseTests = await runDatabaseTests();
       results.push(...databaseTests);
       
-      setTestProgress({ current: 5, total: 6, currentTest: 'Realtime Infrastructure' });
+      setTestProgress({ current: 5, total: 8, currentTest: 'Realtime Infrastructure' });
       const realtimeTests = await runRealtimeTests();
       results.push(...realtimeTests);
       
-      setTestProgress({ current: 6, total: 6, currentTest: 'Team Operations' });
+      setTestProgress({ current: 6, total: 8, currentTest: 'Team Operations' });
       const teamTests = await runTeamOperationTests();
       results.push(...teamTests);
+      
+      setTestProgress({ current: 7, total: 8, currentTest: 'Per-Cell Save System' });
+      const perCellTests = await runPerCellSaveTests();
+      results.push(...perCellTests);
+      
+      setTestProgress({ current: 8, total: 8, currentTest: 'Data Integrity' });
+      const integrityTests = await runDataIntegrityTests();
+      results.push(...integrityTests);
       
       setTestResults(results);
       

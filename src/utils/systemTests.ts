@@ -405,3 +405,283 @@ export async function runTeamOperationTests(): Promise<TestResult[]> {
 
   return results;
 }
+
+// ============ PER-CELL SAVE SYSTEM TESTS ============
+export async function runPerCellSaveTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  let testRundownId: string | null = null;
+  let testTeamId: string | null = null;
+
+  try {
+    // Get user's first team
+    const { data: userTeams } = await supabase
+      .from('team_members')
+      .select('team_id')
+      .limit(1)
+      .single();
+    
+    if (!userTeams) {
+      results.push({
+        category: 'Per-Cell Save',
+        test: 'Setup - Get Team',
+        passed: false,
+        duration: 0,
+        error: 'No team available for testing'
+      });
+      return results;
+    }
+    
+    testTeamId = userTeams.team_id;
+
+    // Test 1: Built-in field save persistence
+    results.push(await runTest(
+      'Per-Cell Save',
+      'Built-in Field Save & Persist',
+      async () => {
+        const { data: rundown, error: createError } = await supabase
+          .from('rundowns')
+          .insert({
+            title: 'Health Test - Built-in',
+            team_id: testTeamId,
+            items: [{
+              id: 'test-item-1',
+              type: 'regular',
+              name: 'Original Name',
+              rowNumber: '1',
+              startTime: '', duration: '', endTime: '', elapsedTime: '',
+              talent: '', script: '', gfx: '', video: '', images: '', notes: '',
+              color: '', isFloating: false
+            }],
+            per_cell_save_enabled: true
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        testRundownId = rundown.id;
+
+        const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
+          body: {
+            rundownId: testRundownId,
+            updates: [{
+              itemId: 'test-item-1',
+              field: 'name',
+              value: 'Updated Name'
+            }]
+          }
+        });
+
+        if (saveError) throw saveError;
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const { data: refetched, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('items')
+          .eq('id', testRundownId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        const item = refetched.items.find((i: any) => i.id === 'test-item-1');
+        if (!item || item.name !== 'Updated Name') {
+          throw new Error(`Built-in field not persisted. Got: "${item?.name}"`);
+        }
+      }
+    ));
+
+    // Test 2: Custom field save persistence
+    results.push(await runTest(
+      'Per-Cell Save',
+      'Custom Field Save & Persist',
+      async () => {
+        if (!testRundownId) throw new Error('Test rundown not created');
+
+        const { error: updateError } = await supabase
+          .from('rundowns')
+          .update({
+            items: [{
+              id: 'test-item-2',
+              type: 'regular',
+              name: 'Test Item 2',
+              rowNumber: '2',
+              startTime: '', duration: '', endTime: '', elapsedTime: '',
+              talent: '', script: '', gfx: '', video: '', images: '', notes: '',
+              color: '', isFloating: false,
+              customFields: { custom_test: 'Original' }
+            }]
+          })
+          .eq('id', testRundownId);
+
+        if (updateError) throw updateError;
+
+        const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
+          body: {
+            rundownId: testRundownId,
+            updates: [{
+              itemId: 'test-item-2',
+              field: 'customFields.custom_test',
+              value: 'Updated Custom'
+            }]
+          }
+        });
+
+        if (saveError) throw saveError;
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const { data: refetched, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('items')
+          .eq('id', testRundownId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        const item = refetched.items.find((i: any) => i.id === 'test-item-2');
+        if (!item?.customFields || item.customFields.custom_test !== 'Updated Custom') {
+          throw new Error(`Custom field not persisted. Got: "${item?.customFields?.custom_test}"`);
+        }
+      }
+    ));
+
+    // Test 3: Mixed field types
+    results.push(await runTest(
+      'Per-Cell Save',
+      'Built-in + Custom Together',
+      async () => {
+        if (!testRundownId) throw new Error('Test rundown not created');
+
+        const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
+          body: {
+            rundownId: testRundownId,
+            updates: [
+              { itemId: 'test-item-2', field: 'talent', value: 'Test Talent' },
+              { itemId: 'test-item-2', field: 'customFields.custom_test', value: 'Final Custom' }
+            ]
+          }
+        });
+
+        if (saveError) throw saveError;
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const { data: refetched, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('items')
+          .eq('id', testRundownId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        const item = refetched.items.find((i: any) => i.id === 'test-item-2');
+        if (!item || item.talent !== 'Test Talent') {
+          throw new Error(`Built-in not saved. Got: "${item?.talent}"`);
+        }
+        if (!item.customFields || item.customFields.custom_test !== 'Final Custom') {
+          throw new Error(`Custom not saved. Got: "${item?.customFields?.custom_test}"`);
+        }
+      }
+    ));
+
+  } finally {
+    if (testRundownId) {
+      await supabase.from('rundowns').delete().eq('id', testRundownId);
+    }
+  }
+
+  return results;
+}
+
+// ============ DATA INTEGRITY TESTS ============
+export async function runDataIntegrityTests(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  let testRundownId: string | null = null;
+  let testTeamId: string | null = null;
+
+  try {
+    const { data: userTeams } = await supabase
+      .from('team_members')
+      .select('team_id')
+      .limit(1)
+      .single();
+    
+    if (!userTeams) {
+      results.push({
+        category: 'Data Integrity',
+        test: 'Setup - Get Team',
+        passed: false,
+        duration: 0,
+        error: 'No team available for testing'
+      });
+      return results;
+    }
+    
+    testTeamId = userTeams.team_id;
+
+    // Test 1: Custom column end-to-end
+    results.push(await runTest(
+      'Data Integrity',
+      'Custom Column Workflow',
+      async () => {
+        const { data: rundown, error: createError } = await supabase
+          .from('rundowns')
+          .insert({
+            title: 'Health Test - Integrity',
+            team_id: testTeamId,
+            items: [
+              {
+                id: 'int-1',
+                type: 'regular',
+                name: 'Item 1',
+                rowNumber: '1',
+                startTime: '', duration: '', endTime: '', elapsedTime: '',
+                talent: 'Host A', script: '', gfx: '', video: '', images: '', notes: '',
+                color: '', isFloating: false,
+                customFields: { music: 'Song A', location: 'Studio 1' }
+              }
+            ],
+            per_cell_save_enabled: true
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        testRundownId = rundown.id;
+
+        const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
+          body: {
+            rundownId: testRundownId,
+            updates: [
+              { itemId: 'int-1', field: 'customFields.music', value: 'Updated Song' },
+              { itemId: 'int-1', field: 'talent', value: 'Updated Host' }
+            ]
+          }
+        });
+
+        if (saveError) throw saveError;
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const { data: refetched, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('items')
+          .eq('id', testRundownId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        const item = refetched.items.find((i: any) => i.id === 'int-1');
+
+        if (item?.customFields?.music !== 'Updated Song') {
+          throw new Error('Custom field not updated');
+        }
+        if (item?.talent !== 'Updated Host') {
+          throw new Error('Built-in field not updated');
+        }
+        if (item?.customFields?.location !== 'Studio 1') {
+          throw new Error('Other custom field was lost');
+        }
+      }
+    ));
+
+  } finally {
+    if (testRundownId) {
+      await supabase.from('rundowns').delete().eq('id', testRundownId);
+    }
+  }
+
+  return results;
+}
