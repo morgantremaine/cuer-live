@@ -450,11 +450,12 @@ export async function runPerCellSaveTests(testTeamId: string): Promise<TestResul
         const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
           body: {
             rundownId: testRundownId,
-            updates: [{
+            fieldUpdates: [{
               itemId: 'test-item-1',
               field: 'name',
               value: 'Updated Name'
-            }]
+            }],
+            contentSignature: 'test-signature'
           }
         });
 
@@ -503,11 +504,12 @@ export async function runPerCellSaveTests(testTeamId: string): Promise<TestResul
         const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
           body: {
             rundownId: testRundownId,
-            updates: [{
+            fieldUpdates: [{
               itemId: 'test-item-2',
               field: 'customFields.custom_test',
               value: 'Updated Custom'
-            }]
+            }],
+            contentSignature: 'test-signature'
           }
         });
 
@@ -538,10 +540,11 @@ export async function runPerCellSaveTests(testTeamId: string): Promise<TestResul
         const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
           body: {
             rundownId: testRundownId,
-            updates: [
+            fieldUpdates: [
               { itemId: 'test-item-2', field: 'talent', value: 'Test Talent' },
               { itemId: 'test-item-2', field: 'customFields.custom_test', value: 'Final Custom' }
-            ]
+            ],
+            contentSignature: 'test-signature'
           }
         });
 
@@ -620,10 +623,11 @@ export async function runDataIntegrityTests(testTeamId: string): Promise<TestRes
         const { error: saveError } = await supabase.functions.invoke('cell-field-save', {
           body: {
             rundownId: testRundownId,
-            updates: [
+            fieldUpdates: [
               { itemId: 'int-1', field: 'customFields.music', value: 'Updated Song' },
               { itemId: 'int-1', field: 'talent', value: 'Updated Host' }
-            ]
+            ],
+            contentSignature: 'test-signature'
           }
         });
 
