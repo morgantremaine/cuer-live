@@ -35,7 +35,7 @@ export const UnlockConfirmationDialog = ({
               <strong>Warning:</strong> Unlocking will renumber all rows sequentially.
             </p>
             <p>
-              Row numbers like <span className="font-mono">3A, 3B, 3C</span> will become{' '}
+              Row numbers like <span className="font-mono">3.1, 3.2, 3.3</span> will become{' '}
               <span className="font-mono">3, 4, 5</span>.
             </p>
             <p className="text-destructive">This action cannot be undone.</p>
