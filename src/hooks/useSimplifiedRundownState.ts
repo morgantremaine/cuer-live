@@ -690,7 +690,7 @@ export const useSimplifiedRundownState = () => {
   
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
-    isPerCellEnabled: perCellEnabled,
+    isPerCellEnabled: Boolean(state.perCellSaveEnabled), // Use reactive state value, not derived constant
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
