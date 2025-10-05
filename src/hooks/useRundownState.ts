@@ -6,6 +6,7 @@ import { Column } from '@/types/columns';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { debugLogger } from '@/utils/debugLogger';
+import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
 export interface RundownState {
   items: RundownItem[];
@@ -137,8 +138,6 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       if (state.numberingLocked && item.type === 'regular') {
         console.log('🔒 ADD_ITEM: Auto-locking new item in locked mode');
         // Calculate what the new item's row number will be
-        // Import calculateItemsWithTiming at the top if needed
-        const { calculateItemsWithTiming } = require('@/utils/rundownCalculations');
         const calculatedItems = calculateItemsWithTiming(
           items,
           state.startTime,

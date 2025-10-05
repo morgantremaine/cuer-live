@@ -4,14 +4,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 
 // Check if we're in a blueprint context (optional dependency)
-const useBlueprintContextSafe = () => {
-  try {
-    const { useBlueprintContext } = require('@/contexts/BlueprintContext');
-    return useBlueprintContext();
-  } catch {
-    return null;
-  }
-};
+let useBlueprintContextSafe: () => any;
+try {
+  const BlueprintContextModule = await import('@/contexts/BlueprintContext');
+  useBlueprintContextSafe = BlueprintContextModule.useBlueprintContext;
+} catch {
+  useBlueprintContextSafe = () => null;
+}
 
 interface Note {
   id: string;
