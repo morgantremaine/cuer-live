@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio, Wifi, WifiOff, LoaderCircle, Search } from 'lucide-react';
+import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio, Wifi, WifiOff, LoaderCircle, Search, Settings, Undo2, Lock } from 'lucide-react';
 import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,7 @@ const helpSections = [
   { id: 'column-manager', title: 'Column Manager', icon: FileText },
   { id: 'find-replace', title: 'Find & Replace', icon: Search },
   { id: 'team-collaboration', title: 'Team Collaboration', icon: Users },
+  { id: 'settings-preferences', title: 'Settings & Preferences', icon: Settings },
   { id: 'connection-status', title: 'Connection Status', icon: Wifi },
   { id: 'showcaller', title: 'Showcaller', icon: Radio },
   { id: 'ai-helper', title: 'AI Helper', icon: Bot },
@@ -225,6 +226,23 @@ const Help = () => {
                   <li>Right-click rows to color them or float/unfloat items</li>
                 </ul>
               </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Undo & Redo</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li>Use the Undo/Redo buttons in the toolbar to revert or reapply changes</li>
+                  <li>Undo history tracks all major editing actions across the rundown</li>
+                  <li>Hover over buttons to see what action will be undone/redone</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Row Number Locking</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li>Use the lock button in the toolbar to control row numbering behavior</li>
+                  <li><strong>Locked (default):</strong> When adding rows between existing items, new rows get letter suffixes (e.g., 3A, 3B, 3C) to preserve original numbering</li>
+                  <li><strong>Unlocked:</strong> All rows are renumbered sequentially (1, 2, 3, 4...) - useful when you want clean sequential numbering</li>
+                  <li>Unlocking permanently converts letter-suffixed rows to sequential numbers</li>
+                </ul>
+              </div>
             </div>
           </section>
 
@@ -296,6 +314,48 @@ const Help = () => {
                 <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
                 <li><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown</li>
               </ul>
+              
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Team Switching</h3>
+                <p className="text-sm mb-2">If you're a member of multiple teams, you can easily switch between them:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                  <li>Click on your team name in the top navigation bar</li>
+                  <li>Select a different team from the dropdown menu</li>
+                  <li>Your active team determines which rundowns and resources you see</li>
+                  <li>Each team has its own rundowns, layouts, and settings</li>
+                </ul>
+              </div>
+              
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Team Roles</h3>
+                <p className="text-sm mb-2">Teams have three permission levels:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
+                  <li><strong>Admin:</strong> Full control - can manage team settings, invite/remove members, and edit all rundowns</li>
+                  <li><strong>Manager:</strong> Can invite new team members and manage team resources, but cannot change team settings or remove other members</li>
+                  <li><strong>Member:</strong> Can create and edit rundowns but cannot manage team membership or settings</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+                {/* Settings & Preferences */}
+                <section id="settings-preferences" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Settings className="h-6 w-6 mr-2 text-gray-600" />
+              Settings & Preferences
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Customize your Cuer experience with personal preferences:</p>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Clock Format (12/24 Hour)</h3>
+                <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                  <li>Choose between 12-hour (with AM/PM) or 24-hour time format</li>
+                  <li>Access this setting from the timezone selector in any rundown</li>
+                  <li>Your preference applies to all timestamps, including showcaller timing, AD view, and scheduling</li>
+                  <li>This is a personal preference and doesn't affect other team members' views</li>
+                </ul>
+              </div>
             </div>
           </section>
 
@@ -388,6 +448,18 @@ const Help = () => {
                 <li><strong>Content Suggestions:</strong> Get help writing scripts, segment descriptions, or other rundown content</li>
                 <li><strong>Timing Assistance:</strong> Ask questions about duration calculations and scheduling</li>
               </ul>
+              
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Templates</h3>
+                <p className="text-sm mb-2">Speed up rundown creation with AI-powered templates:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                  <li>When creating a new rundown, select "Generate with AI" to use an AI template</li>
+                  <li>Describe the type of show you're producing (e.g., "morning news show", "awards ceremony", "sports broadcast")</li>
+                  <li>The AI generates a complete rundown structure with appropriate segments, timing estimates, and placeholder content</li>
+                  <li>Edit and customize the generated rundown to fit your specific needs</li>
+                  <li>Templates provide a professional starting point, saving hours of setup time</li>
+                </ul>
+              </div>
             </div>
           </section>
 
