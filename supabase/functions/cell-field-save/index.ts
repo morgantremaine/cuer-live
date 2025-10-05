@@ -119,9 +119,22 @@ serve(async (req) => {
       if (update.itemId) {
         const itemIndex = updatedItems.findIndex(item => item.id === update.itemId)
         if (itemIndex >= 0) {
-          updatedItems[itemIndex] = {
-            ...updatedItems[itemIndex],
-            [update.field]: update.value
+          // Handle custom fields with nested structure
+          if (update.field.startsWith('customFields.')) {
+            const customFieldKey = update.field.replace('customFields.', '')
+            updatedItems[itemIndex] = {
+              ...updatedItems[itemIndex],
+              customFields: {
+                ...(updatedItems[itemIndex].customFields || {}),
+                [customFieldKey]: update.value
+              }
+            }
+          } else {
+            // Regular field update
+            updatedItems[itemIndex] = {
+              ...updatedItems[itemIndex],
+              [update.field]: update.value
+            }
           }
         }
       } else {
