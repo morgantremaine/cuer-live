@@ -948,6 +948,11 @@ export const useSimplifiedRundownState = () => {
             [customFieldKey]: value
           }
         });
+        
+        // CRITICAL: Track field change for per-cell save system
+        if (cellEditIntegration.isPerCellEnabled) {
+          cellEditIntegration.handleCellChange(id, field, value);
+        }
       }
     } else {
       let updateField = field;
