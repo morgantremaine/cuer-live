@@ -33,14 +33,6 @@ const ColumnList = ({
   onDeleteColumn, 
   onRenameColumn 
 }: ColumnListProps) => {
-  // Debug log to ensure all columns are being received
-  console.log('📊 ColumnList: Received columns:', {
-    totalColumns: columns.length,
-    defaultColumns: columns.filter(col => !col.isCustom).length,
-    customColumns: columns.filter(col => col.isCustom && !(col as any).isTeamColumn).length,
-    teamColumns: columns.filter(col => (col as any).isTeamColumn).length,
-    columnNames: columns.map(col => ({ name: col.name, isTeamColumn: (col as any).isTeamColumn || false }))
-  });
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
