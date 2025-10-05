@@ -9,10 +9,10 @@ import { useNavigate } from 'react-router-dom';
 const helpSections = [
   { id: 'getting-started', title: 'Getting Started', icon: FileText },
   { id: 'basic-operations', title: 'Basic Operations', icon: MousePointer },
+  { id: 'row-locking', title: 'Row Number Locking', icon: Lock },
   { id: 'column-manager', title: 'Column Manager', icon: FileText },
   { id: 'find-replace', title: 'Find & Replace', icon: Search },
   { id: 'team-collaboration', title: 'Team Collaboration', icon: Users },
-  { id: 'settings-preferences', title: 'Settings & Preferences', icon: Settings },
   { id: 'connection-status', title: 'Connection Status', icon: Wifi },
   { id: 'showcaller', title: 'Showcaller', icon: Radio },
   { id: 'ai-helper', title: 'AI Helper', icon: Bot },
@@ -198,6 +198,16 @@ const Help = () => {
                   <li><strong>Script & Notes Columns:</strong> These columns are expandable - click on them to see the full content in a larger, easier-to-read format.</li>
                 </ul>
               </div>
+              
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Clock Format Preference</h3>
+                <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                  <li>Choose between 12-hour (with AM/PM) or 24-hour time format</li>
+                  <li>Access this setting from the timezone selector in any rundown</li>
+                  <li>Your preference applies to all timestamps including showcaller timing, AD view, and scheduling</li>
+                  <li>This is a personal preference and doesn't affect other team members' views</li>
+                </ul>
+              </div>
             </div>
           </section>
 
@@ -234,14 +244,41 @@ const Help = () => {
                   <li>Hover over buttons to see what action will be undone/redone</li>
                 </ul>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Row Number Locking</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                  <li>Use the lock button in the toolbar to control row numbering behavior</li>
-                  <li><strong>Locked (default):</strong> When adding rows between existing items, new rows get letter suffixes (e.g., 3A, 3B, 3C) to preserve original numbering</li>
-                  <li><strong>Unlocked:</strong> All rows are renumbered sequentially (1, 2, 3, 4...) - useful when you want clean sequential numbering</li>
-                  <li>Unlocking permanently converts letter-suffixed rows to sequential numbers</li>
-                </ul>
+            </div>
+          </section>
+
+                {/* Row Number Locking */}
+                <section id="row-locking" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Lock className="h-6 w-6 mr-2 text-red-600" />
+              Row Number Locking
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Row number locking controls how rows are numbered when you insert new items between existing rows. This feature helps maintain stable row references throughout your production workflow.</p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Locked Mode (Default)</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li>Original row numbers are preserved when inserting new rows</li>
+                    <li>New rows between existing items get letter suffixes (3A, 3B, 3C)</li>
+                    <li>Ideal for live shows where row numbers are referenced in scripts or cues</li>
+                    <li>Prevents confusion when talent or crew reference specific row numbers</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Unlocked Mode</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li>All rows are automatically renumbered sequentially (1, 2, 3, 4...)</li>
+                    <li>Clean, simple numbering without letter suffixes</li>
+                    <li>Best for pre-production planning or when row references aren't critical</li>
+                    <li>Warning: Unlocking permanently converts lettered rows to sequential numbers</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Important:</strong> Unlocking row numbers is permanent - rows like 3A, 3B, 3C will be renumbered to 3, 4, 5 and cannot be reverted. Use this feature carefully, especially during live production.</p>
               </div>
             </div>
           </section>
@@ -333,27 +370,6 @@ const Help = () => {
                   <li><strong>Admin:</strong> Full control - can manage team settings, invite/remove members, and edit all rundowns</li>
                   <li><strong>Manager:</strong> Can invite new team members and manage team resources, but cannot change team settings or remove other members</li>
                   <li><strong>Member:</strong> Can create and edit rundowns but cannot manage team membership or settings</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-                {/* Settings & Preferences */}
-                <section id="settings-preferences" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Settings className="h-6 w-6 mr-2 text-gray-600" />
-              Settings & Preferences
-            </h2>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>Customize your Cuer experience with personal preferences:</p>
-              
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Clock Format (12/24 Hour)</h3>
-                <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
-                  <li>Choose between 12-hour (with AM/PM) or 24-hour time format</li>
-                  <li>Access this setting from the timezone selector in any rundown</li>
-                  <li>Your preference applies to all timestamps, including showcaller timing, AD view, and scheduling</li>
-                  <li>This is a personal preference and doesn't affect other team members' views</li>
                 </ul>
               </div>
             </div>
