@@ -75,7 +75,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['system']));
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   
   // Folder drag and drop state
   const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
@@ -316,58 +316,44 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       {/* Content - Only show folders when not searching */}
       {!searchQuery && (
         <div className="flex-1 overflow-y-auto p-2">
-          {/* System Folders */}
+          {/* System Folders - Always visible */}
           <div className="mb-4">
-            <div 
-              className="flex items-center px-2 py-1 mb-2 cursor-pointer"
-              onClick={() => toggleFolderExpansion('system')}
-            >
-              {expandedFolders.has('system') ? (
-                <ChevronDown className="h-3 w-3 text-gray-400 mr-1" />
-              ) : (
-                <ChevronRight className="h-3 w-3 text-gray-400 mr-1" />
-              )}
-              <span className="text-xs text-gray-400 uppercase tracking-wide">System</span>
-            </div>
-            
-            {expandedFolders.has('system') && (
-              <div className="space-y-1">
-                {systemFolders.map((folder) => {
-                  const isSelected = folderType === folder.type;
-                  // For "All Rundowns" (id: null), check against 'all-rundowns'
-                  const dragId = folder.id === null ? 'all-rundowns' : folder.id;
-                  const isDragOver = dragOverFolder === dragId;
-                  
-                  // Priority: drag-over > selected > default hover
-                  let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
-                  
-                  if (isDragOver) {
-                    containerClasses += "bg-gray-700 text-white";
-                  } else if (isSelected) {
-                    containerClasses += "bg-blue-600 text-white";
-                  } else {
-                    containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
-                  }
-                  
-                  return (
-                    <div
-                      key={folder.id || 'all'}
-                      className={containerClasses}
-                      onClick={() => onFolderSelect(folder.id, folder.type)}
-                      onDragOver={(e) => handleDragOver(e, folder.id)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, folder.id)}
-                    >
-                      <div className="flex items-center">
-                        <folder.icon className="h-4 w-4 mr-2" />
-                        <span className="text-sm">{folder.name}</span>
-                      </div>
-                      <span className="text-xs text-gray-400">{folder.count}</span>
+            <div className="space-y-1">
+              {systemFolders.map((folder) => {
+                const isSelected = folderType === folder.type;
+                // For "All Rundowns" (id: null), check against 'all-rundowns'
+                const dragId = folder.id === null ? 'all-rundowns' : folder.id;
+                const isDragOver = dragOverFolder === dragId;
+                
+                // Priority: drag-over > selected > default hover
+                let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
+                
+                if (isDragOver) {
+                  containerClasses += "bg-gray-700 text-white";
+                } else if (isSelected) {
+                  containerClasses += "bg-blue-600 text-white";
+                } else {
+                  containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                }
+                
+                return (
+                  <div
+                    key={folder.id || 'all'}
+                    className={containerClasses}
+                    onClick={() => onFolderSelect(folder.id, folder.type)}
+                    onDragOver={(e) => handleDragOver(e, folder.id)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, folder.id)}
+                  >
+                    <div className="flex items-center">
+                      <folder.icon className="h-4 w-4 mr-2" />
+                      <span className="text-sm">{folder.name}</span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <span className="text-xs text-gray-400">{folder.count}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Custom Folders - Changed header from "Custom" to "Folders" */}
