@@ -177,8 +177,18 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     }
 
     case 'DELETE_ITEM': {
-      const items = state.items.filter(item => item.id !== action.payload);
-      return markChanged({ items: clearHeaderNumbers(items) }, 'DELETE_ITEM');
+      const filtered = state.items.filter(item => item.id !== action.payload);
+      // If locked, also remove from locked numbers
+      const newLockedNumbers = state.numberingLocked && state.lockedRowNumbers
+        ? Object.fromEntries(
+            Object.entries(state.lockedRowNumbers).filter(([id]) => id !== action.payload)
+          )
+        : state.lockedRowNumbers;
+      
+      return markChanged({
+        items: clearHeaderNumbers(filtered),
+        lockedRowNumbers: newLockedNumbers
+      }, 'DELETE_ITEM');
     }
 
     case 'DELETE_MULTIPLE_ITEMS': {
@@ -279,20 +289,6 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     case 'SET_LOCKED_ROW_NUMBERS':
       return markChanged({ lockedRowNumbers: action.payload }, 'SET_LOCKED_ROW_NUMBERS');
 
-    case 'DELETE_ITEM': {
-      const filtered = state.items.filter(item => item.id !== action.payload);
-      // If locked, also remove from locked numbers
-      const newLockedNumbers = state.numberingLocked && state.lockedRowNumbers
-        ? Object.fromEntries(
-            Object.entries(state.lockedRowNumbers).filter(([id]) => id !== action.payload)
-          )
-        : state.lockedRowNumbers;
-      
-      return markChanged({
-        items: filtered,
-        lockedRowNumbers: newLockedNumbers
-      }, 'DELETE_ITEM');
-    }
 
     case 'LOAD_STATE': {
       console.log('📥 LOAD_STATE action received:', {

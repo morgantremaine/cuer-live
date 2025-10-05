@@ -3,14 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 
-// Check if we're in a blueprint context (optional dependency)
-let useBlueprintContextSafe: () => any;
-try {
-  const BlueprintContextModule = await import('@/contexts/BlueprintContext');
-  useBlueprintContextSafe = BlueprintContextModule.useBlueprintContext;
-} catch {
-  useBlueprintContextSafe = () => null;
-}
+// Import blueprint context - errors will be handled at runtime
+import { useBlueprintContext } from '@/contexts/BlueprintContext';
+
+// Safe wrapper that handles errors
+const useBlueprintContextSafe = () => {
+  try {
+    return useBlueprintContext();
+  } catch {
+    return null;
+  }
+};
 
 interface Note {
   id: string;
