@@ -289,7 +289,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               placeholder="Search rundowns"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 pl-9 pr-8 h-8 text-sm"
+              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 pl-9 pr-3 h-8 text-sm"
             />
             {searchQuery && (
               <Button
