@@ -432,6 +432,13 @@ export const useSimpleAutoSave = (
       // If there are still unsaved changes, schedule a save
       if (hasUnsavedChangesRef.current && !saveInProgressRef.current) {
         console.log('💾 Typing timeout: scheduling delayed save for remaining changes');
+        
+        // CRITICAL: Cancel the main save timeout to prevent duplicate save
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = undefined;
+        }
+        
         setTimeout(() => {
           if (!saveInProgressRef.current && !userTypingRef.current) {
             performSave(false, isSharedView);
