@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   CheckCircle2,
   XCircle,
@@ -73,13 +74,37 @@ const AdminHealth = () => {
       const teamTests = await runTeamOperationTests();
       results.push(...teamTests);
       
-      setTestProgress({ current: 7, total: 8, currentTest: 'Per-Cell Save System' });
-      const perCellTests = await runPerCellSaveTests();
-      results.push(...perCellTests);
+      // Get team ID for the per-cell and integrity tests
+      const { data: userTeams } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .limit(1)
+        .single();
       
-      setTestProgress({ current: 8, total: 8, currentTest: 'Data Integrity' });
-      const integrityTests = await runDataIntegrityTests();
-      results.push(...integrityTests);
+      if (userTeams) {
+        setTestProgress({ current: 7, total: 8, currentTest: 'Per-Cell Save System' });
+        const perCellTests = await runPerCellSaveTests(userTeams.team_id);
+        results.push(...perCellTests);
+        
+        setTestProgress({ current: 8, total: 8, currentTest: 'Data Integrity' });
+        const integrityTests = await runDataIntegrityTests(userTeams.team_id);
+        results.push(...integrityTests);
+      } else {
+        results.push({
+          category: 'Per-Cell Save',
+          test: 'Setup',
+          passed: false,
+          duration: 0,
+          error: 'No team available for testing'
+        });
+        results.push({
+          category: 'Data Integrity',
+          test: 'Setup',
+          passed: false,
+          duration: 0,
+          error: 'No team available for testing'
+        });
+      }
       
       setTestResults(results);
       

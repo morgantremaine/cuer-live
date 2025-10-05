@@ -407,31 +407,17 @@ export async function runTeamOperationTests(): Promise<TestResult[]> {
 }
 
 // ============ PER-CELL SAVE SYSTEM TESTS ============
-export async function runPerCellSaveTests(): Promise<TestResult[]> {
+export async function runPerCellSaveTests(testTeamId: string): Promise<TestResult[]> {
   const results: TestResult[] = [];
   let testRundownId: string | null = null;
-  let testTeamId: string | null = null;
 
   try {
-    // Get user's first team
-    const { data: userTeams } = await supabase
-      .from('team_members')
-      .select('team_id')
-      .limit(1)
-      .single();
-    
-    if (!userTeams) {
-      results.push({
-        category: 'Per-Cell Save',
-        test: 'Setup - Get Team',
-        passed: false,
-        duration: 0,
-        error: 'No team available for testing'
-      });
-      return results;
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Not authenticated for per-cell save tests');
     }
-    
-    testTeamId = userTeams.team_id;
+
 
     // Test 1: Built-in field save persistence
     results.push(await runTest(
@@ -442,6 +428,7 @@ export async function runPerCellSaveTests(): Promise<TestResult[]> {
           .from('rundowns')
           .insert({
             title: 'Health Test - Built-in',
+            user_id: user.id,
             team_id: testTeamId,
             items: [{
               id: 'test-item-1',
@@ -588,30 +575,16 @@ export async function runPerCellSaveTests(): Promise<TestResult[]> {
 }
 
 // ============ DATA INTEGRITY TESTS ============
-export async function runDataIntegrityTests(): Promise<TestResult[]> {
+export async function runDataIntegrityTests(testTeamId: string): Promise<TestResult[]> {
   const results: TestResult[] = [];
   let testRundownId: string | null = null;
-  let testTeamId: string | null = null;
 
   try {
-    const { data: userTeams } = await supabase
-      .from('team_members')
-      .select('team_id')
-      .limit(1)
-      .single();
-    
-    if (!userTeams) {
-      results.push({
-        category: 'Data Integrity',
-        test: 'Setup - Get Team',
-        passed: false,
-        duration: 0,
-        error: 'No team available for testing'
-      });
-      return results;
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Not authenticated for data integrity tests');
     }
-    
-    testTeamId = userTeams.team_id;
 
     // Test 1: Custom column end-to-end
     results.push(await runTest(
@@ -622,6 +595,7 @@ export async function runDataIntegrityTests(): Promise<TestResult[]> {
           .from('rundowns')
           .insert({
             title: 'Health Test - Integrity',
+            user_id: user.id,
             team_id: testTeamId,
             items: [
               {
