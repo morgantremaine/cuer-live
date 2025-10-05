@@ -1,13 +1,13 @@
-# Save System Architecture Documentation
+# Per-Cell Save System Architecture Documentation
 
 ## Overview
 
-The rundown save system implements a sophisticated multi-layered architecture designed for real-time collaborative editing. This document explains the intentional design decisions and architectural patterns.
+The rundown save system implements a per-cell save architecture designed for real-time collaborative editing. **Per-cell save is always enabled** - there is no delta save fallback or mode switching. This document explains the intentional design decisions and architectural patterns.
 
 ## System Layers
 
 ### Layer 1: Base Operations
-**Files**: Individual save hooks (`useCellLevelSave`, `useFieldDeltaSave`, `useStructuralSave`)
+**Files**: Individual save hooks (`useCellLevelSave`, `useStructuralSave`)
 **Purpose**: Handle direct database interactions and edge function calls
 **Responsibilities**:
 - Execute actual save operations
@@ -21,11 +21,10 @@ The rundown save system implements a sophisticated multi-layered architecture de
 **Responsibilities**:
 - Queue operations by priority
 - Prevent race conditions
-- Route between save strategies
 - Coordinate structural vs. content changes
 
 ### Layer 3: Unified Interface
-**Files**: `useUnifiedSaveCoordination`
+**Files**: `useSimpleAutoSave`
 **Purpose**: Provide consistent interface to UI components
 **Responsibilities**:
 - Present unified save state to UI
@@ -35,8 +34,8 @@ The rundown save system implements a sophisticated multi-layered architecture de
 
 ## Save Strategy Architecture
 
-### Per-Cell Save Strategy
-**When Used**: Individual field edits in collaborative sessions
+### Cell-Level Save Strategy
+**When Used**: Individual field edits (always enabled)
 **Benefits**:
 - Instant user feedback
 - Granular conflict resolution
@@ -48,19 +47,6 @@ The rundown save system implements a sophisticated multi-layered architecture de
 User Edit → Field Change Tracking → Cell-Level Edge Function → Database Update → Broadcast
 ```
 
-### Delta Save Strategy
-**When Used**: Batch changes and fallback scenarios
-**Benefits**:
-- Handles complex changes
-- Backward compatibility
-- Efficient for large updates
-- Comprehensive validation
-
-**Process Flow**:
-```
-Content Changes → Delta Detection → Traditional Save → Version Update → Broadcast
-```
-
 ### Structural Save Strategy
 **When Used**: Row operations (add, delete, move, reorder)
 **Benefits**:
@@ -68,6 +54,7 @@ Content Changes → Delta Detection → Traditional Save → Version Update → 
 - Conflict prevention
 - Proper sequencing
 - Data integrity
+- Content snapshots preserve concurrent edits
 
 **Process Flow**:
 ```
@@ -78,179 +65,237 @@ Structural Operation → Coordination Queue → Edge Function → Database Updat
 
 ### Multiple Signature Types Rationale
 
-#### Content Signatures
-```typescript
-createContentSignature(items, title, columns, { 
-  excludeUIFields: true,
-  includeStructural: true 
-})
-```
-**Purpose**: Detect actual content changes, ignore UI state
-**Use Cases**: Change detection, autosave triggers, conflict resolution
+**Why we need multiple signature approaches:**
 
-#### Lightweight Signatures  
-```typescript
-createLightweightSignature(items, title)
-```
-**Purpose**: Fast computation for frequent operations
-**Use Cases**: Real-time collaboration, performance-critical paths
+#### 1. Content Signatures (`createContentSignature`)
+- **Purpose**: Detect actual content changes
+- **When**: Before autosave to prevent no-op saves
+- **Includes**: Items, global fields, timestamps
+- **Cost**: Medium computational cost
+- **Precision**: High - catches all meaningful changes
 
-#### Unified Signatures
-```typescript
-createUnifiedSignature(completeState, { 
-  includeMetadata: true,
-  comprehensive: true 
-})
-```
-**Purpose**: Complete state validation
-**Use Cases**: Manual saves, backup operations, debugging
+#### 2. Lightweight Signatures (`createLightweightSignature`)
+- **Purpose**: Fast computation for frequent operations
+- **When**: During typing detection, real-time validation
+- **Includes**: Essential fields only
+- **Cost**: Low computational cost
+- **Precision**: Medium - catches major changes
 
-### Why Multiple Approaches Are Necessary
+#### 3. Unified Signatures (`createUnifiedSignature`)
+- **Purpose**: Complete state validation
+- **When**: Conflict detection, version validation
+- **Includes**: Everything (content + UI + metadata)
+- **Cost**: High computational cost
+- **Precision**: Maximum - catches all state changes
 
-1. **Performance Optimization**: Different operations have different performance requirements
-2. **Accuracy Needs**: Some operations need complete validation, others need speed
-3. **Collaboration Support**: Real-time features need lightweight, frequent checks
-4. **Conflict Resolution**: Different signature granularities help resolve different conflict types
+**Why not just one?**
+- Performance: Lightweight for frequent operations
+- Accuracy: Full signatures for important decisions
+- Collaboration: Different needs for local vs. remote changes
+- Conflict resolution: Need varying granularity
 
 ## Coordination Patterns
 
 ### Operation Priority System
+
 ```typescript
-// Priority 1: Structural Operations (highest)
-executeWithStructuralOperation(() => addRow())
-
-// Priority 2: Cell Updates (medium)  
-executeWithCellUpdate(() => updateField())
-
-// Priority 3: UI Operations (lowest)
-executeWithShowcallerOperation(() => updateVisualState())
+enum OperationPriority {
+  STRUCTURAL = 1,    // Highest - affects data integrity
+  CELL_UPDATE = 2,   // Medium - content changes
+  UI_UPDATE = 3      // Lowest - visual only
+}
 ```
 
 ### Queue Management
-- **Immediate execution**: When no conflicts exist
-- **Queued execution**: When operations would conflict
-- **Priority ordering**: Higher priority operations run first
-- **Dependency tracking**: Operations wait for dependencies
+
+**Immediate Execution:**
+- Structural operations (properly coordinated)
+- Cell updates (debounced for typing)
+
+**Priority Ordering:**
+- All operations execute immediately
+- No blocking or complex queuing
+- Simple, predictable behavior
 
 ### Blocking Policies
-```typescript
-shouldBlockAutoSave() // Prevents saves during critical operations
-shouldBlockTeleprompterSave() // Protects teleprompter state
-shouldBlockStructuralOperation() // Prevents concurrent structural changes
-```
+
+**Removed in Phase 5 Simplification:**
+- No autosave blocking
+- No operation queuing
+- No complex coordination delays
+- All saves execute immediately (with debouncing)
+
+**Current Approach:**
+- Simple "last write wins" for concurrent edits
+- ID-based operations prevent most conflicts
+- Content snapshots for structural operations
 
 ## State Management Architecture
 
 ### Distributed State Concerns
 
-#### Content State
-- **Location**: `usePersistedRundownState`
-- **Purpose**: Actual rundown data (items, columns, title)
-- **Scope**: Core business logic
+The system separates different state concerns:
 
-#### UI State  
-- **Location**: `useRundownUIState`
-- **Purpose**: Visual presentation state
-- **Scope**: User interface concerns
+1. **Content State** (`usePersistedRundownState`)
+   - Rundown items and fields
+   - Global rundown settings
+   - Persisted to database
 
-#### Coordination State
-- **Location**: `useCellUpdateCoordination`, `useUnifiedSaveCoordination`
-- **Purpose**: Operation management and timing
-- **Scope**: System coordination
+2. **UI State** (`useRundownUIState`)
+   - Selected cells, focus state
+   - Scroll positions
+   - Ephemeral, not persisted
 
-#### Performance State
-- **Location**: `useRundownPerformanceOptimization`
-- **Purpose**: Optimization and caching
-- **Scope**: Performance enhancement
+3. **Coordination State** (`useCellUpdateCoordination`)
+   - Operation queues
+   - Save timers
+   - Typing detection
 
-### Why Separation Is Maintained
-1. **Single Responsibility**: Each state manager has a focused purpose
-2. **Performance**: UI state changes don't trigger business logic
-3. **Testing**: Individual concerns can be tested in isolation
-4. **Scalability**: Different state types can be optimized independently
+4. **Performance State** (various tracking refs)
+   - Signature caching
+   - Debounce timers
+   - Operation throttling
+
+**Why separate?**
+- Single Responsibility Principle
+- Easier testing and debugging
+- Better performance (selective updates)
+- Clearer data flow
+- Improved scalability
 
 ## Integration Patterns
 
 ### Hook Composition
-The system uses careful hook composition to maintain separation of concerns:
 
 ```typescript
-// Each hook handles a specific aspect
-const coordination = useCellUpdateCoordination()
-const perCellSave = usePerCellSaveCoordination()
-const unifiedSave = useUnifiedSaveCoordination()
-
-// Higher-level hooks compose lower-level functionality
-const rundownState = useRundownStateCoordination()
+// Careful composition maintains separation of concerns
+useSimpleAutoSave(
+  state,                    // Content state
+  rundownId,                // Identity
+  onSaved,                  // Callbacks
+  pendingStructuralChangeRef, // Coordination
+  suppressUntilRef,         // Timing
+  isInitiallyLoaded,        // Lifecycle
+  // ...
+)
 ```
 
 ### Event Flow
-```
-User Action → UI State Update → Content State Change → Save Coordination → Database Update → Real-time Broadcast
-```
+
+1. **User Action** → Component
+2. **State Update** → `usePersistedRundownState`
+3. **Change Detection** → `usePerCellSaveCoordination`
+4. **Save Coordination** → `useCellLevelSave` or `useStructuralSave`
+5. **Database Update** → Edge Function
+6. **Broadcast** → Real-time channel
+7. **Remote Application** → Other users' clients
 
 ### Error Handling
-- **Layer isolation**: Errors in one layer don't cascade
-- **Graceful degradation**: Fallback mechanisms at each layer
-- **Recovery**: Automatic retry and recovery patterns
-- **User feedback**: Appropriate error messages at UI layer
+
+**Layer Isolation:**
+- Each layer handles its own errors
+- Errors don't cascade unnecessarily
+- Graceful degradation
+
+**Recovery Strategies:**
+- Retry with exponential backoff
+- Queue failed operations
+- User notification for critical failures
+
+**User Feedback:**
+- Toast notifications for errors
+- Loading states during saves
+- Clear error messages
 
 ## Collaboration Features
 
-### Real-Time Synchronization
-- **Change detection**: Signatures identify what changed
-- **Conflict resolution**: Multiple strategies for different conflict types
-- **Presence tracking**: Users see who's editing what sections
-- **State reconciliation**: Automatic merging of compatible changes
+### Real-time Synchronization
 
-### Multi-Tab Support
-- **Cross-tab coordination**: Changes sync between browser tabs
-- **Conflict prevention**: Operations coordinate across tabs
-- **State consistency**: All tabs maintain consistent state
+**Dual Broadcasting Pattern:**
+1. **Immediate Broadcast**: UI updates instantly (optimistic)
+2. **Database Save**: Persists in parallel
+3. **ID-Based Operations**: Prevents most race conditions
+4. **Content Snapshots**: Structural operations preserve concurrent edits
+
+**Benefits:**
+- Google Sheets-like instant feedback
+- Zero perceived latency
+- Automatic conflict resolution
+- Scales to many concurrent users
+
+### Multi-tab Support
+
+**Coordination:**
+- Own update tracking prevents self-conflicts
+- Tab ID system identifies update source
+- Real-time sync across tabs
 
 ## Performance Optimizations
 
 ### Debounced Operations
-- **Autosave**: Debounced to prevent excessive saves
-- **Signature generation**: Cached and reused when possible
-- **UI updates**: Batched for performance
+
+```typescript
+// Autosave: Wait for typing to stop
+debounce(autoSave, 1000)
+
+// Signature generation: Prevent excessive computation
+debounce(createSignature, 500)
+
+// UI updates: Prevent layout thrashing
+debounce(updateUI, 100)
+```
 
 ### Selective Updates
-- **Content-only changes**: Skip UI recalculation when possible
-- **Field-level updates**: Only update affected components
-- **Lazy loading**: Load expensive operations on demand
+
+**Content-only changes:**
+- Skip UI-only fields in signatures
+- Prevent unnecessary saves
+
+**Field-level updates:**
+- Only send changed fields
+- Minimize network traffic
+
+**Lazy loading:**
+- Defer non-critical operations
+- Prioritize user-facing updates
 
 ## Common Anti-Patterns to Avoid
 
-### ❌ Bypassing Coordination
+❌ **Don't bypass the coordination layer**
 ```typescript
-// DON'T: Direct save calls bypass coordination
-await saveDirectly(data)
+// Bad: Direct database write
+supabase.from('rundowns').update(...)
 
-// DO: Use coordination layer
-await coordinatedSave('manual', saveFunction)
+// Good: Use coordination
+handleStructuralOperation('add_row', data)
 ```
 
-### ❌ Mixing State Concerns
+❌ **Don't mix state concerns**
 ```typescript
-// DON'T: Mix UI and content state
-const [items, setItems] = useState() // Content
-const [selectedRow, setSelectedRow] = useState() // UI - should be separate
+// Bad: UI state in content hook
+const [items, scrollPosition] = useState(...)
 
-// DO: Separate state concerns
-const { items } = useRundownContent()
-const { selectedRow } = useRundownUI()
+// Good: Separate hooks
+const items = usePersistedRundownState(...)
+const scrollPosition = useRundownUIState(...)
 ```
 
-### ❌ Creating New Layers
+❌ **Don't create new layers without justification**
 ```typescript
-// DON'T: Add new coordination layers
-const myCustomSaveCoordination = () => { /* ... */ }
+// Bad: Unnecessary abstraction
+useMyCustomSaveWrapper(useCellLevelSave(...))
 
-// DO: Extend existing layers
-const extendedSaveCoordination = useUnifiedSaveCoordination()
+// Good: Use existing layers
+const { trackFieldChange } = usePerCellSaveCoordination(...)
 ```
 
-## Conclusion
+## Summary
 
-This architecture enables sophisticated collaborative editing features while maintaining performance and reliability. The apparent complexity serves specific purposes and should not be simplified without understanding the collaborative editing requirements it supports.
+This architecture provides:
+- **Reliability**: Per-cell save is always enabled, single code path
+- **Performance**: Optimized for real-time collaboration
+- **Maintainability**: Clear separation of concerns
+- **Scalability**: Handles many concurrent users
+- **Simplicity**: No mode switching or fallback logic
+
+The key is understanding which layer handles which concern and using the appropriate abstraction level for each use case.

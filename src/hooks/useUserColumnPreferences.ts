@@ -254,10 +254,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
       setColumns(mergedDefaults);
     } finally {
-      setIsLoading(false);
-      // CRITICAL FIX: Set hasInitialLoad immediately after load completes
-      // This ensures the flag is always set correctly, preventing autosave blockage
+      // CRITICAL: Set flag BEFORE clearing loading to prevent race condition
       setHasInitialLoad(true);
+      setIsLoading(false);
       console.log('✅ hasInitialLoad flag set - autosaves now enabled');
     }
   }, [user?.id, rundownId, team?.id, teamColumnsLoading]); // Removed mergeColumnsWithTeamColumns to prevent recreation

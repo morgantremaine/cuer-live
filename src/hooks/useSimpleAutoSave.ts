@@ -10,7 +10,6 @@ import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { createContentSignature, createLightweightContentSignature } from '@/utils/contentSignature';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
-import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { getTabId } from '@/utils/tabUtils';
@@ -335,14 +334,13 @@ export const useSimpleAutoSave = (
     setPerCellHasUnsavedChanges(false);
   }, []);
 
-  // Unified save coordination - switches between per-cell and delta saves (no trackOwnUpdate needed)
+  // Unified save coordination - per-cell save is always enabled
   const {
     trackFieldChange,
     saveState: saveCoordinatedState,
     initializeBaseline,
     hasUnsavedChanges: hasCoordinatedUnsavedChanges,
-    handleStructuralOperation,
-    isPerCellEnabled: perCellActive
+    handleStructuralOperation
   } = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
@@ -356,8 +354,7 @@ export const useSimpleAutoSave = (
     typingIdleMs
   });
 
-  // Legacy field delta save (fallback when per-cell is disabled - no trackOwnUpdate needed)
-  const { saveDeltaState, initializeSavedState } = useFieldDeltaSave(rundownId);
+  // Per-cell save is always enabled - delta save system removed
 
   // Enhanced typing tracker with immediate save cancellation and proper timeout management
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -705,30 +702,19 @@ export const useSimpleAutoSave = (
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        console.log(`⚡ AutoSave: using ${perCellActive ? 'per-cell' : 'delta'} save for rundown`, { 
+        console.log('⚡ AutoSave: per-cell save active for rundown', { 
           rundownId, 
           itemCount: saveState.items?.length || 0,
-          isFlushSave,
-          perCellEnabled: perCellActive
+          isFlushSave
         });
         
         try {
-          let updatedAt;
+          // Per-cell save is always active - per-cell system handles all persistence
+          console.log('🧪 AutoSave: per-cell save handles all persistence - returning without action');
+          const updatedAt = new Date().toISOString();
           
-          // When per-cell save is active, don't interfere - per-cell system handles everything
-          if (perCellActive) {
-            console.log('🧪 AutoSave: per-cell save is active - skipping main auto-save entirely');
-            // Just return success without doing anything - per-cell saves handle persistence
-            updatedAt = new Date().toISOString();
-          } else {
-            // Use coordinated save system for delta saves only
-            const result = await saveCoordinatedState(saveState);
-            updatedAt = result.updatedAt;
-          }
-          
-          console.log(`✅ AutoSave: ${perCellActive ? 'per-cell' : 'delta'} save response`, { 
-            updatedAt,
-            saveType: perCellActive ? 'per-cell' : 'delta'
+          console.log('✅ AutoSave: per-cell save response', { 
+            updatedAt
           });
 
           // Track the actual timestamp returned by the database via centralized tracker
@@ -744,7 +730,7 @@ export const useSimpleAutoSave = (
           // Update lastSavedRef to current state signature after successful save
           const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
-          console.log(`📝 Setting lastSavedRef to current state after ${perCellActive ? 'per-cell' : 'delta'} save:`, currentSignatureAfterSave.length);
+          console.log('📝 Setting lastSavedRef to current state after per-cell save:', currentSignatureAfterSave.length);
 
           // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
@@ -758,7 +744,7 @@ export const useSimpleAutoSave = (
         } catch (saveError: any) {
           // If coordinated save fails due to no changes, that's OK
           if (saveError?.message === 'No changes to save') {
-            console.log(`ℹ️ ${perCellActive ? 'Per-cell' : 'Delta'} save: no changes detected`);
+            console.log('ℹ️ Per-cell save: no changes detected');
             onSavedRef.current?.();
           } else {
             throw saveError;
