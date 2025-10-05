@@ -1146,6 +1146,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_orphaned_custom_columns: {
+        Args: { new_owner_id: string; target_team_id: string }
+        Returns: Json
+      }
+      cleanup_orphaned_layouts: {
+        Args: { new_owner_id: string; target_team_id: string }
+        Returns: Json
+      }
       cleanup_orphaned_memberships: {
         Args: Record<PropertyKey, never>
         Returns: undefined
