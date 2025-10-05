@@ -558,7 +558,9 @@ export const useTeam = () => {
       return { 
         result: {
           rundownsTransferred: data.rundownsTransferred || 0,
-          blueprintsTransferred: data.blueprintsTransferred || 0
+          blueprintsTransferred: data.blueprintsTransferred || 0,
+          layoutsTransferred: data.layoutsTransferred || 0,
+          customColumnsTransferred: data.customColumnsTransferred || 0
         }
       };
     } catch (error) {

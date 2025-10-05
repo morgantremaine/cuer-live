@@ -179,9 +179,15 @@ const TeamManagement = () => {
       if (result?.blueprintsTransferred > 0) {
         transferredItems.push(`${result.blueprintsTransferred} blueprint${result.blueprintsTransferred > 1 ? 's' : ''}`);
       }
+      if (result?.layoutsTransferred > 0) {
+        transferredItems.push(`${result.layoutsTransferred} saved layout${result.layoutsTransferred > 1 ? 's' : ''}`);
+      }
+      if (result?.customColumnsTransferred > 0) {
+        transferredItems.push(`${result.customColumnsTransferred} custom column${result.customColumnsTransferred > 1 ? 's' : ''}`);
+      }
       
       const transferMessage = transferredItems.length > 0 
-        ? ` ${transferredItems.join(' and ')} transferred to you.`
+        ? ` ${transferredItems.join(', ')} transferred to you.`
         : '';
       
       toast({
