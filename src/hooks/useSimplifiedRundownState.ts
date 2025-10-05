@@ -1025,16 +1025,11 @@ export const useSimplifiedRundownState = () => {
         return;
       }
 
-      // Don't show loading if we have cached state
+      // Set loading state (may be skipped visually if we have cached UI state)
+      setIsLoading(!shouldSkipLoading);
       if (shouldSkipLoading) {
-        console.log('📋 Skipping loading state - using cached data for:', rundownId);
-        setIsLoading(false);
-        setIsInitialized(true);
-        console.log('✅ Initialization complete (cached):', rundownId);
-        return;
+        console.log('📋 Using cached UI state - fetching fresh data without loading indicator:', rundownId);
       }
-
-      setIsLoading(true);
       setCacheLoading(true);
       try {
         // Check if this is a demo rundown
