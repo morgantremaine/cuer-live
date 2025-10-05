@@ -10,7 +10,7 @@ const helpSections = [
   { id: 'getting-started', title: 'Getting Started', icon: FileText },
   { id: 'basic-operations', title: 'Basic Operations', icon: MousePointer },
   { id: 'row-locking', title: 'Row Number Locking', icon: Lock },
-  { id: 'column-manager', title: 'Column Manager', icon: FileText },
+  { id: 'column-manager', title: 'Layout Manager', icon: FileText },
   { id: 'find-replace', title: 'Find & Replace', icon: Search },
   { id: 'team-collaboration', title: 'Team Collaboration', icon: Users },
   { id: 'connection-status', title: 'Connection Status', icon: Wifi },
@@ -297,11 +297,11 @@ const Help = () => {
             </div>
           </section>
 
-                {/* Column Manager */}
+                {/* Layout Manager */}
                 <section id="column-manager" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <FileText className="h-6 w-6 mr-2 text-orange-600" />
-              Column Manager
+              Layout Manager
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
               <p>Customize your rundown view with powerful column management features:</p>
