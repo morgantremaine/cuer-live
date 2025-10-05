@@ -713,18 +713,10 @@ export const useSimpleAutoSave = (
         });
         
         try {
-          let updatedAt;
-          
-          // When per-cell save is active, don't interfere - per-cell system handles everything
-          if (perCellActive) {
-            console.log('🧪 AutoSave: per-cell save is active - skipping main auto-save entirely');
-            // Just return success without doing anything - per-cell saves handle persistence
-            updatedAt = new Date().toISOString();
-          } else {
-            // Use coordinated save system for delta saves only
-            const result = await saveCoordinatedState(saveState);
-            updatedAt = result.updatedAt;
-          }
+          // Delegate to coordinated save system (handles both per-cell and delta saves)
+          console.log(`⚡ AutoSave: delegating to ${perCellActive ? 'per-cell' : 'delta'} save system`);
+          const result = await saveCoordinatedState(saveState);
+          const updatedAt = result.updatedAt;
           
           console.log(`✅ AutoSave: ${perCellActive ? 'per-cell' : 'delta'} save response`, { 
             updatedAt,
