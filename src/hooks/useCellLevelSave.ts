@@ -49,9 +49,33 @@ export const useCellLevelSave = (
       onUnsavedChanges();
     }
 
-    // Note: Save scheduling is handled by useSimpleAutoSave to avoid race conditions
-    // This function only queues the update, actual save timing is coordinated externally
-  }, [rundownId, onUnsavedChanges]);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    const scheduleTypingAwareSave = () => {
+      // Use quick delay for non-typing fields, normal delay for content fields
+      const isQuickSaveField = QUICK_SAVE_FIELDS.includes(field);
+      const delay = isQuickSaveField ? QUICK_SAVE_DELAY : (typingIdleMs || 1500);
+      
+      saveTimeoutRef.current = setTimeout(() => {
+        // Skip typing check for quick-save fields
+        if (!isQuickSaveField && isTypingActive && isTypingActive()) {
+          scheduleTypingAwareSave();
+          return;
+        }
+        
+        if (saveInProgressRef && saveInProgressRef.current) {
+          scheduleTypingAwareSave();
+          return;
+        }
+        
+        savePendingUpdates();
+      }, delay);
+    };
+
+    scheduleTypingAwareSave();
+  }, [rundownId]);
 
   // Save pending updates to database via edge function
   const savePendingUpdates = useCallback(async () => {

@@ -690,7 +690,7 @@ export const useSimplifiedRundownState = () => {
   
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
-    isPerCellEnabled: Boolean(state.perCellSaveEnabled), // Use reactive state value, not derived constant
+    isPerCellEnabled: perCellEnabled,
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
@@ -948,11 +948,6 @@ export const useSimplifiedRundownState = () => {
             [customFieldKey]: value
           }
         });
-        
-        // CRITICAL: Track field change for per-cell save system
-        if (cellEditIntegration.isPerCellEnabled) {
-          cellEditIntegration.handleCellChange(id, field, value);
-        }
       }
     } else {
       let updateField = field;

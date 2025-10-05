@@ -432,13 +432,6 @@ export const useSimpleAutoSave = (
       // If there are still unsaved changes, schedule a save
       if (hasUnsavedChangesRef.current && !saveInProgressRef.current) {
         console.log('💾 Typing timeout: scheduling delayed save for remaining changes');
-        
-        // CRITICAL: Cancel the main save timeout to prevent duplicate save
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-          saveTimeoutRef.current = undefined;
-        }
-        
         setTimeout(() => {
           if (!saveInProgressRef.current && !userTypingRef.current) {
             performSave(false, isSharedView);
@@ -720,10 +713,18 @@ export const useSimpleAutoSave = (
         });
         
         try {
-          // Delegate to coordinated save system (handles both per-cell and delta saves)
-          console.log(`⚡ AutoSave: delegating to ${perCellActive ? 'per-cell' : 'delta'} save system`);
-          const result = await saveCoordinatedState(saveState);
-          const updatedAt = result.updatedAt;
+          let updatedAt;
+          
+          // When per-cell save is active, don't interfere - per-cell system handles everything
+          if (perCellActive) {
+            console.log('🧪 AutoSave: per-cell save is active - skipping main auto-save entirely');
+            // Just return success without doing anything - per-cell saves handle persistence
+            updatedAt = new Date().toISOString();
+          } else {
+            // Use coordinated save system for delta saves only
+            const result = await saveCoordinatedState(saveState);
+            updatedAt = result.updatedAt;
+          }
           
           console.log(`✅ AutoSave: ${perCellActive ? 'per-cell' : 'delta'} save response`, { 
             updatedAt,
