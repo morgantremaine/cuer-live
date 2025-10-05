@@ -258,21 +258,21 @@ const Help = () => {
               
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Locked Mode (Default)</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Unlocked Mode (Default)</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li>All rows are automatically renumbered sequentially (1, 2, 3, 4...)</li>
+                    <li>Clean, simple numbering without decimal suffixes</li>
+                    <li>Best for pre-production planning or when row references aren&apos;t critical</li>
+                    <li>Provides straightforward sequential numbering as you work</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Locked Mode</h3>
                   <ul className="list-disc list-inside space-y-2 text-sm">
                     <li>Original row numbers are preserved when inserting new rows</li>
                     <li>New rows between existing items get decimal numbers (3.1, 3.2, 3.3)</li>
                     <li>Ideal for live shows where row numbers are referenced in scripts or cues</li>
                     <li>Prevents confusion when talent or crew reference specific row numbers</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Unlocked Mode</h3>
-                  <ul className="list-disc list-inside space-y-2 text-sm">
-                    <li>All rows are automatically renumbered sequentially (1, 2, 3, 4...)</li>
-                    <li>Clean, simple numbering without decimal suffixes</li>
-                    <li>Best for pre-production planning or when row references aren&apos;t critical</li>
-                    <li>Warning: Unlocking permanently converts decimal rows to sequential numbers</li>
                   </ul>
                 </div>
               </div>
