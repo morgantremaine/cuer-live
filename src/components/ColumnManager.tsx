@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
+import { useTeam } from '@/hooks/useTeam';
 import LayoutManager from './ColumnManager/LayoutManager';
 import ColumnEditor from './ColumnManager/ColumnEditor';
 import ColumnList from './ColumnManager/ColumnList';
@@ -28,8 +29,11 @@ interface ColumnManagerProps {
     deleteLayout: (id: string) => Promise<void>;
     canEditLayout: (layout: any) => boolean;
     loading: boolean;
+    setDefaultLayout?: (layoutId: string) => Promise<void>;
+    getDefaultLayout?: () => Promise<any>;
   };
 }
+
 
 const ColumnManager = ({ 
   columns, 
@@ -56,8 +60,12 @@ const ColumnManager = ({
     renameLayout, 
     deleteLayout,
     canEditLayout,
-    loading
+    loading,
+    setDefaultLayout
   } = operations;
+
+  const { userRole } = useTeam();
+  const isTeamAdmin = userRole === 'admin';
 
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [size, setSize] = useState({ width: 800, height: 600 }); // Wider initial size for two-column layout
@@ -208,6 +216,8 @@ const ColumnManager = ({
                 onDeleteLayout={deleteLayout}
                 onLoadLayout={handleLoadLayout}
                 canEditLayout={canEditLayout}
+                onSetDefaultLayout={setDefaultLayout}
+                isTeamAdmin={isTeamAdmin}
               />
             </div>
 

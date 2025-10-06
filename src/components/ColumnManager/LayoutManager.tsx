@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Save, FolderOpen, Edit, RefreshCw, Trash2, Check, XIcon, User } from 'lucide-react';
+import { Save, FolderOpen, Edit, RefreshCw, Trash2, Check, XIcon, User, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Column } from '@/types/columns';
 
@@ -14,6 +14,8 @@ interface LayoutManagerProps {
   onDeleteLayout: (layoutId: string) => Promise<void>;
   onLoadLayout: (columns: Column[]) => void;
   canEditLayout?: (layout: any) => boolean;
+  onSetDefaultLayout?: (layoutId: string) => Promise<void>;
+  isTeamAdmin?: boolean;
 }
 
 const LayoutManager = ({
@@ -25,7 +27,9 @@ const LayoutManager = ({
   onRenameLayout,
   onDeleteLayout,
   onLoadLayout,
-  canEditLayout
+  canEditLayout,
+  onSetDefaultLayout,
+  isTeamAdmin = false
 }: LayoutManagerProps) => {
   const [layoutName, setLayoutName] = useState('');
   const [showSaveLayout, setShowSaveLayout] = useState(false);
@@ -217,19 +221,37 @@ const LayoutManager = ({
                           <XIcon className="h-3 w-3" />
                         </Button>
                       </div>
-                    ) : (
+                     ) : (
                       <>
                         <button
                           onClick={() => handleLoadLayout(layout)}
                           className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
                           title={`Load layout with ${getVisibleColumnCount(layout)} visible columns (${Array.isArray(layout.columns) ? layout.columns.length : 0} total)`}
                         >
-                          <div className="font-medium">{layout.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{layout.name}</span>
+                            {layout.is_default && (
+                              <span title="Default layout for team">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {getVisibleColumnCount(layout)} visible columns
                           </div>
                         </button>
                         <div className="flex items-center space-x-1">
+                          {isTeamAdmin && onSetDefaultLayout && !layout.is_default && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onSetDefaultLayout(layout.id)}
+                              className="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              title="Set as default layout for team"
+                            >
+                              <Star className="h-3 w-3" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -281,7 +303,14 @@ const LayoutManager = ({
                       className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
                       title={`Load layout with ${getVisibleColumnCount(layout)} visible columns (${Array.isArray(layout.columns) ? layout.columns.length : 0} total)`}
                     >
-                      <div className="font-medium">{layout.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{layout.name}</span>
+                        {layout.is_default && (
+                          <span title="Default layout for team">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
                         <User className="h-3 w-3" />
                         <span>by {getCreatorDisplay(layout)}</span>
@@ -290,6 +319,17 @@ const LayoutManager = ({
                       </div>
                     </button>
                     <div className="flex items-center space-x-1">
+                      {isTeamAdmin && onSetDefaultLayout && !layout.is_default && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onSetDefaultLayout(layout.id)}
+                          className="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
+                          title="Set as default layout for team"
+                        >
+                          <Star className="h-3 w-3" />
+                        </Button>
+                      )}
                       <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
                         Team
                       </span>

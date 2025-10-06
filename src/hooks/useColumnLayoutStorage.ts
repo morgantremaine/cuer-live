@@ -257,6 +257,58 @@ export const useColumnLayoutStorage = () => {
     return layout.user_id === user?.id
   }
 
+  // Set a layout as the default for the team
+  const setDefaultLayout = async (layoutId: string) => {
+    if (!user || !activeTeamId) return
+
+    try {
+      const { error } = await supabase
+        .from('column_layouts')
+        .update({ is_default: true })
+        .eq('id', layoutId)
+        .eq('team_id', activeTeamId)
+
+      if (error) {
+        toast({
+          title: 'Error',
+          description: 'Failed to set default layout',
+          variant: 'destructive',
+        })
+        throw error
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Default layout updated successfully!',
+        })
+        loadLayouts()
+      }
+    } catch (error) {
+      console.error('Error setting default layout:', error)
+      throw error
+    }
+  }
+
+  // Get the default layout for the team
+  const getDefaultLayout = async () => {
+    if (!activeTeamId) return null
+
+    try {
+      const { data, error } = await supabase
+        .rpc('get_team_default_layout', { team_uuid: activeTeamId })
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error getting default layout:', error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error in getDefaultLayout:', error)
+      return null
+    }
+  }
+
   useEffect(() => {
     if (user && activeTeamId) {
       loadLayouts()
@@ -272,5 +324,7 @@ export const useColumnLayoutStorage = () => {
     deleteLayout,
     loadLayouts,
     canEditLayout,
+    setDefaultLayout,
+    getDefaultLayout,
   }
 }

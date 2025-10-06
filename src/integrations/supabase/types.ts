@@ -1212,6 +1212,18 @@ export type Database = {
           id: string
         }[]
       }
+      get_team_default_layout: {
+        Args: { team_uuid: string }
+        Returns: {
+          columns: Json
+          created_at: string
+          id: string
+          name: string
+          team_id: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_user_email_safe: {
         Args: { user_uuid: string }
         Returns: string
@@ -1266,6 +1278,10 @@ export type Database = {
       }
       is_team_admin_check: {
         Args: { team_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_team_admin_for_layout: {
+        Args: { layout_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_team_admin_for_member_view: {

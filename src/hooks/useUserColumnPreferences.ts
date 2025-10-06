@@ -234,7 +234,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         console.error('Error loading column preferences:', error);
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
-        } else if (data?.column_layout) {
+      } else if (data?.column_layout) {
           const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
           
           // Normalize any missing fields to prevent dropped columns
@@ -244,7 +244,28 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           console.log('✅ Column preferences hydrated:', mergedColumns.length);
           debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
-        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+        // No saved preferences - check for team default layout
+        let initialColumns = defaultColumns;
+        
+        if (team?.id) {
+          try {
+            const { data: defaultLayoutData } = await supabase
+              .rpc('get_team_default_layout', { team_uuid: team.id })
+              .single();
+            
+            const layoutData = defaultLayoutData as Record<string, any> | null;
+            
+            if (layoutData?.columns && Array.isArray(layoutData.columns)) {
+              console.log('✅ Using team default layout:', layoutData.name || 'Unknown');
+              debugLogger.preferences('Using team default layout: ' + (layoutData.name || 'Unknown'));
+              initialColumns = normalizeColumns(layoutData.columns);
+            }
+          } catch (error) {
+            console.log('No team default layout found, using hardcoded defaults');
+          }
+        }
+        
+        const mergedDefaults = mergeColumnsWithTeamColumns(initialColumns);
         setColumns(mergedDefaults);
         console.log('✅ Column preferences hydrated (defaults):', mergedDefaults.length);
         debugLogger.preferences('No saved preferences - using defaults');
