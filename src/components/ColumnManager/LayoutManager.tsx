@@ -140,6 +140,29 @@ const LayoutManager = ({
   const userLayouts = savedLayouts.filter(isUserLayout);
   const teamLayouts = savedLayouts.filter(layout => !isUserLayout(layout));
 
+  // Debug logging for default layout feature
+  console.log("🔍 LayoutManager Debug:", {
+    isTeamAdmin,
+    hasSetDefaultHandler: !!onSetDefaultLayout,
+    totalLayouts: savedLayouts.length,
+    userLayoutsCount: userLayouts.length,
+    teamLayoutsCount: teamLayouts.length,
+    userLayoutsDetails: userLayouts.map(l => ({
+      id: l.id,
+      name: l.name,
+      team_id: l.team_id,
+      is_default: l.is_default,
+      willShowStarButton: isTeamAdmin && !!onSetDefaultLayout && !l.is_default
+    })),
+    teamLayoutsDetails: teamLayouts.map(l => ({
+      id: l.id,
+      name: l.name,
+      team_id: l.team_id,
+      is_default: l.is_default,
+      willShowStarButton: isTeamAdmin && !!onSetDefaultLayout && !l.is_default
+    }))
+  });
+
   return (
     <div className="space-y-2 h-full flex flex-col">
       <div className="flex space-x-2">
