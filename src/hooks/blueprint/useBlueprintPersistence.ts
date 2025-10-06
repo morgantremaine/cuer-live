@@ -2,7 +2,7 @@
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BlueprintList } from '@/types/blueprint';
-import { useBlueprintSignatureIntegration } from './useBlueprintSignatureIntegration';
+import { createContentSignature } from '@/utils/contentSignature';
 
 interface PartialBlueprintUpdate {
   lists?: BlueprintList[];
@@ -233,14 +233,21 @@ export const useBlueprintPersistence = (
       console.log('📋 SAVE RESULT DEBUG - Saved data verification:', data);
       
       // Update saved signature for change tracking
-      const { blueprintSignature } = useBlueprintSignatureIntegration({
-        lists: data.lists || [],
-        showDate: data.show_date || '',
-        notes: data.notes || '',
-        cameraPlots: data.camera_plots || [],
-        componentOrder: data.component_order || []
+      const signature = createContentSignature({
+        items: [],
+        title: 'blueprint',
+        columns: [],
+        timezone: '',
+        startTime: '',
+        showDate: data.show_date ? new Date(data.show_date) : null,
+        externalNotes: JSON.stringify({
+          lists: data.lists || [],
+          notes: data.notes || '',
+          cameraPlots: data.camera_plots || [],
+          componentOrder: data.component_order || ['crew-list', 'camera-plot', 'scratchpad']
+        })
       });
-      lastSavedSignatureRef.current = blueprintSignature;
+      lastSavedSignatureRef.current = signature;
       
       setSavedBlueprint(data);
     } catch (error) {
@@ -366,14 +373,21 @@ export const useBlueprintPersistence = (
       console.log('📋 PARTIAL SAVE RESULT - Updated fields:', Object.keys(updateData));
       
       // Update saved signature for change tracking
-      const { blueprintSignature } = useBlueprintSignatureIntegration({
-        lists: data.lists || [],
-        showDate: data.show_date || '',
-        notes: data.notes || '',
-        cameraPlots: data.camera_plots || [],
-        componentOrder: data.component_order || []
+      const signature = createContentSignature({
+        items: [],
+        title: 'blueprint',
+        columns: [],
+        timezone: '',
+        startTime: '',
+        showDate: data.show_date ? new Date(data.show_date) : null,
+        externalNotes: JSON.stringify({
+          lists: data.lists || [],
+          notes: data.notes || '',
+          cameraPlots: data.camera_plots || [],
+          componentOrder: data.component_order || ['crew-list', 'camera-plot', 'scratchpad']
+        })
       });
-      lastSavedSignatureRef.current = blueprintSignature;
+      lastSavedSignatureRef.current = signature;
       
       setSavedBlueprint(data);
     } catch (error) {
@@ -390,8 +404,24 @@ export const useBlueprintPersistence = (
     cameraPlots?: any[];
     componentOrder?: string[];
   }): boolean => {
-    const { hasBlueprintChanges } = useBlueprintSignatureIntegration(currentData);
-    return hasBlueprintChanges(lastSavedSignatureRef.current);
+    if (!lastSavedSignatureRef.current) return true;
+    
+    const currentSignature = createContentSignature({
+      items: [],
+      title: 'blueprint',
+      columns: [],
+      timezone: '',
+      startTime: '',
+      showDate: currentData.showDate ? new Date(currentData.showDate) : null,
+      externalNotes: JSON.stringify({
+        lists: currentData.lists || [],
+        notes: currentData.notes || '',
+        cameraPlots: currentData.cameraPlots || [],
+        componentOrder: currentData.componentOrder || ['crew-list', 'camera-plot', 'scratchpad']
+      })
+    });
+    
+    return currentSignature !== lastSavedSignatureRef.current;
   }, []);
 
   return {
