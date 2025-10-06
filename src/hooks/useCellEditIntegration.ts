@@ -4,7 +4,7 @@ import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 interface CellEditIntegrationProps {
   rundownId: string | null;
   isPerCellEnabled: boolean;
-  onSaveComplete?: () => void;
+  onSaveComplete?: (completionCount?: number) => void;
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
 }
@@ -27,10 +27,10 @@ export const useCellEditIntegration = ({
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
-    onSaveComplete: () => {
+    onSaveComplete: (completionCount?: number) => {
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);
-      onSaveComplete?.();
+      onSaveComplete?.(completionCount);
     },
     onSaveStart: () => {
       setIsPerCellSaving(true);

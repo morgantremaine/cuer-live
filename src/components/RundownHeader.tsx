@@ -56,6 +56,7 @@ interface RundownHeaderProps {
   onUpdateItem?: (id: string, field: string, value: string) => void;
   hasActiveTeammates?: boolean;
   activeTeammateNames?: string[];
+  saveCompletionCount?: number;
 }
 
 const RundownHeader = ({
@@ -88,7 +89,8 @@ const RundownHeader = ({
   rundownId,
   onUpdateItem,
   hasActiveTeammates,
-  activeTeammateNames = []
+  activeTeammateNames = [],
+  saveCompletionCount
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -246,7 +248,8 @@ const RundownHeader = ({
     hasUnsavedChanges: hasUnsavedChanges, // Use the coordinated unsaved changes from the hook
     lastSaved: null,
     saveError: null,
-    hasContentChanges: hasUnsavedChanges // Content changes are tracked by the save coordination system
+    hasContentChanges: hasUnsavedChanges, // Content changes are tracked by the save coordination system
+    saveCompletionCount // Forward completion count from props
   };
 
   // Get current universal time for display

@@ -19,7 +19,7 @@ const QUICK_SAVE_DELAY = 300; // 300ms for quick-save fields
 
 export const useCellLevelSave = (
   rundownId: string | null,
-  onSaveComplete?: (savedUpdates?: FieldUpdate[]) => void,
+  onSaveComplete?: (savedUpdates?: FieldUpdate[], completionCount?: number) => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void,
   onChangesSaved?: () => void,
@@ -31,6 +31,7 @@ export const useCellLevelSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const failedSavesRef = useRef<FieldUpdate[]>([]);
   const wasOfflineRef = useRef(false);
+  const saveCompletionCountRef = useRef(0);
 
   // Track individual field changes
   const trackCellChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -131,12 +132,15 @@ export const useCellLevelSave = (
         const context = rundownId ? `realtime-${rundownId}` : undefined;
         ownUpdateTracker.track(data.updatedAt, context);
         
+        // Increment completion counter for reliable UI updates
+        saveCompletionCountRef.current += 1;
+        
         if (onChangesSaved) {
           onChangesSaved();
         }
         
         if (onSaveComplete) {
-          onSaveComplete(updatesToSave);
+          onSaveComplete(updatesToSave, saveCompletionCountRef.current);
         }
         
         return {

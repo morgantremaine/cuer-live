@@ -21,6 +21,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     rundownId,
     hasUnsavedChanges,
     isSaving,
+    saveCompletionCount,
     onUndo,
     canUndo,
     lastAction,
@@ -56,6 +57,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       totalRuntime={totalRuntime}
       hasUnsavedChanges={hasUnsavedChanges}
       isSaving={isSaving}
+      saveCompletionCount={saveCompletionCount}
       title={rundownTitle}
       onTitleChange={onTitleChange}
       rundownStartTime={rundownStartTime}

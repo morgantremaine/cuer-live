@@ -46,6 +46,7 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   const [lastKnownTimestamp, setLastKnownTimestamp] = useState<string | null>(null);
+  const [saveCompletionCount, setSaveCompletionCount] = useState(0);
   
   
   // Connection state will come from realtime hook
@@ -671,9 +672,12 @@ export const useSimplifiedRundownState = () => {
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
-    onSaveComplete: () => {
+    onSaveComplete: (completionCount?: number) => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
+      if (completionCount) {
+        setSaveCompletionCount(completionCount);
+      }
     },
     onSaveStart: () => {
       console.log('🧪 PER-CELL SAVE: Save started');
@@ -690,11 +694,14 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     isPerCellEnabled: perCellEnabled,
     currentUserId,
-    onSaveComplete: () => {
+    onSaveComplete: (completionCount?: number) => {
       console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
       setIsStructuralSaving(false);
       setHasStructuralUnsavedChanges(false);
       actions.markSaved();
+      if (completionCount) {
+        setSaveCompletionCount(completionCount);
+      }
     },
     onSaveStart: () => {
       console.log('🧪 STRUCTURAL SAVE: Save started - updating UI state');
@@ -1595,6 +1602,7 @@ export const useSimplifiedRundownState = () => {
     isSaving: perCellEnabled ? 
       (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
       isSaving,
+    saveCompletionCount,
     showcallerActivity,
     
     // Realtime connection status

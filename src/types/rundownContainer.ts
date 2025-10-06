@@ -62,6 +62,7 @@ export interface RundownContainerProps {
   resetToDefaults?: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
+  saveCompletionCount?: number;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;

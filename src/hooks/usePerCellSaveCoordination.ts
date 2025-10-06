@@ -10,7 +10,7 @@ interface PerCellSaveOptions {
   rundownId: string | null;
   isPerCellEnabled: boolean;
   currentUserId?: string;
-  onSaveComplete?: () => void;
+  onSaveComplete?: (completionCount?: number) => void;
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
   onChangesSaved?: () => void;
@@ -37,11 +37,17 @@ export const usePerCellSaveCoordination = ({
   const coordination = useCellUpdateCoordination();
 
   // Cell-level save system - per-cell save is always enabled
+  const handleCellSaveComplete = useCallback((savedUpdates?: any[], completionCount?: number) => {
+    if (onSaveComplete) {
+      onSaveComplete(completionCount);
+    }
+  }, [onSaveComplete]);
+
   const {
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs);
+  } = useCellLevelSave(rundownId, handleCellSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs);
 
   // Structural save system for row operations
   const {

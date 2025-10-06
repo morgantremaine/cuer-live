@@ -8,6 +8,7 @@ interface SaveState {
   hasUnsavedChanges: boolean;
   saveError: string | null;
   hasContentChanges?: boolean; // Additional flag to distinguish content vs column changes
+  saveCompletionCount?: number; // Counter incremented on each save completion
 }
 
 interface RundownSaveIndicatorProps {
@@ -19,10 +20,10 @@ interface RundownSaveIndicatorProps {
 }
 
 const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false }: RundownSaveIndicatorProps) => {
-  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
+  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true, saveCompletionCount } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
-  const [previouslySaving, setPreviouslySaving] = useState(false);
+  const [lastCompletionCount, setLastCompletionCount] = useState(0);
   const [isLongSave, setIsLongSave] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -33,6 +34,8 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     hasContentChanges,
     showSaved,
     showTemporarySaved,
+    saveCompletionCount,
+    lastCompletionCount,
     shouldShow: !(!hasContentChanges && !shouldShowSavedFlash && !showSaved && !isTeammateEditing)
   });
 
@@ -50,24 +53,18 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     }
   }, [lastSaved, hasUnsavedChanges, isSaving]);
 
-  // Track when saving transitions from true to false to show temporary "Saved" message
-  // Only show for content changes, not column-only changes
+  // Track save completion count to show temporary "Saved" message
+  // This approach works even for super-fast saves that don't trigger isSaving UI state
   useEffect(() => {
-    if (
-      previouslySaving &&
-      !isSaving &&
-      !hasUnsavedChanges &&
-      !saveError &&
-      !lastSaved &&
-      hasContentChanges &&
-      !showTemporarySaved && // don't retrigger if already showing
-      !timerRef.current // don't retrigger if timer is already active
-    ) {
-      setShowTemporarySaved(true);
+    if (saveCompletionCount && saveCompletionCount !== lastCompletionCount) {
+      setLastCompletionCount(saveCompletionCount);
+      
+      // Only show "Saved" for content changes, not errors, and when there are no unsaved changes
+      if (!hasUnsavedChanges && !saveError && hasContentChanges) {
+        setShowTemporarySaved(true);
+      }
     }
-    
-    setPreviouslySaving(isSaving);
-  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges, showTemporarySaved]);
+  }, [saveCompletionCount, lastCompletionCount, hasUnsavedChanges, saveError, hasContentChanges]);
 
   // External trigger to flash "Saved" (e.g., from parent after content save completes)
   useEffect(() => {
