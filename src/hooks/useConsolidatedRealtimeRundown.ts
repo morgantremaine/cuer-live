@@ -44,7 +44,7 @@ export const useConsolidatedRealtimeRundown = ({
   isSharedView = false,
   blockUntilLocalEditRef
 }: UseConsolidatedRealtimeRundownProps) => {
-  const { user } = useAuth();
+  const { user, tokenReady } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -381,9 +381,17 @@ export const useConsolidatedRealtimeRundown = ({
 
   useEffect(() => {
     // For shared views, allow subscription without authentication
+    // For authenticated users, wait for token to be ready
     if (!rundownId || (!user && !isSharedView) || !enabled) {
       return;
     }
+
+    if (user && !tokenReady) {
+      console.log('📡 Waiting for token to be ready before connecting to realtime...');
+      return;
+    }
+
+    console.log('📡 Token ready, creating consolidated realtime subscription');
 
     // Reset initial load flag for new rundown
     setIsInitialLoad(true);
@@ -650,7 +658,7 @@ export const useConsolidatedRealtimeRundown = ({
 
       setIsConnected(false);
     };
-  }, [rundownId, user?.id, enabled, processRealtimeUpdate, isSharedView]);
+  }, [rundownId, user?.id, tokenReady, enabled, processRealtimeUpdate, isSharedView]);
 
   // Sync lastSeenDocVersion into global state without resubscribing
   useEffect(() => {

@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  tokenReady: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any; data: any }>
   signOut: () => Promise<void>
@@ -25,21 +26,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tokenReady, setTokenReady] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+
+  // Helper to check if token is valid (at least 60 seconds remaining)
+  const isTokenValid = useCallback((session: Session | null): boolean => {
+    if (!session?.access_token) return false
+    try {
+      const decoded = JSON.parse(atob(session.access_token.split('.')[1]))
+      const expiresAt = decoded.exp * 1000 // Convert to milliseconds
+      const now = Date.now()
+      const timeUntilExpiry = expiresAt - now
+      return timeUntilExpiry > 60000 // At least 60 seconds remaining
+    } catch (error) {
+      logger.error('Error validating token', error)
+      return false
+    }
+  }, [])
 
   // Initialize auth state
   useEffect(() => {
+    let mounted = true
     logger.debug('Initializing auth state...')
     
     // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+
       logger.debug('Auth state changed', { event, userEmail: session?.user?.email || 'no user', hasSession: !!session })
       
       // Set session and user state
       setSession(session)
       setUser(session?.user ?? null)
+      
+      // Update token ready state
+      if (session && isTokenValid(session)) {
+        logger.debug('✅ Token is valid and ready')
+        setTokenReady(true)
+      } else if (!session) {
+        setTokenReady(false)
+      }
       
       // Notify AuthMonitor of auth state changes for realtime coordination
       if (event === 'TOKEN_REFRESHED') {
@@ -56,42 +84,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsInitialLoad(false)
       }
       
-      // Only set loading to false after we've processed the auth state change
-      // Add a small delay to ensure Supabase has fully processed the session
-      setTimeout(() => {
-        setLoading(false)
-      }, 100)
-      
       // Clean up invalid tokens when user signs in
       if (session?.user && event === 'SIGNED_IN') {
         clearInvalidTokens()
       }
     })
 
-    // THEN get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    // THEN get initial session with token validation
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (!mounted) return
+
       if (error) {
         logger.error('Error getting initial session', error)
         setLoading(false)
-      } else {
-        logger.debug('Initial session retrieved', { userEmail: session?.user?.email || 'no user', hasSession: !!session })
+        return
+      }
+
+      logger.debug('Initial session retrieved', { userEmail: session?.user?.email || 'no user', hasSession: !!session })
+
+      // Check if token needs refresh
+      if (session && !isTokenValid(session)) {
+        logger.debug('🔄 Token expired or expiring soon, refreshing...')
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
         
-        // Only update state if we haven't already set it via the auth state change listener
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
-        
-        // Clean up invalid tokens if there's a user
-        if (session?.user) {
-          clearInvalidTokens()
+        if (!mounted) return
+
+        if (refreshError) {
+          logger.error('❌ Token refresh failed', refreshError)
+          setSession(null)
+          setUser(null)
+          setTokenReady(false)
+        } else if (refreshedSession) {
+          logger.debug('✅ Token refreshed successfully')
+          setSession(refreshedSession)
+          setUser(refreshedSession.user)
+          setTokenReady(true)
         }
+      } else if (session) {
+        logger.debug('✅ Existing session is valid')
+        setSession(session)
+        setUser(session.user)
+        setTokenReady(true)
+      } else {
+        setSession(null)
+        setUser(null)
+        setTokenReady(false)
+      }
+      
+      setLoading(false)
+      
+      // Clean up invalid tokens if there's a user
+      if (session?.user) {
+        clearInvalidTokens()
       }
     })
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [isTokenValid])
 
   // Memoized auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
@@ -283,7 +335,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const contextValue = useMemo(() => ({
     user, 
     session,
-    loading, 
+    loading,
+    tokenReady, 
     signIn, 
     signUp, 
     signOut, 
@@ -292,7 +345,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateProfile, 
     resetPassword, 
     resendConfirmation 
-  }), [user, session, loading, signIn, signUp, signOut, updatePassword, resetPasswordFromEmail, updateProfile, resetPassword, resendConfirmation])
+  }), [user, session, loading, tokenReady, signIn, signUp, signOut, updatePassword, resetPasswordFromEmail, updateProfile, resetPassword, resendConfirmation])
 
   return (
     <AuthContext.Provider value={contextValue}>

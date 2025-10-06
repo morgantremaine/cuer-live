@@ -13,7 +13,7 @@ export const useShowcallerBroadcastSync = ({
   onBroadcastReceived,
   enabled = true
 }: UseShowcallerBroadcastSyncProps) => {
-  const { user } = useAuth();
+  const { user, tokenReady } = useAuth();
   const callbackRef = useRef(onBroadcastReceived);
   const lastBroadcastRef = useRef<number>(0);
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -81,12 +81,12 @@ export const useShowcallerBroadcastSync = ({
 
   // Set up broadcast subscription
   useEffect(() => {
-    if (!rundownId || !enabled) {
+    if (!rundownId || !enabled || !user || !tokenReady) {
       setIsConnected(false);
       return;
     }
 
-    console.log('📺 Setting up showcaller broadcast sync:', rundownId);
+    console.log('📺 Token ready, setting up showcaller broadcast sync:', rundownId);
 
     const unsubscribe = showcallerBroadcast.subscribeToShowcallerBroadcasts(
       rundownId,
@@ -128,7 +128,7 @@ export const useShowcallerBroadcastSync = ({
       unsubscribe();
       setIsConnected(false);
     };
-  }, [rundownId, enabled, handleBroadcast, user?.id]);
+  }, [rundownId, enabled, handleBroadcast, user?.id, tokenReady]);
 
   return {
     broadcastState,
