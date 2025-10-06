@@ -15,8 +15,8 @@ interface RundownMainPropsAdapterProps {
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   const [showFindReplace, setShowFindReplace] = useState(false);
-  const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout, canEditLayout } = useColumnLayoutStorage();
-  const layoutOperations = { saveLayout, updateLayout, renameLayout, deleteLayout, canEditLayout, loading };
+  const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout, canEditLayout, setDefaultLayout } = useColumnLayoutStorage();
+  const layoutOperations = { saveLayout, updateLayout, renameLayout, deleteLayout, canEditLayout, setDefaultLayout, loading };
   
   const {
     currentTime,
