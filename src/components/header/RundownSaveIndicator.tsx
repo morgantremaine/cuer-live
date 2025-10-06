@@ -54,20 +54,16 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   // Track when saving transitions from true to false to show temporary "Saved" message
   // Only show for content changes, not column-only changes
   useEffect(() => {
-    if (
-      previouslySaving &&
-      !isSaving &&
-      !hasUnsavedChanges &&
-      !saveError &&
-      !lastSaved &&
-      hasContentChanges
-    ) {
+    if (isSaving) {
+      // Save has started - mark that we're now saving
+      setPreviouslySaving(true);
+    } else if (previouslySaving && !hasUnsavedChanges && !saveError && !lastSaved && hasContentChanges) {
+      // Save has completed (isSaving is now false but previouslySaving was true)
       setShowTemporarySaved(true);
       setSaveCompletionCount(prev => prev + 1); // Increment to trigger timer reset
+      setPreviouslySaving(false); // Reset for next save
     }
-    
-    setPreviouslySaving(isSaving);
-  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges, showTemporarySaved]);
+  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges]);
 
   // External trigger to flash "Saved" (e.g., from parent after content save completes)
   useEffect(() => {
