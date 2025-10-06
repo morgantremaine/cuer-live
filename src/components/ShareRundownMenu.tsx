@@ -11,13 +11,14 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer, Download, FileText, Table } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
 import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { useSubscription } from '@/hooks/useSubscription';
+import { printRundownScript } from '@/utils/scriptPrint';
 
 interface ShareRundownMenuProps {
   rundownId: string;
@@ -461,6 +462,38 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     }, 1000);
   };
 
+  const handlePrintScript = () => {
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Print and export features are available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
+    try {
+      if (!rundownData?.items) {
+        throw new Error('No rundown data available for print');
+      }
+      
+      printRundownScript(rundownTitle, rundownData.items);
+      
+      toast({
+        title: 'Opening print dialog...',
+        description: 'Script is ready to print',
+      });
+    } catch (error) {
+      console.error('Print script error:', error);
+      toast({
+        title: 'Print failed',
+        description: error instanceof Error ? error.message : 'Failed to print script',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleExportCSV = () => {
     // Block for free tier users
     if (isFreeUser) {
@@ -588,10 +621,22 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           Export as CSV
         </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={handlePrint}>
-          <Printer className="h-4 w-4 mr-2" />
-          Print/PDF
-        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Printer className="h-4 w-4 mr-2" />
+            Print/PDF
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem onClick={handlePrint}>
+              <Table className="h-4 w-4 mr-2" />
+              Print Rundown
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handlePrintScript}>
+              <FileText className="h-4 w-4 mr-2" />
+              Print Script
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   );
