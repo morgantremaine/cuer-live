@@ -24,7 +24,6 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
   const [isLongSave, setIsLongSave] = useState(false);
-  const [saveCompletionCount, setSaveCompletionCount] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   debugLogger.autosave('RundownSaveIndicator render:', {
@@ -54,36 +53,33 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   // Track when saving transitions from true to false to show temporary "Saved" message
   // Only show for content changes, not column-only changes
   useEffect(() => {
-    if (isSaving) {
-      // Save has started - mark that we're now saving
-      setPreviouslySaving(true);
-    } else if (previouslySaving && !hasUnsavedChanges && !saveError && !lastSaved && hasContentChanges) {
-      // Save has completed (isSaving is now false but previouslySaving was true)
+    if (
+      previouslySaving &&
+      !isSaving &&
+      !hasUnsavedChanges &&
+      !saveError &&
+      !lastSaved &&
+      hasContentChanges &&
+      !showTemporarySaved && // don't retrigger if already showing
+      !timerRef.current // don't retrigger if timer is already active
+    ) {
       setShowTemporarySaved(true);
-      setSaveCompletionCount(prev => prev + 1); // Increment to trigger timer reset
-      setPreviouslySaving(false); // Reset for next save
     }
-  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges]);
+    
+    setPreviouslySaving(isSaving);
+  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges, showTemporarySaved]);
 
   // External trigger to flash "Saved" (e.g., from parent after content save completes)
   useEffect(() => {
     if (shouldShowSavedFlash && !timerRef.current) {
       setShowTemporarySaved(true);
-      setSaveCompletionCount(prev => prev + 1); // Increment to trigger timer reset
     }
   }, [shouldShowSavedFlash]);
 
   // Centralized timer to hide the temporary saved message after 2 seconds
-  // Always reset timer on new save completion
   useEffect(() => {
-    if (showTemporarySaved) {
-      // Clear any existing timer to reset the countdown
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      
-      // Start a fresh 2-second timer
+    if (showTemporarySaved && !timerRef.current) {
+      // Only start a new timer if one isn't already running
       timerRef.current = setTimeout(() => {
         setShowTemporarySaved(false);
         timerRef.current = null;
@@ -96,7 +92,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
         }
       };
     }
-  }, [showTemporarySaved, saveCompletionCount]);
+  }, [showTemporarySaved]);
 
   // Show "Still saving..." after 3 seconds for user confidence
   useEffect(() => {
