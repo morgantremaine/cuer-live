@@ -230,21 +230,29 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         .limit(1)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading column preferences:', error);
-        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
-        setColumns(mergedDefaults);
-      } else if (data?.column_layout) {
-          const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
-          
-          // Normalize any missing fields to prevent dropped columns
-          const normalized = normalizeColumns(loadedColumns);
-          const mergedColumns = mergeColumnsWithTeamColumns(normalized);
-          setColumns(mergedColumns);
-          console.log('✅ Column preferences hydrated:', mergedColumns.length);
-          debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
+      // Check if we have saved user preferences
+      if (!error && data?.column_layout) {
+        // User has saved preferences - use them
+        const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
+        
+        // Normalize any missing fields to prevent dropped columns
+        const normalized = normalizeColumns(loadedColumns);
+        const mergedColumns = mergeColumnsWithTeamColumns(normalized);
+        setColumns(mergedColumns);
+        console.log('✅ Column preferences hydrated:', mergedColumns.length);
+        debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
-        // No saved preferences - check for team default layout
+        // No saved preferences (either no data or error like RLS 406)
+        // Log the reason for using defaults
+        if (error) {
+          if (error.code === 'PGRST116') {
+            console.log('ℹ️ No saved preferences found for user');
+          } else {
+            console.log('ℹ️ Error loading preferences (likely RLS):', error.message);
+          }
+        }
+        
+        // Try to load team default layout
         let initialColumns = defaultColumns;
         
         if (team?.id) {
@@ -261,14 +269,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
               initialColumns = normalizeColumns(layoutData.columns);
             }
           } catch (error) {
-            console.log('No team default layout found, using hardcoded defaults');
+            console.log('ℹ️ No team default layout found, using hardcoded defaults');
           }
         }
         
         const mergedDefaults = mergeColumnsWithTeamColumns(initialColumns);
         setColumns(mergedDefaults);
         console.log('✅ Column preferences hydrated (defaults):', mergedDefaults.length);
-        debugLogger.preferences('No saved preferences - using defaults');
+        debugLogger.preferences('No saved preferences - using defaults/team default');
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
