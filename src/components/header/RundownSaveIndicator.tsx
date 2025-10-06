@@ -57,14 +57,17 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   // This approach works even for super-fast saves that don't trigger isSaving UI state
   useEffect(() => {
     if (saveCompletionCount && saveCompletionCount !== lastCompletionCount) {
+      console.log(`💾 SAVE COMPLETED: Count ${lastCompletionCount} → ${saveCompletionCount}`);
       setLastCompletionCount(saveCompletionCount);
       
-      // Only show "Saved" for content changes, not errors, and when there are no unsaved changes
-      if (!hasUnsavedChanges && !saveError && hasContentChanges) {
+      // Show "Saved" whenever a save completes, even if user already started typing again
+      // Don't check hasUnsavedChanges here - that creates a race condition
+      if (!saveError && hasContentChanges) {
+        console.log('✅ Showing "Saved" message after completion');
         setShowTemporarySaved(true);
       }
     }
-  }, [saveCompletionCount, lastCompletionCount, hasUnsavedChanges, saveError, hasContentChanges]);
+  }, [saveCompletionCount, lastCompletionCount, saveError, hasContentChanges]);
 
   // External trigger to flash "Saved" (e.g., from parent after content save completes)
   useEffect(() => {
