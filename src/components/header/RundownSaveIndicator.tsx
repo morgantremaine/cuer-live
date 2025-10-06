@@ -24,6 +24,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
   const [isLongSave, setIsLongSave] = useState(false);
+  const [saveCompletionCount, setSaveCompletionCount] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   debugLogger.autosave('RundownSaveIndicator render:', {
@@ -64,6 +65,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
       !timerRef.current // don't retrigger if timer is already active
     ) {
       setShowTemporarySaved(true);
+      setSaveCompletionCount(prev => prev + 1); // Increment to trigger timer reset
     }
     
     setPreviouslySaving(isSaving);
@@ -73,13 +75,21 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   useEffect(() => {
     if (shouldShowSavedFlash && !timerRef.current) {
       setShowTemporarySaved(true);
+      setSaveCompletionCount(prev => prev + 1); // Increment to trigger timer reset
     }
   }, [shouldShowSavedFlash]);
 
   // Centralized timer to hide the temporary saved message after 2 seconds
+  // Always reset timer on new save completion
   useEffect(() => {
-    if (showTemporarySaved && !timerRef.current) {
-      // Only start a new timer if one isn't already running
+    if (showTemporarySaved) {
+      // Clear any existing timer to reset the countdown
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // Start a fresh 2-second timer
       timerRef.current = setTimeout(() => {
         setShowTemporarySaved(false);
         timerRef.current = null;
@@ -92,7 +102,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
         }
       };
     }
-  }, [showTemporarySaved]);
+  }, [showTemporarySaved, saveCompletionCount]);
 
   // Show "Still saving..." after 3 seconds for user confidence
   useEffect(() => {
