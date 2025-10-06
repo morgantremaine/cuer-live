@@ -60,9 +60,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
       !hasUnsavedChanges &&
       !saveError &&
       !lastSaved &&
-      hasContentChanges &&
-      !showTemporarySaved && // don't retrigger if already showing
-      !timerRef.current // don't retrigger if timer is already active
+      hasContentChanges
     ) {
       setShowTemporarySaved(true);
       setSaveCompletionCount(prev => prev + 1); // Increment to trigger timer reset
