@@ -675,7 +675,7 @@ export const useSimplifiedRundownState = () => {
     onSaveComplete: (completionCount?: number) => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
-      if (completionCount) {
+      if (completionCount !== undefined) {
         setSaveCompletionCount(completionCount);
       }
     },
@@ -699,7 +699,7 @@ export const useSimplifiedRundownState = () => {
       setIsStructuralSaving(false);
       setHasStructuralUnsavedChanges(false);
       actions.markSaved();
-      if (completionCount) {
+      if (completionCount !== undefined) {
         setSaveCompletionCount(completionCount);
       }
     },
