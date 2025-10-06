@@ -327,6 +327,20 @@ const Help = () => {
                 </div>
               </div>
               
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Default Layouts for Teams</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  Team administrators and managers can set a default layout that will be automatically applied for all team members:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 ml-4">
+                  <li>Open the Layout Manager and locate a saved team layout</li>
+                  <li>Click the "Set as Default" button (star icon) next to any team layout</li>
+                  <li>The default layout will automatically load for team members who haven't saved their own preferences</li>
+                  <li>Team members can still create and save their own personal layouts, which will override the team default</li>
+                  <li>Only one layout can be set as the default at a time</li>
+                </ul>
+              </div>
+              
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Auto-sizing works for most columns, but script and notes columns are excluded since they have expandable cells. Use the expand/collapse arrows on those columns instead.</p>
               </div>
