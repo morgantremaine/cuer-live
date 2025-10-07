@@ -8,46 +8,6 @@ import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { debugLogger } from '@/utils/debugLogger';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
-// Helper to notify per-cell save system about field changes
-function notifyPerCellSaveSystem(
-  actionType: string | undefined,
-  action: RundownAction,
-  newState: Partial<RundownState>,
-  trackFieldChange: (itemId: string | undefined, field: string, value: any) => void
-) {
-  switch (actionType) {
-    case 'SET_TITLE':
-      if ('title' in newState) {
-        trackFieldChange(undefined, 'title', newState.title);
-      }
-      break;
-    case 'SET_START_TIME':
-      if ('startTime' in newState) {
-        trackFieldChange(undefined, 'startTime', newState.startTime);
-      }
-      break;
-    case 'SET_TIMEZONE':
-      if ('timezone' in newState) {
-        trackFieldChange(undefined, 'timezone', newState.timezone);
-      }
-      break;
-    case 'SET_SHOW_DATE':
-      if ('showDate' in newState) {
-        trackFieldChange(undefined, 'showDate', newState.showDate);
-      }
-      break;
-    case 'UPDATE_ITEM':
-      if (action.type === 'UPDATE_ITEM') {
-        const { id, updates } = action.payload;
-        // Track each updated field separately
-        Object.entries(updates).forEach(([field, value]) => {
-          trackFieldChange(id, field, value);
-        });
-      }
-      break;
-  }
-}
-
 export interface RundownState {
   items: RundownItem[];
   columns: Column[];
@@ -110,24 +70,18 @@ const initialState: RundownState = {
 
 function rundownReducer(
   state: RundownState, 
-  action: RundownAction,
-  trackFieldChange?: (itemId: string | undefined, field: string, value: any) => void
+  action: RundownAction
 ): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
     // CRITICAL: If per-cell save is enabled, don't set hasUnsavedChanges
     // Let the per-cell system manage the saved state
     if (state.perCellSaveEnabled) {
-      console.log('📝 CONTENT CHANGE: Per-cell save active - tracking field change', {
+      console.log('📝 CONTENT CHANGE: Per-cell save active', {
         action: actionType,
         isContentChange: true,
         reason: 'Per-cell save system will manage saved state'
       });
       debugLogger.autosave('Content change detected but per-cell save active - not flagging hasUnsavedChanges via action:', actionType);
-      
-      // CRITICAL: Notify per-cell save system about the change
-      if (trackFieldChange) {
-        notifyPerCellSaveSystem(actionType, action, newState, trackFieldChange);
-      }
       
       return {
         ...state,
@@ -382,32 +336,15 @@ function clearHeaderNumbers(items: RundownItem[]): RundownItem[] {
 export const useRundownState = (
   initialData?: Partial<RundownState>, 
   rundownId?: string,
-  markActiveTypingRef?: React.MutableRefObject<(() => void) | undefined>,
-  trackFieldChange?: (itemId: string | undefined, field: string, value: any) => void
+  markActiveTypingRef?: React.MutableRefObject<(() => void) | undefined>
 ) => {
-  // Store trackFieldChange in a ref to pass to reducer
-  const trackFieldChangeRef = useRef(trackFieldChange);
-  trackFieldChangeRef.current = trackFieldChange;
-
-  // Custom dispatch that passes trackFieldChange to reducer
-  const enhancedDispatch = useCallback((action: RundownAction) => {
-    // @ts-ignore - We're enhancing the reducer with an extra parameter
-    dispatch({ ...action, __trackFieldChange: trackFieldChangeRef.current });
-  }, []);
-
-  const [state, originalDispatch] = useReducer(
-    (state: RundownState, action: RundownAction & { __trackFieldChange?: typeof trackFieldChange }) => {
-      const { __trackFieldChange, ...cleanAction } = action;
-      return rundownReducer(state, cleanAction as RundownAction, __trackFieldChange);
-    },
+  const [state, dispatch] = useReducer(
+    rundownReducer,
     {
       ...initialState,
       ...initialData
     }
   );
-
-  // Use enhanced dispatch everywhere
-  const dispatch = enhancedDispatch;
 
   // Set up live broadcast for real-time updates
   const { broadcastLiveUpdate } = useRundownBroadcast({

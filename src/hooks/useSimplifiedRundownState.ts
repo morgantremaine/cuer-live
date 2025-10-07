@@ -128,17 +128,6 @@ export const useSimplifiedRundownState = () => {
     // Simplified: no field tracking needed
   }, []);
 
-  // Cell edit integration for per-cell saves - initialize early so we can pass to useRundownState
-  const cellEditIntegrationRef = useRef<ReturnType<typeof useCellEditIntegration> | null>(null);
-  
-  // Create a stable callback for field tracking
-  const trackFieldChangeCallback = useCallback((itemId: string | undefined, field: string, value: any) => {
-    if (cellEditIntegrationRef.current?.handleCellChange) {
-      console.log('🔗 Reducer → Per-cell save: Tracking field change', { itemId, field, value });
-      cellEditIntegrationRef.current.handleCellChange(itemId, field, value);
-    }
-  }, []);
-
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
     state,
@@ -151,7 +140,7 @@ export const useSimplifiedRundownState = () => {
     startTime: '09:00:00',
     timezone: 'America/New_York',
     showDate: null
-  }, rundownId || undefined, markActiveTypingRef, trackFieldChangeCallback); // Pass field change tracker
+  }, rundownId || undefined, markActiveTypingRef);
 
   // User-specific column preferences (separate from team sync)
   const {
@@ -706,8 +695,55 @@ export const useSimplifiedRundownState = () => {
     }
   });
   
-  // Store cellEditIntegration in ref so trackFieldChangeCallback can access it
-  cellEditIntegrationRef.current = cellEditIntegration;
+  // Track state changes and notify per-cell save system
+  const previousStateRef = useRef(state);
+  useEffect(() => {
+    if (!perCellEnabled || !isInitialized) return;
+    
+    const prev = previousStateRef.current;
+    const curr = state;
+    
+    // Track title changes
+    if (prev.title !== curr.title) {
+      cellEditIntegration.handleCellChange(undefined, 'title', curr.title);
+    }
+    
+    // Track startTime changes
+    if (prev.startTime !== curr.startTime) {
+      cellEditIntegration.handleCellChange(undefined, 'startTime', curr.startTime);
+    }
+    
+    // Track timezone changes
+    if (prev.timezone !== curr.timezone) {
+      cellEditIntegration.handleCellChange(undefined, 'timezone', curr.timezone);
+    }
+    
+    // Track showDate changes
+    if (prev.showDate !== curr.showDate) {
+      cellEditIntegration.handleCellChange(undefined, 'showDate', curr.showDate);
+    }
+    
+    // Track item changes - compare by ID
+    if (prev.items !== curr.items) {
+      const prevItemsMap = new Map(prev.items.map(item => [item.id, item]));
+      const currItemsMap = new Map(curr.items.map(item => [item.id, item]));
+      
+      // Check for changed items
+      for (const [id, currItem] of currItemsMap) {
+        const prevItem = prevItemsMap.get(id);
+        if (prevItem) {
+          // Check each field for changes
+          for (const [field, value] of Object.entries(currItem)) {
+            if (field !== 'id' && (prevItem as any)[field] !== value) {
+              cellEditIntegration.handleCellChange(id, field, value);
+            }
+          }
+        }
+      }
+    }
+    
+    previousStateRef.current = state;
+  }, [state, perCellEnabled, isInitialized, cellEditIntegration]);
   
   // Get save coordination system for structural operations - use same callbacks as cell edit integration
   const saveCoordination = usePerCellSaveCoordination({
