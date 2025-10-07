@@ -128,6 +128,17 @@ export const useSimplifiedRundownState = () => {
     // Simplified: no field tracking needed
   }, []);
 
+  // Cell edit integration for per-cell saves - initialize early so we can pass to useRundownState
+  const cellEditIntegrationRef = useRef<ReturnType<typeof useCellEditIntegration> | null>(null);
+  
+  // Create a stable callback for field tracking
+  const trackFieldChangeCallback = useCallback((itemId: string | undefined, field: string, value: any) => {
+    if (cellEditIntegrationRef.current?.handleCellChange) {
+      console.log('🔗 Reducer → Per-cell save: Tracking field change', { itemId, field, value });
+      cellEditIntegrationRef.current.handleCellChange(itemId, field, value);
+    }
+  }, []);
+
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
     state,
@@ -140,7 +151,7 @@ export const useSimplifiedRundownState = () => {
     startTime: '09:00:00',
     timezone: 'America/New_York',
     showDate: null
-  }, rundownId || undefined, markActiveTypingRef); // Pass rundownId for broadcast functionality and typing ref
+  }, rundownId || undefined, markActiveTypingRef, trackFieldChangeCallback); // Pass field change tracker
 
   // User-specific column preferences (separate from team sync)
   const {
@@ -694,6 +705,9 @@ export const useSimplifiedRundownState = () => {
       // The hasUnsavedChanges will be managed by the per-cell save system itself
     }
   });
+  
+  // Store cellEditIntegration in ref so trackFieldChangeCallback can access it
+  cellEditIntegrationRef.current = cellEditIntegration;
   
   // Get save coordination system for structural operations - use same callbacks as cell edit integration
   const saveCoordination = usePerCellSaveCoordination({
