@@ -63,7 +63,7 @@ const initialState: RundownState = {
   hasUnsavedChanges: false,
   lastChanged: 0,
   docVersion: 0, // Initialize docVersion
-  perCellSaveEnabled: false, // Initialize per-cell save as disabled by default
+  perCellSaveEnabled: true, // Initialize per-cell save as enabled by default for all new rundowns
   numberingLocked: false, // Initialize lock as off
   lockedRowNumbers: {} // Initialize empty locked numbers
 };
