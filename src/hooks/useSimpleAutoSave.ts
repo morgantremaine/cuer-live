@@ -97,33 +97,28 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state]);
 
-  // Set initial load cooldown to prevent false attribution
-  // Detect if this is a brand new rundown (created in last 30 seconds)
-  const isNewRundown = useCallback(() => {
-    if (!rundownId) return false;
-    
-    // Check if rundown was just created by checking if it has very few items and was just loaded
-    const itemCount = state.items?.length || 0;
-    const hasDefaultTitle = state.title === 'Untitled Rundown' || state.title.startsWith('New Rundown');
-    
-    // New rundowns typically have default items count and default title
-    return itemCount <= 20 && hasDefaultTitle;
-  }, [rundownId, state.items, state.title]);
-  
+  // Set initial load cooldown to prevent false attribution - runs ONCE on load
   useEffect(() => {
     if (isInitiallyLoaded) {
-      // For brand new rundowns, use minimal cooldown (500ms)
+      // Detect if this is a brand new rundown (created in last 30 seconds)
+      const itemCount = state.items?.length || 0;
+      const hasDefaultTitle = state.title === 'Untitled Rundown' || state.title.startsWith('New Rundown');
+      
+      // For brand new rundowns with few items, use minimal cooldown (500ms)
       // For existing rundowns, use 3 seconds to prevent false attribution
-      const cooldownMs = isNewRundown() ? 500 : 3000;
+      const isNewRundown = itemCount <= 20 && hasDefaultTitle;
+      const cooldownMs = isNewRundown ? 500 : 3000;
       initialLoadCooldownRef.current = Date.now() + cooldownMs;
       
-      console.log(`🕐 Initial load cooldown set: ${cooldownMs}ms`, {
-        isNewRundown: isNewRundown(),
+      console.log(`🕐 Initial load cooldown set: ${cooldownMs}ms (runs ONCE)`, {
+        isNewRundown,
         rundownId,
-        itemCount: state.items?.length || 0
+        itemCount
       });
     }
-  }, [isInitiallyLoaded, isNewRundown, rundownId, state.items, state.title]);
+    // CRITICAL: Only run this once on initial load, not on every state change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInitiallyLoaded]);
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
