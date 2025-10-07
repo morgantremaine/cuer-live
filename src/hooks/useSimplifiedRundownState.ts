@@ -697,11 +697,23 @@ export const useSimplifiedRundownState = () => {
   
   // Track state changes and notify per-cell save system
   const previousStateRef = useRef(state);
+  const hasTrackedInitialLoad = useRef(false);
+  
   useEffect(() => {
     if (!perCellEnabled || !isInitialized) return;
     
     const prev = previousStateRef.current;
     const curr = state;
+    
+    // Skip change tracking on initial load (when previous state was empty)
+    if (!hasTrackedInitialLoad.current && prev.items.length === 0 && curr.items.length > 0) {
+      console.log('🚫 Skipping change tracking for initial load', { itemsLoaded: curr.items.length });
+      hasTrackedInitialLoad.current = true;
+      previousStateRef.current = state;
+      return;
+    }
+    
+    hasTrackedInitialLoad.current = true;
     
     // Track title changes
     if (prev.title !== curr.title) {
