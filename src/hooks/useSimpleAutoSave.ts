@@ -98,12 +98,32 @@ export const useSimpleAutoSave = (
   }, [state]);
 
   // Set initial load cooldown to prevent false attribution
+  // Detect if this is a brand new rundown (created in last 30 seconds)
+  const isNewRundown = useCallback(() => {
+    if (!rundownId) return false;
+    
+    // Check if rundown was just created by checking if it has very few items and was just loaded
+    const itemCount = state.items?.length || 0;
+    const hasDefaultTitle = state.title === 'Untitled Rundown' || state.title.startsWith('New Rundown');
+    
+    // New rundowns typically have default items count and default title
+    return itemCount <= 20 && hasDefaultTitle;
+  }, [rundownId, state.items, state.title]);
+  
   useEffect(() => {
     if (isInitiallyLoaded) {
-      // Prevent saves for 3 seconds after initial load to avoid false attribution
-      initialLoadCooldownRef.current = Date.now() + 3000;
+      // For brand new rundowns, use minimal cooldown (500ms)
+      // For existing rundowns, use 3 seconds to prevent false attribution
+      const cooldownMs = isNewRundown() ? 500 : 3000;
+      initialLoadCooldownRef.current = Date.now() + cooldownMs;
+      
+      console.log(`🕐 Initial load cooldown set: ${cooldownMs}ms`, {
+        isNewRundown: isNewRundown(),
+        rundownId,
+        itemCount: state.items?.length || 0
+      });
     }
-  }, [isInitiallyLoaded]);
+  }, [isInitiallyLoaded, isNewRundown, rundownId, state.items, state.title]);
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
@@ -513,8 +533,9 @@ export const useSimpleAutoSave = (
 
     // CRITICAL: Prevent saves during initial load period to avoid false attribution
     if (initialLoadCooldownRef.current > Date.now()) {
+      const remainingMs = initialLoadCooldownRef.current - Date.now();
       debugLogger.autosave('Save blocked: initial load cooldown active');
-      console.log('🛑 AutoSave: blocked - initial load cooldown active');
+      console.log(`🛑 AutoSave: blocked - initial load cooldown active (${remainingMs}ms remaining)`);
       return;
     }
 

@@ -329,7 +329,11 @@ function clearHeaderNumbers(items: RundownItem[]): RundownItem[] {
   });
 }
 
-export const useRundownState = (initialData?: Partial<RundownState>, rundownId?: string) => {
+export const useRundownState = (
+  initialData?: Partial<RundownState>, 
+  rundownId?: string,
+  markActiveTypingRef?: React.MutableRefObject<(() => void) | undefined>
+) => {
   const [state, dispatch] = useReducer(rundownReducer, {
     ...initialState,
     ...initialData
@@ -537,6 +541,10 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     
     setTitle: (title: string) => {
       dispatch({ type: 'SET_TITLE', payload: title });
+      // Notify autosave system that user is typing
+      if (markActiveTypingRef?.current) {
+        markActiveTypingRef.current();
+      }
       if (rundownId) {
         broadcastLiveUpdate('live_typing', { title });
       }

@@ -118,6 +118,9 @@ export const useSimplifiedRundownState = () => {
   // Simplified dropdown protection
   const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
   const DROPDOWN_PROTECTION_WINDOW_MS = 800; // Much shorter dropdown protection
+  
+  // Create ref for markActiveTyping to pass to useRundownState
+  const markActiveTypingRef = useRef<(() => void) | undefined>(undefined);
 
   const markDropdownFieldChanged = useCallback((fieldKey: string) => {
     const now = Date.now();
@@ -137,7 +140,7 @@ export const useSimplifiedRundownState = () => {
     startTime: '09:00:00',
     timezone: 'America/New_York',
     showDate: null
-  }, rundownId || undefined); // Pass rundownId for broadcast functionality
+  }, rundownId || undefined, markActiveTypingRef); // Pass rundownId for broadcast functionality and typing ref
 
   // User-specific column preferences (separate from team sync)
   const {
@@ -210,6 +213,9 @@ export const useSimplifiedRundownState = () => {
     cooldownUntilRef,
     applyingCellBroadcastRef // Pass the cell broadcast flag
   );
+  
+  // Update the ref so useRundownState can use it
+  markActiveTypingRef.current = markActiveTyping;
 
   // Standalone undo system - now with redo
   const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
