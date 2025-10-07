@@ -164,12 +164,16 @@ export const useRundownStorage = () => {
         folder_id: folderId,
         archived: false,
         last_updated_by: user.id,
-        show_date: new Date().toISOString().split('T')[0] // Set current date in YYYY-MM-DD format
+        show_date: new Date().toISOString().split('T')[0], // Set current date in YYYY-MM-DD format
+        per_cell_save_enabled: true // Enable per-cell saving for new rundowns
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Failed to create rundown:', error);
+      throw error;
+    }
 
     // Add to local state
     const newRundown = {
@@ -196,12 +200,16 @@ export const useRundownStorage = () => {
         start_time: rundown.start_time,
         archived: false,
         last_updated_by: user.id,
-        show_date: rundown.show_date || new Date().toISOString().split('T')[0] // Set current date if not provided
+        show_date: rundown.show_date || new Date().toISOString().split('T')[0], // Set current date if not provided
+        per_cell_save_enabled: true // Enable per-cell saving for new rundowns
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Failed to save rundown:', error);
+      throw error;
+    }
 
     // Add to local state
     const newRundown = {
