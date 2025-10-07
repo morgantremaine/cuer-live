@@ -120,6 +120,100 @@ export const useTeam = () => {
     }
   }, [user]);
 
+  const loadTeamMembers = async (teamId: string) => {
+    // Add debouncing to prevent excessive API calls when switching accounts
+    const now = Date.now();
+    const lastMemberLoad = lastMemberLoadRef.current;
+    if (lastMemberLoad && (now - lastMemberLoad) < 2000) {
+      console.log('⏭️ Skipping member load - too frequent');
+      return;
+    }
+    lastMemberLoadRef.current = now;
+    
+    try {
+      // First get team members
+      const { data: membersData, error: membersError } = await supabase
+        .from('team_members')
+        .select('id, user_id, role, joined_at')
+        .eq('team_id', teamId)
+        .order('joined_at', { ascending: true });
+
+      if (membersError) {
+        console.error('Error loading team members:', membersError);
+        return;
+      }
+
+      // Then get profiles for each user
+      const userIds = membersData?.map(member => member.user_id) || [];
+      
+      if (userIds.length === 0) {
+        setTeamMembers([]);
+        return;
+      }
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        // Still set members without profile data
+        const membersWithoutProfiles = membersData.map(member => ({
+          ...member,
+          profiles: undefined
+        }));
+        setTeamMembers(membersWithoutProfiles);
+        return;
+      }
+
+      // Combine the data
+      const transformedMembers: TeamMember[] = membersData.map(member => {
+        const profile = profilesData?.find(p => p.id === member.user_id);
+        return {
+          ...member,
+          profiles: profile ? {
+            email: profile.email,
+            full_name: profile.full_name
+          } : undefined
+        };
+      });
+
+      setTeamMembers(transformedMembers);
+    } catch (error) {
+      console.error('Failed to load team members:', error);
+    }
+  };
+
+  const loadPendingInvitations = async (teamId: string) => {
+    // Add debouncing to prevent excessive API calls when switching accounts
+    const now = Date.now();
+    const lastInvitationLoad = lastInvitationLoadRef.current;
+    if (lastInvitationLoad && (now - lastInvitationLoad) < 2000) {
+      console.log('⏭️ Skipping invitation load - too frequent');
+      return;
+    }
+    lastInvitationLoadRef.current = now;
+    
+    try {
+      const { data, error } = await supabase
+        .from('team_invitations')
+        .select('id, email, created_at')
+        .eq('team_id', teamId)
+        .eq('accepted', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading pending invitations:', error);
+      } else {
+        setPendingInvitations(data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load pending invitations:', error);
+    }
+  };
+
   const loadTeamData = useCallback(async () => {
     const currentActiveTeamId = activeTeamId;
     const loadKey = `${user?.id}-${currentActiveTeamId}`;
@@ -320,100 +414,6 @@ export const useTeam = () => {
     
     loadTeamData();
   }, [team?.id, activeTeamId, setActiveTeam, loadTeamData, user?.id]);
-
-  const loadTeamMembers = async (teamId: string) => {
-    // Add debouncing to prevent excessive API calls when switching accounts
-    const now = Date.now();
-    const lastMemberLoad = lastMemberLoadRef.current;
-    if (lastMemberLoad && (now - lastMemberLoad) < 2000) {
-      console.log('⏭️ Skipping member load - too frequent');
-      return;
-    }
-    lastMemberLoadRef.current = now;
-    
-    try {
-      // First get team members
-      const { data: membersData, error: membersError } = await supabase
-        .from('team_members')
-        .select('id, user_id, role, joined_at')
-        .eq('team_id', teamId)
-        .order('joined_at', { ascending: true });
-
-      if (membersError) {
-        console.error('Error loading team members:', membersError);
-        return;
-      }
-
-      // Then get profiles for each user
-      const userIds = membersData?.map(member => member.user_id) || [];
-      
-      if (userIds.length === 0) {
-        setTeamMembers([]);
-        return;
-      }
-
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', userIds);
-
-      if (profilesError) {
-        console.error('Error loading profiles:', profilesError);
-        // Still set members without profile data
-        const membersWithoutProfiles = membersData.map(member => ({
-          ...member,
-          profiles: undefined
-        }));
-        setTeamMembers(membersWithoutProfiles);
-        return;
-      }
-
-      // Combine the data
-      const transformedMembers: TeamMember[] = membersData.map(member => {
-        const profile = profilesData?.find(p => p.id === member.user_id);
-        return {
-          ...member,
-          profiles: profile ? {
-            email: profile.email,
-            full_name: profile.full_name
-          } : undefined
-        };
-      });
-
-      setTeamMembers(transformedMembers);
-    } catch (error) {
-      console.error('Failed to load team members:', error);
-    }
-  };
-
-  const loadPendingInvitations = async (teamId: string) => {
-    // Add debouncing to prevent excessive API calls when switching accounts
-    const now = Date.now();
-    const lastInvitationLoad = lastInvitationLoadRef.current;
-    if (lastInvitationLoad && (now - lastInvitationLoad) < 2000) {
-      console.log('⏭️ Skipping invitation load - too frequent');
-      return;
-    }
-    lastInvitationLoadRef.current = now;
-    
-    try {
-      const { data, error } = await supabase
-        .from('team_invitations')
-        .select('id, email, created_at')
-        .eq('team_id', teamId)
-        .eq('accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading pending invitations:', error);
-      } else {
-        setPendingInvitations(data || []);
-      }
-    } catch (error) {
-      console.error('Failed to load pending invitations:', error);
-    }
-  };
 
   const inviteTeamMember = async (email: string) => {
     if (!team?.id) {

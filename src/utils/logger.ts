@@ -22,6 +22,7 @@ const config: LoggerConfig = {
     'morgantremaine@gmail.com',
     'morgan@cuer.live', 
     'morgantremaine@me.com',
+    'morgan.tremaine@esportsawards.com',
     'cuertest@gmail.com',
     'cuertest2@gmail.com'
   ]
