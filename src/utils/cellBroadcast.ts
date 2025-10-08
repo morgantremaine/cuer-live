@@ -95,17 +95,23 @@ export class CellBroadcastManager {
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
         
-        // Retry on CHANNEL_ERROR if auth was recently refreshed or session is valid
+        // Retry ONCE on CHANNEL_ERROR if auth session is valid
+        // (Coordinator handles systematic reconnection)
         if (status === 'CHANNEL_ERROR') {
-          console.log('🔄 Checking if cell channel error is due to stale token...');
-          const { data: { session }, error } = await supabase.auth.getSession();
-          if (!error && session) {
-            console.log('✅ Valid session found - retrying cell connection in 2s');
-            setTimeout(() => {
-              this.forceReconnect(rundownId);
-            }, 2000);
+          const failures = this.broadcastFailureCount.get(rundownId) || 0;
+          
+          // Only retry once, then rely on coordinator
+          if (failures <= 1) {
+            console.log('🔄 Cell channel error - checking session for one-time retry...');
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (!error && session) {
+              console.log('✅ Valid session found - retrying cell connection once in 2s');
+              setTimeout(() => {
+                this.forceReconnect(rundownId);
+              }, 2000);
+            }
           } else {
-            console.warn('❌ Cannot retry cell connection - invalid session');
+            console.log('⏭️ Cell channel error - waiting for coordinator to handle reconnection');
           }
         }
       } else {

@@ -499,19 +499,26 @@ export const useConsolidatedRealtimeRundown = ({
           state.isConnected = false;
           console.error('❌ Consolidated realtime connection failed:', status);
           
-          // Retry on CHANNEL_ERROR if auth was recently refreshed or session is valid
+          // Retry ONCE on CHANNEL_ERROR if auth session is valid
+          // (Coordinator handles systematic reconnection)
           if (status === 'CHANNEL_ERROR') {
-            console.log('🔄 Checking if consolidated channel error is due to stale token...');
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (!error && session) {
-              console.log('✅ Valid session found - retrying consolidated connection in 2s');
-              setTimeout(() => {
-                if (reconnectHandler) {
-                  reconnectHandler();
-                }
-              }, 2000);
+            const retryCount = (channel as any)?._retryCount || 0;
+            
+            // Only retry once, then rely on coordinator
+            if (retryCount === 0) {
+              console.log('🔄 Consolidated channel error - checking session for one-time retry...');
+              const { data: { session }, error } = await supabase.auth.getSession();
+              if (!error && session) {
+                console.log('✅ Valid session found - retrying consolidated connection once in 2s');
+                (channel as any)._retryCount = 1;
+                setTimeout(() => {
+                  if (reconnectHandler) {
+                    reconnectHandler();
+                  }
+                }, 2000);
+              }
             } else {
-              console.warn('❌ Cannot retry consolidated connection - invalid session');
+              console.log('⏭️ Consolidated channel error - waiting for coordinator to handle reconnection');
             }
           }
         } else if (status === 'CLOSED') {

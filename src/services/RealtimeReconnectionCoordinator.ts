@@ -127,7 +127,36 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
 
-    // If no connections yet, wait with retry mechanism
+    // PHASE 1: Check WebSocket health before attempting channel reconnections
+    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+    const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
+    
+    if (!isWebSocketAlive) {
+      console.warn('🔌 WebSocket is dead - forcing full reconnection before channel setup');
+      
+      const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
+      
+      if (!reconnected) {
+        console.error('❌ Failed to reconnect WebSocket - aborting channel reconnection');
+        return;
+      }
+      
+      // Mark WebSocket as validated
+      websocketHealthCheck.markValidated();
+      
+      // Reset all circuit breakers after successful WebSocket reconnection
+      console.log('🔄 Resetting all circuit breakers after WebSocket reconnection');
+      for (const connection of this.connections.values()) {
+        connection.failedAttempts = 0;
+        connection.circuitState = 'closed';
+        connection.lastFailureTime = 0;
+      }
+      
+      // Wait for WebSocket to stabilize before proceeding
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // PHASE 2: Wait for connections to register if needed
     if (this.connections.size === 0) {
       console.log('⏳ ReconnectionCoordinator: No connections found, waiting for registrations...');
       
@@ -152,7 +181,7 @@ class RealtimeReconnectionCoordinatorService {
 
     const connectionCount = this.connections.size;
 
-    // Validate auth session before attempting any reconnections
+    // PHASE 3: Validate auth session before attempting any reconnections
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session) {
       console.warn('🔄 ReconnectionCoordinator: Invalid auth session, waiting for refresh');
