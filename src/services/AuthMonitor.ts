@@ -33,13 +33,25 @@ class AuthMonitorService {
   /**
    * Notify when token is refreshed
    */
-  onTokenRefreshed(session: Session | null) {
+  async onTokenRefreshed(session: Session | null) {
     const timeSinceLastRefresh = Date.now() - this.lastTokenRefresh;
     console.log(`🔐 AuthMonitor: Token refreshed (${Math.round(timeSinceLastRefresh / 1000)}s since last refresh)`);
     
     this.currentSession = session;
     this.lastTokenRefresh = Date.now();
-    this.notifyListeners(session);
+    
+    // Wait for session to be fully validated before notifying
+    // This gives Supabase client time to update internal auth state
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Validate session is actually ready
+    const isValid = await this.isSessionValid();
+    if (isValid) {
+      console.log('🔐 AuthMonitor: Session validated and ready, notifying listeners');
+      this.notifyListeners(session);
+    } else {
+      console.warn('🔐 AuthMonitor: Session validation failed after refresh');
+    }
   }
 
   /**

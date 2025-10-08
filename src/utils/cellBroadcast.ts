@@ -79,7 +79,7 @@ export class CellBroadcastManager {
         }
       });
 
-    channel.subscribe((status: string) => {
+    channel.subscribe(async (status: string) => {
       this.connectionStatus.set(rundownId, status);
       
       if (status === 'SUBSCRIBED') {
@@ -89,11 +89,25 @@ export class CellBroadcastManager {
         console.log('✅ Cell realtime channel subscribed:', key);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
-        console.warn('🔌 Cell realtime channel status (no manual reconnect):', key, status);
+        console.warn('🔌 Cell realtime channel error:', key, status);
         
         // Track connection failures for health monitoring
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
+        
+        // Retry on CHANNEL_ERROR if auth was recently refreshed or session is valid
+        if (status === 'CHANNEL_ERROR') {
+          console.log('🔄 Checking if cell channel error is due to stale token...');
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (!error && session) {
+            console.log('✅ Valid session found - retrying cell connection in 2s');
+            setTimeout(() => {
+              this.forceReconnect(rundownId);
+            }, 2000);
+          } else {
+            console.warn('❌ Cannot retry cell connection - invalid session');
+          }
+        }
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }

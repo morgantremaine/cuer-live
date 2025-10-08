@@ -24,13 +24,15 @@ class RealtimeReconnectionCoordinatorService {
   private connections: Map<string, RegisteredConnection> = new Map();
   private isReconnecting: boolean = false;
   private reconnectionDebounceTimer: NodeJS.Timeout | null = null;
-  private readonly RECONNECTION_DEBOUNCE_MS = 2000; // 2 seconds
+  private readonly RECONNECTION_DEBOUNCE_MS = 3000; // 3 seconds (increased for component mount time)
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
   private readonly STAGGER_DELAY_MS = 100; // Delay between individual reconnections
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
   private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
   private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
   private readonly MAX_BACKOFF_DELAY_MS = 30000; // 30 seconds
+  private readonly MAX_REGISTRATION_WAIT_MS = 5000; // Wait up to 5s for connections to register
+  private readonly REGISTRATION_CHECK_INTERVAL_MS = 500; // Check every 500ms
 
   constructor() {
     // Register with auth monitor
@@ -125,11 +127,30 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
 
-    const connectionCount = this.connections.size;
-    if (connectionCount === 0) {
-      console.log('🔄 ReconnectionCoordinator: No connections to reconnect');
-      return;
+    // If no connections yet, wait with retry mechanism
+    if (this.connections.size === 0) {
+      console.log('⏳ ReconnectionCoordinator: No connections found, waiting for registrations...');
+      
+      const startTime = Date.now();
+      let attempts = 0;
+      
+      // Retry loop: check every 500ms for up to 5 seconds
+      while (this.connections.size === 0 && Date.now() - startTime < this.MAX_REGISTRATION_WAIT_MS) {
+        attempts++;
+        console.log(`⏳ ReconnectionCoordinator: Waiting for connections... (attempt ${attempts})`);
+        await new Promise(resolve => setTimeout(resolve, this.REGISTRATION_CHECK_INTERVAL_MS));
+      }
+      
+      // Final check after waiting
+      if (this.connections.size === 0) {
+        console.log('🔄 ReconnectionCoordinator: No connections registered after waiting, skipping');
+        return;
+      }
+      
+      console.log(`✅ ReconnectionCoordinator: Found ${this.connections.size} connection(s) after ${attempts} attempts`);
     }
+
+    const connectionCount = this.connections.size;
 
     // Validate auth session before attempting any reconnections
     const { data: { session }, error } = await supabase.auth.getSession();

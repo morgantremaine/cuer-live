@@ -403,6 +403,9 @@ export const useConsolidatedRealtimeRundown = ({
       // Create new global subscription with enhanced state tracking
       console.log('📡 Creating enhanced consolidated realtime subscription for', rundownId);
       
+      // Define reconnect handler that will be set later
+      let reconnectHandler: (() => Promise<void>) | null = null;
+      
       const channel = supabase
         .channel(`consolidated-realtime-${rundownId}`)
         .on(
@@ -495,6 +498,22 @@ export const useConsolidatedRealtimeRundown = ({
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           state.isConnected = false;
           console.error('❌ Consolidated realtime connection failed:', status);
+          
+          // Retry on CHANNEL_ERROR if auth was recently refreshed or session is valid
+          if (status === 'CHANNEL_ERROR') {
+            console.log('🔄 Checking if consolidated channel error is due to stale token...');
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (!error && session) {
+              console.log('✅ Valid session found - retrying consolidated connection in 2s');
+              setTimeout(() => {
+                if (reconnectHandler) {
+                  reconnectHandler();
+                }
+              }, 2000);
+            } else {
+              console.warn('❌ Cannot retry consolidated connection - invalid session');
+            }
+          }
         } else if (status === 'CLOSED') {
           state.isConnected = false;
           console.log('🔌 Consolidated realtime connection closed');
@@ -516,8 +535,8 @@ export const useConsolidatedRealtimeRundown = ({
 
       globalSubscriptions.set(rundownId, globalState);
       
-      // Register with reconnection coordinator
-      const forceReconnect = async () => {
+      // Define and register reconnection handler
+      reconnectHandler = async () => {
         console.log('📡 🔄 Force reconnect requested for consolidated channel:', rundownId);
         
         // Check auth first
@@ -563,7 +582,7 @@ export const useConsolidatedRealtimeRundown = ({
       realtimeReconnectionCoordinator.register(
         `consolidated-${rundownId}`,
         'consolidated',
-        forceReconnect
+        reconnectHandler
       );
     }
 

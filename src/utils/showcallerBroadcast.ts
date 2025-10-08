@@ -37,7 +37,7 @@ class ShowcallerBroadcastManager {
           callbacks.forEach(callback => callback(payload));
         }
       })
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         console.log('📺 Showcaller broadcast status:', status, rundownId);
         this.connectionStatus.set(rundownId, status);
         
@@ -45,10 +45,20 @@ class ShowcallerBroadcastManager {
           console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
         } else if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
-          // Coordinator will handle reconnection
+          
+          // Retry on CHANNEL_ERROR if auth was recently refreshed or session is valid
+          console.log('🔄 Checking if showcaller error is due to stale token...');
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (!error && session) {
+            console.log('✅ Valid session found - retrying showcaller connection in 2s');
+            setTimeout(() => {
+              this.forceReconnect(rundownId);
+            }, 2000);
+          } else {
+            console.warn('❌ Cannot retry showcaller connection - invalid session');
+          }
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
-          // Coordinator will handle reconnection
         }
       });
 
