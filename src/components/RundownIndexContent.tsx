@@ -12,6 +12,7 @@ import { calculateEndTime } from '@/utils/rundownCalculations';
 import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
+import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 // Import timing test to run calculations check
@@ -327,6 +328,14 @@ const RundownIndexContent = () => {
     handleAddRow,
     handleAddHeader
   } = interactions;
+
+  // Add keyboard shortcuts for copy/paste
+  useRundownKeyboardShortcuts({
+    onCopy: handleCopySelectedRows,
+    onPaste: () => handlePasteRows(),
+    selectedRows: interactions.selectedRows,
+    hasClipboardData: hasClipboardData()
+  });
 
   const { 
     showColorPicker, 
