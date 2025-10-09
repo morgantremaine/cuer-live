@@ -90,7 +90,10 @@ export const useRundownInteractionHandlers = (
     addHeaderAtIndex,
     markStructuralChange,
     rundownId,
-    currentUserId
+    currentUserId,
+    saveUndoState,
+    columns,
+    title
   });
 
   return {

@@ -29,6 +29,9 @@ interface UseRundownGridHandlersProps {
   markStructuralChange?: (operationType: string, operationData: any) => void;
   rundownId?: string;
   currentUserId?: string;
+  saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void;
+  columns?: any[];
+  title?: string;
 }
 
 export const useRundownGridHandlers = ({
@@ -56,7 +59,10 @@ export const useRundownGridHandlers = ({
   addHeaderAtIndex,
   markStructuralChange,
   rundownId,
-  currentUserId
+  currentUserId,
+  saveUndoState,
+  columns,
+  title
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -139,6 +145,12 @@ export const useRundownGridHandlers = ({
     if (clipboardItems.length > 0) {
       debugLogger.grid('Grid handlers: pasting with targetRowId:', targetRowId);
       
+      // Save undo state BEFORE making changes
+      if (saveUndoState && columns && title) {
+        debugLogger.grid('💾 Saving undo state before paste');
+        saveUndoState(items, columns, title, 'Paste rows');
+      }
+      
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -182,7 +194,7 @@ export const useRundownGridHandlers = ({
         markAsChanged();
       }
     }
-  }, [clipboardItems, items, setItems, markAsChanged, markStructuralChange]);
+  }, [clipboardItems, items, setItems, markAsChanged, markStructuralChange, saveUndoState, columns, title]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);
