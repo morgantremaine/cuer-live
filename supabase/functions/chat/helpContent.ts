@@ -315,28 +315,27 @@ Display scripts in a large, scrolling teleprompter view:
 ## Keyboard Shortcuts
 
 ### Navigation
-- **Tab**: Move to next field
-- **Shift + Tab**: Move to previous field
-- **Enter**: New row below
-- **Shift + Enter**: New row above
+- **Tab**: Move to next cell
+- **Shift + Tab**: Move to previous cell
+- **Enter**: Save and move down
+- **Escape**: Cancel edit
 - **↑/↓ Arrow Keys**: Navigate between rows
 
-### Editing
-- **Cmd/Ctrl + C**: Copy selected row
-- **Cmd/Ctrl + V**: Paste row
-- **Cmd/Ctrl + Z**: Undo
-- **Cmd/Ctrl + Shift + Z**: Redo
-- **Delete/Backspace**: Delete row (when row is selected)
+### Editing Actions
+- **Cmd/Ctrl + C**: Copy selected rows
+- **Cmd/Ctrl + V**: Paste rows (pastes below selected row or at end if nothing selected)
+- **Cmd/Ctrl + Shift + Enter**: Add new segment row (inserts below selected row or at end if nothing selected)
+- **Cmd/Ctrl + Enter**: Insert line break in cell
 
-### Features
-- **Cmd/Ctrl + F**: Find & Replace
-- **Cmd/Ctrl + S**: Save (auto-saves, but force-saves if needed)
-- **Esc**: Close dialogs/modals
+### Find & Replace
+- **Cmd/Ctrl + F**: Open Find & Replace dialog
+- **Enter**: Navigate to next match
+- **Shift + Enter**: Navigate to previous match
 
-### Row Actions
-- **Cmd/Ctrl + D**: Duplicate row
-- **Cmd/Ctrl + X**: Cut row
-- **Alt + ↑/↓**: Move row up/down
+### Teleprompter Controls
+- **Arrow Keys**: Adjust scroll speed
+- **Space Bar**: Pause/Resume scrolling
+- **Esc**: Exit fullscreen mode
 
 ## Support
 

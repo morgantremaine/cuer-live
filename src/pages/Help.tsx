@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 const helpSections = [
   { id: 'getting-started', title: 'Getting Started', icon: FileText },
   { id: 'basic-operations', title: 'Basic Operations', icon: MousePointer },
+  { id: 'keyboard-shortcuts', title: 'Keyboard Shortcuts', icon: Keyboard },
   { id: 'row-locking', title: 'Row Number Locking', icon: Lock },
   { id: 'column-manager', title: 'Layout Manager', icon: FileText },
   { id: 'find-replace', title: 'Find & Replace', icon: Search },
@@ -21,7 +22,6 @@ const helpSections = [
   { id: 'ad-view', title: 'AD View', icon: Eye },
   { id: 'csv-import', title: 'CSV Import', icon: Upload },
   { id: 'teleprompter', title: 'Teleprompter', icon: Monitor },
-  { id: 'keyboard-shortcuts', title: 'Keyboard Shortcuts', icon: Keyboard },
   { id: 'support', title: 'Support', icon: Clock }
 ];
 
@@ -258,6 +258,50 @@ const Help = () => {
                   <li>Use the Undo/Redo buttons in the toolbar to revert or reapply changes</li>
                   <li>Undo history tracks all major editing actions across the rundown</li>
                   <li>Hover over buttons to see what action will be undone/redone</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+                {/* Keyboard Shortcuts */}
+                <section id="keyboard-shortcuts" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Keyboard className="h-6 w-6 mr-2 text-indigo-600" />
+              Keyboard Shortcuts
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Navigation</h3>
+                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Tab</kbd> - Move to next cell</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Shift + Tab</kbd> - Move to previous cell</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Save and move down</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Escape</kbd> - Cancel edit</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Editing Actions</h3>
+                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + C</kbd> - Copy selected rows</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + V</kbd> - Paste rows</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Shift + Enter</kbd> - Add new segment</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Enter</kbd> - Line break in cell</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Find & Replace</h3>
+                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + F</kbd> - Open Find & Replace</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Next match</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Shift + Enter</kbd> - Previous match</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Teleprompter</h3>
+                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Arrow Keys</kbd> - Adjust scroll speed</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Space</kbd> - Pause/Resume scroll</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Esc</kbd> - Exit fullscreen</li>
                 </ul>
               </div>
             </div>
@@ -636,33 +680,6 @@ const Help = () => {
                     <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Esc</kbd> - Exit fullscreen mode</li>
                   </ul>
                 </div>
-              </div>
-            </div>
-          </section>
-
-                {/* Keyboard Shortcuts */}
-                <section id="keyboard-shortcuts" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Keyboard className="h-6 w-6 mr-2 text-indigo-600" />
-              Keyboard Shortcuts
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Navigation</h3>
-                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Tab</kbd> - Next cell</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Shift + Tab</kbd> - Previous cell</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Save and move down</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Escape</kbd> - Cancel edit</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Teleprompter</h3>
-                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Arrow Keys</kbd> - Adjust scroll speed</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Space</kbd> - Pause/Resume scroll</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Esc</kbd> - Exit fullscreen</li>
-                </ul>
               </div>
             </div>
           </section>
