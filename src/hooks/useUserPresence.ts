@@ -34,7 +34,6 @@ export const useUserPresence = ({
   const channelRef = useRef<any>(null);
   const sessionIdRef = useRef<string>(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const joinedAtRef = useRef<string>(new Date().toISOString());
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
   const lastSeenUpdateRef = useRef<NodeJS.Timeout>();
   const hasUnsavedRef = useRef<boolean>(!!hasUnsavedChanges);
 
@@ -120,18 +119,6 @@ export const useUserPresence = ({
         // Track this user's presence
         const trackStatus = await channel.track(userPresence);
         
-        // Set up heartbeat to update lastSeen
-        heartbeatIntervalRef.current = setInterval(async () => {
-          if (!hasSessionConflict) {
-            await channel.track({
-              ...userPresence,
-              lastSeen: new Date().toISOString(),
-              hasUnsavedChanges: hasUnsavedRef.current,
-              userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
-            });
-          }
-        }, 30000); // Update every 30 seconds
-        
       } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
         setIsConnected(false);
       }
@@ -140,11 +127,6 @@ export const useUserPresence = ({
     channelRef.current = channel;
 
     return () => {
-      
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-      
       if (lastSeenUpdateRef.current) {
         clearTimeout(lastSeenUpdateRef.current);
       }
