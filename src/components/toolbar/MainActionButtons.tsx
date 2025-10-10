@@ -82,36 +82,10 @@ const MainActionButtons = ({
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
 
-  // Cooldown states for Add buttons
-  const [addRowCooldown, setAddRowCooldown] = useState(false);
-  const [addHeaderCooldown, setAddHeaderCooldown] = useState(false);
-
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
 
-  // Wrapper functions with cooldown logic
-  const handleAddRowWithCooldown = useCallback(() => {
-    if (addRowCooldown) return;
-    
-    setAddRowCooldown(true);
-    onAddRow();
-    
-    setTimeout(() => {
-      setAddRowCooldown(false);
-    }, 1000);
-  }, [addRowCooldown, onAddRow]);
-
-  const handleAddHeaderWithCooldown = useCallback(() => {
-    if (addHeaderCooldown) return;
-    
-    setAddHeaderCooldown(true);
-    onAddHeader();
-    
-    setTimeout(() => {
-      setAddHeaderCooldown(false);
-    }, 1000);
-  }, [addHeaderCooldown, onAddHeader]);
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
       onToggleAutoScroll();
@@ -160,11 +134,11 @@ const MainActionButtons = ({
               />
             </div>
           )}
-          <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
+          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Segment</span>
           </Button>
-          <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className="flex items-center justify-start gap-1.5">
+          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Header</span>
           </Button>
@@ -259,11 +233,11 @@ const MainActionButtons = ({
           size={buttonSize}
         />
       )}
-      <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
+      <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Segment</span>
       </Button>
-      <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className={buttonClass}>
+      <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Header</span>
       </Button>
