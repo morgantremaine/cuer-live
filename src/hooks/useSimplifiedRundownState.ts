@@ -653,8 +653,11 @@ export const useSimplifiedRundownState = () => {
             actionsRef.current.loadRemoteState({ items: updatedItems });
           }
       } finally {
-        // Reset flag immediately since loadRemoteState won't trigger AutoSave
-        applyingCellBroadcastRef.current = false;
+        // Delay resetting flag to ensure useEffect sees it
+        // This prevents the change tracking effect from running for remote updates
+        setTimeout(() => {
+          applyingCellBroadcastRef.current = false;
+        }, 0);
       }
     }, currentUserId);
 
@@ -701,6 +704,13 @@ export const useSimplifiedRundownState = () => {
   
   useEffect(() => {
     if (!perCellEnabled || !isInitialized) return;
+    
+    // CRITICAL: Skip tracking if we're applying a remote cell broadcast
+    if (applyingCellBroadcastRef.current) {
+      console.log('🚫 Skipping change tracking - applying remote cell broadcast');
+      previousStateRef.current = state;
+      return;
+    }
     
     const prev = previousStateRef.current;
     const curr = state;
