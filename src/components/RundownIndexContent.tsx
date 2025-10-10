@@ -329,10 +329,11 @@ const RundownIndexContent = () => {
     handleAddHeader
   } = interactions;
 
-  // Add keyboard shortcuts for copy/paste
+  // Add keyboard shortcuts for copy/paste/add row
   useRundownKeyboardShortcuts({
     onCopy: handleCopySelectedRows,
     onPaste: handlePasteRows,
+    onAddRow: handleAddRow,
     selectedRows: interactions.selectedRows,
     hasClipboardData: hasClipboardData()
   });

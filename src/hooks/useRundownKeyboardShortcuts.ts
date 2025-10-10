@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 interface UseRundownKeyboardShortcutsProps {
   onCopy: () => void;
   onPaste: (targetRowId?: string) => void;
+  onAddRow: () => void;
   selectedRows: Set<string>;
   hasClipboardData: boolean;
 }
@@ -10,6 +11,7 @@ interface UseRundownKeyboardShortcutsProps {
 export const useRundownKeyboardShortcuts = ({
   onCopy,
   onPaste,
+  onAddRow,
   selectedRows,
   hasClipboardData
 }: UseRundownKeyboardShortcutsProps) => {
@@ -52,6 +54,13 @@ export const useRundownKeyboardShortcuts = ({
         console.log('📋 Keyboard shortcut: Paste rows', targetRowId ? `after row: ${targetRowId}` : 'at end');
         onPaste(targetRowId);
       }
+
+      // Add row: Ctrl/Cmd + Shift + Enter
+      if (isCtrlOrCmd && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Add new segment row');
+        onAddRow();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -59,5 +68,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, selectedRows, hasClipboardData]);
+  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData]);
 };
