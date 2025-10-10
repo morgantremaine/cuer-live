@@ -63,8 +63,8 @@ export const useStandaloneUndo = ({ onUndo, setUndoActive }: UseStandaloneUndoPr
 
     setUndoStack(prev => {
       const newStack = [...prev, newState];
-      // Keep only last 20 states
-      return newStack.slice(-20);
+      // Keep only last 5 states
+      return newStack.slice(-5);
     });
     
     // Clear redo stack when new state is saved
@@ -93,7 +93,7 @@ export const useStandaloneUndo = ({ onUndo, setUndoActive }: UseStandaloneUndoPr
       action: lastState.action,
       timestamp: Date.now()
     };
-    setRedoStack(prev => [...prev, currentState].slice(-20));
+    setRedoStack(prev => [...prev, currentState].slice(-5));
     
     // Mark that we're undoing to prevent saving this as a new state
     isUndoing.current = true;

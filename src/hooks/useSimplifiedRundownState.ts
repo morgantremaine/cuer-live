@@ -113,6 +113,17 @@ export const useSimplifiedRundownState = () => {
     return unsubscribe;
   }, []);
 
+  // Cleanup refs on unmount to release memory
+  useEffect(() => {
+    return () => {
+      recentCellUpdatesRef.current.clear();
+      recentlyEditedFieldsRef.current.clear();
+      dropdownFieldProtectionRef.current.clear();
+      typingSessionRef.current = null;
+      activeFocusFieldRef.current = null;
+    };
+  }, []);
+
 
 
   // Simplified dropdown protection
