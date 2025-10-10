@@ -199,7 +199,7 @@ export const useSharedRundownState = () => {
     // Smart polling intervals based on showcaller state
     const getPollingInterval = () => {
       const showcallerActive = rundownData?.showcallerState?.isPlaying;
-      return showcallerActive ? 1000 : 3000; // 1s when active, 3s when idle
+      return showcallerActive ? 1000 : 10000; // 1s when active, 10s when idle
     };
 
     // Initial poll
@@ -285,6 +285,11 @@ export const useSharedRundownState = () => {
         clearInterval(timeUpdateInterval.current);
         timeUpdateInterval.current = null;
       }
+      
+      // Clear refs and state to release memory
+      lastDocVersion.current = 0;
+      setRundownData(null);
+      setError(null);
     };
   }, [stopPolling]);
 
