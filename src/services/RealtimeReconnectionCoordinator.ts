@@ -24,6 +24,7 @@ class RealtimeReconnectionCoordinatorService {
   private connections: Map<string, RegisteredConnection> = new Map();
   private isReconnecting: boolean = false;
   private reconnectionDebounceTimer: NodeJS.Timeout | null = null;
+  private consecutiveWebSocketFailures: number = 0;
   private readonly RECONNECTION_DEBOUNCE_MS = 3000; // 3 seconds (increased for component mount time)
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
   private readonly STAGGER_DELAY_MS = 100; // Delay between individual reconnections
@@ -137,9 +138,32 @@ class RealtimeReconnectionCoordinatorService {
       const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
       
       if (!reconnected) {
-        console.error('❌ Failed to reconnect WebSocket - aborting channel reconnection');
+        this.consecutiveWebSocketFailures++;
+        console.error(`❌ Failed to reconnect WebSocket (attempt ${this.consecutiveWebSocketFailures})`);
+        
+        // Show user-facing error after 3 failures
+        if (this.consecutiveWebSocketFailures >= 3) {
+          const { toast } = await import('sonner');
+          toast.error('Connection issues detected. Please refresh the page.', {
+            duration: 10000,
+            action: {
+              label: 'Refresh',
+              onClick: () => window.location.reload()
+            }
+          });
+        }
+        
+        // Schedule retry after 10 seconds instead of aborting
+        console.log('🔄 Scheduling WebSocket reconnection retry in 10 seconds...');
+        setTimeout(() => {
+          this.scheduleReconnection();
+        }, 10000);
+        
         return;
       }
+      
+      // Reset failure counter on success
+      this.consecutiveWebSocketFailures = 0;
       
       // Mark WebSocket as validated
       websocketHealthCheck.markValidated();
@@ -151,6 +175,11 @@ class RealtimeReconnectionCoordinatorService {
         connection.circuitState = 'closed';
         connection.lastFailureTime = 0;
       }
+      
+      // Broadcast reconnection complete event for showcaller recovery
+      console.log('📺 Broadcasting reconnection_complete event');
+      (globalThis as any)._websocketReconnectionComplete = Date.now();
+      window.dispatchEvent(new CustomEvent('websocket-reconnection-complete'));
       
       // Wait for WebSocket to stabilize before proceeding
       await new Promise(resolve => setTimeout(resolve, 1000));

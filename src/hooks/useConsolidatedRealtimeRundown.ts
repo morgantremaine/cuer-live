@@ -658,10 +658,17 @@ export const useConsolidatedRealtimeRundown = ({
         const subscription = state.subscription;
         globalSubscriptions.delete(rundownId);
         
-        // Safe async cleanup
+        // Safe async cleanup - guard against recursive calls during global reconnection
         setTimeout(() => {
           try {
-            supabase.removeChannel(subscription);
+            // Check if we're in a global WebSocket reconnection
+            const isGlobalReconnecting = (globalThis as any)._isGlobalReconnecting;
+            
+            if (isGlobalReconnecting) {
+              console.log('📡 Skipping channel removal during global WebSocket reconnection');
+            } else {
+              supabase.removeChannel(subscription);
+            }
           } catch (error) {
             console.warn('📡 Error during consolidated cleanup:', error);
           }

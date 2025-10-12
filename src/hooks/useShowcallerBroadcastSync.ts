@@ -120,10 +120,29 @@ export const useShowcallerBroadcastSync = ({
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Listen for WebSocket reconnection complete event
+    const handleWebSocketReconnection = async () => {
+      console.log('📺 WebSocket reconnected - scheduling showcaller recovery in 2 seconds...');
+      
+      // Wait for stabilization before forcing reconnection
+      setTimeout(async () => {
+        console.log('📺 Attempting showcaller broadcast recovery after WebSocket reconnection');
+        try {
+          await showcallerBroadcast.forceReconnect(rundownId);
+          console.log('📺 ✅ Showcaller broadcast recovery successful');
+        } catch (error) {
+          console.error('📺 ❌ Showcaller broadcast recovery failed:', error);
+        }
+      }, 2000);
+    };
+    
+    window.addEventListener('websocket-reconnection-complete', handleWebSocketReconnection);
 
     return () => {
       console.log('📺 Cleaning up showcaller broadcast sync');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('websocket-reconnection-complete', handleWebSocketReconnection);
       clearInterval(statusInterval);
       unsubscribe();
       setIsConnected(false);
