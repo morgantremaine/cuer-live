@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,9 +36,6 @@ const JoinTeam = () => {
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
-  
-  // Track whether we've attempted to accept the invitation
-  const hasAttemptedAcceptance = useRef(false);
 
   // Define helper function early in the component
   const getInviterDisplayName = () => {
@@ -165,48 +162,18 @@ const JoinTeam = () => {
     }
   };
 
-  // Reset acceptance tracking when token changes
-  useEffect(() => {
-    hasAttemptedAcceptance.current = false;
-  }, [token]);
-
-  // Handle invitation acceptance when user is authenticated
-  useEffect(() => {
-    // Skip if we've already attempted or are currently processing
-    if (hasAttemptedAcceptance.current || isProcessing) {
-      console.log('Skipping acceptance:', { attempted: hasAttemptedAcceptance.current, isProcessing });
-      return;
-    }
-    
-    // Both user and invitation must be loaded
-    if (user && invitation) {
-      console.log('User is authenticated and invitation is loaded, processing invitation');
-      hasAttemptedAcceptance.current = true;
-      handleAcceptInvitation();
-    } else {
-      console.log('Waiting for auth/invitation:', { hasUser: !!user, hasInvitation: !!invitation });
-    }
-  }, [user?.id, invitation?.id]);
 
   const handleAcceptInvitation = async () => {
-    if (!token || isProcessing) return;
-    
-    // Check if we're already processing this specific invitation
-    const processingKey = `acceptingInvitation-${token}`;
-    if (localStorage.getItem(processingKey) === 'true') {
-      console.log('Already processing this invitation, skipping duplicate call');
+    if (!token || isProcessing) {
+      console.log('Cannot accept invitation:', { hasToken: !!token, isProcessing });
       return;
     }
-    
-    // Set processing flag for this specific invitation
-    localStorage.setItem(processingKey, 'true');
-    
-    // Clear token IMMEDIATELY to prevent race conditions with useInvitationHandler
-    console.log('Clearing pendingInvitationToken immediately');
-    localStorage.removeItem('pendingInvitationToken');
 
     setIsProcessing(true);
     
+    // Clear pending token to prevent useInvitationHandler from interfering
+    localStorage.removeItem('pendingInvitationToken');
+
     try {
       console.log('Accepting invitation with token:', token);
       const { error } = await acceptInvitation(token);
@@ -214,23 +181,18 @@ const JoinTeam = () => {
       if (error) {
         console.error('Failed to accept invitation:', error);
         
-        // If invitation was already accepted, treat as success and redirect
+        // If already accepted, treat as success
         if (error.toLowerCase().includes('already been accepted')) {
           console.log('Invitation already accepted - redirecting to dashboard');
           toast({
             title: 'Welcome!',
             description: 'You are already a member of this team.',
           });
-          setTimeout(() => {
-            localStorage.removeItem(processingKey);
-            navigate('/dashboard', { replace: true });
-          }, 500);
+          navigate('/dashboard', { replace: true });
           return;
         }
         
         // Other errors - show error and allow retry
-        localStorage.removeItem(processingKey);
-        hasAttemptedAcceptance.current = false; // Allow retry
         toast({
           title: 'Error',
           description: error,
@@ -243,17 +205,10 @@ const JoinTeam = () => {
           title: 'Success',
           description: 'Welcome to the team!',
         });
-        
-        // Add a small delay before navigation to ensure toast is visible
-        setTimeout(() => {
-          localStorage.removeItem(processingKey);
-          navigate('/dashboard', { replace: true });
-        }, 500);
+        navigate('/dashboard', { replace: true });
       }
     } catch (error) {
       console.error('Error accepting invitation:', error);
-      localStorage.removeItem(processingKey);
-      hasAttemptedAcceptance.current = false; // Allow retry
       toast({
         title: 'Error',
         description: 'Failed to join team. Please try again.',
@@ -321,20 +276,22 @@ const JoinTeam = () => {
     } else {
       console.log('Account created successfully');
       
-      // Since email confirmation is disabled, user should have immediate session
+      // Check if user has immediate session (email confirmation disabled)
       if (data?.session) {
-        console.log('User has immediate session - proceeding with team invitation');
+        console.log('User has immediate session - accepting invitation');
         toast({
-          title: 'Account Created Successfully!',
-          description: 'Welcome! You will now join the team automatically.',
+          title: 'Account Created!',
+          description: 'Joining team...',
         });
-        // User will be automatically processed by the useEffect that handles invitation acceptance
+        
+        // Directly accept the invitation
+        await handleAcceptInvitation();
       } else {
-        console.log('Unexpected: No immediate session despite disabled email confirmation');
-        // Fallback - still show confirmation screen just in case
+        // Fallback if email confirmation is somehow enabled
+        console.log('No immediate session - showing confirmation message');
         setShowEmailConfirmation(true);
+        setIsProcessing(false);
       }
-      setIsProcessing(false);
     }
   };
 
@@ -363,8 +320,11 @@ const JoinTeam = () => {
         });
       }
       setIsProcessing(false);
+    } else {
+      // Sign-in successful - directly accept invitation
+      console.log('Sign-in successful - accepting invitation');
+      await handleAcceptInvitation();
     }
-    // If successful, the useEffect will handle accepting the invitation
   };
 
   if (loading) {
