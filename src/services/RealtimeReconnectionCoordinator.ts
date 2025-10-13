@@ -25,7 +25,12 @@ class RealtimeReconnectionCoordinatorService {
   private isReconnecting: boolean = false;
   private reconnectionDebounceTimer: NodeJS.Timeout | null = null;
   private consecutiveWebSocketFailures: number = 0;
-  private readonly RECONNECTION_DEBOUNCE_MS = 3000; // 3 seconds (increased for component mount time)
+  private lastWebSocketCheckTime: number = 0;
+  private websocketFailureResetTimer: NodeJS.Timeout | null = null;
+  private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
+  private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
+  private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
+  private readonly WEBSOCKET_FAILURE_RESET_MS = 300000; // Reset after 5 minutes
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
   private readonly STAGGER_DELAY_MS = 100; // Delay between individual reconnections
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
@@ -128,6 +133,14 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
 
+    // PHASE 0: Cooldown check to prevent rapid WebSocket reconnection attempts
+    const timeSinceLastCheck = Date.now() - this.lastWebSocketCheckTime;
+    if (timeSinceLastCheck < this.WEBSOCKET_CHECK_COOLDOWN_MS) {
+      console.log(`🔄 ReconnectionCoordinator: WebSocket check on cooldown, skipping (${Math.round(timeSinceLastCheck / 1000)}s ago)`);
+      return;
+    }
+    this.lastWebSocketCheckTime = Date.now();
+
     // PHASE 1: Check WebSocket health before attempting channel reconnections
     const { websocketHealthCheck } = await import('@/utils/websocketHealth');
     const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
@@ -141,8 +154,19 @@ class RealtimeReconnectionCoordinatorService {
         this.consecutiveWebSocketFailures++;
         console.error(`❌ Failed to reconnect WebSocket (attempt ${this.consecutiveWebSocketFailures})`);
         
-        // Show user-facing error after 3 failures
-        if (this.consecutiveWebSocketFailures >= 3) {
+        // Clear existing reset timer
+        if (this.websocketFailureResetTimer) {
+          clearTimeout(this.websocketFailureResetTimer);
+        }
+        
+        // Schedule failure counter reset after 5 minutes
+        this.websocketFailureResetTimer = setTimeout(() => {
+          console.log('🔄 Resetting WebSocket failure counter after cooldown');
+          this.consecutiveWebSocketFailures = 0;
+        }, this.WEBSOCKET_FAILURE_RESET_MS);
+        
+        // Show user-facing error after 3 failures and STOP retrying
+        if (this.consecutiveWebSocketFailures >= this.MAX_WEBSOCKET_FAILURES) {
           const { toast } = await import('sonner');
           toast.error('Connection issues detected. Please refresh the page.', {
             duration: 10000,
@@ -151,13 +175,18 @@ class RealtimeReconnectionCoordinatorService {
               onClick: () => window.location.reload()
             }
           });
+          
+          // STOP retrying after max failures - require user action
+          console.error('🔄 Max WebSocket failures reached - stopping automatic retries');
+          return;
         }
         
-        // Schedule retry after 10 seconds instead of aborting
-        console.log('🔄 Scheduling WebSocket reconnection retry in 10 seconds...');
+        // Schedule retry with exponential backoff
+        const retryDelay = Math.min(10000 * Math.pow(2, this.consecutiveWebSocketFailures - 1), 60000);
+        console.log(`🔄 Scheduling WebSocket reconnection retry in ${retryDelay / 1000} seconds...`);
         setTimeout(() => {
           this.scheduleReconnection();
-        }, 10000);
+        }, retryDelay);
         
         return;
       }
