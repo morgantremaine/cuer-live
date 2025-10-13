@@ -660,6 +660,7 @@ export const useTeam = () => {
 
   const acceptInvitation = async (token: string) => {
     setIsProcessingInvitation(true);
+    localStorage.setItem('isProcessingInvitation', 'true');
     try {
       const { data, error } = await supabase.rpc('accept_invitation_secure', {
         invitation_token: token
@@ -693,6 +694,7 @@ export const useTeam = () => {
       localStorage.removeItem('pendingInvitationToken');
       return { error: 'Failed to accept invitation' };
     } finally {
+      localStorage.removeItem('isProcessingInvitation');
       setIsProcessingInvitation(false);
     }
   };

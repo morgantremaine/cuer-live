@@ -19,11 +19,12 @@ export const useInvitationHandler = () => {
   const processedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Don't run the invitation handler if we're on auth-related pages
+    // Don't run the invitation handler if we're on auth-related pages OR actively processing an invitation
     if (location.pathname.startsWith('/join-team/') || 
         location.pathname.startsWith('/auth-callback') ||
-        location.pathname.startsWith('/login')) {
-      console.log('On auth-related page, skipping invitation handler');
+        location.pathname.startsWith('/login') ||
+        localStorage.getItem('isProcessingInvitation') === 'true') {
+      console.log('On auth-related page or processing invitation, skipping invitation handler');
       return;
     }
 

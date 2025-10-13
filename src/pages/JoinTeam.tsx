@@ -165,7 +165,10 @@ const JoinTeam = () => {
 
   // Handle invitation acceptance when user is authenticated
   useEffect(() => {
-    if (user && invitation && !invitationProcessed && !isProcessing) {
+    // Guard against re-runs during processing
+    if (invitationProcessed || isProcessing) return;
+    
+    if (user && invitation) {
       console.log('User is authenticated and invitation is loaded, processing invitation');
       setInvitationProcessed(true);
       
@@ -174,10 +177,14 @@ const JoinTeam = () => {
         handleAcceptInvitation();
       }, 200);
     }
-  }, [user?.id, invitation?.id, invitationProcessed, isProcessing]); // Use specific IDs to prevent unnecessary re-renders
+  }, [user?.id, invitation?.id]); // Simplified dependencies
 
   const handleAcceptInvitation = async () => {
     if (!token || isProcessing) return;
+    
+    // Clear token IMMEDIATELY to prevent race conditions with useInvitationHandler
+    console.log('Clearing pendingInvitationToken immediately');
+    localStorage.removeItem('pendingInvitationToken');
 
     setIsProcessing(true);
     
@@ -196,7 +203,6 @@ const JoinTeam = () => {
         setInvitationProcessed(false); // Reset so user can try again
       } else {
         console.log('Invitation accepted successfully');
-        localStorage.removeItem('pendingInvitationToken');
         toast({
           title: 'Success',
           description: 'Welcome to the team!',
@@ -204,7 +210,7 @@ const JoinTeam = () => {
         
         // Add a small delay before navigation to ensure toast is visible
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
         }, 1000);
       }
     } catch (error) {
