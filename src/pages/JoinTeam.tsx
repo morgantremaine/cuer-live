@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,11 +32,13 @@ const JoinTeam = () => {
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
   const [profileError, setProfileError] = useState(false);
-  const [invitationProcessed, setInvitationProcessed] = useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
+  
+  // Track whether we've attempted to accept the invitation
+  const hasAttemptedAcceptance = useRef(false);
 
   // Define helper function early in the component
   const getInviterDisplayName = () => {
@@ -163,21 +165,28 @@ const JoinTeam = () => {
     }
   };
 
+  // Reset acceptance tracking when token changes
+  useEffect(() => {
+    hasAttemptedAcceptance.current = false;
+  }, [token]);
+
   // Handle invitation acceptance when user is authenticated
   useEffect(() => {
-    // Guard against re-runs during processing
-    if (invitationProcessed || isProcessing) return;
+    // Skip if we've already attempted or are currently processing
+    if (hasAttemptedAcceptance.current || isProcessing) {
+      console.log('Skipping acceptance:', { attempted: hasAttemptedAcceptance.current, isProcessing });
+      return;
+    }
     
+    // Both user and invitation must be loaded
     if (user && invitation) {
       console.log('User is authenticated and invitation is loaded, processing invitation');
-      setInvitationProcessed(true);
-      
-      // Add a small delay to ensure useTeam hook doesn't interfere
-      setTimeout(() => {
-        handleAcceptInvitation();
-      }, 200);
+      hasAttemptedAcceptance.current = true;
+      handleAcceptInvitation();
+    } else {
+      console.log('Waiting for auth/invitation:', { hasUser: !!user, hasInvitation: !!invitation });
     }
-  }, [user?.id, invitation?.id]); // Simplified dependencies
+  }, [user?.id, invitation?.id]);
 
   const handleAcceptInvitation = async () => {
     if (!token || isProcessing) return;
@@ -221,13 +230,13 @@ const JoinTeam = () => {
         
         // Other errors - show error and allow retry
         localStorage.removeItem(processingKey);
+        hasAttemptedAcceptance.current = false; // Allow retry
         toast({
           title: 'Error',
           description: error,
           variant: 'destructive',
         });
         setIsProcessing(false);
-        setInvitationProcessed(false); // Reset so user can try again
       } else {
         console.log('Invitation accepted successfully');
         toast({
@@ -244,13 +253,13 @@ const JoinTeam = () => {
     } catch (error) {
       console.error('Error accepting invitation:', error);
       localStorage.removeItem(processingKey);
+      hasAttemptedAcceptance.current = false; // Allow retry
       toast({
         title: 'Error',
         description: 'Failed to join team. Please try again.',
         variant: 'destructive',
       });
       setIsProcessing(false);
-      setInvitationProcessed(false);
     }
   };
 
@@ -407,7 +416,7 @@ const JoinTeam = () => {
             <Button 
               onClick={handleAcceptInvitation} 
               className="w-full" 
-              disabled={isProcessing || invitationProcessed}
+              disabled={isProcessing}
             >
               {isProcessing ? 'Joining Team...' : 'Accept Invitation'}
             </Button>
