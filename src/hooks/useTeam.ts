@@ -679,17 +679,15 @@ export const useTeam = () => {
       // Clear the pending token immediately upon successful acceptance
       localStorage.removeItem('pendingInvitationToken');
       
-      // Set the newly joined team as active if we have the team_id
-      if (data.team_id) {
-        console.log('Setting newly joined team as active:', data.team_id);
-        setActiveTeam(data.team_id);
-      }
+      // Return the team_id so caller can set it as active when user is ready
+      // DON'T call setActiveTeam here - it may fail if user isn't set yet
+      console.log('Invitation accepted, returning team_id:', data.team_id);
       
       // Reload team data after successful invitation acceptance
       loadedUserRef.current = null;
       isLoadingRef.current = false;
       setTimeout(() => loadTeamData(), 500);
-      return { success: true };
+      return { success: true, teamId: data.team_id };
     } catch (error) {
       localStorage.removeItem('pendingInvitationToken');
       return { error: 'Failed to accept invitation' };

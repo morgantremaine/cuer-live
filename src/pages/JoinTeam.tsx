@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
+import { useActiveTeam } from '@/hooks/useActiveTeam';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Footer from '@/components/Footer';
@@ -35,6 +36,7 @@ const JoinTeam = () => {
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
+  const { setActiveTeam } = useActiveTeam();
   const { toast } = useToast();
 
   // Define helper function early in the component
@@ -176,13 +178,13 @@ const JoinTeam = () => {
 
     try {
       console.log('Accepting invitation with token:', token);
-      const { error } = await acceptInvitation(token);
+      const result = await acceptInvitation(token);
       
-      if (error) {
-        console.error('Failed to accept invitation:', error);
+      if (result.error) {
+        console.error('Failed to accept invitation:', result.error);
         
         // If already accepted, treat as success
-        if (error.toLowerCase().includes('already been accepted')) {
+        if (result.error.toLowerCase().includes('already been accepted')) {
           console.log('Invitation already accepted - redirecting to dashboard');
           toast({
             title: 'Welcome!',
@@ -195,12 +197,19 @@ const JoinTeam = () => {
         // Other errors - show error and allow retry
         toast({
           title: 'Error',
-          description: error,
+          description: result.error,
           variant: 'destructive',
         });
         setIsProcessing(false);
       } else {
         console.log('Invitation accepted successfully');
+        
+        // Set the newly joined team as active NOW (after we have a user)
+        if (result.teamId) {
+          console.log('Setting newly joined team as active:', result.teamId);
+          setActiveTeam(result.teamId);
+        }
+        
         toast({
           title: 'Success',
           description: 'Welcome to the team!',
