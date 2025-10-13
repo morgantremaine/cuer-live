@@ -182,6 +182,16 @@ const JoinTeam = () => {
   const handleAcceptInvitation = async () => {
     if (!token || isProcessing) return;
     
+    // Check if we're already processing this specific invitation
+    const processingKey = `acceptingInvitation-${token}`;
+    if (localStorage.getItem(processingKey) === 'true') {
+      console.log('Already processing this invitation, skipping duplicate call');
+      return;
+    }
+    
+    // Set processing flag for this specific invitation
+    localStorage.setItem(processingKey, 'true');
+    
     // Clear token IMMEDIATELY to prevent race conditions with useInvitationHandler
     console.log('Clearing pendingInvitationToken immediately');
     localStorage.removeItem('pendingInvitationToken');
@@ -194,6 +204,23 @@ const JoinTeam = () => {
       
       if (error) {
         console.error('Failed to accept invitation:', error);
+        
+        // If invitation was already accepted, treat as success and redirect
+        if (error.toLowerCase().includes('already been accepted')) {
+          console.log('Invitation already accepted - redirecting to dashboard');
+          toast({
+            title: 'Welcome!',
+            description: 'You are already a member of this team.',
+          });
+          setTimeout(() => {
+            localStorage.removeItem(processingKey);
+            navigate('/dashboard', { replace: true });
+          }, 500);
+          return;
+        }
+        
+        // Other errors - show error and allow retry
+        localStorage.removeItem(processingKey);
         toast({
           title: 'Error',
           description: error,
@@ -210,11 +237,13 @@ const JoinTeam = () => {
         
         // Add a small delay before navigation to ensure toast is visible
         setTimeout(() => {
+          localStorage.removeItem(processingKey);
           navigate('/dashboard', { replace: true });
-        }, 1000);
+        }, 500);
       }
     } catch (error) {
       console.error('Error accepting invitation:', error);
+      localStorage.removeItem(processingKey);
       toast({
         title: 'Error',
         description: 'Failed to join team. Please try again.',
