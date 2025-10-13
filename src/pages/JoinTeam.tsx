@@ -166,8 +166,8 @@ const JoinTeam = () => {
 
 
   const handleAcceptInvitation = async () => {
-    if (!token || isProcessing) {
-      console.log('Cannot accept invitation:', { hasToken: !!token, isProcessing });
+    if (!token || isProcessing || !user) {
+      console.log('Cannot accept invitation:', { hasToken: !!token, isProcessing, hasUser: !!user });
       return;
     }
 
@@ -204,10 +204,11 @@ const JoinTeam = () => {
       } else {
         console.log('Invitation accepted successfully');
         
-        // Set the newly joined team as active NOW (after we have a user)
-        if (result.teamId) {
-          console.log('Setting newly joined team as active:', result.teamId);
-          setActiveTeam(result.teamId);
+        // Set the newly joined team as active in localStorage
+        if (result.teamId && user?.id) {
+          const storageKey = `cuer-active-team-${user.id}`;
+          console.log('Setting active team in localStorage:', { storageKey, teamId: result.teamId });
+          localStorage.setItem(storageKey, result.teamId);
         }
         
         toast({
@@ -286,15 +287,36 @@ const JoinTeam = () => {
       console.log('Account created successfully');
       
       // Check if user has immediate session (email confirmation disabled)
-      if (data?.session) {
+      if (data?.session?.user) {
         console.log('User has immediate session - accepting invitation');
         toast({
           title: 'Account Created!',
           description: 'Joining team...',
         });
         
-        // Directly accept the invitation
-        await handleAcceptInvitation();
+        // Accept invitation and set the team
+        const result = await acceptInvitation(token!);
+        
+        if (result.error) {
+          toast({
+            title: 'Error',
+            description: result.error,
+            variant: 'destructive',
+          });
+          setIsProcessing(false);
+        } else if (result.teamId) {
+          // Directly set localStorage with the correct key format
+          const userId = data.session.user.id;
+          const storageKey = `cuer-active-team-${userId}`;
+          console.log('Setting active team in localStorage:', { storageKey, teamId: result.teamId });
+          localStorage.setItem(storageKey, result.teamId);
+          
+          toast({
+            title: 'Success',
+            description: 'Welcome to the team!',
+          });
+          navigate('/dashboard', { replace: true });
+        }
       } else {
         // Fallback if email confirmation is somehow enabled
         console.log('No immediate session - showing confirmation message');
@@ -330,9 +352,36 @@ const JoinTeam = () => {
       }
       setIsProcessing(false);
     } else {
-      // Sign-in successful - directly accept invitation
+      // Sign-in successful - wait for user context and accept invitation
       console.log('Sign-in successful - accepting invitation');
-      await handleAcceptInvitation();
+      
+      // Give the auth context a moment to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const result = await acceptInvitation(token!);
+      
+      if (result.error) {
+        toast({
+          title: 'Error',
+          description: result.error,
+          variant: 'destructive',
+        });
+        setIsProcessing(false);
+      } else if (result.teamId) {
+        // Get current user from supabase
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          const storageKey = `cuer-active-team-${currentUser.id}`;
+          console.log('Setting active team in localStorage:', { storageKey, teamId: result.teamId });
+          localStorage.setItem(storageKey, result.teamId);
+        }
+        
+        toast({
+          title: 'Success',
+          description: 'Welcome to the team!',
+        });
+        navigate('/dashboard', { replace: true });
+      }
     }
   };
 
