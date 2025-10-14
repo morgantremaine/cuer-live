@@ -53,7 +53,6 @@ class RealtimeReconnectionCoordinatorService {
     // Add visibility change listener for wake-up detection
     if (typeof window !== 'undefined') {
       document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-      window.addEventListener('focus', this.handleWindowFocus.bind(this));
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
     }
     
@@ -87,18 +86,6 @@ class RealtimeReconnectionCoordinatorService {
     await this.executeReconnection();
   }
 
-  /**
-   * Handle window focus to detect wake-up from sleep (second monitor scenario)
-   */
-  private async handleWindowFocus() {
-    console.log('👁️ ReconnectionCoordinator: Window focused, checking connections...');
-    
-    // Give browser 500ms to stabilize network
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Force WebSocket health check
-    await this.executeReconnection();
-  }
 
   /**
    * Handle network online event
