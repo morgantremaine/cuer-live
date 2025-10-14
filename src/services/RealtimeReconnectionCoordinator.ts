@@ -70,7 +70,19 @@ class RealtimeReconnectionCoordinatorService {
     // Give browser 1s to fully establish network
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Force WebSocket health check
+    // Import health check utility
+    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+    
+    // Check if WebSocket is already alive
+    const isAlive = await websocketHealthCheck.isWebSocketAlive();
+    
+    if (isAlive) {
+      console.log('✅ Network online - WebSocket already healthy, skipping reconnection');
+      return;
+    }
+    
+    console.log('⚠️ Network online - WebSocket dead, forcing reconnection');
+    // Only reconnect if WebSocket is actually dead
     await this.executeReconnection();
   }
 
