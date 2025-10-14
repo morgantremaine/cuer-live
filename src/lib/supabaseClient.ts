@@ -16,7 +16,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   realtime: {
     params: {
       eventsPerSecond: 50
-    }
+    },
+    // Enable Web Worker to prevent background throttling
+    worker: typeof Worker !== 'undefined',
+    // Reduce heartbeat interval for faster detection
+    heartbeatIntervalMs: 15000, // 15 seconds (default is 30s)
+    // More aggressive timeout detection
+    timeout: 10000 // 10 seconds (default is 10s)
   }
 });
 

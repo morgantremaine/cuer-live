@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 // Module-level guards for health check throttling
 let isHealthCheckRunning = false;
 let lastHealthCheckTime = 0;
-const HEALTH_CHECK_COOLDOWN_MS = 5000; // 5 seconds between health checks
+const HEALTH_CHECK_COOLDOWN_MS = 3000; // 3 seconds between health checks
 
 export const websocketHealthCheck = {
   /**
@@ -52,7 +52,7 @@ export const websocketHealthCheck = {
             }
             resolve(false);
           }
-        }, 5000); // Increased timeout to 5 seconds for slow wake-up
+        }, 3000); // 3 seconds for faster failure detection
         
         testChannel.subscribe((status) => {
           if (!resolved) {

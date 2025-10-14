@@ -29,6 +29,7 @@ class RealtimeReconnectionCoordinatorService {
   private websocketFailureResetTimer: NodeJS.Timeout | null = null;
   private stuckOfflineTimer: NodeJS.Timeout | null = null;
   private lastVisibilityChange: number = 0;
+  private connectionMonitorInterval: NodeJS.Timeout | null = null;
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
   private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
@@ -43,15 +44,21 @@ class RealtimeReconnectionCoordinatorService {
   private readonly REGISTRATION_CHECK_INTERVAL_MS = 500; // Check every 500ms
   private readonly VISIBILITY_DEBOUNCE_MS = 2000; // Debounce visibility changes
   private readonly STUCK_OFFLINE_TIMEOUT_MS = 30000; // 30 seconds
+  private readonly CONNECTION_MONITOR_INTERVAL_MS = 60000; // Check every 60 seconds
 
   constructor() {
     // Register with auth monitor
     authMonitor.registerListener('realtime-coordinator', this.handleAuthChange.bind(this));
     
     // Add visibility change listener for wake-up detection
-    if (typeof document !== 'undefined') {
+    if (typeof window !== 'undefined') {
       document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+      window.addEventListener('focus', this.handleWindowFocus.bind(this));
+      window.addEventListener('online', this.handleNetworkOnline.bind(this));
     }
+    
+    // Start proactive connection monitoring
+    this.startConnectionMonitoring();
   }
 
   /**
@@ -78,6 +85,66 @@ class RealtimeReconnectionCoordinatorService {
     
     // Force WebSocket health check
     await this.executeReconnection();
+  }
+
+  /**
+   * Handle window focus to detect wake-up from sleep (second monitor scenario)
+   */
+  private async handleWindowFocus() {
+    console.log('👁️ ReconnectionCoordinator: Window focused, checking connections...');
+    
+    // Give browser 500ms to stabilize network
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Force WebSocket health check
+    await this.executeReconnection();
+  }
+
+  /**
+   * Handle network online event
+   */
+  private async handleNetworkOnline() {
+    console.log('🌐 ReconnectionCoordinator: Network came online, checking connections...');
+    
+    // Give browser 1s to fully establish network
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Force WebSocket health check
+    await this.executeReconnection();
+  }
+
+  /**
+   * Start proactive connection monitoring for background tabs
+   */
+  private startConnectionMonitoring() {
+    // Clear existing interval
+    if (this.connectionMonitorInterval) {
+      clearInterval(this.connectionMonitorInterval);
+    }
+    
+    // Check connection health every 60 seconds
+    this.connectionMonitorInterval = setInterval(async () => {
+      // Only check if we have registered connections
+      if (this.connections.size === 0) return;
+      
+      // Only check if not already reconnecting
+      if (this.isReconnecting) return;
+      
+      console.log('⏱️ Periodic connection health check...');
+      
+      // Import health check utility
+      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+      
+      // Quick non-blocking health check
+      const isAlive = await websocketHealthCheck.isWebSocketAlive();
+      
+      if (!isAlive) {
+        console.warn('⚠️ Periodic check detected dead WebSocket - triggering recovery');
+        await this.executeReconnection();
+      } else {
+        console.log('✅ Periodic check: WebSocket healthy');
+      }
+    }, this.CONNECTION_MONITOR_INTERVAL_MS);
   }
 
   /**
@@ -384,6 +451,24 @@ class RealtimeReconnectionCoordinatorService {
   async forceReconnection() {
     console.log('🔄 ReconnectionCoordinator: Force reconnection requested');
     await this.executeReconnection();
+  }
+
+  /**
+   * Cleanup and destroy coordinator
+   */
+  destroy() {
+    if (this.connectionMonitorInterval) {
+      clearInterval(this.connectionMonitorInterval);
+    }
+    if (this.reconnectionDebounceTimer) {
+      clearTimeout(this.reconnectionDebounceTimer);
+    }
+    if (this.websocketFailureResetTimer) {
+      clearTimeout(this.websocketFailureResetTimer);
+    }
+    if (this.stuckOfflineTimer) {
+      clearTimeout(this.stuckOfflineTimer);
+    }
   }
 }
 
