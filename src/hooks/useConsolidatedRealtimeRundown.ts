@@ -160,16 +160,29 @@ export const useConsolidatedRealtimeRundown = ({
     };
     
     const handleOffline = () => {
-      console.log('📵 Browser detected network offline');
-      setIsConnected(false);
+      console.log('📵 Browser reported offline (may be false)');
       
-      // Also update global subscription state immediately and track offline timestamp
-      const state = globalSubscriptions.get(rundownId);
-      if (state) {
-        state.isConnected = false;
-        state.offlineSince = Date.now();
-        console.log('📵 Marked offline at:', new Date(state.offlineSince).toISOString());
-      }
+      // Don't immediately trust navigator.onLine
+      // Wait 2s and verify with actual Supabase session check
+      setTimeout(async () => {
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (!error && data.session) {
+            console.log('✅ Auth check passed despite offline report - ignoring false offline');
+            return; // Network is actually fine
+          }
+        } catch {
+          // Network truly offline
+          console.log('📵 Confirmed network offline via auth check');
+          setIsConnected(false);
+          const state = globalSubscriptions.get(rundownId);
+          if (state) {
+            state.isConnected = false;
+            state.offlineSince = Date.now();
+            console.log('📵 Marked offline at:', new Date(state.offlineSince).toISOString());
+          }
+        }
+      }, 2000);
     };
     
     // Listen to browser network events for instant detection
@@ -499,28 +512,8 @@ export const useConsolidatedRealtimeRundown = ({
           state.isConnected = false;
           console.error('❌ Consolidated realtime connection failed:', status);
           
-          // Retry ONCE on CHANNEL_ERROR if auth session is valid
-          // (Coordinator handles systematic reconnection)
-          if (status === 'CHANNEL_ERROR') {
-            const retryCount = (channel as any)?._retryCount || 0;
-            
-            // Only retry once, then rely on coordinator
-            if (retryCount === 0) {
-              console.log('🔄 Consolidated channel error - checking session for one-time retry...');
-              const { data: { session }, error } = await supabase.auth.getSession();
-              if (!error && session) {
-                console.log('✅ Valid session found - retrying consolidated connection once in 2s');
-                (channel as any)._retryCount = 1;
-                setTimeout(() => {
-                  if (reconnectHandler) {
-                    reconnectHandler();
-                  }
-                }, 2000);
-              }
-            } else {
-              console.log('⏭️ Consolidated channel error - waiting for coordinator to handle reconnection');
-            }
-          }
+          // Let coordinator handle all reconnections - no individual retries
+          console.log('⏭️ Consolidated channel error - coordinator will handle reconnection');
         } else if (status === 'CLOSED') {
           state.isConnected = false;
           console.log('🔌 Consolidated realtime connection closed');

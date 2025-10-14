@@ -27,6 +27,8 @@ class RealtimeReconnectionCoordinatorService {
   private consecutiveWebSocketFailures: number = 0;
   private lastWebSocketCheckTime: number = 0;
   private websocketFailureResetTimer: NodeJS.Timeout | null = null;
+  private stuckOfflineTimer: NodeJS.Timeout | null = null;
+  private lastVisibilityChange: number = 0;
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
   private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
@@ -39,10 +41,43 @@ class RealtimeReconnectionCoordinatorService {
   private readonly MAX_BACKOFF_DELAY_MS = 30000; // 30 seconds
   private readonly MAX_REGISTRATION_WAIT_MS = 5000; // Wait up to 5s for connections to register
   private readonly REGISTRATION_CHECK_INTERVAL_MS = 500; // Check every 500ms
+  private readonly VISIBILITY_DEBOUNCE_MS = 2000; // Debounce visibility changes
+  private readonly STUCK_OFFLINE_TIMEOUT_MS = 30000; // 30 seconds
 
   constructor() {
     // Register with auth monitor
     authMonitor.registerListener('realtime-coordinator', this.handleAuthChange.bind(this));
+    
+    // Add visibility change listener for wake-up detection
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    }
+  }
+
+  /**
+   * Handle page visibility changes to detect wake-up from sleep
+   */
+  private async handleVisibilityChange() {
+    // Only trigger on becoming visible
+    if (document.visibilityState !== 'visible') return;
+    
+    const now = Date.now();
+    const timeSinceLastChange = now - this.lastVisibilityChange;
+    this.lastVisibilityChange = now;
+    
+    // Debounce rapid visibility changes
+    if (timeSinceLastChange < this.VISIBILITY_DEBOUNCE_MS) {
+      console.log('🔄 ReconnectionCoordinator: Ignoring rapid visibility change');
+      return;
+    }
+    
+    console.log('👁️ ReconnectionCoordinator: Page became visible, checking connections...');
+    
+    // Give browser 500ms to stabilize network
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Force WebSocket health check
+    await this.executeReconnection();
   }
 
   /**
@@ -148,6 +183,21 @@ class RealtimeReconnectionCoordinatorService {
     if (!isWebSocketAlive) {
       console.warn('🔌 WebSocket is dead - forcing full reconnection before channel setup');
       
+      // Set stuck offline timer
+      if (this.stuckOfflineTimer) {
+        clearTimeout(this.stuckOfflineTimer);
+      }
+      
+      this.stuckOfflineTimer = setTimeout(async () => {
+        console.warn('⚠️ Stuck offline for 30s - forcing recovery');
+        const { toast } = await import('sonner');
+        toast.warning('Connection issues detected', {
+          description: 'Attempting automatic recovery...',
+          duration: 5000
+        });
+        this.forceReconnection();
+      }, this.STUCK_OFFLINE_TIMEOUT_MS);
+      
       const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
       
       if (!reconnected) {
@@ -189,6 +239,12 @@ class RealtimeReconnectionCoordinatorService {
         }, retryDelay);
         
         return;
+      }
+      
+      // Clear stuck offline timer on success
+      if (this.stuckOfflineTimer) {
+        clearTimeout(this.stuckOfflineTimer);
+        this.stuckOfflineTimer = null;
       }
       
       // Reset failure counter on success
