@@ -26,8 +26,8 @@ export const websocketHealthCheck = {
     const now = Date.now();
     if (now - lastHealthCheckTime < HEALTH_CHECK_COOLDOWN_MS) {
       const waitTime = Math.ceil((HEALTH_CHECK_COOLDOWN_MS - (now - lastHealthCheckTime)) / 1000);
-      console.log(`🔍 WebSocket health check on cooldown, retry in ${waitTime}s`);
-      return false;
+      console.log(`🔍 WebSocket health check on cooldown, assuming healthy (checked ${waitTime}s ago)`);
+      return true; // Assume healthy if recently validated
     }
     
     isHealthCheckRunning = true;
