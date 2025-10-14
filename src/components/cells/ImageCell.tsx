@@ -256,26 +256,31 @@ const ImageCell = ({
     setIsEditing(true);
   };
 
-  // Check if it's a Google Drive file/folder (but not an image) first
-  const isGoogleDriveFile = internalValue && 
-    internalValue.includes('drive.google.com') && 
-    (internalValue.includes('/folders/') || internalValue.includes('/file/d/'));
-
   // Check if it's a Google Docs file
   const isGoogleDocsFile = internalValue && internalValue.includes('docs.google.com/');
 
   // Check if it's a Figma design file
   const isFigmaFile = internalValue && internalValue.includes('figma.com');
 
-  // Check if it looks like an image URL (but exclude Google Drive folders/files and Google Docs)
-  const isLikelyImageUrl = internalValue && !isGoogleDriveFile && !isGoogleDocsFile && (
+  // Check if it's a Google Drive folder (not a file - folders should show the card)
+  const isGoogleDriveFolder = internalValue && 
+    internalValue.includes('drive.google.com') && 
+    internalValue.includes('/folders/');
+
+  // Check if it's a Google Drive file link (treat as potential image)
+  const isGoogleDriveFileLink = internalValue && 
+    internalValue.includes('drive.google.com') && 
+    internalValue.includes('/file/d/');
+
+  // Check if it looks like an image URL (include Google Drive file links as potential images)
+  const isLikelyImageUrl = internalValue && !isGoogleDriveFolder && !isGoogleDocsFile && (
     /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(internalValue) ||
     /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(internalValue) ||
     internalValue.includes('images') ||
     internalValue.includes('photos') ||
     internalValue.includes('imgur') ||
     internalValue.includes('unsplash') ||
-    (internalValue.includes('drive.google.com') && /\.(jpg|jpeg|png|gif|webp|svg)/i.test(internalValue)) ||
+    isGoogleDriveFileLink ||
     internalValue.includes('dropbox.com') ||
     internalValue.includes('gstatic.com') ||
     internalValue.includes('amazonaws.com') ||
@@ -370,13 +375,13 @@ const ImageCell = ({
                 <ExternalLink className="h-3 w-3 text-gray-600" />
               </button>
             </div>
-          ) : isGoogleDriveFile ? (
+          ) : isGoogleDriveFolder ? (
             <div className="w-full min-h-[48px] max-h-16 flex items-center justify-between bg-blue-50 rounded border border-blue-200 p-1.5 overflow-hidden">
               <div className="flex items-center space-x-1.5 text-blue-700 min-w-0 flex-1">
                 <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                   G
                 </div>
-                <span className="text-xs font-medium truncate">{getGoogleDriveName(internalValue)}</span>
+                <span className="text-xs font-medium truncate">Google Drive Folder</span>
               </div>
               <button
                 onClick={(e) => {
