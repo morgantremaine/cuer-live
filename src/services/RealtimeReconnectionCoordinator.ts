@@ -50,9 +50,8 @@ class RealtimeReconnectionCoordinatorService {
     // Register with auth monitor
     authMonitor.registerListener('realtime-coordinator', this.handleAuthChange.bind(this));
     
-    // Add visibility change listener for wake-up detection
+    // Add network online listener for wake-up detection
     if (typeof window !== 'undefined') {
-      document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
     }
     
@@ -60,31 +59,6 @@ class RealtimeReconnectionCoordinatorService {
     this.startConnectionMonitoring();
   }
 
-  /**
-   * Handle page visibility changes to detect wake-up from sleep
-   */
-  private async handleVisibilityChange() {
-    // Only trigger on becoming visible
-    if (document.visibilityState !== 'visible') return;
-    
-    const now = Date.now();
-    const timeSinceLastChange = now - this.lastVisibilityChange;
-    this.lastVisibilityChange = now;
-    
-    // Debounce rapid visibility changes
-    if (timeSinceLastChange < this.VISIBILITY_DEBOUNCE_MS) {
-      console.log('🔄 ReconnectionCoordinator: Ignoring rapid visibility change');
-      return;
-    }
-    
-    console.log('👁️ ReconnectionCoordinator: Page became visible, checking connections...');
-    
-    // Give browser 500ms to stabilize network
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Force WebSocket health check
-    await this.executeReconnection();
-  }
 
 
   /**
