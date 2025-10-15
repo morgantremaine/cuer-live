@@ -203,7 +203,7 @@ const LandingPage = () => {
                 <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">effortless streams.</span>
               </h1>
               <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up hidden sm:block">
-                Cuer's intelligent workflows, real-time sync, and AI-powered tools let your production team move at the speed of live.
+                Cuer's intelligent workflows, real-time sync, and AI-powered tools keep modern productions moving at the speed of live.
               </p>
             </div>
 
