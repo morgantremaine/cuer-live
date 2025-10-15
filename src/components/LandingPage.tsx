@@ -253,7 +253,7 @@ const LandingPage = () => {
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-blue-500/20 border-2 border-blue-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-blue-400">1</div>
             <h3 className="text-2xl font-bold text-white">Plan & Build</h3>
-            <p className="text-slate-400">Build rundowns fast with intuitive design and auto asset lists using Cuer Blueprints. Get intelligent suggestions and optimization with Cuer AI.</p>
+            <p className="text-slate-400">Build rundowns fast with intuitive design, automated asset lists from Cuer Blueprints, and AI-assisted scripting, timing, and template creation with Cuer AI.</p>
           </div>
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-green-400">2</div>
