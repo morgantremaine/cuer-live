@@ -199,12 +199,11 @@ const LandingPage = () => {
             
             <div className="space-y-2 mb-8">
               <h1 className="text-3xl md:text-4xl font-bold fade-up">
-                <span className="text-white">Run your show, </span>
-                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">not your software.</span>
+                <span className="text-white">Smarter rundowns, </span>
+                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">effortless streams.</span>
               </h1>
               <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up hidden sm:block">
-                Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>,<br />
-                without the learning curve of traditional broadcast tools.
+                Cuer's intelligent workflows, real-time sync, and AI-powered tools let your production team move at the speed of live.
               </p>
             </div>
 
