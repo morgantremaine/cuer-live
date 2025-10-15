@@ -200,7 +200,7 @@ export const useTeleprompterControls = () => {
   };
 
   const toggleBlackout = () => {
-    setIsBlackout(!isBlackout);
+    setIsBlackout(prev => !prev);
   };
 
   return {
