@@ -47,6 +47,7 @@ const Teleprompter = () => {
     isUppercase,
     isBold,
     showAllSegments,
+    isBlackout,
     containerRef,
     toggleScrolling,
     resetScroll,
@@ -56,6 +57,7 @@ const Teleprompter = () => {
     toggleUppercase,
     toggleBold,
     toggleShowAllSegments,
+    toggleBlackout,
     getCurrentSpeed,
     isReverse
   } = useTeleprompterControls();
@@ -531,6 +533,7 @@ const Teleprompter = () => {
             fontSize={fontSize}
             isUppercase={isUppercase}
             isBold={isBold}
+            isBlackout={isBlackout}
             getRowNumber={getRowNumber}
             onUpdateScript={user ? updateScriptContent : undefined}
             canEdit={!!user && !isFullscreen}

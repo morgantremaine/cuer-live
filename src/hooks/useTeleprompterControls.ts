@@ -9,6 +9,7 @@ export const useTeleprompterControls = () => {
   const [isUppercase, setIsUppercase] = useState(false);
   const [isBold, setIsBold] = useState(false); // Changed from true to false
   const [showAllSegments, setShowAllSegments] = useState(false);
+  const [isBlackout, setIsBlackout] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Define speed steps: negative for reverse, 0 for stop, positive for forward
@@ -29,7 +30,7 @@ export const useTeleprompterControls = () => {
       }
 
       // Prevent default behavior for our handled keys when in fullscreen
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) {
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'b', 'B'].includes(event.key)) {
         event.preventDefault();
       }
 
@@ -40,6 +41,11 @@ export const useTeleprompterControls = () => {
         
         case ' ': // Spacebar for play/pause
           toggleScrolling();
+          break;
+        
+        case 'b':
+        case 'B':
+          toggleBlackout();
           break;
         
         case 'ArrowLeft':
@@ -193,6 +199,10 @@ export const useTeleprompterControls = () => {
     setShowAllSegments(!showAllSegments);
   };
 
+  const toggleBlackout = () => {
+    setIsBlackout(!isBlackout);
+  };
+
   return {
     fontSize,
     isScrolling,
@@ -201,6 +211,7 @@ export const useTeleprompterControls = () => {
     isUppercase,
     isBold,
     showAllSegments,
+    isBlackout,
     containerRef,
     toggleScrolling,
     resetScroll,
@@ -210,6 +221,7 @@ export const useTeleprompterControls = () => {
     toggleUppercase,
     toggleBold,
     toggleShowAllSegments,
+    toggleBlackout,
     setIsScrolling,
     getCurrentSpeed,
     isReverse

@@ -11,6 +11,7 @@ interface TeleprompterContentProps {
   fontSize: number;
   isUppercase: boolean;
   isBold: boolean;
+  isBlackout?: boolean;
   getRowNumber: (index: number) => string;
   onUpdateScript?: (itemId: string, newScript: string) => void;
   canEdit?: boolean;
@@ -23,12 +24,21 @@ const TeleprompterContent = ({
   fontSize,
   isUppercase,
   isBold,
+  isBlackout = false,
   getRowNumber,
   onUpdateScript,
   canEdit = false
 }: TeleprompterContentProps) => {
   return (
     <div className={`relative ${isFullscreen ? 'cursor-none' : ''}`}>
+      {/* Blackout Overlay - Only show in fullscreen when active */}
+      {isFullscreen && isBlackout && (
+        <div className="fixed inset-0 bg-black z-50 flex items-start justify-start">
+          <div className="text-white text-sm p-4">
+            [BLACKOUT]
+          </div>
+        </div>
+      )}
       {/* Speaking Indicator Arrow - Only show in fullscreen */}
       {isFullscreen && (
         <div 
