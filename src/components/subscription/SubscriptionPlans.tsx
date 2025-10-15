@@ -18,6 +18,7 @@ const PLANS = [
       '3 rundowns',
       'Read-Only Share Links',
       'Precision Showcaller Controls',
+      'AI Template Creator',
       'Basic features'
     ]
   },
@@ -34,6 +35,7 @@ const PLANS = [
       'Unlimited rundowns',
       'Real-time collaboration',
       'Precision Showcaller Controls',
+      'AI Template Creator',
       'Read-Only Share Links',
       'Teleprompter',
       'AD View',
@@ -53,6 +55,7 @@ const PLANS = [
       'Unlimited rundowns',
       'Real-time collaboration',
       'Precision Showcaller Controls',
+      'AI Template Creator',
       'Read-Only Share Links',
       'Teleprompter',
       'AD View',
@@ -70,6 +73,7 @@ const PLANS = [
     isEnterprise: true,
     features: [
       'Custom Seat Package',
+      'Multi-Team Management',
       'Full Features',
       'Dedicated account manager',
       'Early Access to New Features'
@@ -125,6 +129,12 @@ const getFeatureIcon = (feature: string) => {
   }
   if (feature.includes('Precision Showcaller Controls')) {
     return <Clock className="w-4 h-4 text-orange-500" />;
+  }
+  if (feature.includes('AI Template Creator')) {
+    return <Sparkles className="w-4 h-4 text-fuchsia-500" />;
+  }
+  if (feature.includes('Multi-Team Management')) {
+    return <Users className="w-4 h-4 text-sky-500" />;
   }
   return <Check className="w-4 h-4 text-gray-500" />;
 };
