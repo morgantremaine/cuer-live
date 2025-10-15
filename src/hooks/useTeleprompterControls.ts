@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useRef } from 'react';
-
+import { toast } from 'sonner';
 export const useTeleprompterControls = () => {
   const [fontSize, setFontSize] = useState(24);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -167,10 +166,14 @@ export const useTeleprompterControls = () => {
       try {
         await document.documentElement.requestFullscreen();
         setIsFullscreen(true);
+        setIsBlackout(false); // Reset blackout when entering fullscreen
+        toast.info("Press 'B' to black out prompter", { duration: 3000 });
       } catch (error) {
         console.error('Error entering fullscreen:', error);
         // Fallback to just UI fullscreen if browser fullscreen fails
         setIsFullscreen(true);
+        setIsBlackout(false); // Reset blackout when entering fullscreen
+        toast.info("Press 'B' to black out prompter", { duration: 3000 });
       }
     } else {
       // Exit fullscreen mode
