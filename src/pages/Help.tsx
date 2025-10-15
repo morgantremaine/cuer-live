@@ -254,7 +254,6 @@ const Help = () => {
                       <li>Analyzes word count in the script column and calculates duration</li>
                       <li>Uses 150 words per minute as the default reading speed</li>
                       <li>Time is rounded to the nearest 5 seconds for practical timing</li>
-                      <li>Automatically updates the duration field with the calculated time in MM:SS format</li>
                     </ul>
                   </li>
                 </ul>
