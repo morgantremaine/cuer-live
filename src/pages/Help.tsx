@@ -249,6 +249,14 @@ const Help = () => {
                       <li>Unfloat to restore the row to normal timing and teleprompter visibility</li>
                     </ul>
                   </li>
+                  <li><strong>Auto Time to Script:</strong> Automatically calculate the reading time for script content
+                    <ul className="list-disc list-inside mt-1 ml-6 space-y-1">
+                      <li>Analyzes word count in the script column and calculates duration</li>
+                      <li>Uses 150 words per minute as the default reading speed</li>
+                      <li>Time is rounded to the nearest 5 seconds for practical timing</li>
+                      <li>Automatically updates the duration field with the calculated time in MM:SS format</li>
+                    </ul>
+                  </li>
                 </ul>
               </div>
               
