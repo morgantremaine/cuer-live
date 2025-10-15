@@ -1,5 +1,3 @@
-import { authMonitor } from './AuthMonitor';
-import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 type ReconnectionHandler = () => Promise<void>;
@@ -17,7 +15,7 @@ interface RegisteredConnection {
 /**
  * Realtime Reconnection Coordinator
  * 
- * Coordinates reconnections across all realtime systems when auth tokens are refreshed.
+ * Coordinates reconnections through periodic health monitoring and network events.
  * Prevents cascading reconnection storms by staggering reconnection attempts.
  */
 class RealtimeReconnectionCoordinatorService {
@@ -47,9 +45,6 @@ class RealtimeReconnectionCoordinatorService {
   private readonly CONNECTION_MONITOR_INTERVAL_MS = 60000; // Check every 60 seconds
 
   constructor() {
-    // Register with auth monitor
-    authMonitor.registerListener('realtime-coordinator', this.handleAuthChange.bind(this));
-    
     // Add network online listener for wake-up detection
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
@@ -171,33 +166,6 @@ class RealtimeReconnectionCoordinatorService {
     return this.isReconnecting;
   }
 
-  /**
-   * Handle auth state changes from AuthMonitor
-   */
-  private handleAuthChange(session: Session | null) {
-    if (!session) {
-      console.log('🔄 ReconnectionCoordinator: No session, skipping reconnection');
-      return;
-    }
-
-    console.log('🔄 ReconnectionCoordinator: Auth changed, scheduling reconnection');
-    this.scheduleReconnection();
-  }
-
-  /**
-   * Schedule reconnection with debouncing
-   */
-  private scheduleReconnection() {
-    // Clear existing debounce timer
-    if (this.reconnectionDebounceTimer) {
-      clearTimeout(this.reconnectionDebounceTimer);
-    }
-
-    // Debounce reconnection attempts
-    this.reconnectionDebounceTimer = setTimeout(() => {
-      this.executeReconnection();
-    }, this.RECONNECTION_DEBOUNCE_MS);
-  }
 
   /**
    * Execute reconnection for all registered connections
@@ -275,7 +243,7 @@ class RealtimeReconnectionCoordinatorService {
         const retryDelay = Math.min(10000 * Math.pow(2, this.consecutiveWebSocketFailures - 1), 60000);
         console.log(`🔄 Scheduling WebSocket reconnection retry in ${retryDelay / 1000} seconds...`);
         setTimeout(() => {
-          this.scheduleReconnection();
+          this.executeReconnection();
         }, retryDelay);
         
         return;
