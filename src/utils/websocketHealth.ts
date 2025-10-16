@@ -155,6 +155,16 @@ export const websocketHealthCheck = {
   },
 
   /**
+   * Aggressive health check that bypasses cooldown (for wake-from-sleep)
+   */
+  async forceHealthCheck(): Promise<boolean> {
+    console.log('🔍 FORCING health check (bypassing cooldown)');
+    lastHealthCheckTime = 0; // Reset cooldown
+    isHealthCheckRunning = false; // Reset running flag
+    return await this.isWebSocketAlive();
+  },
+
+  /**
    * Reset cooldown (useful after wake from sleep)
    */
   resetCooldown(): void {

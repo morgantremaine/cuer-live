@@ -78,12 +78,19 @@ class RealtimeReconnectionCoordinatorService {
       const { toast } = await import('sonner');
       toast.info('Reconnecting...', { duration: 3000 });
       
-      // Reset health check cooldown for immediate check
+      // Reset ALL cooldowns (health check AND reconnection coordinator)
+      this.resetReconnectionCooldown();
       const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       websocketHealthCheck.resetCooldown();
       
-      // Force full reconnection
-      await this.executeReconnection();
+      // Force an immediate health check to confirm WebSocket is dead
+      const isAlive = await websocketHealthCheck.forceHealthCheck();
+      if (!isAlive) {
+        console.log('🌅 Confirmed: WebSocket is dead after wake - forcing full reconnection');
+        await this.executeReconnection();
+      } else {
+        console.log('✅ WebSocket is alive after wake - no reconnection needed');
+      }
     } else if (hiddenDuration > 5000) {
       // Even shorter hidden periods might need health check
       console.log('👁️ Tab was hidden 5-30s - checking WebSocket health');
@@ -430,6 +437,15 @@ class RealtimeReconnectionCoordinatorService {
   }
 
   /**
+   * Reset reconnection cooldown (used after wake from sleep)
+   */
+  resetReconnectionCooldown(): void {
+    console.log('🔄 Resetting reconnection cooldown');
+    this.lastWebSocketCheckTime = 0;
+    this.consecutiveWebSocketFailures = 0;
+  }
+
+  /**
    * Force immediate reconnection (useful for testing)
    */
   async forceReconnection() {
@@ -462,3 +478,6 @@ class RealtimeReconnectionCoordinatorService {
 
 // Export singleton instance
 export const realtimeReconnectionCoordinator = new RealtimeReconnectionCoordinatorService();
+
+// Make globally accessible for debugging and status checks
+(window as any).__reconnectionCoordinator = realtimeReconnectionCoordinator;
