@@ -70,9 +70,10 @@ class RealtimeReconnectionCoordinatorService {
     const hiddenDuration = Date.now() - this.lastVisibilityChange;
     console.log(`👁️ Tab visible after ${Math.round(hiddenDuration / 1000)}s hidden`);
     
-    // If hidden for more than 30 seconds, likely wake from sleep
-    if (hiddenDuration > 30000) {
-      console.log('🌅 Detected wake from sleep (30+ seconds hidden) - forcing reconnection');
+    // Only treat as wake from sleep if hidden for 5+ minutes (300s)
+    // Normal tab switching (even a few minutes) shouldn't trigger reconnection
+    if (hiddenDuration > 300000) {
+      console.log('🌅 Detected wake from sleep (5+ minutes hidden) - forcing reconnection');
       
       // Show user notification
       const { toast } = await import('sonner');
@@ -83,25 +84,11 @@ class RealtimeReconnectionCoordinatorService {
       const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       websocketHealthCheck.resetCooldown();
       
-      // Force an immediate health check to confirm WebSocket is dead
-      const isAlive = await websocketHealthCheck.forceHealthCheck();
-      if (!isAlive) {
-        console.log('🌅 Confirmed: WebSocket is dead after wake - forcing full reconnection');
-        await this.executeReconnection();
-      } else {
-        console.log('✅ WebSocket is alive after wake - no reconnection needed');
-      }
-    } else if (hiddenDuration > 5000) {
-      // Even shorter hidden periods might need health check
-      console.log('👁️ Tab was hidden 5-30s - checking WebSocket health');
-      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-      const isAlive = await websocketHealthCheck.isWebSocketAlive();
-      
-      if (!isAlive) {
-        console.warn('⚠️ WebSocket dead after tab hidden - forcing reconnection');
-        await this.executeReconnection();
-      }
+      // ALWAYS force reconnection after true sleep (health check can give false positives)
+      console.log('🌅 Forcing full reconnection (existing channels may be in zombie state)');
+      await this.executeReconnection();
     }
+    // For shorter periods, rely on periodic health checks instead of forcing reconnection
   }
 
 
