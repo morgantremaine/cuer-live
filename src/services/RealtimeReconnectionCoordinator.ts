@@ -45,50 +45,38 @@ class RealtimeReconnectionCoordinatorService {
   private readonly CONNECTION_MONITOR_INTERVAL_MS = 60000; // Check every 60 seconds
 
   constructor() {
-    // Add network online listener for wake-up detection
+    // Listen ONLY to network online event (for wake from sleep)
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
-      window.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     }
     
-    // Start proactive connection monitoring
-    this.startConnectionMonitoring();
+    // Removed: visibilitychange listener (time-based guessing is unreliable)
+    // Removed: periodic connection monitoring (not needed with channel status callbacks)
   }
 
   /**
-   * Handle visibility change (detects wake from sleep)
+   * Central error handler - called when any channel reports an error
+   * This is the main entry point for reconnection logic
    */
-  private async handleVisibilityChange() {
-    if (document.hidden) {
-      // Tab went hidden - record time
-      this.lastVisibilityChange = Date.now();
-      console.log('👁️ Tab hidden');
+  async handleChannelError(channelId: string): Promise<void> {
+    console.log(`❌ Channel error reported: ${channelId}`);
+    
+    // Only check health if not already reconnecting
+    if (this.isReconnecting) {
+      console.log('⏭️ Already reconnecting - skipping duplicate error handling');
       return;
     }
     
-    // Tab became visible
-    const hiddenDuration = Date.now() - this.lastVisibilityChange;
-    console.log(`👁️ Tab visible after ${Math.round(hiddenDuration / 1000)}s hidden`);
+    // Check if this is a global WebSocket issue
+    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+    const isAlive = await websocketHealthCheck.forceHealthCheck();
     
-    // Only treat as wake from sleep if hidden for 5+ minutes (300s)
-    // Normal tab switching (even a few minutes) shouldn't trigger reconnection
-    if (hiddenDuration > 300000) {
-      console.log('🌅 Detected wake from sleep (5+ minutes hidden) - forcing reconnection');
-      
-      // Show user notification
-      const { toast } = await import('sonner');
-      toast.info('Reconnecting...', { duration: 3000 });
-      
-      // Reset ALL cooldowns (health check AND reconnection coordinator)
-      this.resetReconnectionCooldown();
-      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-      websocketHealthCheck.resetCooldown();
-      
-      // ALWAYS force reconnection after true sleep (health check can give false positives)
-      console.log('🌅 Forcing full reconnection (existing channels may be in zombie state)');
+    if (!isAlive) {
+      console.error('💀 WebSocket is dead - forcing full reconnection');
       await this.executeReconnection();
+    } else {
+      console.log('✅ WebSocket is alive - let individual channel retry');
     }
-    // For shorter periods, rely on periodic health checks instead of forcing reconnection
   }
 
 
@@ -118,39 +106,6 @@ class RealtimeReconnectionCoordinatorService {
     await this.executeReconnection();
   }
 
-  /**
-   * Start proactive connection monitoring for background tabs
-   */
-  private startConnectionMonitoring() {
-    // Clear existing interval
-    if (this.connectionMonitorInterval) {
-      clearInterval(this.connectionMonitorInterval);
-    }
-    
-    // Check connection health every 60 seconds
-    this.connectionMonitorInterval = setInterval(async () => {
-      // Only check if we have registered connections
-      if (this.connections.size === 0) return;
-      
-      // Only check if not already reconnecting
-      if (this.isReconnecting) return;
-      
-      console.log('⏱️ Periodic connection health check...');
-      
-      // Import health check utility
-      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-      
-      // Quick non-blocking health check
-      const isAlive = await websocketHealthCheck.isWebSocketAlive();
-      
-      if (!isAlive) {
-        console.warn('⚠️ Periodic check detected dead WebSocket - triggering recovery');
-        await this.executeReconnection();
-      } else {
-        console.log('✅ Periodic check: WebSocket healthy');
-      }
-    }, this.CONNECTION_MONITOR_INTERVAL_MS);
-  }
 
   /**
    * Register a realtime connection
@@ -446,10 +401,6 @@ class RealtimeReconnectionCoordinatorService {
   destroy() {
     if (typeof window !== 'undefined') {
       window.removeEventListener('online', this.handleNetworkOnline.bind(this));
-      window.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    }
-    if (this.connectionMonitorInterval) {
-      clearInterval(this.connectionMonitorInterval);
     }
     if (this.reconnectionDebounceTimer) {
       clearTimeout(this.reconnectionDebounceTimer);

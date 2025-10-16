@@ -43,9 +43,10 @@ class ShowcallerBroadcastManager {
         
         if (status === 'SUBSCRIBED') {
           console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
-          console.log('⏭️ Showcaller channel error - coordinator will handle reconnection');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId, status);
+          // Notify coordinator of channel error
+          realtimeReconnectionCoordinator.handleChannelError(`showcaller-${rundownId}`);
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
         }

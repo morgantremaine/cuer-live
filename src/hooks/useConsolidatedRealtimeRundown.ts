@@ -512,8 +512,8 @@ export const useConsolidatedRealtimeRundown = ({
           state.isConnected = false;
           console.error('❌ Consolidated realtime connection failed:', status);
           
-          // Let coordinator handle all reconnections - no individual retries
-          console.log('⏭️ Consolidated channel error - coordinator will handle reconnection');
+          // Notify coordinator of channel error
+          realtimeReconnectionCoordinator.handleChannelError(`consolidated-${rundownId}`);
         } else if (status === 'CLOSED') {
           state.isConnected = false;
           console.log('🔌 Consolidated realtime connection closed');
