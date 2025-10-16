@@ -168,7 +168,54 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
 
-    // PHASE 0: Cooldown check to prevent rapid WebSocket reconnection attempts
+    // PHASE 0: Ensure we have a fresh auth token BEFORE any reconnection attempts
+    console.log('🔐 ReconnectionCoordinator: Validating auth session before reconnection...');
+    const { authMonitor } = await import('@/services/AuthMonitor');
+    
+    // Check if we just got a fresh token (within last 5 seconds)
+    if (authMonitor.wasRecentlyRefreshed()) {
+      console.log('✅ Auth token recently refreshed, proceeding with reconnection');
+    } else {
+      // Validate current session
+      const isValid = await authMonitor.isSessionValid();
+      
+      if (!isValid) {
+        console.warn('⏳ Auth session invalid, waiting for refresh...');
+        
+        // Wait up to 10 seconds for auth refresh to complete
+        const maxWaitTime = 10000;
+        const startTime = Date.now();
+        let refreshComplete = false;
+        
+        while (!refreshComplete && Date.now() - startTime < maxWaitTime) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Check if refresh happened
+          if (authMonitor.wasRecentlyRefreshed()) {
+            console.log('✅ Auth token refreshed during wait');
+            refreshComplete = true;
+            break;
+          }
+          
+          // Recheck validity
+          const nowValid = await authMonitor.isSessionValid();
+          if (nowValid) {
+            console.log('✅ Auth session now valid');
+            refreshComplete = true;
+            break;
+          }
+        }
+        
+        if (!refreshComplete) {
+          console.error('❌ Auth session still invalid after waiting - aborting reconnection');
+          return;
+        }
+      } else {
+        console.log('✅ Auth session valid, proceeding with reconnection');
+      }
+    }
+
+    // PHASE 0.5: Cooldown check to prevent rapid WebSocket reconnection attempts
     const timeSinceLastCheck = Date.now() - this.lastWebSocketCheckTime;
     if (timeSinceLastCheck < this.WEBSOCKET_CHECK_COOLDOWN_MS) {
       console.log(`🔄 ReconnectionCoordinator: WebSocket check on cooldown, skipping (${Math.round(timeSinceLastCheck / 1000)}s ago)`);
