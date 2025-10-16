@@ -9,7 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 // Module-level guards for health check throttling
 let isHealthCheckRunning = false;
 let lastHealthCheckTime = 0;
-const HEALTH_CHECK_COOLDOWN_MS = 3000; // 3 seconds between health checks
+const HEALTH_CHECK_COOLDOWN_MS = 2000; // 2 seconds between health checks (reduced for faster detection)
+let lastActivityTime = Date.now(); // Track last successful activity
 
 export const websocketHealthCheck = {
   /**
@@ -141,5 +142,23 @@ export const websocketHealthCheck = {
    */
   markValidated(): void {
     (this as any)._lastValidation = Date.now();
+    lastActivityTime = Date.now();
+  },
+
+  /**
+   * Check if connection is stale (no activity for extended period)
+   */
+  isConnectionStale(): boolean {
+    const staleDuration = Date.now() - lastActivityTime;
+    // Consider stale if no activity for 60+ seconds
+    return staleDuration > 60000;
+  },
+
+  /**
+   * Reset cooldown (useful after wake from sleep)
+   */
+  resetCooldown(): void {
+    lastHealthCheckTime = 0;
+    lastActivityTime = Date.now();
   }
 };

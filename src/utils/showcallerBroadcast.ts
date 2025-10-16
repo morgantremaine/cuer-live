@@ -59,7 +59,7 @@ class ShowcallerBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
     
-    // Clean up and reconnect immediately (coordinator validates auth)
+    // Clean up existing channel
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
@@ -71,6 +71,10 @@ class ShowcallerBroadcastManager {
     
     this.channels.delete(rundownId);
     
+    // Wait for cleanup before recreating (prevents zombie state)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Recreate channel if still needed
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);
     }

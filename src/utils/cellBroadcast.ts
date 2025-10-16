@@ -242,7 +242,7 @@ export class CellBroadcastManager {
       return;
     }
     
-    // Clean up and reconnect immediately
+    // Clean up existing channel
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
@@ -256,6 +256,10 @@ export class CellBroadcastManager {
     this.subscribed.delete(rundownId);
     this.reconnectAttempts.set(rundownId, 0); // Reset attempts
     
+    // Wait for cleanup before recreating (prevents zombie state)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Recreate channel if still needed
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);
     }

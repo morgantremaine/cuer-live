@@ -48,10 +48,53 @@ class RealtimeReconnectionCoordinatorService {
     // Add network online listener for wake-up detection
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
+      window.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     }
     
     // Start proactive connection monitoring
     this.startConnectionMonitoring();
+  }
+
+  /**
+   * Handle visibility change (detects wake from sleep)
+   */
+  private async handleVisibilityChange() {
+    if (document.hidden) {
+      // Tab went hidden - record time
+      this.lastVisibilityChange = Date.now();
+      console.log('👁️ Tab hidden');
+      return;
+    }
+    
+    // Tab became visible
+    const hiddenDuration = Date.now() - this.lastVisibilityChange;
+    console.log(`👁️ Tab visible after ${Math.round(hiddenDuration / 1000)}s hidden`);
+    
+    // If hidden for more than 30 seconds, likely wake from sleep
+    if (hiddenDuration > 30000) {
+      console.log('🌅 Detected wake from sleep (30+ seconds hidden) - forcing reconnection');
+      
+      // Show user notification
+      const { toast } = await import('sonner');
+      toast.info('Reconnecting...', { duration: 3000 });
+      
+      // Reset health check cooldown for immediate check
+      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+      websocketHealthCheck.resetCooldown();
+      
+      // Force full reconnection
+      await this.executeReconnection();
+    } else if (hiddenDuration > 5000) {
+      // Even shorter hidden periods might need health check
+      console.log('👁️ Tab was hidden 5-30s - checking WebSocket health');
+      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+      const isAlive = await websocketHealthCheck.isWebSocketAlive();
+      
+      if (!isAlive) {
+        console.warn('⚠️ WebSocket dead after tab hidden - forcing reconnection');
+        await this.executeReconnection();
+      }
+    }
   }
 
 
@@ -398,6 +441,10 @@ class RealtimeReconnectionCoordinatorService {
    * Cleanup and destroy coordinator
    */
   destroy() {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('online', this.handleNetworkOnline.bind(this));
+      window.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    }
     if (this.connectionMonitorInterval) {
       clearInterval(this.connectionMonitorInterval);
     }
