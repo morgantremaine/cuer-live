@@ -328,7 +328,7 @@ class RealtimeReconnectionCoordinatorService {
       }
 
       // Wait for all reconnections to complete
-      await new Promise(resolve => setTimeout(resolve, delay + 1000));
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       console.log('✅ ReconnectionCoordinator: Reconnection complete');
     } catch (error) {
