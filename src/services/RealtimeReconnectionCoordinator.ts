@@ -98,16 +98,18 @@ class RealtimeReconnectionCoordinatorService {
         console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS / 1000}s for WebSocket to stabilize...`);
         await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
         
-        console.log('✅ WebSocket stable. Channel watchdogs will now handle individual reconnections.');
-        // Don't call executeReconnection() here - let component watchdogs handle it
-        // This prevents race conditions with multiple simultaneous reconnection attempts
+        // Clear the lock BEFORE calling executeReconnection
+        this.isReconnecting = false;
+        
+        console.log('✅ WebSocket stable. Reconnecting channels...');
+        await this.executeReconnection();
       } else {
         console.error('❌ WebSocket reconnection failed - will retry via circuit breaker');
       }
     } catch (error) {
       console.error('❌ Error during channel error handling:', error);
     } finally {
-      // Always clear the lock
+      // Ensure lock is cleared
       this.isReconnecting = false;
     }
   }
@@ -199,10 +201,8 @@ class RealtimeReconnectionCoordinatorService {
    * Execute reconnection for all registered connections
    */
   private async executeReconnection() {
-    if (this.isReconnecting) {
-      console.log('🔄 ReconnectionCoordinator: Already reconnecting, skipping');
-      return;
-    }
+    // Note: isReconnecting guard removed - handled by caller (handleChannelError)
+    // This allows executeReconnection to run after WebSocket stabilization
 
     // PHASE 0: Ensure we have a fresh auth token BEFORE any reconnection attempts
     console.log('🔐 ReconnectionCoordinator: Validating auth session before reconnection...');
