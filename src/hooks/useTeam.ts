@@ -244,9 +244,13 @@ export const useTeam = () => {
       return;
     }
 
-    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, currentActiveTeamId });
     const loadStartTime = Date.now();
     globalLoadingStates.set(loadKey, true);
+    
+    // Only log when not using cache
+    if (!globalLoadedKeys.get(loadKey)) {
+      console.log('📊 useTeam - loadTeamData started (cache miss)', { userId: user?.id, currentActiveTeamId });
+    }
     isLoadingRef.current = true;
 
     // Create a promise for this load operation with timeout
@@ -878,16 +882,21 @@ export const useTeam = () => {
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
-    let lastVisibilityCheck = 0;
+    const lastVisibilityCheckRef = { current: 0 };
+    
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const now = Date.now();
         // Throttle visibility checks to max once per 5 seconds
-        if (now - lastVisibilityCheck < 5000) return;
-        lastVisibilityCheck = now;
+        if (now - lastVisibilityCheckRef.current < 5000) return;
+        lastVisibilityCheckRef.current = now;
         
-        // Only reload if we don't have team data and we should have it
-        if (user?.id && !team && !isLoadingRef.current) {
+        // Check team state at time of event, not from closure
+        const loadKey = `${user?.id}-${activeTeamId}`;
+        const hasCachedTeam = globalTeamCache.get(loadKey);
+        
+        // Only reload if we don't have cached team data and should have it
+        if (user?.id && !hasCachedTeam && !isLoadingRef.current) {
           debugLogger.team('Reloading team data after visibility change');
           setIsLoading(true);
           setTimeout(() => loadTeamData(), 100);
@@ -900,7 +909,7 @@ export const useTeam = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user?.id, team]);
+  }, [user?.id, activeTeamId, loadTeamData]);
 
   return {
     team,
