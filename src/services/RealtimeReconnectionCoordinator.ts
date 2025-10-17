@@ -30,6 +30,7 @@ class RealtimeReconnectionCoordinatorService {
   private lastVisibilityChange: number = 0;
   private connectionMonitorInterval: NodeJS.Timeout | null = null;
   private channelErrorCooldowns: Map<string, number> = new Map(); // Prevent rapid-fire errors
+  private statusChangeCallbacks: Set<(isReconnecting: boolean) => void> = new Set();
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
   private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
@@ -88,6 +89,7 @@ class RealtimeReconnectionCoordinatorService {
     
     // Set lock IMMEDIATELY to prevent race conditions
     this.isReconnecting = true;
+    this.emitStatusChange(true);
     
     try {
       // When channels are failing, force full WebSocket reconnection
@@ -107,6 +109,7 @@ class RealtimeReconnectionCoordinatorService {
         
         // Clear the lock BEFORE calling executeReconnection
         this.isReconnecting = false;
+        this.emitStatusChange(false);
         
         console.log('✅ WebSocket stable. Reconnecting channels...');
         await this.executeReconnection();
@@ -118,6 +121,7 @@ class RealtimeReconnectionCoordinatorService {
     } finally {
       // Ensure lock is cleared
       this.isReconnecting = false;
+      this.emitStatusChange(false);
     }
   }
 
@@ -203,6 +207,35 @@ class RealtimeReconnectionCoordinatorService {
     return this.isReconnecting;
   }
 
+  /**
+   * Subscribe to reconnection status changes
+   */
+  onStatusChange(callback: (isReconnecting: boolean) => void): () => void {
+    this.statusChangeCallbacks.add(callback);
+    // Return unsubscribe function
+    return () => this.removeStatusChangeListener(callback);
+  }
+
+  /**
+   * Unsubscribe from reconnection status changes
+   */
+  removeStatusChangeListener(callback: (isReconnecting: boolean) => void): void {
+    this.statusChangeCallbacks.delete(callback);
+  }
+
+  /**
+   * Emit status change event to all listeners
+   */
+  private emitStatusChange(isReconnecting: boolean): void {
+    this.statusChangeCallbacks.forEach(callback => {
+      try {
+        callback(isReconnecting);
+      } catch (error) {
+        console.error('Error in status change callback:', error);
+      }
+    });
+  }
+
 
   /**
    * Execute reconnection for all registered connections
@@ -250,6 +283,7 @@ class RealtimeReconnectionCoordinatorService {
     // PHASE 3: Auth already validated in PHASE 0, skip redundant check
     console.log(`🔄 ReconnectionCoordinator: Starting reconnection for ${connectionCount} connections`);
     this.isReconnecting = true;
+    this.emitStatusChange(true);
 
     try {
       // Sort connections by priority: consolidated > cell > showcaller
@@ -335,6 +369,7 @@ class RealtimeReconnectionCoordinatorService {
       console.error('❌ ReconnectionCoordinator: Reconnection failed:', error);
     } finally {
       this.isReconnecting = false;
+      this.emitStatusChange(false);
     }
   }
 
