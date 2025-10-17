@@ -33,7 +33,8 @@ class RealtimeReconnectionCoordinatorService {
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
   private readonly WEBSOCKET_FAILURE_RESET_MS = 300000; // Reset after 5 minutes
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
-  private readonly STAGGER_DELAY_MS = 100; // Delay between individual reconnections
+  private readonly STAGGER_DELAY_MS = 500; // 500ms delay between channels
+  private readonly WEBSOCKET_STABILIZATION_MS = 2500; // 2.5s for WebSocket to stabilize
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
   private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
   private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
@@ -313,8 +314,10 @@ class RealtimeReconnectionCoordinatorService {
       (globalThis as any)._websocketReconnectionComplete = Date.now();
       window.dispatchEvent(new CustomEvent('websocket-reconnection-complete'));
       
-      // Wait for WebSocket to stabilize before proceeding
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for WebSocket to fully stabilize before reconnecting channels
+      console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS}ms for WebSocket to stabilize...`);
+      await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
+      console.log('✅ WebSocket stabilization complete');
     }
 
     // PHASE 2: Wait for connections to register if needed
@@ -353,9 +356,17 @@ class RealtimeReconnectionCoordinatorService {
     this.isReconnecting = true;
 
     try {
-      // Stagger reconnections to prevent overwhelming the system
+      // Sort connections by priority: consolidated > cell > showcaller
+      const sortedConnections = Array.from(this.connections.entries()).sort((a, b) => {
+        const priorityOrder = { consolidated: 0, cell: 1, showcaller: 2 };
+        return priorityOrder[a[1].type] - priorityOrder[b[1].type];
+      });
+
+      console.log('📋 Reconnection order:', sortedConnections.map(([id, c]) => `${c.type}(${id})`).join(' → '));
+
+      // Stagger reconnections with longer delays to prevent overwhelming WebSocket
       let delay = 0;
-      for (const [id, connection] of this.connections.entries()) {
+      for (const [id, connection] of sortedConnections) {
         // Check circuit breaker state
         if (connection.circuitState === 'open') {
           const timeSinceFailure = Date.now() - connection.lastFailureTime;
