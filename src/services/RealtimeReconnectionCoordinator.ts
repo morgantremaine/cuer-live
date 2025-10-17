@@ -98,13 +98,17 @@ class RealtimeReconnectionCoordinatorService {
         console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS / 1000} seconds for WebSocket to stabilize before channel reconnection...`);
         await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
         
+        // Clear lock before calling executeReconnection (it sets its own lock)
+        this.isReconnecting = false;
+        
         // Now reconnect channels
         await this.executeReconnection();
       } else {
         console.error('❌ WebSocket reconnection failed - will retry via circuit breaker');
+        this.isReconnecting = false;
       }
-    } finally {
-      // Always clear the lock
+    } catch (error) {
+      console.error('❌ Error during channel error handling:', error);
       this.isReconnecting = false;
     }
   }
