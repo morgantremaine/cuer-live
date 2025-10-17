@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ClockFormatProvider } from "@/contexts/ClockFormatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
+import { useAutoReloadOnWake } from "@/hooks/useAutoReloadOnWake";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -64,6 +65,9 @@ const AppRoutes = () => {
   
   // Initialize logger auth sync
   useLoggerAuth();
+  
+  // Auto-reload on laptop wake to ensure fresh state and avoid stale WebSocket issues
+  useAutoReloadOnWake();
 
   if (loading) {
     return (
