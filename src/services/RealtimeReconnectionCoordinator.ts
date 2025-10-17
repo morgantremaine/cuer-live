@@ -35,7 +35,7 @@ class RealtimeReconnectionCoordinatorService {
   private readonly WEBSOCKET_FAILURE_RESET_MS = 300000; // Reset after 5 minutes
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
   private readonly STAGGER_DELAY_MS = 500; // 500ms delay between channels
-  private readonly WEBSOCKET_STABILIZATION_MS = 5000; // 5s for WebSocket to FULLY stabilize
+  private readonly WEBSOCKET_STABILIZATION_MS = 2500; // 2.5s for WebSocket to stabilize
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
   private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
   private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
@@ -79,25 +79,33 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
     
-    // When channels are failing, force full WebSocket reconnection
-    // Don't trust health check - it can be misleading when channels are actively failing
-    console.error('💀 Channel failures detected - forcing aggressive WebSocket reconnection');
+    // Set lock IMMEDIATELY to prevent race conditions
+    this.isReconnecting = true;
     
-    // Import health check utility
-    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-    
-    // Force WebSocket reconnection without health check
-    const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
-    
-    if (reconnected) {
-      // Wait LONGER for WebSocket to fully stabilize before reconnecting channels
-      console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS / 1000} seconds for WebSocket to FULLY stabilize before channel reconnection...`);
-      await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
+    try {
+      // When channels are failing, force full WebSocket reconnection
+      // Don't trust health check - it can be misleading when channels are actively failing
+      console.error('💀 Channel failures detected - forcing aggressive WebSocket reconnection');
       
-      // Now reconnect channels
-      await this.executeReconnection();
-    } else {
-      console.error('❌ WebSocket reconnection failed - will retry via circuit breaker');
+      // Import health check utility
+      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+      
+      // Force WebSocket reconnection without health check
+      const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
+      
+      if (reconnected) {
+        // Wait for WebSocket to stabilize before reconnecting channels
+        console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS / 1000} seconds for WebSocket to stabilize before channel reconnection...`);
+        await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
+        
+        // Now reconnect channels
+        await this.executeReconnection();
+      } else {
+        console.error('❌ WebSocket reconnection failed - will retry via circuit breaker');
+      }
+    } finally {
+      // Always clear the lock
+      this.isReconnecting = false;
     }
   }
 
