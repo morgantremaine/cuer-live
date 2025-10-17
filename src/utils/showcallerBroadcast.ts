@@ -64,7 +64,7 @@ class ShowcallerBroadcastManager {
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
-        supabase.removeChannel(existingChannel);
+        await supabase.removeChannel(existingChannel);
       } catch (error) {
         console.warn('📺 Error removing channel during force reconnect:', error);
       }
@@ -72,13 +72,12 @@ class ShowcallerBroadcastManager {
     
     this.channels.delete(rundownId);
     
-    // Wait for cleanup before recreating (prevents zombie state)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Brief wait for cleanup (200ms matches WebSocket stabilization)
+    await new Promise(resolve => setTimeout(resolve, 200));
     
-    // Recreate channel if still needed
-    if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
-      this.ensureChannel(rundownId);
-    }
+    // Always recreate channel during reconnection
+    const channel = this.ensureChannel(rundownId);
+    console.log('📺 ✅ Showcaller channel recreated after reconnection');
   }
 
   // Broadcast showcaller state change

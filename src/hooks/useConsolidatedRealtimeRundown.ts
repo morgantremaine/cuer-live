@@ -241,10 +241,6 @@ export const useConsolidatedRealtimeRundown = ({
           console.log('⏳ Extended stabilization period (2s) for wake-from-sleep');
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Trigger reconnection coordinator
-          console.log('🔄 Triggering reconnection coordinator after wake');
-          await realtimeReconnectionCoordinator.forceReconnection();
-          
           // Perform catch-up sync
           console.log('📥 Performing catch-up sync after wake');
           await performCatchupSync();
