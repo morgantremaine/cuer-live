@@ -53,7 +53,7 @@ export const websocketHealthCheck = {
             }
             resolve(false);
           }
-        }, 3000); // 3 seconds for faster failure detection
+        }, 1500); // 1.5 seconds for fast failure detection
         
         testChannel.subscribe((status) => {
           if (!resolved) {
@@ -96,8 +96,8 @@ export const websocketHealthCheck = {
       // Remove all channels to force socket closure
       await Promise.all(channels.map(ch => supabase.removeChannel(ch)));
       
-      // Wait longer for Supabase's internal WebSocket cleanup (increased from 500ms to 2000ms)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Minimal wait for Supabase's internal WebSocket cleanup (200ms is enough)
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('🔌 WebSocket cleanup complete, testing new connection...');
       
@@ -113,8 +113,7 @@ export const websocketHealthCheck = {
       
       if (isAlive) {
         console.log('✅ WebSocket reconnection successful');
-        // Wait for stabilization before allowing channel reconnections
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // No wait needed - health check validates WebSocket is ready
       } else {
         console.warn('❌ WebSocket reconnection failed after retry');
       }

@@ -35,8 +35,8 @@ class RealtimeReconnectionCoordinatorService {
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
   private readonly WEBSOCKET_FAILURE_RESET_MS = 300000; // Reset after 5 minutes
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
-  private readonly STAGGER_DELAY_MS = 500; // 500ms delay between channels
-  private readonly WEBSOCKET_STABILIZATION_MS = 1000; // 1s for WebSocket to stabilize
+  private readonly STAGGER_DELAY_MS = 0; // Parallel reconnection for speed
+  private readonly WEBSOCKET_STABILIZATION_MS = 100; // Minimal stabilization delay
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
   private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
   private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
@@ -211,53 +211,6 @@ class RealtimeReconnectionCoordinatorService {
     // Note: isReconnecting guard removed - handled by caller (handleChannelError)
     // This allows executeReconnection to run after WebSocket stabilization
 
-    // PHASE 0: Ensure we have a fresh auth token BEFORE any reconnection attempts
-    console.log('🔐 ReconnectionCoordinator: Validating auth session before reconnection...');
-    const { authMonitor } = await import('@/services/AuthMonitor');
-    
-    // Check if we just got a fresh token (within last 5 seconds)
-    if (authMonitor.wasRecentlyRefreshed()) {
-      console.log('✅ Auth token recently refreshed, proceeding with reconnection');
-    } else {
-      // Validate current session
-      const isValid = await authMonitor.isSessionValid();
-      
-      if (!isValid) {
-        console.warn('⏳ Auth session invalid, waiting for refresh...');
-        
-        // Wait up to 10 seconds for auth refresh to complete
-        const maxWaitTime = 10000;
-        const startTime = Date.now();
-        let refreshComplete = false;
-        
-        while (!refreshComplete && Date.now() - startTime < maxWaitTime) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Check if refresh happened
-          if (authMonitor.wasRecentlyRefreshed()) {
-            console.log('✅ Auth token refreshed during wait');
-            refreshComplete = true;
-            break;
-          }
-          
-          // Recheck validity
-          const nowValid = await authMonitor.isSessionValid();
-          if (nowValid) {
-            console.log('✅ Auth session now valid');
-            refreshComplete = true;
-            break;
-          }
-        }
-        
-        if (!refreshComplete) {
-          console.error('❌ Auth session still invalid after waiting - aborting reconnection');
-          return;
-        }
-      } else {
-        console.log('✅ Auth session valid, proceeding with reconnection');
-      }
-    }
-
     // PHASE 0.5: Cooldown check to prevent rapid WebSocket reconnection attempts
     const timeSinceLastCheck = Date.now() - this.lastWebSocketCheckTime;
     if (timeSinceLastCheck < this.WEBSOCKET_CHECK_COOLDOWN_MS) {
@@ -266,101 +219,8 @@ class RealtimeReconnectionCoordinatorService {
     }
     this.lastWebSocketCheckTime = Date.now();
 
-    // PHASE 1: Check WebSocket health before attempting channel reconnections
-    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-    const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
-    
-    if (!isWebSocketAlive) {
-      console.warn('🔌 WebSocket is dead - forcing full reconnection before channel setup');
-      
-      // Set stuck offline timer
-      if (this.stuckOfflineTimer) {
-        clearTimeout(this.stuckOfflineTimer);
-      }
-      
-      this.stuckOfflineTimer = setTimeout(async () => {
-        console.warn('⚠️ Stuck offline for 30s - forcing recovery');
-        const { toast } = await import('sonner');
-        toast.warning('Connection issues detected', {
-          description: 'Attempting automatic recovery...',
-          duration: 5000
-        });
-        this.forceReconnection();
-      }, this.STUCK_OFFLINE_TIMEOUT_MS);
-      
-      const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
-      
-      if (!reconnected) {
-        this.consecutiveWebSocketFailures++;
-        console.error(`❌ Failed to reconnect WebSocket (attempt ${this.consecutiveWebSocketFailures})`);
-        
-        // Clear existing reset timer
-        if (this.websocketFailureResetTimer) {
-          clearTimeout(this.websocketFailureResetTimer);
-        }
-        
-        // Schedule failure counter reset after 5 minutes
-        this.websocketFailureResetTimer = setTimeout(() => {
-          console.log('🔄 Resetting WebSocket failure counter after cooldown');
-          this.consecutiveWebSocketFailures = 0;
-        }, this.WEBSOCKET_FAILURE_RESET_MS);
-        
-        // Show user-facing error after 3 failures and STOP retrying
-        if (this.consecutiveWebSocketFailures >= this.MAX_WEBSOCKET_FAILURES) {
-          const { toast } = await import('sonner');
-          toast.error('Connection issues detected. Please refresh the page.', {
-            duration: 10000,
-            action: {
-              label: 'Refresh',
-              onClick: () => window.location.reload()
-            }
-          });
-          
-          // STOP retrying after max failures - require user action
-          console.error('🔄 Max WebSocket failures reached - stopping automatic retries');
-          return;
-        }
-        
-        // Schedule retry with exponential backoff
-        const retryDelay = Math.min(10000 * Math.pow(2, this.consecutiveWebSocketFailures - 1), 60000);
-        console.log(`🔄 Scheduling WebSocket reconnection retry in ${retryDelay / 1000} seconds...`);
-        setTimeout(() => {
-          this.executeReconnection();
-        }, retryDelay);
-        
-        return;
-      }
-      
-      // Clear stuck offline timer on success
-      if (this.stuckOfflineTimer) {
-        clearTimeout(this.stuckOfflineTimer);
-        this.stuckOfflineTimer = null;
-      }
-      
-      // Reset failure counter on success
-      this.consecutiveWebSocketFailures = 0;
-      
-      // Mark WebSocket as validated
-      websocketHealthCheck.markValidated();
-      
-      // Reset all circuit breakers after successful WebSocket reconnection
-      console.log('🔄 Resetting all circuit breakers after WebSocket reconnection');
-      for (const connection of this.connections.values()) {
-        connection.failedAttempts = 0;
-        connection.circuitState = 'closed';
-        connection.lastFailureTime = 0;
-      }
-      
-      // Broadcast reconnection complete event for showcaller recovery
-      console.log('📺 Broadcasting reconnection_complete event');
-      (globalThis as any)._websocketReconnectionComplete = Date.now();
-      window.dispatchEvent(new CustomEvent('websocket-reconnection-complete'));
-      
-      // Wait for WebSocket to fully stabilize before reconnecting channels
-      console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS}ms for WebSocket to stabilize...`);
-      await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
-      console.log('✅ WebSocket stabilization complete');
-    }
+    // PHASE 1: Skip redundant WebSocket health check - already validated by handleChannelError
+    // Trust that the WebSocket is ready (just reconnected successfully)
 
     // PHASE 2: Wait for connections to register if needed
     if (this.connections.size === 0) {
