@@ -21,6 +21,7 @@ interface RegisteredConnection {
 class RealtimeReconnectionCoordinatorService {
   private connections: Map<string, RegisteredConnection> = new Map();
   private isReconnecting: boolean = false;
+  private reconnectingChannels: Set<string> = new Set(); // Track channels actively reconnecting
   private reconnectionDebounceTimer: NodeJS.Timeout | null = null;
   private consecutiveWebSocketFailures: number = 0;
   private lastWebSocketCheckTime: number = 0;
@@ -35,7 +36,7 @@ class RealtimeReconnectionCoordinatorService {
   private readonly WEBSOCKET_FAILURE_RESET_MS = 300000; // Reset after 5 minutes
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
   private readonly STAGGER_DELAY_MS = 500; // 500ms delay between channels
-  private readonly WEBSOCKET_STABILIZATION_MS = 2500; // 2.5s for WebSocket to stabilize
+  private readonly WEBSOCKET_STABILIZATION_MS = 1000; // 1s for WebSocket to stabilize
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
   private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
   private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
@@ -63,6 +64,12 @@ class RealtimeReconnectionCoordinatorService {
    */
   async handleChannelError(channelId: string): Promise<void> {
     console.log(`❌ Channel error reported: ${channelId}`);
+    
+    // Check if this channel is already being reconnected
+    if (this.reconnectingChannels.has(channelId)) {
+      console.log(`⏭️ Channel ${channelId} is already reconnecting, skipping duplicate error`);
+      return;
+    }
     
     // Cooldown guard: prevent same channel from triggering multiple reconnections
     const lastError = this.channelErrorCooldowns.get(channelId) || 0;
@@ -380,13 +387,7 @@ class RealtimeReconnectionCoordinatorService {
 
     const connectionCount = this.connections.size;
 
-    // PHASE 3: Validate auth session before attempting any reconnections
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
-      console.warn('🔄 ReconnectionCoordinator: Invalid auth session, waiting for refresh');
-      return;
-    }
-
+    // PHASE 3: Auth already validated in PHASE 0, skip redundant check
     console.log(`🔄 ReconnectionCoordinator: Starting reconnection for ${connectionCount} connections`);
     this.isReconnecting = true;
 
@@ -431,6 +432,9 @@ class RealtimeReconnectionCoordinatorService {
 
         // Schedule staggered reconnection with backoff
         setTimeout(async () => {
+          // Mark channel as reconnecting BEFORE calling handler
+          this.reconnectingChannels.add(id);
+          
           try {
             console.log(`🔄 ReconnectionCoordinator: Reconnecting ${connection.type}: ${id} (attempt ${connection.failedAttempts + 1})`);
             await connection.reconnect();
@@ -454,6 +458,9 @@ class RealtimeReconnectionCoordinatorService {
               connection.circuitState = 'open';
               console.warn(`🔄 ReconnectionCoordinator: Circuit opened for ${id} after ${connection.failedAttempts} failures`);
             }
+          } finally {
+            // Clear reconnecting flag AFTER handler completes
+            this.reconnectingChannels.delete(id);
           }
         }, delay + backoffDelay);
 
