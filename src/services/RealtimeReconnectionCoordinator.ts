@@ -280,7 +280,34 @@ class RealtimeReconnectionCoordinatorService {
 
     const connectionCount = this.connections.size;
 
-    // PHASE 3: Auth already validated in PHASE 0, skip redundant check
+    // PHASE 3: Circuit breaker for reconnection loop detection
+    const recentFailures = Array.from(this.connections.values())
+      .filter(c => c.lastFailureTime > Date.now() - 30000) // Last 30 seconds
+      .length;
+    
+    if (recentFailures >= 4) {
+      console.error('🚨 Reconnection loop detected - forcing extended cooldown and channel reset');
+      
+      // Force longer cooldown (10 seconds)
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      
+      // Clear all channels and start fresh
+      const { supabase } = await import('@/integrations/supabase/client');
+      const allChannels = supabase.getChannels();
+      console.log(`🧹 Cleaning up ${allChannels.length} channels for full reset`);
+      await Promise.all(allChannels.map(ch => supabase.removeChannel(ch)));
+      
+      // Reset all connection states
+      for (const connection of this.connections.values()) {
+        connection.failedAttempts = 0;
+        connection.circuitState = 'closed';
+        connection.lastFailureTime = 0;
+      }
+      
+      console.log('✅ Full channel reset complete, resuming reconnection');
+    }
+    
+    // PHASE 4: Auth already validated in PHASE 0, skip redundant check
     console.log(`🔄 ReconnectionCoordinator: Starting reconnection for ${connectionCount} connections`);
     this.isReconnecting = true;
     this.emitStatusChange(true);

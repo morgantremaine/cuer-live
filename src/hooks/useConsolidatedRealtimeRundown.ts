@@ -217,7 +217,52 @@ export const useConsolidatedRealtimeRundown = ({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [enabled, rundownId]);
+  }, [enabled, rundownId, performCatchupSync]);
+
+  // Page visibility detection for laptop wake-from-sleep
+  useEffect(() => {
+    if (!enabled || !rundownId) return;
+    
+    let hiddenSince = 0;
+    
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        const hiddenDuration = Date.now() - hiddenSince;
+        
+        // If hidden for >30 seconds, trigger smart reconnection
+        if (hiddenDuration > 30000) {
+          console.log('🌅 Page visible after long sleep:', Math.round(hiddenDuration / 1000), 'seconds');
+          
+          // Force WebSocket health check
+          const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+          await websocketHealthCheck.forceHealthCheck();
+          
+          // Extended stabilization for long sleeps
+          console.log('⏳ Extended stabilization period (2s) for wake-from-sleep');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Trigger reconnection coordinator
+          console.log('🔄 Triggering reconnection coordinator after wake');
+          await realtimeReconnectionCoordinator.forceReconnection();
+          
+          // Perform catch-up sync
+          console.log('📥 Performing catch-up sync after wake');
+          await performCatchupSync();
+          
+          console.log('✅ Wake-from-sleep reconnection complete');
+        }
+      } else {
+        // Track when page was hidden
+        hiddenSince = Date.now();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [enabled, rundownId, performCatchupSync]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
@@ -581,27 +626,44 @@ export const useConsolidatedRealtimeRundown = ({
               state.isConnected = true;
               console.log('✅ Reconnected consolidated channel successfully:', rundownId);
               
-              // Perform catch-up sync after reconnection
-              try {
-                const { data, error } = await supabase
-                  .from('rundowns')
-                  .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
-                  .eq('id', rundownId as string)
-                  .maybeSingle();
-                  
-                if (!error && data) {
-                  const serverDoc = data.doc_version || 0;
-                  if (serverDoc > state.lastProcessedDocVersion) {
-                    state.lastProcessedDocVersion = serverDoc;
-                    state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
-                    state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-                      try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
-                    });
-                    console.log('📥 Catch-up sync completed after reconnection');
+              // Perform catch-up sync after reconnection with retry logic
+              let retries = 0;
+              const maxRetries = 3;
+              let syncSuccess = false;
+              
+              while (retries < maxRetries && !syncSuccess) {
+                try {
+                  const { data, error } = await supabase
+                    .from('rundowns')
+                    .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
+                    .eq('id', rundownId as string)
+                    .maybeSingle();
+                    
+                  if (!error && data) {
+                    const serverDoc = data.doc_version || 0;
+                    if (serverDoc > state.lastProcessedDocVersion) {
+                      state.lastProcessedDocVersion = serverDoc;
+                      state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+                      state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                        try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+                      });
+                      console.log('📥 Catch-up sync completed after reconnection');
+                    } else {
+                      console.log('📥 Catch-up sync: already up to date');
+                    }
+                    syncSuccess = true;
+                  } else if (error) {
+                    throw error;
+                  }
+                } catch (err) {
+                  retries++;
+                  if (retries >= maxRetries) {
+                    console.error(`❌ Catch-up sync failed after ${maxRetries} retries:`, err);
+                  } else {
+                    console.warn(`⚠️ Catch-up sync failed (attempt ${retries}/${maxRetries}), retrying in ${retries}s...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
                   }
                 }
-              } catch (err) {
-                console.error('❌ Catch-up sync failed after reconnection:', err);
               }
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
               state.isConnected = false;
