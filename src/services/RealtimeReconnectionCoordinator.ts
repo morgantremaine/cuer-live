@@ -86,7 +86,9 @@ class RealtimeReconnectionCoordinatorService {
    * Handle network online event
    */
   private async handleNetworkOnline() {
-    console.log('🌐 ReconnectionCoordinator: Network came online, checking connections...');
+    const wakeTime = new Date().toISOString();
+    console.log('🌐 ⏰ Network online event fired at', wakeTime);
+    console.log('💤 Checking if this was a wake-from-sleep event...');
     
     // Give browser 1s to fully establish network
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -98,11 +100,12 @@ class RealtimeReconnectionCoordinatorService {
     const isAlive = await websocketHealthCheck.isWebSocketAlive();
     
     if (isAlive) {
-      console.log('✅ Network online - WebSocket already healthy, skipping reconnection');
+      console.log('✅ WebSocket healthy - likely just network blip, not sleep');
       return;
     }
     
-    console.log('⚠️ Network online - WebSocket dead, forcing reconnection');
+    console.log('💤 ➡️ 🌅 CONFIRMED: Wake from sleep detected - WebSocket dead');
+    console.log('🔄 Initiating graceful reconnection sequence...');
     // Only reconnect if WebSocket is actually dead
     await this.executeReconnection();
   }

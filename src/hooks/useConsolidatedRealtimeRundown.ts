@@ -572,7 +572,49 @@ export const useConsolidatedRealtimeRundown = ({
             });
           }
           
-          await newChannel.subscribe();
+          // Subscribe with status callback to handle reconnection failures
+          newChannel.subscribe(async (status) => {
+            const state = globalSubscriptions.get(rundownId);
+            if (!state) return;
+
+            if (status === 'SUBSCRIBED') {
+              state.isConnected = true;
+              console.log('✅ Reconnected consolidated channel successfully:', rundownId);
+              
+              // Perform catch-up sync after reconnection
+              try {
+                const { data, error } = await supabase
+                  .from('rundowns')
+                  .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
+                  .eq('id', rundownId as string)
+                  .maybeSingle();
+                  
+                if (!error && data) {
+                  const serverDoc = data.doc_version || 0;
+                  if (serverDoc > state.lastProcessedDocVersion) {
+                    state.lastProcessedDocVersion = serverDoc;
+                    state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+                    state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                      try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+                    });
+                    console.log('📥 Catch-up sync completed after reconnection');
+                  }
+                }
+              } catch (err) {
+                console.error('❌ Catch-up sync failed after reconnection:', err);
+              }
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              state.isConnected = false;
+              console.error('❌ Reconnected channel failed:', rundownId, status);
+              
+              // Report error back to coordinator for retry with exponential backoff
+              realtimeReconnectionCoordinator.handleChannelError(`consolidated-${rundownId}`);
+            } else if (status === 'CLOSED') {
+              state.isConnected = false;
+              console.log('🔌 Reconnected channel closed:', rundownId);
+            }
+          });
+          
           if (globalState) {
             globalState.subscription = newChannel;
           }
