@@ -2,63 +2,52 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Detect laptop sleep by monitoring for cascading channel errors
+// Detect laptop sleep by monitoring for simultaneous channel errors
 if (typeof window !== 'undefined') {
   import('@/integrations/supabase/client').then(({ supabase }) => {
     const realtimeClient = (supabase as any).realtime;
     
     if (realtimeClient) {
-      // Track channel errors to detect cascading failures (laptop sleep signature)
-      const channelErrors = new Map<string, number>();
+      const channelErrors = new Set<string>();
+      let cascadeTimer: NodeJS.Timeout | null = null;
       
-      // Monitor all channels for errors
+      // Poll every 100ms to catch errors immediately (faster than reconnection logic)
       const checkInterval = setInterval(() => {
         const channels = realtimeClient.channels || [];
         
+        // Count how many channels are in error state RIGHT NOW
+        let errorCount = 0;
         channels.forEach((channel: any) => {
-          const status = channel.state;
-          const topic = channel.topic;
-          
-          // Detect CHANNEL_ERROR state
-          if (status === 'CHANNEL_ERROR' || status === 'errored') {
-            const now = Date.now();
-            const lastError = channelErrors.get(topic);
-            
-            // Only count if this is a new error (not the same one)
-            if (!lastError || now - lastError > 1000) {
-              channelErrors.set(topic, now);
-              
-              // Clear old errors (>2 seconds)
-              const cutoff = now - 2000;
-              for (const [key, time] of channelErrors.entries()) {
-                if (time < cutoff) {
-                  channelErrors.delete(key);
-                }
-              }
-              
-              // If 2+ channels errored within 2 seconds = laptop sleep cascade
-              if (channelErrors.size >= 2) {
-                console.log('💀 Multiple channel errors detected (laptop sleep) - reloading', {
-                  errorCount: channelErrors.size,
-                  channels: Array.from(channelErrors.keys())
-                });
-                
-                clearInterval(checkInterval);
-                
-                import('sonner').then(({ toast }) => {
-                  toast.info('Connection lost. Refreshing...', { duration: 1500 });
-                });
-                
-                setTimeout(() => {
-                  window.location.reload();
-                }, 1500);
-              }
-            }
+          if (channel.state === 'CHANNEL_ERROR' || channel.state === 'errored') {
+            errorCount++;
+            channelErrors.add(channel.topic);
           }
         });
-      }, 500); // Check every 500ms
+        
+        // If 2+ channels are in error state simultaneously = laptop sleep
+        if (errorCount >= 2) {
+          console.log('💀 Laptop sleep detected (multiple simultaneous channel errors) - reloading', {
+            errorCount,
+            channels: Array.from(channelErrors)
+          });
+          
+          clearInterval(checkInterval);
+          if (cascadeTimer) clearTimeout(cascadeTimer);
+          
+          // Reload immediately, no toast (too slow)
+          window.location.reload();
+        }
+        
+        // Clear the set every 2 seconds to prevent stale data
+        if (!cascadeTimer) {
+          cascadeTimer = setTimeout(() => {
+            channelErrors.clear();
+            cascadeTimer = null;
+          }, 2000);
+        }
+      }, 100); // Check 10x per second - fast enough to beat reconnection logic
       
-      console.log('✅ Channel error cascade monitor installed');
+      console.log('✅ Laptop sleep detector active');
     }
   });
 }

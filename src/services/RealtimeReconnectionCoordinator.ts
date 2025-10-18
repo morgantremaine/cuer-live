@@ -61,6 +61,18 @@ class RealtimeReconnectionCoordinatorService {
   async handleChannelError(channelId: string): Promise<void> {
     console.log(`❌ Channel error reported: ${channelId}`);
     
+    // NEW: Check for error cascade (laptop sleep signature)
+    const now = Date.now();
+    const allChannels = Array.from(this.connections.values());
+    const recentErrors = allChannels.filter(c => 
+      now - c.lastFailureTime < 1000 // Errors within last 1 second
+    );
+    
+    if (recentErrors.length >= 2) {
+      console.log('💀 Error cascade detected - letting main.tsx handle reload');
+      return; // Don't try to reconnect, let reload handle it
+    }
+    
     // Check if this channel is already being reconnected
     if (this.reconnectingChannels.has(channelId)) {
       console.log(`⏭️ Channel ${channelId} is already reconnecting, skipping duplicate error`);
@@ -69,7 +81,6 @@ class RealtimeReconnectionCoordinatorService {
     
     // Cooldown guard: prevent same channel from triggering multiple reconnections
     const lastError = this.channelErrorCooldowns.get(channelId) || 0;
-    const now = Date.now();
     if (now - lastError < this.CHANNEL_ERROR_COOLDOWN_MS) {
       console.log(`⏭️ Channel ${channelId} on error cooldown (${Math.ceil((this.CHANNEL_ERROR_COOLDOWN_MS - (now - lastError)) / 1000)}s remaining), skipping`);
       return;
