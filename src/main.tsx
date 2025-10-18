@@ -2,72 +2,63 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Monitor Supabase WebSocket for abnormal closures (laptop sleep, network loss)
+// Detect laptop sleep by monitoring for cascading channel errors
 if (typeof window !== 'undefined') {
   import('@/integrations/supabase/client').then(({ supabase }) => {
-    // Access the internal realtime WebSocket connection
     const realtimeClient = (supabase as any).realtime;
     
     if (realtimeClient) {
-      // Wait for connection to be established
-      const setupMonitor = () => {
-        const conn = realtimeClient.conn;
+      // Track channel errors to detect cascading failures (laptop sleep signature)
+      const channelErrors = new Map<string, number>();
+      
+      // Monitor all channels for errors
+      const checkInterval = setInterval(() => {
+        const channels = realtimeClient.channels || [];
         
-        if (conn && conn.conn) {
-          // Store original onclose handler
-          const originalOnClose = conn.conn.onclose;
+        channels.forEach((channel: any) => {
+          const status = channel.state;
+          const topic = channel.topic;
           
-          // Override with our monitoring version
-          conn.conn.onclose = function(event: CloseEvent) {
-            console.log('🔌 WebSocket closed:', {
-              code: event.code,
-              reason: event.reason,
-              wasClean: event.wasClean
-            });
+          // Detect CHANNEL_ERROR state
+          if (status === 'CHANNEL_ERROR' || status === 'errored') {
+            const now = Date.now();
+            const lastError = channelErrors.get(topic);
             
-            // Detect abnormal closures (laptop sleep, network loss)
-            // Code 1006 = abnormal closure (no close frame received)
-            // Code 1005 = no status code (also abnormal)
-            // !wasClean = connection lost unexpectedly
-            if (event.code === 1006 || event.code === 1005 || !event.wasClean) {
-              console.log('💀 Abnormal WebSocket closure detected (likely laptop sleep) - reloading');
+            // Only count if this is a new error (not the same one)
+            if (!lastError || now - lastError > 1000) {
+              channelErrors.set(topic, now);
               
-              // Show notification
-              import('sonner').then(({ toast }) => {
-                toast.info('Connection lost. Refreshing...', { duration: 1500 });
-              });
+              // Clear old errors (>2 seconds)
+              const cutoff = now - 2000;
+              for (const [key, time] of channelErrors.entries()) {
+                if (time < cutoff) {
+                  channelErrors.delete(key);
+                }
+              }
               
-              // Reload for clean state
-              setTimeout(() => {
-                window.location.reload();
-              }, 1500);
-              
-              return; // Don't call original handler
+              // If 2+ channels errored within 2 seconds = laptop sleep cascade
+              if (channelErrors.size >= 2) {
+                console.log('💀 Multiple channel errors detected (laptop sleep) - reloading', {
+                  errorCount: channelErrors.size,
+                  channels: Array.from(channelErrors.keys())
+                });
+                
+                clearInterval(checkInterval);
+                
+                import('sonner').then(({ toast }) => {
+                  toast.info('Connection lost. Refreshing...', { duration: 1500 });
+                });
+                
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1500);
+              }
             }
-            
-            // Normal closure (user navigation, manual disconnect) - call original handler
-            console.log('✅ Normal WebSocket closure');
-            if (originalOnClose) {
-              originalOnClose.call(this, event);
-            }
-          };
-          
-          console.log('✅ WebSocket close monitor installed');
-        }
-      };
+          }
+        });
+      }, 500); // Check every 500ms
       
-      // Try to setup monitor immediately
-      setupMonitor();
-      
-      // Also setup monitor after any reconnection
-      const originalConnect = realtimeClient.connect;
-      if (originalConnect) {
-        realtimeClient.connect = function() {
-          const result = originalConnect.call(this);
-          setTimeout(setupMonitor, 100); // Give connection time to establish
-          return result;
-        };
-      }
+      console.log('✅ Channel error cascade monitor installed');
     }
   });
 }
