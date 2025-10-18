@@ -241,6 +241,21 @@ export const useConsolidatedRealtimeRundown = ({
           console.log('⏳ Extended stabilization period (2s) for wake-from-sleep');
           await new Promise(resolve => setTimeout(resolve, 2000));
           
+          // Trigger coordinated reconnection of all channels
+          const { realtimeReconnectionCoordinator } = await import('@/services/RealtimeReconnectionCoordinator');
+          await realtimeReconnectionCoordinator.forceReconnection();
+          
+          // Verify connection is stable after reconnection
+          console.log('🔍 Verifying consolidated channel is stable after wake...');
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // If not connected, try ONE more time
+          if (!isConnected) {
+            console.warn('⚠️ Consolidated channel not connected after wake, retrying once...');
+            await realtimeReconnectionCoordinator.forceReconnection();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+          
           // Perform catch-up sync
           console.log('📥 Performing catch-up sync after wake');
           await performCatchupSync();

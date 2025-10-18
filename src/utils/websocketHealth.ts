@@ -114,9 +114,9 @@ export const websocketHealthCheck = {
       if (isAlive) {
         console.log('✅ WebSocket reconnection successful');
         
-        // Adaptive stabilization based on inactivity duration
+        // Adaptive stabilization based on inactivity duration (longer for very long sleeps)
         const inactiveDuration = Date.now() - lastActivityTime;
-        const stabilizationTime = Math.min(3000, 100 + Math.floor(inactiveDuration / 1000) * 50);
+        const stabilizationTime = Math.min(5000, 100 + Math.floor(inactiveDuration / 1000) * 100);
         
         if (stabilizationTime > 100) {
           console.log(`⏳ Waiting ${stabilizationTime}ms for WebSocket to stabilize (inactive for ${Math.round(inactiveDuration / 1000)}s)...`);

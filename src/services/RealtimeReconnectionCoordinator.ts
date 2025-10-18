@@ -361,6 +361,10 @@ class RealtimeReconnectionCoordinatorService {
             await connection.reconnect();
             connection.lastReconnect = Date.now();
             
+            // Verification period: wait to ensure channel stays connected
+            console.log(`⏳ Verifying ${id} stays connected...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
             // Success: Reset circuit breaker
             connection.failedAttempts = 0;
             connection.circuitState = 'closed';
