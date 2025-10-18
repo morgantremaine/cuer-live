@@ -110,98 +110,15 @@ export const useConsolidatedRealtimeRundown = ({
     }
   }, [rundownId]);
 
-  // Track actual channel connection status from globalSubscriptions + browser network
+  // Track actual channel connection status from globalSubscriptions
   useEffect(() => {
     if (!enabled || !rundownId) {
       setIsConnected(false);
       return;
     }
 
-    // Immediate browser-level network detection with catch-up sync
-    const handleOnline = async () => {
-      console.log('📶 Browser detected network online - waiting for Supabase reconnection...');
-      
-      // Wait 1.5s for Supabase channels to reconnect
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const state = globalSubscriptions.get(rundownId);
-      if (state?.isConnected) {
-        console.log('📶 Supabase connected - validating session...');
-        
-        // CRITICAL: Validate session before processing offline data
-        const { authMonitor } = await import('@/services/AuthMonitor');
-        const isSessionValid = await authMonitor.isSessionValid();
-        
-        if (!isSessionValid) {
-          console.warn('🔐 Session expired - cannot process offline queue');
-          toast.error('Session expired. Please log in to sync your changes.', {
-            duration: 10000,
-            action: {
-              label: 'Refresh',
-              onClick: () => window.location.reload()
-            }
-          });
-          setIsConnected(false); // Keep disconnected state to prevent queue processing
-          return;
-        }
-        
-        console.log('📶 Session valid - performing catch-up sync');
-        
-        // FIRST: Fetch latest data from server (catch-up sync)
-        await performCatchupSync();
-        
-        // SECOND: Set connected to trigger offline queue processing
-        setIsConnected(true);
-        
-        console.log('✅ Reconnection complete: catch-up synced + offline queue will process');
-      } else {
-        console.log('⏳ Supabase not yet reconnected, will retry...');
-      }
-    };
-    
-    const handleOffline = () => {
-      console.log('📵 Browser reported offline (may be false)');
-      
-      // Don't immediately trust navigator.onLine
-      // Wait 2s and verify with actual Supabase session check
-      setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          if (!error && data.session) {
-            console.log('✅ Auth check passed despite offline report - ignoring false offline');
-            return; // Network is actually fine
-          }
-        } catch {
-          // Network truly offline
-          console.log('📵 Confirmed network offline via auth check');
-          setIsConnected(false);
-          const state = globalSubscriptions.get(rundownId);
-          if (state) {
-            state.isConnected = false;
-            state.offlineSince = Date.now();
-            console.log('📵 Marked offline at:', new Date(state.offlineSince).toISOString());
-          }
-        }
-      }, 2000);
-    };
-    
-    // Listen to browser network events for instant detection
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Check initial browser network status
-    if (!navigator.onLine) {
-      setIsConnected(false);
-    }
-
     // Check connection status from global state
     const checkConnection = () => {
-      // If browser is offline, always show disconnected
-      if (!navigator.onLine) {
-        setIsConnected(false);
-        return;
-      }
-      
       const state = globalSubscriptions.get(rundownId);
       setIsConnected(state?.isConnected || false);
     };
@@ -209,71 +126,14 @@ export const useConsolidatedRealtimeRundown = ({
     // Initial check
     checkConnection();
 
-    // Poll for connection status updates every 500ms (backup)
+    // Poll for connection status updates every 500ms
     const interval = setInterval(checkConnection, 500);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
     };
-  }, [enabled, rundownId, performCatchupSync]);
+  }, [enabled, rundownId]);
 
-  // Page visibility detection for laptop wake-from-sleep
-  useEffect(() => {
-    if (!enabled || !rundownId) return;
-    
-    let hiddenSince = 0;
-    
-    const handleVisibilityChange = async () => {
-      if (!document.hidden) {
-        const hiddenDuration = Date.now() - hiddenSince;
-        
-        // If hidden for >30 seconds, trigger smart reconnection
-        if (hiddenDuration > 30000) {
-          console.log('🌅 Page visible after long sleep:', Math.round(hiddenDuration / 1000), 'seconds');
-          
-          // Force WebSocket health check
-          const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-          await websocketHealthCheck.forceHealthCheck();
-          
-          // Extended stabilization for long sleeps
-          console.log('⏳ Extended stabilization period (2s) for wake-from-sleep');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Trigger coordinated reconnection of all channels
-          const { realtimeReconnectionCoordinator } = await import('@/services/RealtimeReconnectionCoordinator');
-          await realtimeReconnectionCoordinator.forceReconnection();
-          
-          // Verify connection is stable after reconnection
-          console.log('🔍 Verifying consolidated channel is stable after wake...');
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          
-          // If not connected, try ONE more time
-          if (!isConnected) {
-            console.warn('⚠️ Consolidated channel not connected after wake, retrying once...');
-            await realtimeReconnectionCoordinator.forceReconnection();
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-          
-          // Perform catch-up sync
-          console.log('📥 Performing catch-up sync after wake');
-          await performCatchupSync();
-          
-          console.log('✅ Wake-from-sleep reconnection complete');
-        }
-      } else {
-        // Track when page was hidden
-        hiddenSince = Date.now();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [enabled, rundownId, performCatchupSync]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({

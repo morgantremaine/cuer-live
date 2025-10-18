@@ -50,13 +50,8 @@ class RealtimeReconnectionCoordinatorService {
   private readonly CHANNEL_ERROR_COOLDOWN_MS = 5000; // 5 seconds between error handling
 
   constructor() {
-    // Listen ONLY to network online event (for wake from sleep)
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', this.handleNetworkOnline.bind(this));
-    }
-    
-    // Removed: visibilitychange listener (time-based guessing is unreliable)
-    // Removed: periodic connection monitoring (not needed with channel status callbacks)
+    // Network reconnection is now handled globally in main.tsx
+    // No need for local event listeners - reload provides clean state
   }
 
   /**
@@ -127,33 +122,6 @@ class RealtimeReconnectionCoordinatorService {
 
 
 
-  /**
-   * Handle network online event
-   */
-  private async handleNetworkOnline() {
-    const wakeTime = new Date().toISOString();
-    console.log('🌐 ⏰ Network online event fired at', wakeTime);
-    console.log('💤 Checking if this was a wake-from-sleep event...');
-    
-    // Give browser 1s to fully establish network
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Import health check utility
-    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-    
-    // Check if WebSocket is already alive
-    const isAlive = await websocketHealthCheck.isWebSocketAlive();
-    
-    if (isAlive) {
-      console.log('✅ WebSocket healthy - likely just network blip, not sleep');
-      return;
-    }
-    
-    console.log('💤 ➡️ 🌅 CONFIRMED: Wake from sleep detected - WebSocket dead');
-    console.log('🔄 Initiating graceful reconnection sequence...');
-    // Only reconnect if WebSocket is actually dead
-    await this.executeReconnection();
-  }
 
 
   /**
@@ -425,9 +393,7 @@ class RealtimeReconnectionCoordinatorService {
    * Cleanup and destroy coordinator
    */
   destroy() {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('online', this.handleNetworkOnline.bind(this));
-    }
+    // Network events now handled globally in main.tsx
     if (this.reconnectionDebounceTimer) {
       clearTimeout(this.reconnectionDebounceTimer);
     }
