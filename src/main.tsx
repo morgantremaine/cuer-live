@@ -2,54 +2,59 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Detect laptop sleep by monitoring for simultaneous channel errors
+// Detect laptop sleep using Page Visibility API (most reliable method)
 if (typeof window !== 'undefined') {
-  import('@/integrations/supabase/client').then(({ supabase }) => {
-    const realtimeClient = (supabase as any).realtime;
-    
-    if (realtimeClient) {
-      const channelErrors = new Set<string>();
-      let cascadeTimer: NodeJS.Timeout | null = null;
+  let lastHiddenTime = Date.now();
+  let wasHidden = false;
+  
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Tab is hidden (laptop likely closed)
+      wasHidden = true;
+      lastHiddenTime = Date.now();
+      console.log('👁️ Tab hidden at', new Date(lastHiddenTime).toLocaleTimeString());
+    } else if (wasHidden) {
+      // Tab is visible again (laptop opened)
+      const hiddenDuration = Date.now() - lastHiddenTime;
+      const hiddenMinutes = Math.floor(hiddenDuration / 60000);
       
-      // Poll every 100ms to catch errors immediately (faster than reconnection logic)
-      const checkInterval = setInterval(() => {
-        const channels = realtimeClient.channels || [];
+      console.log(`👁️ Tab visible again after ${hiddenMinutes} minutes`);
+      
+      // If hidden for more than 10 minutes, assume laptop sleep and reload
+      if (hiddenDuration > 10 * 60 * 1000) {
+        console.log('💀 Long sleep detected - forcing immediate reload');
         
-        // Count how many channels are in error state RIGHT NOW
-        let errorCount = 0;
-        channels.forEach((channel: any) => {
-          if (channel.state === 'CHANNEL_ERROR' || channel.state === 'errored') {
-            errorCount++;
-            channelErrors.add(channel.topic);
-          }
-        });
-        
-        // If 2+ channels are in error state simultaneously = laptop sleep
-        if (errorCount >= 2) {
-          console.log('💀 Laptop sleep detected (multiple simultaneous channel errors) - reloading', {
-            errorCount,
-            channels: Array.from(channelErrors)
-          });
-          
-          clearInterval(checkInterval);
-          if (cascadeTimer) clearTimeout(cascadeTimer);
-          
-          // Reload immediately, no toast (too slow)
+        // Small delay to let browser wake up
+        setTimeout(() => {
           window.location.reload();
-        }
-        
-        // Clear the set every 2 seconds to prevent stale data
-        if (!cascadeTimer) {
-          cascadeTimer = setTimeout(() => {
-            channelErrors.clear();
-            cascadeTimer = null;
-          }, 2000);
-        }
-      }, 100); // Check 10x per second - fast enough to beat reconnection logic
+        }, 500);
+      }
       
-      console.log('✅ Laptop sleep detector active');
+      wasHidden = false;
     }
   });
+  
+  // Also handle browser online/offline events for additional reliability
+  let wasOffline = false;
+  
+  window.addEventListener('offline', () => {
+    wasOffline = true;
+    console.log('🌐 Browser detected offline');
+  });
+  
+  window.addEventListener('online', () => {
+    if (wasOffline) {
+      console.log('🌐 Browser detected online after offline - reloading for clean state');
+      wasOffline = false;
+      
+      // Give network 500ms to stabilize
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
+  });
+  
+  console.log('✅ Laptop sleep detector active (visibility + network events)');
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
