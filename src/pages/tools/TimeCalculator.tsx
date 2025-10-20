@@ -16,11 +16,13 @@ import {
   formatTimeForDisplay,
   formatDurationHuman
 } from '@/utils/timeCalculator';
+import { useAuth } from '@/hooks/useAuth';
 
 type CalculatorType = 'add-time' | 'subtract-time' | 'add-durations' | 'subtract-durations' | 'time-until';
 
 const TimeCalculator = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [calculatorType, setCalculatorType] = useState<CalculatorType>('add-time');
   const [startTime, setStartTime] = useState('09:00:00');
   const [endTime, setEndTime] = useState('14:29:00');
@@ -308,9 +310,11 @@ const TimeCalculator = () => {
             <button onClick={() => navigate('/')} className="hover:opacity-80 transition-opacity">
               <CuerLogo className="h-8 w-auto" />
             </button>
-            <Button onClick={() => navigate('/login?tab=signup')} variant="default">
-              Try Cuer Free
-            </Button>
+            {!user && (
+              <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+                Try Cuer Free
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -502,19 +506,21 @@ const TimeCalculator = () => {
         </Card>
 
         {/* CTA */}
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold text-foreground mb-2">
-              Need more powerful broadcast tools?
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
-            </p>
-            <Button onClick={() => navigate('/login?tab=signup')} size="lg">
-              Try Cuer Free
-            </Button>
-          </CardContent>
-        </Card>
+        {!user && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-6 text-center">
+              <h3 className="text-xl font-bold text-foreground mb-2">
+                Need more powerful broadcast tools?
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
+              </p>
+              <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+                Try Cuer Free
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       {/* Footer */}

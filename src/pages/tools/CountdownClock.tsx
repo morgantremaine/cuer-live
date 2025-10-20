@@ -14,9 +14,11 @@ import {
   shouldPulse,
   getQuickPresetTime,
 } from '@/utils/countdownUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 const CountdownClock = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [targetTime, setTargetTime] = useState<Date | null>(null);
   const [showName, setShowName] = useState('');
   const [isRunning, setIsRunning] = useState(false);
@@ -177,9 +179,11 @@ const CountdownClock = () => {
               </Button>
               <CuerLogo className="h-8 w-auto" />
             </div>
-            <Button onClick={() => navigate('/login?tab=signup')} variant="default">
-              Try Cuer Free
-            </Button>
+            {!user && (
+              <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+                Try Cuer Free
+              </Button>
+            )}
           </div>
         </header>
 
@@ -275,17 +279,19 @@ const CountdownClock = () => {
             </Card>
 
             {/* CTA */}
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-              <div className="pt-6 text-center p-6">
-                <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
-                <p className="text-muted-foreground mb-4">
-                  Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
-                </p>
-                <Button onClick={() => navigate('/login?tab=signup')} size="lg">
-                  Try Cuer Free
-                </Button>
-              </div>
-            </Card>
+            {!user && (
+              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <div className="pt-6 text-center p-6">
+                  <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
+                  </p>
+                  <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+                    Try Cuer Free
+                  </Button>
+                </div>
+              </Card>
+            )}
           </div>
         </main>
 
@@ -343,9 +349,11 @@ const CountdownClock = () => {
             </Button>
             <CuerLogo className="h-8 w-auto" />
           </div>
-          <Button onClick={() => navigate('/login?tab=signup')} variant="default">
-            Try Cuer Free
-          </Button>
+          {!user && (
+            <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+              Try Cuer Free
+            </Button>
+          )}
         </div>
       </header>
 
@@ -405,19 +413,21 @@ const CountdownClock = () => {
       </main>
 
       {/* CTA */}
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <div className="pt-6 text-center p-6">
-            <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
-            <p className="text-muted-foreground mb-4">
-              Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
-            </p>
-            <Button onClick={() => navigate('/login?tab=signup')} size="lg">
-              Try Cuer Free
-            </Button>
-          </div>
-        </Card>
-      </div>
+      {!user && (
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="pt-6 text-center p-6">
+              <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
+              <p className="text-muted-foreground mb-4">
+                Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
+              </p>
+              <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+                Try Cuer Free
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       <footer className="mt-16 py-8 border-t text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} Cuer Live. All rights reserved.</p>

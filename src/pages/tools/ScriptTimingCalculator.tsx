@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Clock, Calculator, ArrowLeft } from 'lucide-react';
 import CuerLogo from '@/components/common/CuerLogo';
 import { countWords, calculateReadingTimeSeconds, secondsToMMSS } from '@/utils/scriptTiming';
+import { useAuth } from '@/hooks/useAuth';
 
 const ScriptTimingCalculator = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [scriptText, setScriptText] = useState('');
   const [selectedSpeed, setSelectedSpeed] = useState<'slow' | 'normal' | 'fast' | 'custom'>('normal');
   const [customWPM, setCustomWPM] = useState(150);
@@ -64,9 +66,11 @@ const ScriptTimingCalculator = () => {
             </Button>
             <CuerLogo className="h-8 w-auto" />
           </div>
-          <Button onClick={() => navigate('/login?tab=signup')} variant="default">
-            Try Cuer Free
-          </Button>
+          {!user && (
+            <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+              Try Cuer Free
+            </Button>
+          )}
         </div>
       </header>
 
@@ -189,17 +193,19 @@ const ScriptTimingCalculator = () => {
         )}
 
         {/* CTA */}
-        <Card className="mt-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-semibold mb-2">Need more powerful rundown tools?</h3>
-            <p className="text-muted-foreground mb-4">
-              Cuer offers complete broadcast rundown management with real-time collaboration, timing automation, and AI-powered features.
-            </p>
-            <Button onClick={() => navigate('/login?tab=signup')} size="lg">
-              Try Cuer for Free
-            </Button>
-          </CardContent>
-        </Card>
+        {!user && (
+          <Card className="mt-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="pt-6 text-center">
+              <h3 className="text-xl font-semibold mb-2">Need more powerful rundown tools?</h3>
+              <p className="text-muted-foreground mb-4">
+                Cuer offers complete broadcast rundown management with real-time collaboration, timing automation, and AI-powered features.
+              </p>
+              <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+                Try Cuer for Free
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       {/* Footer */}
