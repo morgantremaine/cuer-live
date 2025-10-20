@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { Clock, Play, Pause, RotateCcw, Maximize2, Settings, ArrowRight } from 'lucide-react';
+import { Clock, Play, Pause, RotateCcw, Maximize2, Settings, ArrowLeft } from 'lucide-react';
+import CuerLogo from '@/components/common/CuerLogo';
 import {
   formatTimeRemaining,
   getClockColorClass,
@@ -14,6 +16,7 @@ import {
 } from '@/utils/countdownUtils';
 
 const CountdownClock = () => {
+  const navigate = useNavigate();
   const [targetTime, setTargetTime] = useState<Date | null>(null);
   const [showName, setShowName] = useState('');
   const [isRunning, setIsRunning] = useState(false);
@@ -150,30 +153,32 @@ const CountdownClock = () => {
   const colorClass = getClockColorClass(secondsRemaining);
   const bgTintClass = getBackgroundTintClass(secondsRemaining);
   const pulseClass = shouldPulse(secondsRemaining) ? 'animate-pulse' : '';
+  
+  // Adjust font size for milliseconds
+  const clockFontSize = settings.showMilliseconds ? 'text-[12vw] md:text-[15vw]' : 'text-[15vw] md:text-[20vw]';
+  const clockFontSizeFullscreen = settings.showMilliseconds ? 'text-[15vw]' : 'text-[20vw]';
 
   // Setup view (before starting)
   if (!isRunning || !targetTime) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted">
         {/* Header */}
-        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <a href="/" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">C</span>
-                  </div>
-                  <span className="font-semibold text-xl">Cuer</span>
-                </a>
-              </div>
-              <Button asChild>
-                <a href="/login">
-                  Try Cuer Free
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </a>
+        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                aria-label="Back to home"
+              >
+                <ArrowLeft className="h-5 w-5" />
               </Button>
+              <CuerLogo className="h-8 w-auto" />
             </div>
+            <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+              Try Cuer Free
+            </Button>
           </div>
         </header>
 
@@ -269,8 +274,16 @@ const CountdownClock = () => {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border py-4 text-center text-sm text-muted-foreground">
-          <p>Free tool by <a href="/" className="text-primary hover:underline">Cuer</a> - Professional broadcast production software</p>
+        <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 mt-auto">
+          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+            <p>
+              Free tool by{' '}
+              <a href="/" className="text-primary hover:underline font-medium">
+                Cuer
+              </a>{' '}
+              - Professional broadcast production software
+            </p>
+          </div>
         </footer>
       </div>
     );
@@ -292,11 +305,11 @@ const CountdownClock = () => {
           
           {secondsRemaining === 0 ? (
             <div className={`${colorClass} animate-pulse`}>
-              <div className="text-[20vw] font-bold leading-none mb-4">🔴</div>
+              <div className={`${clockFontSizeFullscreen} font-bold leading-none mb-4`}>🔴</div>
               <div className="text-[8vw] font-bold">LIVE NOW</div>
             </div>
           ) : (
-            <div className={`text-[20vw] font-bold font-mono leading-none ${colorClass} ${pulseClass} transition-colors duration-300`}>
+            <div className={`${clockFontSizeFullscreen} font-bold font-mono leading-none ${colorClass} ${pulseClass} transition-colors duration-300`}>
               {displayTime}
             </div>
           )}
@@ -307,26 +320,24 @@ const CountdownClock = () => {
 
   // Normal active view
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${bgTintClass}`}>
+    <div className={`min-h-screen bg-gradient-to-br from-background to-muted transition-colors duration-500 ${bgTintClass}`}>
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <a href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">C</span>
-                </div>
-                <span className="font-semibold text-xl">Cuer</span>
-              </a>
-            </div>
-            <Button asChild variant="outline">
-              <a href="/login">
-                Try Cuer Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              aria-label="Back to home"
+            >
+              <ArrowLeft className="h-5 w-5" />
             </Button>
+            <CuerLogo className="h-8 w-auto" />
           </div>
+          <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+            Try Cuer Free
+          </Button>
         </div>
       </header>
 
@@ -340,11 +351,11 @@ const CountdownClock = () => {
           
           {secondsRemaining === 0 ? (
             <div className={`${colorClass} animate-pulse`}>
-              <div className="text-[15vw] md:text-[20vw] font-bold leading-none mb-4">🔴</div>
+              <div className={`${clockFontSize} font-bold leading-none mb-4`}>🔴</div>
               <div className="text-[8vw] md:text-[10vw] font-bold">LIVE NOW</div>
             </div>
           ) : (
-            <div className={`text-[15vw] md:text-[20vw] font-bold font-mono leading-none ${colorClass} ${pulseClass} transition-colors duration-300`}>
+            <div className={`${clockFontSize} font-bold font-mono leading-none ${colorClass} ${pulseClass} transition-colors duration-300`}>
               {displayTime}
             </div>
           )}
@@ -393,8 +404,16 @@ const CountdownClock = () => {
         </div>
       </main>
 
-      <footer className="border-t border-border py-4 text-center text-sm text-muted-foreground">
-        <p>Free tool by <a href="/" className="text-primary hover:underline">Cuer</a> - Professional broadcast production software</p>
+      <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 mt-auto">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>
+            Free tool by{' '}
+            <a href="/" className="text-primary hover:underline font-medium">
+              Cuer
+            </a>{' '}
+            - Professional broadcast production software
+          </p>
+        </div>
       </footer>
     </div>
   );
