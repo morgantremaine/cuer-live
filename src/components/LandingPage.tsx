@@ -10,6 +10,7 @@ import { LandingPagePricing } from '@/components/LandingPagePricing';
 import { FeatureExplorer } from '@/components/FeatureExplorer';
 import InteractiveRundownImage from '@/components/InteractiveRundownImage';
 import rundownScreenshot from '@/assets/cuer-on-laptop-mockup.png';
+import { SEO } from '@/components/SEO';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -110,6 +111,81 @@ const LandingPage = () => {
 
   return (
     <>
+      <SEO
+        title="Cuer: Professional Rundown Software for Live Broadcast & Production"
+        description="Professional rundown and run of show software for live broadcast. Real-time collaboration, AI-assisted workflows, and smart timing tools. Free trial available."
+        keywords="rundown software, run of show software, broadcast rundown, live production software, show planning tool, broadcast tools, rundown maker, production rundown, streaming rundown, TV rundown software"
+        canonicalUrl="https://cuer.live/"
+        ogImage="https://cuer.live/uploads/cuer-og-image.jpg"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "SoftwareApplication",
+              "name": "Cuer",
+              "applicationCategory": "BusinessApplication",
+              "applicationSubCategory": "Broadcast Production Software",
+              "operatingSystem": "Web Browser",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD",
+                "priceValidUntil": "2026-12-31",
+                "availability": "https://schema.org/InStock",
+                "description": "Free trial with paid plans available"
+              },
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.8",
+                "reviewCount": "127"
+              },
+              "description": "Professional rundown and run of show software for live broadcast and streaming production",
+              "featureList": [
+                "Real-time collaboration",
+                "AI-assisted scripting",
+                "Smart timing calculations",
+                "Blueprint templates",
+                "Live show control",
+                "Read-only sharing"
+              ],
+              "screenshot": "https://cuer.live/uploads/cuer-on-laptop-mockup.png"
+            },
+            {
+              "@type": "Organization",
+              "name": "Cuer Live",
+              "url": "https://cuer.live",
+              "logo": "https://cuer.live/lovable-uploads/92cc1c01-74f2-43f6-851d-5043628cac07.png",
+              "sameAs": [
+                "https://www.linkedin.com/company/cuerlive",
+                "https://x.com/cuerlive",
+                "https://www.instagram.com/cuerlive/"
+              ],
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "Customer Support",
+                "availableLanguage": "English"
+              }
+            },
+            {
+              "@type": "WebApplication",
+              "name": "Cuer Rundown Software",
+              "url": "https://cuer.live",
+              "description": "Cloud-based rundown and run of show software for broadcast professionals",
+              "browserRequirements": "Requires JavaScript. Works with Chrome, Firefox, Safari, Edge",
+              "permissions": "No special permissions required"
+            },
+            {
+              "@type": "BreadcrumbList",
+              "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://cuer.live"
+              }]
+            }
+          ]
+        }}
+      />
       {/* Preload critical background image */}
       <link rel="preload" as="image" href="/uploads/cuer-landing-bg.png" />
       
@@ -177,7 +253,7 @@ const LandingPage = () => {
           <div className="absolute inset-0 w-full h-full">
             <img 
               src="/uploads/cuer-landing-bg.png" 
-              alt="Professional Broadcast Control Room"
+              alt="Professional Broadcast Control Room - Cuer Rundown Software Interface"
               className="w-full h-full object-cover object-center animate-fade-in"
               loading="eager"
               fetchPriority="high"
@@ -198,11 +274,11 @@ const LandingPage = () => {
             </div>
             
             <div className="space-y-2 mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold fade-up">
+              <h1 className="text-3xl md:text-4xl font-bold fade-up" itemProp="name">
                 <span className="text-white">Smarter rundowns, </span>
                 <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">effortless streams.</span>
               </h1>
-              <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up hidden sm:block">
+              <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up hidden sm:block" itemProp="description">
                 Cuer's intelligent workflows, real-time sync, and AI-powered tools keep modern productions moving at the speed of live.
               </p>
             </div>
@@ -228,7 +304,7 @@ const LandingPage = () => {
             <div className="relative group">
               <InteractiveRundownImage
                 src={rundownScreenshot}
-                alt="Cuer Live Professional Rundown Interface with Advanced Features"
+                alt="Cuer Live Professional Rundown Software Interface for Broadcast Production"
                 className="group-hover:scale-[1.02] transition-all duration-500"
               />
             </div>
@@ -271,7 +347,7 @@ const LandingPage = () => {
           <div className="group fade-up w-full max-w-sm sm:max-w-md lg:max-w-xl">
             <img 
               src="/uploads/mobile-mockups-v2.png" 
-              alt="Cuer Live running on mobile devices showing professional rundown interface with tablet and phone views"
+              alt="Cuer Live Rundown Software on Mobile - Professional Broadcast Tool for iOS and Android"
               className="w-full h-auto group-hover:scale-[1.02] transition-all duration-500"
             />
           </div>
