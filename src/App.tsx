@@ -40,6 +40,7 @@ import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
 import ScriptTimingCalculator from "./pages/tools/ScriptTimingCalculator";
+import TimeCalculator from "./pages/tools/TimeCalculator";
 
 
 // Login wrapper to handle Stream Deck vs normal login flows
@@ -103,6 +104,7 @@ const AppRoutes = () => {
       <Route path="/stream-deck-plugin" element={<StreamDeckDownload />} />
       <Route path="/stream-deck-plugin.zip" element={<StreamDeckDownload />} />
       <Route path="/tools/script-timing" element={<ScriptTimingCalculator />} />
+      <Route path="/tools/time-calculator" element={<TimeCalculator />} />
       
       {/* Admin routes */}
       <Route 
