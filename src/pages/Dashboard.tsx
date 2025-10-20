@@ -555,11 +555,10 @@ const Dashboard = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
-                        variant="outline"
                         size="lg"
-                        className="text-blue-400 hover:text-blue-300 border-blue-400/30 bg-gray-900/50 hover:bg-gray-700 flex items-center gap-2"
+                        className="bg-gray-700 hover:bg-gray-800 text-white border-0 flex items-center gap-2"
                       >
-                        <Wrench className="h-4 w-4" />
+                        <Wrench className="h-5 w-5 mr-2" />
                         Tools
                       </Button>
                     </DropdownMenuTrigger>
