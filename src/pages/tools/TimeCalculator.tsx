@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Calculator, Plus, Minus, Timer, Copy, Check } from 'lucide-react';
+import { Clock, Calculator, Plus, Minus, Timer, Copy, Check, TimerIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
@@ -17,6 +17,7 @@ import {
   formatDurationHuman
 } from '@/utils/timeCalculator';
 import { useAuth } from '@/hooks/useAuth';
+import { SEO } from '@/components/SEO';
 
 type CalculatorType = 'add-time' | 'subtract-time' | 'add-durations' | 'subtract-durations' | 'time-until';
 
@@ -301,8 +302,41 @@ const TimeCalculator = () => {
     }
   };
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": ["SoftwareApplication", "WebApplication"],
+    "name": "Free Time Calculator for Broadcast",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Professional time calculator for broadcast and production. Add/subtract times and durations, calculate show end times, and plan your rundowns with precision.",
+    "featureList": [
+      "Add time and duration",
+      "Subtract times to find duration",
+      "Add multiple durations",
+      "Subtract durations",
+      "Calculate time until target",
+      "24-hour and 12-hour format support"
+    ],
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "Production professionals, broadcast engineers, event planners"
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Free Time Calculator | Add & Subtract Times | Broadcast Tool | Cuer"
+        description="Professional time calculator for broadcast and production. Add/subtract times and durations, calculate show end times, and plan your rundowns with precision."
+        keywords="time calculator, duration calculator, time math, broadcast timing, show timing calculator, production time calculator, time addition, time subtraction"
+        canonicalUrl="https://usecuer.com/tools/time-calculator"
+        structuredData={structuredData}
+      />
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
@@ -501,6 +535,76 @@ const TimeCalculator = () => {
               >
                 Remaining: 60:00 - 42:30
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* How it Works */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <h2 className="text-2xl font-bold mb-4">How to Use the Time Calculator</h2>
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+              <li>Select the type of calculation you need from the buttons above</li>
+              <li>Enter your time values in 24-hour (e.g., 14:30:00) or 12-hour format (e.g., 2:30 PM)</li>
+              <li>View the calculated result instantly</li>
+              <li>Toggle between 24-hour and 12-hour display formats</li>
+              <li>Copy the result to your clipboard with one click</li>
+            </ol>
+          </CardContent>
+        </Card>
+
+        {/* Benefits & Use Cases */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <h2 className="text-2xl font-bold mb-4">Professional Time Math for Broadcast & Production</h2>
+            <p className="text-muted-foreground mb-4">
+              Our time calculator is designed for broadcast professionals, production teams, and event planners who need accurate time calculations. 
+              Eliminate mental math errors and save time with instant, precise calculations for all your timing needs.
+            </p>
+            <div className="space-y-3">
+              <h3 className="font-semibold">Perfect for:</h3>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li><strong>Show Planning:</strong> Calculate when your show will end based on start time and duration</li>
+                <li><strong>Rundown Management:</strong> Determine segment durations and show flow</li>
+                <li><strong>Commercial Breaks:</strong> Add up multiple break durations</li>
+                <li><strong>Remaining Time:</strong> Calculate how much time is left in your show</li>
+                <li><strong>Live Events:</strong> Plan precise timing for ceremonies and presentations</li>
+                <li><strong>Production Scheduling:</strong> Coordinate complex timing for multi-segment productions</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* More Tools */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <h2 className="text-2xl font-bold mb-4">More Free Broadcast Tools</h2>
+            <p className="text-muted-foreground mb-4">Professional timing tools for broadcast and production</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <button 
+                onClick={() => navigate('/tools/script-timing')}
+                className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Calculator className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Script Timing Calculator</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Calculate how long it takes to read scripts at different speaking speeds
+                </p>
+              </button>
+              <button 
+                onClick={() => navigate('/tools/countdown-clock')}
+                className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <TimerIcon className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Countdown Clock</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Live countdown with fullscreen display, color alerts, and audio cues
+                </p>
+              </button>
             </div>
           </CardContent>
         </Card>
