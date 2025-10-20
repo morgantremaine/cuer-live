@@ -48,8 +48,8 @@ const PLANS = [
     description: 'Ideal for growing teams',
     maxMembers: 25,
     teamRange: 'Up to 15 team members',
-    monthlyPrice: 99,
-    yearlyPrice: 1069, // 10% off: 99 * 12 * 0.9
+    monthlyPrice: 75,
+    yearlyPrice: 810, // 10% off: 75 * 12 * 0.9 = 810
     features: [
       'Up to 15 team members',
       'Unlimited rundowns',

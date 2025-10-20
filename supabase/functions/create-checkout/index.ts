@@ -16,8 +16,8 @@ const TIER_CONFIG = {
   },
   'Premium': { 
     maxMembers: 15, 
-    monthly: 'price_1S73MoCDuejYEwM0MqlcIpEc', 
-    yearly: 'price_1S73OnCDuejYEwM0AEykNo4T' 
+    monthly: 'price_1SKNMjCDuejYEwM0tPdxRjIE', 
+    yearly: 'price_1SKNWxCDuejYEwM07E9QmL5M' 
   }
   // Enterprise is contact-only, no Stripe checkout
 };
