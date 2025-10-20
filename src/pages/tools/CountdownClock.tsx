@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { Clock, Play, Pause, RotateCcw, Maximize2, Settings, ArrowLeft } from 'lucide-react';
+import { Clock, Play, Square, Maximize2, Settings, ArrowLeft } from 'lucide-react';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
   formatTimeRemaining,
@@ -139,9 +139,10 @@ const CountdownClock = () => {
     lastBeepSecondRef.current = -1;
   };
 
-  const handleReset = () => {
+  const handleStop = () => {
     setIsRunning(false);
     setTargetTime(null);
+    setShowSettings(false);
     lastBeepSecondRef.current = -1;
   };
 
@@ -368,17 +369,9 @@ const CountdownClock = () => {
           )}
           
           <div className="flex flex-wrap items-center justify-center gap-3 pt-8">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setIsRunning(!isRunning)}
-            >
-              {isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
-              {isRunning ? 'Pause' : 'Resume'}
-            </Button>
-            <Button variant="outline" size="lg" onClick={handleReset}>
-              <RotateCcw className="mr-2 h-5 w-5" />
-              Reset
+            <Button variant="outline" size="lg" onClick={handleStop}>
+              <Square className="mr-2 h-5 w-5" />
+              Stop
             </Button>
             <Button variant="outline" size="lg" onClick={() => setShowSettings(!showSettings)}>
               <Settings className="mr-2 h-5 w-5" />
