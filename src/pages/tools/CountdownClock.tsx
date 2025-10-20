@@ -271,19 +271,24 @@ const CountdownClock = () => {
               </Button>
             </div>
           </Card>
+
+          {/* CTA */}
+          <Card className="mt-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="pt-6 text-center p-6">
+              <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
+              <p className="text-muted-foreground mb-4">
+                Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
+              </p>
+              <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+                Try Cuer Free
+              </Button>
+            </div>
+          </Card>
         </main>
 
         {/* Footer */}
-        <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 mt-auto">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-            <p>
-              Free tool by{' '}
-              <a href="/" className="text-primary hover:underline font-medium">
-                Cuer
-              </a>{' '}
-              - Professional broadcast production software
-            </p>
-          </div>
+        <footer className="mt-16 py-8 border-t text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} Cuer Live. All rights reserved.</p>
         </footer>
       </div>
     );
@@ -404,16 +409,23 @@ const CountdownClock = () => {
         </div>
       </main>
 
-      <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>
-            Free tool by{' '}
-            <a href="/" className="text-primary hover:underline font-medium">
-              Cuer
-            </a>{' '}
-            - Professional broadcast production software
-          </p>
-        </div>
+      {/* CTA */}
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <div className="pt-6 text-center p-6">
+            <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
+            <p className="text-muted-foreground mb-4">
+              Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
+            </p>
+            <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+              Try Cuer Free
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <footer className="mt-16 py-8 border-t text-center text-sm text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} Cuer Live. All rights reserved.</p>
       </footer>
     </div>
   );
