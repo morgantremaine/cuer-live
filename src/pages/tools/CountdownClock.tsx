@@ -300,10 +300,6 @@ const CountdownClock = () => {
               {displayTime}
             </div>
           )}
-          
-          <p className="text-xl text-muted-foreground mt-8">
-            Click anywhere to exit fullscreen
-          </p>
         </div>
       </div>
     );
