@@ -156,14 +156,14 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
           }`}
         >
           <Sparkles className="h-5 w-5" />
-          Create Template with Cuer AI
+          Create AI Template
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-blue-500" />
-            Create Rundown Template with Cuer AI
+            Create AI Template
           </DialogTitle>
         </DialogHeader>
 
