@@ -184,106 +184,108 @@ const CountdownClock = () => {
 
         {/* Main Content */}
         <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl p-8 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="flex items-center justify-center space-x-2 text-4xl mb-2">
-                <Clock className="h-10 w-10 text-primary" />
-                <h1 className="font-bold">Live Show Countdown Clock</h1>
-              </div>
-              <p className="text-muted-foreground">
-                Count down to showtime with a massive, color-coded display
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="showName">Show Name (optional)</Label>
-                <Input
-                  id="showName"
-                  value={showName}
-                  onChange={(e) => setShowName(e.target.value)}
-                  placeholder="Evening News"
-                  className="mt-1"
-                />
+          <div className="w-full max-w-2xl space-y-8">
+            <Card className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="flex items-center justify-center space-x-2 text-4xl mb-2">
+                  <Clock className="h-10 w-10 text-primary" />
+                  <h1 className="font-bold">Live Show Countdown Clock</h1>
+                </div>
+                <p className="text-muted-foreground">
+                  Count down to showtime with a massive, color-coded display
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="targetTime">Target Time</Label>
+                  <Label htmlFor="showName">Show Name (optional)</Label>
                   <Input
-                    id="targetTime"
-                    type="time"
-                    step="1"
-                    value={inputTime}
-                    onChange={(e) => setInputTime(e.target.value)}
+                    id="showName"
+                    value={showName}
+                    onChange={(e) => setShowName(e.target.value)}
+                    placeholder="Evening News"
                     className="mt-1"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="targetTime">Target Time</Label>
+                    <Input
+                      id="targetTime"
+                      type="time"
+                      step="1"
+                      value={inputTime}
+                      onChange={(e) => setInputTime(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="targetDate">Date</Label>
+                    <Input
+                      id="targetDate"
+                      type="date"
+                      value={inputDate}
+                      onChange={(e) => setInputDate(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="targetDate">Date</Label>
-                  <Input
-                    id="targetDate"
-                    type="date"
-                    value={inputDate}
-                    onChange={(e) => setInputDate(e.target.value)}
-                    className="mt-1"
-                  />
+                  <Label className="mb-2 block">Quick Presets</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleQuickPreset('15min')}>
+                      +15 min
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleQuickPreset('30min')}>
+                      +30 min
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleQuickPreset('1hour')}>
+                      +1 hour
+                    </Button>
+                  </div>
                 </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="audioAlerts">Audio Alerts</Label>
+                    <Switch
+                      id="audioAlerts"
+                      checked={settings.audioAlerts}
+                      onCheckedChange={(checked) => setSettings({ ...settings, audioAlerts: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="showMilliseconds">Show Milliseconds</Label>
+                    <Switch
+                      id="showMilliseconds"
+                      checked={settings.showMilliseconds}
+                      onCheckedChange={(checked) => setSettings({ ...settings, showMilliseconds: checked })}
+                    />
+                  </div>
+                </div>
+
+                <Button className="w-full" size="lg" onClick={handleStart}>
+                  <Play className="mr-2 h-5 w-5" />
+                  Start Countdown
+                </Button>
               </div>
+            </Card>
 
-              <div>
-                <Label className="mb-2 block">Quick Presets</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleQuickPreset('15min')}>
-                    +15 min
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleQuickPreset('30min')}>
-                    +30 min
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleQuickPreset('1hour')}>
-                    +1 hour
-                  </Button>
-                </div>
+            {/* CTA */}
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <div className="pt-6 text-center p-6">
+                <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
+                <p className="text-muted-foreground mb-4">
+                  Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
+                </p>
+                <Button onClick={() => navigate('/login?tab=signup')} size="lg">
+                  Try Cuer Free
+                </Button>
               </div>
-
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="audioAlerts">Audio Alerts</Label>
-                  <Switch
-                    id="audioAlerts"
-                    checked={settings.audioAlerts}
-                    onCheckedChange={(checked) => setSettings({ ...settings, audioAlerts: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="showMilliseconds">Show Milliseconds</Label>
-                  <Switch
-                    id="showMilliseconds"
-                    checked={settings.showMilliseconds}
-                    onCheckedChange={(checked) => setSettings({ ...settings, showMilliseconds: checked })}
-                  />
-                </div>
-              </div>
-
-              <Button className="w-full" size="lg" onClick={handleStart}>
-                <Play className="mr-2 h-5 w-5" />
-                Start Countdown
-              </Button>
-            </div>
-          </Card>
-
-          {/* CTA */}
-          <Card className="mt-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <div className="pt-6 text-center p-6">
-              <h3 className="text-xl font-semibold mb-2">Need more powerful broadcast tools?</h3>
-              <p className="text-muted-foreground mb-4">
-                Cuer offers complete rundown management, real-time collaboration, AI assistance, and much more.
-              </p>
-              <Button onClick={() => navigate('/login?tab=signup')} size="lg">
-                Try Cuer Free
-              </Button>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </main>
 
         {/* Footer */}
