@@ -10,7 +10,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ClockFormatProvider } from "@/contexts/ClockFormatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
-
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";

@@ -9,8 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 // Module-level guards for health check throttling
 let isHealthCheckRunning = false;
 let lastHealthCheckTime = 0;
-const HEALTH_CHECK_COOLDOWN_MS = 2000; // 2 seconds between health checks (reduced for faster detection)
-let lastActivityTime = Date.now(); // Track last successful activity
+const HEALTH_CHECK_COOLDOWN_MS = 3000; // 3 seconds between health checks
 
 export const websocketHealthCheck = {
   /**
@@ -53,7 +52,7 @@ export const websocketHealthCheck = {
             }
             resolve(false);
           }
-        }, 1500); // 1.5 seconds for fast failure detection
+        }, 3000); // 3 seconds for faster failure detection
         
         testChannel.subscribe((status) => {
           if (!resolved) {
@@ -96,8 +95,8 @@ export const websocketHealthCheck = {
       // Remove all channels to force socket closure
       await Promise.all(channels.map(ch => supabase.removeChannel(ch)));
       
-      // Minimal wait for Supabase's internal WebSocket cleanup (200ms is enough)
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait longer for Supabase's internal WebSocket cleanup (increased from 500ms to 2000ms)
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       console.log('🔌 WebSocket cleanup complete, testing new connection...');
       
@@ -113,16 +112,8 @@ export const websocketHealthCheck = {
       
       if (isAlive) {
         console.log('✅ WebSocket reconnection successful');
-        
-        // Adaptive stabilization based on inactivity duration (longer for very long sleeps)
-        const inactiveDuration = Date.now() - lastActivityTime;
-        const stabilizationTime = Math.min(5000, 100 + Math.floor(inactiveDuration / 1000) * 100);
-        
-        if (stabilizationTime > 100) {
-          console.log(`⏳ Waiting ${stabilizationTime}ms for WebSocket to stabilize (inactive for ${Math.round(inactiveDuration / 1000)}s)...`);
-          await new Promise(resolve => setTimeout(resolve, stabilizationTime));
-          console.log('✅ WebSocket stable. Reconnecting channels...');
-        }
+        // Wait for stabilization before allowing channel reconnections
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
         console.warn('❌ WebSocket reconnection failed after retry');
       }
@@ -150,33 +141,5 @@ export const websocketHealthCheck = {
    */
   markValidated(): void {
     (this as any)._lastValidation = Date.now();
-    lastActivityTime = Date.now();
-  },
-
-  /**
-   * Check if connection is stale (no activity for extended period)
-   */
-  isConnectionStale(): boolean {
-    const staleDuration = Date.now() - lastActivityTime;
-    // Consider stale if no activity for 60+ seconds
-    return staleDuration > 60000;
-  },
-
-  /**
-   * Aggressive health check that bypasses cooldown (for wake-from-sleep)
-   */
-  async forceHealthCheck(): Promise<boolean> {
-    console.log('🔍 FORCING health check (bypassing cooldown)');
-    lastHealthCheckTime = 0; // Reset cooldown
-    isHealthCheckRunning = false; // Reset running flag
-    return await this.isWebSocketAlive();
-  },
-
-  /**
-   * Reset cooldown (useful after wake from sleep)
-   */
-  resetCooldown(): void {
-    lastHealthCheckTime = 0;
-    lastActivityTime = Date.now();
   }
 };

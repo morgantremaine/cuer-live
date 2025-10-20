@@ -16,7 +16,6 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { toast } from 'sonner';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 import { printRundownScript } from '@/utils/scriptPrint';
-import { visibilitySyncService } from '@/services/visibilitySync';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -96,7 +95,7 @@ const Teleprompter = () => {
   // Simplified: No tab tracking needed with single sessions
 
   // Enhanced real-time updates with doc version tracking
-  const { isConnected: isRealtimeConnected, trackOwnUpdate, performCatchupSync } = useConsolidatedRealtimeRundown({
+  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
     lastSeenDocVersion,
@@ -119,25 +118,6 @@ const Teleprompter = () => {
       }
     }
   });
-
-  // Register with visibility sync service for immediate data refresh when tab becomes visible
-  useEffect(() => {
-    if (!performCatchupSync || !rundownId) return;
-
-    const unregister = visibilitySyncService.registerSyncCallback(async () => {
-      console.log('🔄 Teleprompter: Tab visible - performing catch-up sync');
-      try {
-        await performCatchupSync();
-        console.log('✅ Teleprompter: Catch-up sync complete');
-      } catch (error) {
-        console.error('❌ Teleprompter: Catch-up sync failed:', error);
-      }
-    });
-
-    return () => {
-      unregister();
-    };
-  }, [performCatchupSync, rundownId]);
 
   // Simplified: No tab-based refresh needed with single sessions
   // Data freshness maintained through realtime updates only

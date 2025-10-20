@@ -43,10 +43,9 @@ class ShowcallerBroadcastManager {
         
         if (status === 'SUBSCRIBED') {
           console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId, status);
-          // Notify coordinator of channel error
-          realtimeReconnectionCoordinator.handleChannelError(`showcaller-${rundownId}`);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
+          console.log('⏭️ Showcaller channel error - coordinator will handle reconnection');
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
         }
@@ -60,11 +59,11 @@ class ShowcallerBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
     
-    // Clean up existing channel
+    // Clean up and reconnect immediately (coordinator validates auth)
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
-        await supabase.removeChannel(existingChannel);
+        supabase.removeChannel(existingChannel);
       } catch (error) {
         console.warn('📺 Error removing channel during force reconnect:', error);
       }
@@ -72,12 +71,9 @@ class ShowcallerBroadcastManager {
     
     this.channels.delete(rundownId);
     
-    // Brief wait for cleanup (200ms matches WebSocket stabilization)
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Always recreate channel during reconnection
-    const channel = this.ensureChannel(rundownId);
-    console.log('📺 ✅ Showcaller channel recreated after reconnection');
+    if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+      this.ensureChannel(rundownId);
+    }
   }
 
   // Broadcast showcaller state change

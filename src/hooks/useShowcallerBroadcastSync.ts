@@ -94,8 +94,8 @@ export const useShowcallerBroadcastSync = ({
       user?.id || ''
     );
 
-    // Immediately check connection status after subscription
-    const checkConnectionStatus = () => {
+    // Check connection status periodically
+    const statusInterval = setInterval(() => {
       const connected = showcallerBroadcast.isChannelConnected(rundownId);
       const currentStatus = showcallerBroadcast.getConnectionStatus(rundownId);
       
@@ -104,13 +104,7 @@ export const useShowcallerBroadcastSync = ({
       if (!connected) {
         console.warn('📺 ⚠️ Showcaller broadcast channel not connected:', rundownId, 'Status:', currentStatus);
       }
-    };
-
-    // Check immediately
-    setTimeout(checkConnectionStatus, 100);
-
-    // Check connection status frequently for fast updates
-    const statusInterval = setInterval(checkConnectionStatus, 1000); // Check every second
+    }, 10000); // Check every 10 seconds
 
     // Monitor window focus to ensure connection stays active
     const handleVisibilityChange = () => {
