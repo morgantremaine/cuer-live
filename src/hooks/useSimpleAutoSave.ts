@@ -1053,7 +1053,11 @@ export const useSimpleAutoSave = (
       // 2. Not currently typing (respect user input)
       // 3. Not in the middle of a save operation
       
-      const hasChanges = state.hasUnsavedChanges || hasUnsavedChangesRef.current || perCellHasUnsavedChanges;
+      // In per-cell mode, only trust the per-cell tracking flags
+      // state.hasUnsavedChanges is managed by reducer and doesn't know about per-cell saves
+      const hasChanges = isPerCellEnabled 
+        ? (hasUnsavedChangesRef.current || perCellHasUnsavedChanges)
+        : state.hasUnsavedChanges;
       const isTyping = isTypingActive();
       const isSavingNow = saveInProgressRef.current || isSaving;
       

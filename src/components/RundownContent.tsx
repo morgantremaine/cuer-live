@@ -240,8 +240,11 @@ const RundownContent = React.memo<RundownContentProps>(({
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && resetDragState) {
-        console.log('🎯 Tab switched during drag - cancelling drag operation');
-        resetDragState();
+        // Only log and reset if actually dragging
+        if (draggedItemIndex !== null || isDragging) {
+          console.log('🎯 Tab switched during drag - cancelling drag operation');
+          resetDragState();
+        }
       }
     };
 

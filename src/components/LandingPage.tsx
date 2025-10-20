@@ -337,21 +337,6 @@ const LandingPage = () => {
       {/* Copyright Footer */}
       <footer className="relative z-10 text-center py-8 border-t border-slate-800/50">
         <div className="text-center text-slate-400 text-sm space-y-4">
-          <div className="mb-4 flex flex-wrap justify-center gap-4">
-            <a
-              href="/tools/script-timing"
-              className="text-blue-400 hover:text-blue-300 underline transition-colors"
-            >
-              Script Timing Calculator
-            </a>
-            <span className="text-slate-600">•</span>
-            <a
-              href="/tools/time-calculator"
-              className="text-blue-400 hover:text-blue-300 underline transition-colors"
-            >
-              Time Calculator
-            </a>
-          </div>
           <div className="flex justify-center space-x-6">
             <a
               href="https://www.linkedin.com/company/cuerlive"

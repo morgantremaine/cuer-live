@@ -110,98 +110,15 @@ export const useConsolidatedRealtimeRundown = ({
     }
   }, [rundownId]);
 
-  // Track actual channel connection status from globalSubscriptions + browser network
+  // Track actual channel connection status from globalSubscriptions
   useEffect(() => {
     if (!enabled || !rundownId) {
       setIsConnected(false);
       return;
     }
 
-    // Immediate browser-level network detection with catch-up sync
-    const handleOnline = async () => {
-      console.log('📶 Browser detected network online - waiting for Supabase reconnection...');
-      
-      // Wait 1.5s for Supabase channels to reconnect
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const state = globalSubscriptions.get(rundownId);
-      if (state?.isConnected) {
-        console.log('📶 Supabase connected - validating session...');
-        
-        // CRITICAL: Validate session before processing offline data
-        const { authMonitor } = await import('@/services/AuthMonitor');
-        const isSessionValid = await authMonitor.isSessionValid();
-        
-        if (!isSessionValid) {
-          console.warn('🔐 Session expired - cannot process offline queue');
-          toast.error('Session expired. Please log in to sync your changes.', {
-            duration: 10000,
-            action: {
-              label: 'Refresh',
-              onClick: () => window.location.reload()
-            }
-          });
-          setIsConnected(false); // Keep disconnected state to prevent queue processing
-          return;
-        }
-        
-        console.log('📶 Session valid - performing catch-up sync');
-        
-        // FIRST: Fetch latest data from server (catch-up sync)
-        await performCatchupSync();
-        
-        // SECOND: Set connected to trigger offline queue processing
-        setIsConnected(true);
-        
-        console.log('✅ Reconnection complete: catch-up synced + offline queue will process');
-      } else {
-        console.log('⏳ Supabase not yet reconnected, will retry...');
-      }
-    };
-    
-    const handleOffline = () => {
-      console.log('📵 Browser reported offline (may be false)');
-      
-      // Don't immediately trust navigator.onLine
-      // Wait 2s and verify with actual Supabase session check
-      setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          if (!error && data.session) {
-            console.log('✅ Auth check passed despite offline report - ignoring false offline');
-            return; // Network is actually fine
-          }
-        } catch {
-          // Network truly offline
-          console.log('📵 Confirmed network offline via auth check');
-          setIsConnected(false);
-          const state = globalSubscriptions.get(rundownId);
-          if (state) {
-            state.isConnected = false;
-            state.offlineSince = Date.now();
-            console.log('📵 Marked offline at:', new Date(state.offlineSince).toISOString());
-          }
-        }
-      }, 2000);
-    };
-    
-    // Listen to browser network events for instant detection
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Check initial browser network status
-    if (!navigator.onLine) {
-      setIsConnected(false);
-    }
-
     // Check connection status from global state
     const checkConnection = () => {
-      // If browser is offline, always show disconnected
-      if (!navigator.onLine) {
-        setIsConnected(false);
-        return;
-      }
-      
       const state = globalSubscriptions.get(rundownId);
       setIsConnected(state?.isConnected || false);
     };
@@ -209,15 +126,14 @@ export const useConsolidatedRealtimeRundown = ({
     // Initial check
     checkConnection();
 
-    // Poll for connection status updates every 500ms (backup)
+    // Poll for connection status updates every 500ms
     const interval = setInterval(checkConnection, 500);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
     };
   }, [enabled, rundownId]);
+
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
@@ -512,8 +428,8 @@ export const useConsolidatedRealtimeRundown = ({
           state.isConnected = false;
           console.error('❌ Consolidated realtime connection failed:', status);
           
-          // Let coordinator handle all reconnections - no individual retries
-          console.log('⏭️ Consolidated channel error - coordinator will handle reconnection');
+          // Notify coordinator of channel error
+          realtimeReconnectionCoordinator.handleChannelError(`consolidated-${rundownId}`);
         } else if (status === 'CLOSED') {
           state.isConnected = false;
           console.log('🔌 Consolidated realtime connection closed');
@@ -572,7 +488,66 @@ export const useConsolidatedRealtimeRundown = ({
             });
           }
           
-          await newChannel.subscribe();
+          // Subscribe with status callback to handle reconnection failures
+          newChannel.subscribe(async (status) => {
+            const state = globalSubscriptions.get(rundownId);
+            if (!state) return;
+
+            if (status === 'SUBSCRIBED') {
+              state.isConnected = true;
+              console.log('✅ Reconnected consolidated channel successfully:', rundownId);
+              
+              // Perform catch-up sync after reconnection with retry logic
+              let retries = 0;
+              const maxRetries = 3;
+              let syncSuccess = false;
+              
+              while (retries < maxRetries && !syncSuccess) {
+                try {
+                  const { data, error } = await supabase
+                    .from('rundowns')
+                    .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
+                    .eq('id', rundownId as string)
+                    .maybeSingle();
+                    
+                  if (!error && data) {
+                    const serverDoc = data.doc_version || 0;
+                    if (serverDoc > state.lastProcessedDocVersion) {
+                      state.lastProcessedDocVersion = serverDoc;
+                      state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+                      state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                        try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+                      });
+                      console.log('📥 Catch-up sync completed after reconnection');
+                    } else {
+                      console.log('📥 Catch-up sync: already up to date');
+                    }
+                    syncSuccess = true;
+                  } else if (error) {
+                    throw error;
+                  }
+                } catch (err) {
+                  retries++;
+                  if (retries >= maxRetries) {
+                    console.error(`❌ Catch-up sync failed after ${maxRetries} retries:`, err);
+                  } else {
+                    console.warn(`⚠️ Catch-up sync failed (attempt ${retries}/${maxRetries}), retrying in ${retries}s...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
+                  }
+                }
+              }
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              state.isConnected = false;
+              console.error('❌ Reconnected channel failed:', rundownId, status);
+              
+              // Report error back to coordinator for retry with exponential backoff
+              realtimeReconnectionCoordinator.handleChannelError(`consolidated-${rundownId}`);
+            } else if (status === 'CLOSED') {
+              state.isConnected = false;
+              console.log('🔌 Reconnected channel closed:', rundownId);
+            }
+          });
+          
           if (globalState) {
             globalState.subscription = newChannel;
           }

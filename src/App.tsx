@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ClockFormatProvider } from "@/contexts/ClockFormatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
+
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -39,8 +40,6 @@ import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
-import ScriptTimingCalculator from "./pages/tools/ScriptTimingCalculator";
-import TimeCalculator from "./pages/tools/TimeCalculator";
 
 
 // Login wrapper to handle Stream Deck vs normal login flows
@@ -103,8 +102,6 @@ const AppRoutes = () => {
       <Route path="/delete-test-user" element={<DeleteTestUser />} />
       <Route path="/stream-deck-plugin" element={<StreamDeckDownload />} />
       <Route path="/stream-deck-plugin.zip" element={<StreamDeckDownload />} />
-      <Route path="/tools/script-timing" element={<ScriptTimingCalculator />} />
-      <Route path="/tools/time-calculator" element={<TimeCalculator />} />
       
       {/* Admin routes */}
       <Route 
