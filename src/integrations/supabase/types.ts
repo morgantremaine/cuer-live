@@ -1138,11 +1138,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_old_backups: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_operations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       cleanup_old_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_revisions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
