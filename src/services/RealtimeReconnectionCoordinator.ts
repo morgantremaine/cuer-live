@@ -21,7 +21,6 @@ interface RegisteredConnection {
 class RealtimeReconnectionCoordinatorService {
   private connections: Map<string, RegisteredConnection> = new Map();
   private isReconnecting: boolean = false;
-  private reconnectingChannels: Set<string> = new Set(); // Track channels actively reconnecting
   private reconnectionDebounceTimer: NodeJS.Timeout | null = null;
   private consecutiveWebSocketFailures: number = 0;
   private lastWebSocketCheckTime: number = 0;
@@ -29,15 +28,12 @@ class RealtimeReconnectionCoordinatorService {
   private stuckOfflineTimer: NodeJS.Timeout | null = null;
   private lastVisibilityChange: number = 0;
   private connectionMonitorInterval: NodeJS.Timeout | null = null;
-  private channelErrorCooldowns: Map<string, number> = new Map(); // Prevent rapid-fire errors
-  private statusChangeCallbacks: Set<(isReconnecting: boolean) => void> = new Set();
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
   private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
   private readonly WEBSOCKET_FAILURE_RESET_MS = 300000; // Reset after 5 minutes
   private readonly MIN_RECONNECTION_INTERVAL_MS = 10000; // 10 seconds minimum between reconnections
-  private readonly STAGGER_DELAY_MS = 0; // Parallel reconnection for speed
-  private readonly WEBSOCKET_STABILIZATION_MS = 100; // Minimal stabilization delay
+  private readonly STAGGER_DELAY_MS = 100; // Delay between individual reconnections
   private readonly MAX_FAILED_ATTEMPTS = 3; // Circuit breaker threshold
   private readonly CIRCUIT_OPEN_DURATION_MS = 60000; // 1 minute
   private readonly BASE_BACKOFF_DELAY_MS = 2000; // 2 seconds
@@ -47,93 +43,77 @@ class RealtimeReconnectionCoordinatorService {
   private readonly VISIBILITY_DEBOUNCE_MS = 2000; // Debounce visibility changes
   private readonly STUCK_OFFLINE_TIMEOUT_MS = 30000; // 30 seconds
   private readonly CONNECTION_MONITOR_INTERVAL_MS = 60000; // Check every 60 seconds
-  private readonly CHANNEL_ERROR_COOLDOWN_MS = 5000; // 5 seconds between error handling
 
   constructor() {
-    // Network reconnection is now handled globally in main.tsx
-    // No need for local event listeners - reload provides clean state
+    // Add network online listener for wake-up detection
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', this.handleNetworkOnline.bind(this));
+    }
+    
+    // Start proactive connection monitoring
+    this.startConnectionMonitoring();
+  }
+
+
+
+  /**
+   * Handle network online event
+   */
+  private async handleNetworkOnline() {
+    console.log('🌐 ReconnectionCoordinator: Network came online, checking connections...');
+    
+    // Give browser 1s to fully establish network
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Import health check utility
+    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+    
+    // Check if WebSocket is already alive
+    const isAlive = await websocketHealthCheck.isWebSocketAlive();
+    
+    if (isAlive) {
+      console.log('✅ Network online - WebSocket already healthy, skipping reconnection');
+      return;
+    }
+    
+    console.log('⚠️ Network online - WebSocket dead, forcing reconnection');
+    // Only reconnect if WebSocket is actually dead
+    await this.executeReconnection();
   }
 
   /**
-   * Central error handler - called when any channel reports an error
-   * This is the main entry point for reconnection logic
+   * Start proactive connection monitoring for background tabs
    */
-  async handleChannelError(channelId: string): Promise<void> {
-    console.log(`❌ Channel error reported: ${channelId}`);
-    
-    // NEW: Check for error cascade (laptop sleep signature)
-    const now = Date.now();
-    const allChannels = Array.from(this.connections.values());
-    const recentErrors = allChannels.filter(c => 
-      now - c.lastFailureTime < 1000 // Errors within last 1 second
-    );
-    
-    if (recentErrors.length >= 2) {
-      console.log('💀 Error cascade detected - letting main.tsx handle reload');
-      return; // Don't try to reconnect, let reload handle it
+  private startConnectionMonitoring() {
+    // Clear existing interval
+    if (this.connectionMonitorInterval) {
+      clearInterval(this.connectionMonitorInterval);
     }
     
-    // Check if this channel is already being reconnected
-    if (this.reconnectingChannels.has(channelId)) {
-      console.log(`⏭️ Channel ${channelId} is already reconnecting, skipping duplicate error`);
-      return;
-    }
-    
-    // Cooldown guard: prevent same channel from triggering multiple reconnections
-    const lastError = this.channelErrorCooldowns.get(channelId) || 0;
-    if (now - lastError < this.CHANNEL_ERROR_COOLDOWN_MS) {
-      console.log(`⏭️ Channel ${channelId} on error cooldown (${Math.ceil((this.CHANNEL_ERROR_COOLDOWN_MS - (now - lastError)) / 1000)}s remaining), skipping`);
-      return;
-    }
-    this.channelErrorCooldowns.set(channelId, now);
-    
-    // Only check health if not already reconnecting
-    if (this.isReconnecting) {
-      console.log('⏭️ Already reconnecting - skipping duplicate error handling');
-      return;
-    }
-    
-    // Set lock IMMEDIATELY to prevent race conditions
-    this.isReconnecting = true;
-    this.emitStatusChange(true);
-    
-    try {
-      // When channels are failing, force full WebSocket reconnection
-      // Don't trust health check - it can be misleading when channels are actively failing
-      console.error('💀 Channel failures detected - forcing aggressive WebSocket reconnection');
+    // Check connection health every 60 seconds
+    this.connectionMonitorInterval = setInterval(async () => {
+      // Only check if we have registered connections
+      if (this.connections.size === 0) return;
+      
+      // Only check if not already reconnecting
+      if (this.isReconnecting) return;
+      
+      console.log('⏱️ Periodic connection health check...');
       
       // Import health check utility
       const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       
-      // Force WebSocket reconnection without health check
-      const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
+      // Quick non-blocking health check
+      const isAlive = await websocketHealthCheck.isWebSocketAlive();
       
-      if (reconnected) {
-        // Wait for WebSocket to stabilize
-        console.log(`⏳ Waiting ${this.WEBSOCKET_STABILIZATION_MS / 1000}s for WebSocket to stabilize...`);
-        await new Promise(resolve => setTimeout(resolve, this.WEBSOCKET_STABILIZATION_MS));
-        
-        // Clear the lock BEFORE calling executeReconnection
-        this.isReconnecting = false;
-        this.emitStatusChange(false);
-        
-        console.log('✅ WebSocket stable. Reconnecting channels...');
+      if (!isAlive) {
+        console.warn('⚠️ Periodic check detected dead WebSocket - triggering recovery');
         await this.executeReconnection();
       } else {
-        console.error('❌ WebSocket reconnection failed - will retry via circuit breaker');
+        console.log('✅ Periodic check: WebSocket healthy');
       }
-    } catch (error) {
-      console.error('❌ Error during channel error handling:', error);
-    } finally {
-      // Ensure lock is cleared
-      this.isReconnecting = false;
-      this.emitStatusChange(false);
-    }
+    }, this.CONNECTION_MONITOR_INTERVAL_MS);
   }
-
-
-
-
 
   /**
    * Register a realtime connection
@@ -186,44 +166,17 @@ class RealtimeReconnectionCoordinatorService {
     return this.isReconnecting;
   }
 
-  /**
-   * Subscribe to reconnection status changes
-   */
-  onStatusChange(callback: (isReconnecting: boolean) => void): () => void {
-    this.statusChangeCallbacks.add(callback);
-    // Return unsubscribe function
-    return () => this.removeStatusChangeListener(callback);
-  }
-
-  /**
-   * Unsubscribe from reconnection status changes
-   */
-  removeStatusChangeListener(callback: (isReconnecting: boolean) => void): void {
-    this.statusChangeCallbacks.delete(callback);
-  }
-
-  /**
-   * Emit status change event to all listeners
-   */
-  private emitStatusChange(isReconnecting: boolean): void {
-    this.statusChangeCallbacks.forEach(callback => {
-      try {
-        callback(isReconnecting);
-      } catch (error) {
-        console.error('Error in status change callback:', error);
-      }
-    });
-  }
-
 
   /**
    * Execute reconnection for all registered connections
    */
   private async executeReconnection() {
-    // Note: isReconnecting guard removed - handled by caller (handleChannelError)
-    // This allows executeReconnection to run after WebSocket stabilization
+    if (this.isReconnecting) {
+      console.log('🔄 ReconnectionCoordinator: Already reconnecting, skipping');
+      return;
+    }
 
-    // PHASE 0.5: Cooldown check to prevent rapid WebSocket reconnection attempts
+    // PHASE 0: Cooldown check to prevent rapid WebSocket reconnection attempts
     const timeSinceLastCheck = Date.now() - this.lastWebSocketCheckTime;
     if (timeSinceLastCheck < this.WEBSOCKET_CHECK_COOLDOWN_MS) {
       console.log(`🔄 ReconnectionCoordinator: WebSocket check on cooldown, skipping (${Math.round(timeSinceLastCheck / 1000)}s ago)`);
@@ -231,8 +184,99 @@ class RealtimeReconnectionCoordinatorService {
     }
     this.lastWebSocketCheckTime = Date.now();
 
-    // PHASE 1: Skip redundant WebSocket health check - already validated by handleChannelError
-    // Trust that the WebSocket is ready (just reconnected successfully)
+    // PHASE 1: Check WebSocket health before attempting channel reconnections
+    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+    const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
+    
+    if (!isWebSocketAlive) {
+      console.warn('🔌 WebSocket is dead - forcing full reconnection before channel setup');
+      
+      // Set stuck offline timer
+      if (this.stuckOfflineTimer) {
+        clearTimeout(this.stuckOfflineTimer);
+      }
+      
+      this.stuckOfflineTimer = setTimeout(async () => {
+        console.warn('⚠️ Stuck offline for 30s - forcing recovery');
+        const { toast } = await import('sonner');
+        toast.warning('Connection issues detected', {
+          description: 'Attempting automatic recovery...',
+          duration: 5000
+        });
+        this.forceReconnection();
+      }, this.STUCK_OFFLINE_TIMEOUT_MS);
+      
+      const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
+      
+      if (!reconnected) {
+        this.consecutiveWebSocketFailures++;
+        console.error(`❌ Failed to reconnect WebSocket (attempt ${this.consecutiveWebSocketFailures})`);
+        
+        // Clear existing reset timer
+        if (this.websocketFailureResetTimer) {
+          clearTimeout(this.websocketFailureResetTimer);
+        }
+        
+        // Schedule failure counter reset after 5 minutes
+        this.websocketFailureResetTimer = setTimeout(() => {
+          console.log('🔄 Resetting WebSocket failure counter after cooldown');
+          this.consecutiveWebSocketFailures = 0;
+        }, this.WEBSOCKET_FAILURE_RESET_MS);
+        
+        // Show user-facing error after 3 failures and STOP retrying
+        if (this.consecutiveWebSocketFailures >= this.MAX_WEBSOCKET_FAILURES) {
+          const { toast } = await import('sonner');
+          toast.error('Connection issues detected. Please refresh the page.', {
+            duration: 10000,
+            action: {
+              label: 'Refresh',
+              onClick: () => window.location.reload()
+            }
+          });
+          
+          // STOP retrying after max failures - require user action
+          console.error('🔄 Max WebSocket failures reached - stopping automatic retries');
+          return;
+        }
+        
+        // Schedule retry with exponential backoff
+        const retryDelay = Math.min(10000 * Math.pow(2, this.consecutiveWebSocketFailures - 1), 60000);
+        console.log(`🔄 Scheduling WebSocket reconnection retry in ${retryDelay / 1000} seconds...`);
+        setTimeout(() => {
+          this.executeReconnection();
+        }, retryDelay);
+        
+        return;
+      }
+      
+      // Clear stuck offline timer on success
+      if (this.stuckOfflineTimer) {
+        clearTimeout(this.stuckOfflineTimer);
+        this.stuckOfflineTimer = null;
+      }
+      
+      // Reset failure counter on success
+      this.consecutiveWebSocketFailures = 0;
+      
+      // Mark WebSocket as validated
+      websocketHealthCheck.markValidated();
+      
+      // Reset all circuit breakers after successful WebSocket reconnection
+      console.log('🔄 Resetting all circuit breakers after WebSocket reconnection');
+      for (const connection of this.connections.values()) {
+        connection.failedAttempts = 0;
+        connection.circuitState = 'closed';
+        connection.lastFailureTime = 0;
+      }
+      
+      // Broadcast reconnection complete event for showcaller recovery
+      console.log('📺 Broadcasting reconnection_complete event');
+      (globalThis as any)._websocketReconnectionComplete = Date.now();
+      window.dispatchEvent(new CustomEvent('websocket-reconnection-complete'));
+      
+      // Wait for WebSocket to stabilize before proceeding
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
 
     // PHASE 2: Wait for connections to register if needed
     if (this.connections.size === 0) {
@@ -259,50 +303,20 @@ class RealtimeReconnectionCoordinatorService {
 
     const connectionCount = this.connections.size;
 
-    // PHASE 3: Circuit breaker for reconnection loop detection
-    const recentFailures = Array.from(this.connections.values())
-      .filter(c => c.lastFailureTime > Date.now() - 30000) // Last 30 seconds
-      .length;
-    
-    if (recentFailures >= 4) {
-      console.error('🚨 Reconnection loop detected - forcing extended cooldown and channel reset');
-      
-      // Force longer cooldown (10 seconds)
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      // Clear all channels and start fresh
-      const { supabase } = await import('@/integrations/supabase/client');
-      const allChannels = supabase.getChannels();
-      console.log(`🧹 Cleaning up ${allChannels.length} channels for full reset`);
-      await Promise.all(allChannels.map(ch => supabase.removeChannel(ch)));
-      
-      // Reset all connection states
-      for (const connection of this.connections.values()) {
-        connection.failedAttempts = 0;
-        connection.circuitState = 'closed';
-        connection.lastFailureTime = 0;
-      }
-      
-      console.log('✅ Full channel reset complete, resuming reconnection');
+    // PHASE 3: Validate auth session before attempting any reconnections
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      console.warn('🔄 ReconnectionCoordinator: Invalid auth session, waiting for refresh');
+      return;
     }
-    
-    // PHASE 4: Auth already validated in PHASE 0, skip redundant check
+
     console.log(`🔄 ReconnectionCoordinator: Starting reconnection for ${connectionCount} connections`);
     this.isReconnecting = true;
-    this.emitStatusChange(true);
 
     try {
-      // Sort connections by priority: consolidated > cell > showcaller
-      const sortedConnections = Array.from(this.connections.entries()).sort((a, b) => {
-        const priorityOrder = { consolidated: 0, cell: 1, showcaller: 2 };
-        return priorityOrder[a[1].type] - priorityOrder[b[1].type];
-      });
-
-      console.log('📋 Reconnection order:', sortedConnections.map(([id, c]) => `${c.type}(${id})`).join(' → '));
-
-      // Stagger reconnections with longer delays to prevent overwhelming WebSocket
+      // Stagger reconnections to prevent overwhelming the system
       let delay = 0;
-      for (const [id, connection] of sortedConnections) {
+      for (const [id, connection] of this.connections.entries()) {
         // Check circuit breaker state
         if (connection.circuitState === 'open') {
           const timeSinceFailure = Date.now() - connection.lastFailureTime;
@@ -332,17 +346,10 @@ class RealtimeReconnectionCoordinatorService {
 
         // Schedule staggered reconnection with backoff
         setTimeout(async () => {
-          // Mark channel as reconnecting BEFORE calling handler
-          this.reconnectingChannels.add(id);
-          
           try {
             console.log(`🔄 ReconnectionCoordinator: Reconnecting ${connection.type}: ${id} (attempt ${connection.failedAttempts + 1})`);
             await connection.reconnect();
             connection.lastReconnect = Date.now();
-            
-            // Verification period: wait to ensure channel stays connected
-            console.log(`⏳ Verifying ${id} stays connected...`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Success: Reset circuit breaker
             connection.failedAttempts = 0;
@@ -362,9 +369,6 @@ class RealtimeReconnectionCoordinatorService {
               connection.circuitState = 'open';
               console.warn(`🔄 ReconnectionCoordinator: Circuit opened for ${id} after ${connection.failedAttempts} failures`);
             }
-          } finally {
-            // Clear reconnecting flag AFTER handler completes
-            this.reconnectingChannels.delete(id);
           }
         }, delay + backoffDelay);
 
@@ -372,24 +376,14 @@ class RealtimeReconnectionCoordinatorService {
       }
 
       // Wait for all reconnections to complete
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, delay + 1000));
       
       console.log('✅ ReconnectionCoordinator: Reconnection complete');
     } catch (error) {
       console.error('❌ ReconnectionCoordinator: Reconnection failed:', error);
     } finally {
       this.isReconnecting = false;
-      this.emitStatusChange(false);
     }
-  }
-
-  /**
-   * Reset reconnection cooldown (used after wake from sleep)
-   */
-  resetReconnectionCooldown(): void {
-    console.log('🔄 Resetting reconnection cooldown');
-    this.lastWebSocketCheckTime = 0;
-    this.consecutiveWebSocketFailures = 0;
   }
 
   /**
@@ -404,7 +398,9 @@ class RealtimeReconnectionCoordinatorService {
    * Cleanup and destroy coordinator
    */
   destroy() {
-    // Network events now handled globally in main.tsx
+    if (this.connectionMonitorInterval) {
+      clearInterval(this.connectionMonitorInterval);
+    }
     if (this.reconnectionDebounceTimer) {
       clearTimeout(this.reconnectionDebounceTimer);
     }
@@ -419,6 +415,3 @@ class RealtimeReconnectionCoordinatorService {
 
 // Export singleton instance
 export const realtimeReconnectionCoordinator = new RealtimeReconnectionCoordinatorService();
-
-// Make globally accessible for debugging and status checks
-(window as any).__reconnectionCoordinator = realtimeReconnectionCoordinator;

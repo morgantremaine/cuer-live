@@ -99,19 +99,18 @@ const RundownIndexContent = () => {
     hasUnsavedChanges,
   });
 
-  // Track reconnection status with event-driven updates
+  // Track reconnection status
   const [isReconnecting, setIsReconnecting] = useState(false);
   
   useEffect(() => {
-    // Subscribe to status changes from the coordinator
-    const unsubscribe = realtimeReconnectionCoordinator.onStatusChange((reconnecting) => {
-      setIsReconnecting(reconnecting);
-    });
+    const checkReconnecting = () => {
+      setIsReconnecting(realtimeReconnectionCoordinator.isCurrentlyReconnecting());
+    };
     
-    // Set initial status
-    setIsReconnecting(realtimeReconnectionCoordinator.isCurrentlyReconnecting());
+    // Poll for reconnection status every 100ms
+    const interval = setInterval(checkReconnecting, 100);
     
-    return unsubscribe;
+    return () => clearInterval(interval);
   }, []);
 
   // Show teammate editing when any teammate is active and has unsaved changes

@@ -13,10 +13,10 @@ interface RealtimeConnectionStatusProps {
 }
 
 const RealtimeConnectionStatus = ({ className }: RealtimeConnectionStatusProps) => {
-  const { isConnected, isProcessingUpdate, isReconnecting } = useRealtimeConnection();
+  const { isConnected, isProcessingUpdate } = useRealtimeConnection();
 
-  // Determine status (reconnecting takes priority over other states)
-  const status = isReconnecting ? 'reconnecting' : !isConnected ? 'disconnected' : isProcessingUpdate ? 'syncing' : 'connected';
+  // Determine status
+  const status = !isConnected ? 'disconnected' : isProcessingUpdate ? 'syncing' : 'connected';
 
   // Status colors
   const statusConfig = {
@@ -29,11 +29,6 @@ const RealtimeConnectionStatus = ({ className }: RealtimeConnectionStatusProps) 
       color: 'bg-yellow-500 animate-pulse',
       text: 'Syncing',
       description: 'Synchronizing changes...'
-    },
-    reconnecting: {
-      color: 'bg-orange-500 animate-pulse',
-      text: 'Reconnecting',
-      description: 'Re-establishing connection...'
     },
     disconnected: {
       color: 'bg-red-500 animate-pulse',

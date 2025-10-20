@@ -95,8 +95,8 @@ export class CellBroadcastManager {
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
         
-        // Notify coordinator of channel error
-        realtimeReconnectionCoordinator.handleChannelError(`cell-${rundownId}`);
+        // Let coordinator handle all reconnections - no individual retries
+        console.log('⏭️ Cell channel error - coordinator will handle reconnection');
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
@@ -242,7 +242,7 @@ export class CellBroadcastManager {
       return;
     }
     
-    // Clean up existing channel
+    // Clean up and reconnect immediately
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
@@ -256,10 +256,6 @@ export class CellBroadcastManager {
     this.subscribed.delete(rundownId);
     this.reconnectAttempts.set(rundownId, 0); // Reset attempts
     
-    // Wait for cleanup before recreating (prevents zombie state)
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Recreate channel if still needed
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);
     }
