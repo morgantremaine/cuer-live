@@ -351,6 +351,13 @@ const LandingPage = () => {
             >
               Time Calculator
             </a>
+            <span className="text-slate-600">•</span>
+            <a
+              href="/tools/countdown-clock"
+              className="text-blue-400 hover:text-blue-300 underline transition-colors"
+            >
+              Countdown Clock
+            </a>
           </div>
           <div className="flex justify-center space-x-6">
             <a

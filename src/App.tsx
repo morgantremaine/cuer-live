@@ -41,6 +41,7 @@ import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
 import ScriptTimingCalculator from "./pages/tools/ScriptTimingCalculator";
 import TimeCalculator from "./pages/tools/TimeCalculator";
+import CountdownClock from "./pages/tools/CountdownClock";
 
 
 // Login wrapper to handle Stream Deck vs normal login flows
@@ -105,6 +106,7 @@ const AppRoutes = () => {
       <Route path="/stream-deck-plugin.zip" element={<StreamDeckDownload />} />
       <Route path="/tools/script-timing" element={<ScriptTimingCalculator />} />
       <Route path="/tools/time-calculator" element={<TimeCalculator />} />
+      <Route path="/tools/countdown-clock" element={<CountdownClock />} />
       
       {/* Admin routes */}
       <Route 
