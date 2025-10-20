@@ -555,9 +555,9 @@ const Dashboard = () => {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-blue-400 hover:text-blue-300 hover:bg-gray-700 flex items-center gap-2"
+                        className="text-blue-400 hover:text-blue-300 border-blue-400/30 bg-gray-900/50 hover:bg-gray-700 flex items-center gap-2"
                       >
                         <Wrench className="h-4 w-4" />
                         Tools
