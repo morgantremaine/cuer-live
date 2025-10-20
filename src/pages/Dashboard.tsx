@@ -26,7 +26,13 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import AdminNotificationSender from '@/components/AdminNotificationSender';
-import { Plus } from 'lucide-react';
+import { Plus, Wrench, Calculator, Clock, Timer } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -544,6 +550,42 @@ const Dashboard = () => {
                       Import CSV
                     </Button>
                   )
+                )}
+                {!isMobile && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        size="lg" 
+                        className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2"
+                      >
+                        <Wrench className="h-4 w-4" />
+                        Tools
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-popover">
+                      <DropdownMenuItem 
+                        onClick={() => navigate('/tools/script-timing')}
+                        className="cursor-pointer"
+                      >
+                        <Calculator className="h-4 w-4 mr-2" />
+                        Script Timing Calculator
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => navigate('/tools/time-calculator')}
+                        className="cursor-pointer"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Time Calculator
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => navigate('/tools/countdown-clock')}
+                        className="cursor-pointer"
+                      >
+                        <Timer className="h-4 w-4 mr-2" />
+                        Countdown Clock
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <AdminNotificationSender userEmail={user?.email} />
                  {/* Admin only: Delete test user button */}
