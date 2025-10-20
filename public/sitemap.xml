@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://usecuer.com/</loc>
+    <loc>https://cuer.live/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://usecuer.com/tools/script-timing</loc>
+    <loc>https://cuer.live/tools/script-timing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://usecuer.com/tools/time-calculator</loc>
+    <loc>https://cuer.live/tools/time-calculator</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://usecuer.com/tools/countdown-clock</loc>
+    <loc>https://cuer.live/tools/countdown-clock</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://usecuer.com/sitemap.xml
+Sitemap: https://cuer.live/sitemap.xml

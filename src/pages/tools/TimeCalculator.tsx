@@ -334,7 +334,7 @@ const TimeCalculator = () => {
         title="Free Time Calculator | Add & Subtract Times | Broadcast Tool | Cuer"
         description="Professional time calculator for broadcast and production. Add/subtract times and durations, calculate show end times, and plan your rundowns with precision."
         keywords="time calculator, duration calculator, time math, broadcast timing, show timing calculator, production time calculator, time addition, time subtraction"
-        canonicalUrl="https://usecuer.com/tools/time-calculator"
+        canonicalUrl="https://cuer.live/tools/time-calculator"
         structuredData={structuredData}
       />
       {/* Header */}

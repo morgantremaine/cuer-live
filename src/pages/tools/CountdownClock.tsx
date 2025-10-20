@@ -196,7 +196,7 @@ const CountdownClock = () => {
           title="Free Live Countdown Clock | Fullscreen Timer for Broadcast | Cuer"
           description="Professional countdown clock with fullscreen display, color-coded alerts, and audio cues. Perfect for live broadcasts, events, and show production countdowns."
           keywords="countdown clock, broadcast countdown, live show timer, fullscreen countdown, production clock, event countdown timer, show countdown"
-          canonicalUrl="https://usecuer.com/tools/countdown-clock"
+          canonicalUrl="https://cuer.live/tools/countdown-clock"
           structuredData={structuredData}
         />
         {/* Header */}

@@ -82,7 +82,7 @@ const ScriptTimingCalculator = () => {
         title="Free Script Timing Calculator | Calculate Reading Time | Cuer"
         description="Calculate how long it takes to read your script with our free timing calculator. Perfect for broadcast, voiceover, and video production. Supports custom WPM speeds."
         keywords="script timing calculator, reading time calculator, script duration, words per minute, WPM calculator, voiceover timing, broadcast script timing"
-        canonicalUrl="https://usecuer.com/tools/script-timing"
+        canonicalUrl="https://cuer.live/tools/script-timing"
         structuredData={structuredData}
       />
       {/* Header */}
