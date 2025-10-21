@@ -40,6 +40,7 @@ import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
 import ScriptTimingCalculator from "./pages/tools/ScriptTimingCalculator";
+import BroadcastGlossary from "./pages/tools/BroadcastGlossary";
 import TimeCalculator from "./pages/tools/TimeCalculator";
 import CountdownClock from "./pages/tools/CountdownClock";
 
@@ -107,6 +108,7 @@ const AppRoutes = () => {
       <Route path="/tools/script-timing" element={<ScriptTimingCalculator />} />
       <Route path="/tools/time-calculator" element={<TimeCalculator />} />
       <Route path="/tools/countdown-clock" element={<CountdownClock />} />
+      <Route path="/tools/broadcast-glossary" element={<BroadcastGlossary />} />
       
       {/* Admin routes */}
       <Route 
