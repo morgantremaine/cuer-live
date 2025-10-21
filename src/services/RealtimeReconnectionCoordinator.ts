@@ -13,7 +13,6 @@ interface RegisteredConnection {
 }
 
 // Constants for sleep detection
-const HEARTBEAT_CHECK_INTERVAL_MS = 15000; // 15 seconds
 const LAPTOP_SLEEP_THRESHOLD_MS = 60000; // 60 seconds
 const CUMULATIVE_FAILURE_WINDOW_MS = 300000; // 5 minutes
 const MAX_CUMULATIVE_FAILURES = 10; // 10 failures in 5 minutes = reload
@@ -38,7 +37,6 @@ class RealtimeReconnectionCoordinatorService {
   
   // Sleep detection properties
   private lastActiveTime: number = Date.now();
-  private heartbeatCheckInterval: NodeJS.Timeout | null = null;
   private cumulativeFailureWindow: Array<number> = []; // Track failure timestamps
   private wasRecentSleep: boolean = false;
   
@@ -76,32 +74,8 @@ class RealtimeReconnectionCoordinatorService {
     
     // Start proactive connection monitoring
     this.startConnectionMonitoring();
-    
-    // Sleep detection: periodic heartbeat
-    this.startHeartbeatCheck();
   }
 
-  /**
-   * Start periodic heartbeat check to detect laptop sleep via time drift
-   */
-  private startHeartbeatCheck() {
-    this.heartbeatCheckInterval = setInterval(() => {
-      const now = Date.now();
-      const inactiveDuration = now - this.lastActiveTime;
-      const expectedMaxDuration = HEARTBEAT_CHECK_INTERVAL_MS + 5000; // Add 5s tolerance
-      
-      // If time jumped forward significantly, laptop likely slept
-      if (inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS && 
-          inactiveDuration > expectedMaxDuration) {
-        console.log(`💤 Sleep detected via heartbeat (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
-        this.forceReload('laptop-sleep-heartbeat');
-        return;
-      }
-      
-      this.lastActiveTime = now;
-    }, HEARTBEAT_CHECK_INTERVAL_MS);
-  }
-  
   /**
    * Handle visibility change events (tab switching, minimize, etc.)
    */
@@ -542,9 +516,6 @@ class RealtimeReconnectionCoordinatorService {
     }
     if (this.stuckOfflineTimer) {
       clearTimeout(this.stuckOfflineTimer);
-    }
-    if (this.heartbeatCheckInterval) {
-      clearInterval(this.heartbeatCheckInterval);
     }
     
     // Remove event listeners
