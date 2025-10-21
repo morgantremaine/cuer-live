@@ -18,6 +18,7 @@ interface AuthContextType {
   updateProfile: (fullName: string) => Promise<{ error: any }>
   resetPassword: (email: string) => Promise<{ error: any }>
   resendConfirmation: (email: string) => Promise<{ error: any }>
+  signInWithGoogle: () => Promise<{ error: any; data?: any }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -335,6 +336,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error }
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth-callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      })
+      
+      if (error) {
+        logger.error('Google sign-in error', error)
+        return { error }
+      }
+      
+      return { error: null, data }
+    } catch (error) {
+      logger.error('Unexpected Google sign-in error', error)
+      return { error }
+    }
+  }, [])
+
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     user, 
@@ -348,8 +374,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     resetPasswordFromEmail, 
     updateProfile, 
     resetPassword, 
-    resendConfirmation 
-  }), [user, session, loading, tokenReady, signIn, signUp, signOut, updatePassword, resetPasswordFromEmail, updateProfile, resetPassword, resendConfirmation])
+    resendConfirmation,
+    signInWithGoogle 
+  }), [user, session, loading, tokenReady, signIn, signUp, signOut, updatePassword, resetPasswordFromEmail, updateProfile, resetPassword, resendConfirmation, signInWithGoogle])
 
   return (
     <AuthContext.Provider value={contextValue}>
