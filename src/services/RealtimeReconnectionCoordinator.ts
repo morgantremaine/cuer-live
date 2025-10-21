@@ -211,6 +211,19 @@ class RealtimeReconnectionCoordinatorService {
       
       console.log('⏱️ Periodic connection health check...');
       
+      // Check for long sleep FIRST (before attempting reconnection)
+      const now = Date.now();
+      const timeSinceLastActivity = now - this.lastActiveTime;
+      
+      if (timeSinceLastActivity > LAPTOP_SLEEP_THRESHOLD_MS) {
+        console.log(`💤 Long sleep detected during periodic check (${Math.round(timeSinceLastActivity/1000)}s), forcing reload...`);
+        this.forceReload('laptop-sleep-detected-background');
+        return; // Don't attempt reconnection, just reload
+      }
+      
+      // Update last active time (no sleep detected)
+      this.lastActiveTime = now;
+      
       // Import health check utility
       const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       
