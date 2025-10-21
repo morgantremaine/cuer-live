@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 import { ArrowLeft, Search, BookOpen, Users, Zap } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
@@ -302,42 +302,41 @@ const BroadcastGlossary = () => {
         </div>
 
         {/* Glossary Content */}
-        <Card className="mb-12">
-          <CardContent className="p-6">
-            {groupedTerms.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No terms found matching "{searchTerm}"
-              </p>
-            ) : (
-              <Accordion type="multiple" className="w-full">
-                {groupedTerms.map((group, index) => (
-                  <AccordionItem key={group.category} value={`category-${index}`}>
-                    <AccordionTrigger className="text-lg font-semibold">
-                      {group.category}
-                      <span className="ml-2 text-sm text-muted-foreground">
-                        ({group.terms.length})
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <dl className="space-y-4 pt-2">
-                        {group.terms.map((term) => (
-                          <div key={term.term} className="border-l-2 border-primary/20 pl-4">
-                            <dt className="font-semibold text-foreground mb-1">
-                              {term.term}
-                            </dt>
-                            <dd className="text-muted-foreground">
-                              {term.definition}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-12 mb-12">
+          {groupedTerms.length === 0 ? (
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-center text-muted-foreground py-8">
+                  No terms found matching "{searchTerm}"
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            groupedTerms.map((group) => (
+              <Card key={group.category}>
+                <CardHeader>
+                  <CardTitle className="text-2xl">
+                    {group.category}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <dl className="space-y-4">
+                    {group.terms.map((term) => (
+                      <div key={term.term} className="border-l-2 border-primary/20 pl-4">
+                        <dt className="font-semibold text-foreground mb-1">
+                          {term.term}
+                        </dt>
+                        <dd className="text-muted-foreground">
+                          {term.definition}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
 
         {/* Anonymous User Content */}
         {!user && (
