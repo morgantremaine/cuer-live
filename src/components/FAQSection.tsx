@@ -18,8 +18,8 @@ const FAQSection = () => {
       answer: "Cuer modernizes broadcast production with real-time collaboration, AI-assisted workflows, automatic timing calculations, and cloud-based access. Unlike traditional tools, Cuer offers instant sync across your team, smart templates with Blueprint mode, read-only sharing for stakeholders, and integrated prompter functionality - all in a modern, intuitive interface."
     },
     {
-      question: "Can I use Cuer for live broadcasts?",
-      answer: "Yes! Cuer is specifically designed for live production. Our live showcaller controls keep your entire crew synchronized and on time. Features like floating segments, real-time updates, automatic timing adjustments, and rundown-to-prompter integration ensure your live broadcasts run smoothly from start to finish."
+      question: "What types of shows can I produce with Cuer?",
+      answer: "Cuer works for any live production - from large-scale events and TV shows to podcasts, esports tournaments, and Twitch streams. Whether you're running a solo stream or coordinating a full production crew, Cuer's flexible tools adapt to your workflow. Our live showcaller controls, floating segments, and real-time collaboration features scale from intimate streams to major broadcast productions."
     },
     {
       question: "Does Cuer work with multiple team members?",
