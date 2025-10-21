@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Search, BookOpen, Users, Zap } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/hooks/useAuth";
+import CuerLogo from "@/components/common/CuerLogo";
 
 interface GlossaryTerm {
   term: string;
@@ -267,11 +268,7 @@ const BroadcastGlossary = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <Link to="/" className="flex items-center gap-2">
-                <img 
-                  src="https://cuer.live/uploads/cuer-logo-2.svg" 
-                  alt="Cuer Logo" 
-                  className="h-8"
-                />
+                <CuerLogo className="h-8" />
               </Link>
             </div>
             <nav className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
