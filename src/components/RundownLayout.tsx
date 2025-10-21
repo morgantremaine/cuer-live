@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import RundownLayoutRouter from '@/components/RundownLayoutRouter';
-import { sleepDetector } from '@/services/sleepDetector';
 
 const RundownLayout = () => {
   const { id } = useParams<{ id: string }>();
@@ -9,10 +8,8 @@ const RundownLayout = () => {
   
   useEffect(() => {
     console.log('🔄 RundownLayout mounted for rundown:', id, 'at path:', location.pathname);
-    sleepDetector.start();
     return () => {
       console.log('🧹 RundownLayout unmounting for rundown:', id);
-      sleepDetector.stop();
     };
   }, [id, location.pathname]);
   

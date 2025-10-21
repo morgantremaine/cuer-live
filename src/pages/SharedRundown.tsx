@@ -14,7 +14,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
 
 import { useTabFocus } from '@/hooks/useTabFocus';
-import { sleepDetector } from '@/services/sleepDetector';
 
 // Default columns to use when rundown has no columns defined - excludes notes for shared rundown
 const DEFAULT_COLUMNS = [
@@ -234,11 +233,9 @@ const SharedRundown = () => {
   // Enhanced cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
-    sleepDetector.start();
     
     return () => {
       isMountedRef.current = false;
-      sleepDetector.stop();
     };
   }, []);
 

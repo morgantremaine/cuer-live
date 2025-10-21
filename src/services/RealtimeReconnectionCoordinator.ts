@@ -12,11 +12,18 @@ interface RegisteredConnection {
   lastFailureTime: number;
 }
 
+// Constants for sleep detection
+const HEARTBEAT_CHECK_INTERVAL_MS = 15000; // 15 seconds
+const LAPTOP_SLEEP_THRESHOLD_MS = 60000; // 60 seconds
+const CUMULATIVE_FAILURE_WINDOW_MS = 300000; // 5 minutes
+const MAX_CUMULATIVE_FAILURES = 10; // 10 failures in 5 minutes = reload
+
 /**
  * Realtime Reconnection Coordinator
  * 
  * Coordinates reconnections through periodic health monitoring and network events.
  * Prevents cascading reconnection storms by staggering reconnection attempts.
+ * Includes comprehensive sleep detection via multiple methods.
  */
 class RealtimeReconnectionCoordinatorService {
   private connections: Map<string, RegisteredConnection> = new Map();
@@ -28,6 +35,13 @@ class RealtimeReconnectionCoordinatorService {
   private stuckOfflineTimer: NodeJS.Timeout | null = null;
   private lastVisibilityChange: number = 0;
   private connectionMonitorInterval: NodeJS.Timeout | null = null;
+  
+  // Sleep detection properties
+  private lastActiveTime: number = Date.now();
+  private heartbeatCheckInterval: NodeJS.Timeout | null = null;
+  private cumulativeFailureWindow: Array<number> = []; // Track failure timestamps
+  private wasRecentSleep: boolean = false;
+  
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
   private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
   private readonly MAX_WEBSOCKET_FAILURES = 3; // Stop retries after 3 failures
@@ -42,19 +56,142 @@ class RealtimeReconnectionCoordinatorService {
   private readonly REGISTRATION_CHECK_INTERVAL_MS = 500; // Check every 500ms
   private readonly VISIBILITY_DEBOUNCE_MS = 2000; // Debounce visibility changes
   private readonly STUCK_OFFLINE_TIMEOUT_MS = 30000; // 30 seconds
+  private readonly AGGRESSIVE_STUCK_TIMEOUT_MS = 15000; // 15 seconds after sleep
   private readonly CONNECTION_MONITOR_INTERVAL_MS = 60000; // Check every 60 seconds
 
   constructor() {
     // Add network online listener for wake-up detection
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
+      
+      // Sleep detection: visibilitychange
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      
+      // Sleep detection: pageshow (bfcache)
+      window.addEventListener('pageshow', this.handlePageShow);
+      
+      // Sleep detection: focus
+      window.addEventListener('focus', this.handleFocus);
     }
     
     // Start proactive connection monitoring
     this.startConnectionMonitoring();
+    
+    // Sleep detection: periodic heartbeat
+    this.startHeartbeatCheck();
   }
 
-
+  /**
+   * Start periodic heartbeat check to detect laptop sleep via time drift
+   */
+  private startHeartbeatCheck() {
+    this.heartbeatCheckInterval = setInterval(() => {
+      const now = Date.now();
+      const inactiveDuration = now - this.lastActiveTime;
+      const expectedMaxDuration = HEARTBEAT_CHECK_INTERVAL_MS + 5000; // Add 5s tolerance
+      
+      // If time jumped forward significantly, laptop likely slept
+      if (inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS && 
+          inactiveDuration > expectedMaxDuration) {
+        console.log(`💤 Sleep detected via heartbeat (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
+        this.forceReload('laptop-sleep-heartbeat');
+        return;
+      }
+      
+      this.lastActiveTime = now;
+    }, HEARTBEAT_CHECK_INTERVAL_MS);
+  }
+  
+  /**
+   * Handle visibility change events (tab switching, minimize, etc.)
+   */
+  private handleVisibilityChange = () => {
+    if (!document.hidden) {
+      const now = Date.now();
+      const inactiveDuration = now - this.lastActiveTime;
+      
+      if (inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS) {
+        console.log(`💤 Sleep detected via visibility change (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
+        this.forceReload('laptop-sleep-visibility');
+        return;
+      }
+      
+      this.wasRecentSleep = inactiveDuration > 30000; // Flag if inactive >30s
+    }
+    this.lastActiveTime = Date.now();
+  };
+  
+  /**
+   * Handle pageshow events (browser back/forward cache)
+   */
+  private handlePageShow = (event: PageTransitionEvent) => {
+    const now = Date.now();
+    const inactiveDuration = now - this.lastActiveTime;
+    
+    // If page was persisted in bfcache and we've been inactive for a while
+    if (event.persisted && inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS) {
+      console.log(`💤 Sleep detected via pageshow (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
+      this.forceReload('laptop-sleep-pageshow');
+      return;
+    }
+    
+    this.lastActiveTime = now;
+  };
+  
+  /**
+   * Handle window focus events
+   */
+  private handleFocus = () => {
+    const now = Date.now();
+    const inactiveDuration = now - this.lastActiveTime;
+    
+    if (inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS) {
+      console.log(`💤 Sleep detected via focus (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
+      this.forceReload('laptop-sleep-focus');
+      return;
+    }
+    
+    this.wasRecentSleep = inactiveDuration > 30000; // Flag if inactive >30s
+    this.lastActiveTime = now;
+  };
+  
+  /**
+   * Track connection failures over time window
+   */
+  private trackConnectionFailure() {
+    const now = Date.now();
+    this.cumulativeFailureWindow.push(now);
+    
+    // Remove failures older than the tracking window
+    this.cumulativeFailureWindow = this.cumulativeFailureWindow.filter(
+      timestamp => now - timestamp < CUMULATIVE_FAILURE_WINDOW_MS
+    );
+    
+    // If we've had too many failures in the window, force reload
+    if (this.cumulativeFailureWindow.length >= MAX_CUMULATIVE_FAILURES) {
+      console.error(`⚠️ ${this.cumulativeFailureWindow.length} failures in ${CUMULATIVE_FAILURE_WINDOW_MS/1000}s - forcing reload`);
+      this.forceReload('cumulative-failures');
+    }
+  }
+  
+  /**
+   * Centralized force reload method with reason tracking
+   */
+  private forceReload(reason: string) {
+    console.error(`🔄 Force reload triggered: ${reason}`);
+    
+    // Show toast before reload
+    import('sonner').then(({ toast }) => {
+      toast.error('Connection issues detected. Reloading page...', {
+        duration: 3000
+      });
+    });
+    
+    // Reload after brief delay to allow toast to show
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  }
 
   /**
    * Handle network online event
@@ -191,28 +328,29 @@ class RealtimeReconnectionCoordinatorService {
     if (!isWebSocketAlive) {
       console.warn('🔌 WebSocket is dead - forcing full reconnection before channel setup');
       
-      // Set stuck offline timer
+      // Set stuck offline timer - use shorter timeout if we recently detected a sleep
       if (this.stuckOfflineTimer) {
         clearTimeout(this.stuckOfflineTimer);
       }
       
-      this.stuckOfflineTimer = setTimeout(async () => {
-        console.warn('⚠️ Stuck offline for 30s - forcing page reload for recovery');
-        const { toast } = await import('sonner');
-        toast.error('Extended connection issues detected. Reloading page...', {
-          duration: 3000
-        });
-        
-        // Force reload after brief delay
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }, this.STUCK_OFFLINE_TIMEOUT_MS);
+      const timeoutDuration = this.wasRecentSleep 
+        ? this.AGGRESSIVE_STUCK_TIMEOUT_MS 
+        : this.STUCK_OFFLINE_TIMEOUT_MS;
+      
+      this.stuckOfflineTimer = setTimeout(() => {
+        console.error(`⚠️ Still offline after ${timeoutDuration/1000}s - forcing page reload`);
+        this.forceReload('stuck-offline-timeout');
+      }, timeoutDuration);
+      
+      // Reset the recent sleep flag after using it
+      this.wasRecentSleep = false;
       
       const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
       
       if (!reconnected) {
         this.consecutiveWebSocketFailures++;
+        this.trackConnectionFailure(); // Track for cumulative failure detection
+        
         console.error(`❌ Failed to reconnect WebSocket (attempt ${this.consecutiveWebSocketFailures})`);
         
         // Clear existing reset timer
@@ -228,18 +366,8 @@ class RealtimeReconnectionCoordinatorService {
         
         // Force reload after 3 consecutive failures
         if (this.consecutiveWebSocketFailures >= this.MAX_WEBSOCKET_FAILURES) {
-          console.error('🔄 Max WebSocket failures reached - forcing page reload for clean recovery');
-          
-          const { toast } = await import('sonner');
-          toast.error('Connection issues detected. Reloading page...', {
-            duration: 3000
-          });
-          
-          // Wait briefly for toast to be visible, then force reload
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-          
+          console.error('🔄 Max consecutive WebSocket failures reached - forcing page reload');
+          this.forceReload('max-consecutive-failures');
           return;
         }
         
@@ -367,6 +495,7 @@ class RealtimeReconnectionCoordinatorService {
             // Track failure
             connection.failedAttempts++;
             connection.lastFailureTime = Date.now();
+            this.trackConnectionFailure(); // Track for cumulative failure detection
             
             // Check if circuit breaker should trip
             if (connection.failedAttempts >= this.MAX_FAILED_ATTEMPTS) {
@@ -413,6 +542,16 @@ class RealtimeReconnectionCoordinatorService {
     }
     if (this.stuckOfflineTimer) {
       clearTimeout(this.stuckOfflineTimer);
+    }
+    if (this.heartbeatCheckInterval) {
+      clearInterval(this.heartbeatCheckInterval);
+    }
+    
+    // Remove event listeners
+    if (typeof window !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+      window.removeEventListener('pageshow', this.handlePageShow);
+      window.removeEventListener('focus', this.handleFocus);
     }
   }
 }
