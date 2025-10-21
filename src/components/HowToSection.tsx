@@ -12,7 +12,7 @@ const HowToSection = () => {
     },
     {
       name: "Create your first rundown",
-      text: "Start with a blank rundown or use Blueprint mode to create templates from your existing show formats. Add segments, timing, scripts, and custom columns.",
+      text: "Start with a blank rundown or use Cuer AI to generate templates from a text description of your show. Add segments, timing, scripts, and custom columns to match your workflow.",
       image: "https://cuer.live/uploads/cuer-on-laptop-mockup.png",
       url: "https://cuer.live/dashboard"
     },
