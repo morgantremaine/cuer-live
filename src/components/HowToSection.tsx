@@ -24,7 +24,7 @@ const HowToSection = () => {
     },
     {
       name: "Go live with confidence",
-      text: "Use showcaller controls to keep everyone synchronized during your live broadcast. Floating segments adapt to timing changes automatically.",
+      text: "Use showcaller controls to keep everyone synchronized during your live broadcast. Floating segments adapt timing and scripting changes automatically.",
       image: "https://cuer.live/uploads/cuer-on-laptop-mockup.png",
       url: "https://cuer.live/dashboard"
     }
