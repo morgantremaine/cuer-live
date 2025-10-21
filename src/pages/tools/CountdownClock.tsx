@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { Clock, Play, Square, Maximize2, Settings, ArrowLeft, Calculator, TimerIcon } from 'lucide-react';
+import { Clock, Play, Square, Maximize2, Settings, ArrowLeft, Calculator, TimerIcon, Home } from 'lucide-react';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
   formatTimeRemaining,
@@ -16,6 +16,14 @@ import {
 } from '@/utils/countdownUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { SEO } from '@/components/SEO';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 const CountdownClock = () => {
   const navigate = useNavigate();
@@ -164,28 +172,55 @@ const CountdownClock = () => {
 
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": ["SoftwareApplication", "WebApplication"],
-    "name": "Free Live Countdown Clock",
-    "applicationCategory": "UtilityApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "description": "Professional countdown clock with fullscreen display, color-coded alerts, and audio cues. Perfect for live broadcasts, events, and show production countdowns.",
-    "featureList": [
-      "Fullscreen countdown display",
-      "Color-coded time alerts",
-      "Audio beep alerts",
-      "Millisecond precision",
-      "Quick preset times",
-      "Large readable display"
-    ],
-    "audience": {
-      "@type": "Audience",
-      "audienceType": "Broadcast professionals, live event producers, show directors"
-    }
+    "@graph": [
+      {
+        "@type": ["SoftwareApplication", "WebApplication"],
+        "name": "Free Live Countdown Clock",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Professional countdown clock with fullscreen display, color-coded alerts, and audio cues. Perfect for live broadcasts, events, and show production countdowns.",
+        "featureList": [
+          "Fullscreen countdown display",
+          "Color-coded time alerts",
+          "Audio beep alerts",
+          "Millisecond precision",
+          "Quick preset times",
+          "Large readable display"
+        ],
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "Broadcast professionals, live event producers, show directors"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://cuer.live"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Free Tools",
+            "item": "https://cuer.live/tools"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Countdown Clock",
+            "item": "https://cuer.live/tools/countdown-clock"
+          }
+        ]
+      }
+    ]
   };
 
   // Setup view (before starting)
@@ -201,23 +236,39 @@ const CountdownClock = () => {
         />
         {/* Header */}
         <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/')}
-                aria-label="Back to home"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <CuerLogo className="h-8 w-auto" />
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate('/')}
+                  aria-label="Back to home"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <CuerLogo className="h-8 w-auto" />
+              </div>
+              {!user && (
+                <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+                  Try Cuer Free
+                </Button>
+              )}
             </div>
-            {!user && (
-              <Button onClick={() => navigate('/login?tab=signup')} variant="default">
-                Try Cuer Free
-              </Button>
-            )}
+            <Breadcrumb className="ml-14">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/" className="flex items-center gap-1">
+                    <Home className="h-3 w-3" />
+                    Home
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Countdown Clock</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
         </header>
 

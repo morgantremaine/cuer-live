@@ -5,11 +5,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Clock, Calculator, ArrowLeft, TimerIcon } from 'lucide-react';
+import { Clock, Calculator, ArrowLeft, TimerIcon, Home } from 'lucide-react';
 import CuerLogo from '@/components/common/CuerLogo';
 import { countWords, calculateReadingTimeSeconds, secondsToMMSS } from '@/utils/scriptTiming';
 import { useAuth } from '@/hooks/useAuth';
 import { SEO } from '@/components/SEO';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 const ScriptTimingCalculator = () => {
   const navigate = useNavigate();
@@ -53,27 +61,54 @@ const ScriptTimingCalculator = () => {
 
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": ["SoftwareApplication", "WebApplication"],
-    "name": "Free Script Timing Calculator",
-    "applicationCategory": "ProductivityApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "description": "Calculate how long it takes to read your script with our free timing calculator. Perfect for broadcast, voiceover, and video production.",
-    "featureList": [
-      "Word counting",
-      "Reading time calculation",
-      "Custom WPM speeds",
-      "Slow, normal, fast presets",
-      "Real-time updates"
-    ],
-    "audience": {
-      "@type": "Audience",
-      "audienceType": "Broadcast professionals, content creators, voiceover artists"
-    }
+    "@graph": [
+      {
+        "@type": ["SoftwareApplication", "WebApplication"],
+        "name": "Free Script Timing Calculator",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Calculate how long it takes to read your script with our free timing calculator. Perfect for broadcast, voiceover, and video production.",
+        "featureList": [
+          "Word counting",
+          "Reading time calculation",
+          "Custom WPM speeds",
+          "Slow, normal, fast presets",
+          "Real-time updates"
+        ],
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "Broadcast professionals, content creators, voiceover artists"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://cuer.live"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Free Tools",
+            "item": "https://cuer.live/tools"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Script Timing Calculator",
+            "item": "https://cuer.live/tools/script-timing"
+          }
+        ]
+      }
+    ]
   };
 
   return (
@@ -87,23 +122,39 @@ const ScriptTimingCalculator = () => {
       />
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/')}
-              aria-label="Back to home"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <CuerLogo className="h-8 w-auto" />
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                aria-label="Back to home"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <CuerLogo className="h-8 w-auto" />
+            </div>
+            {!user && (
+              <Button onClick={() => navigate('/login?tab=signup')} variant="default">
+                Try Cuer Free
+              </Button>
+            )}
           </div>
-          {!user && (
-            <Button onClick={() => navigate('/login?tab=signup')} variant="default">
-              Try Cuer Free
-            </Button>
-          )}
+          <Breadcrumb className="ml-14">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-1">
+                  <Home className="h-3 w-3" />
+                  Home
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Script Timing Calculator</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
       </header>
 

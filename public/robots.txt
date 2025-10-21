@@ -1,16 +1,42 @@
+# Cuer.live Robots.txt
+# https://cuer.live/robots.txt
+
+# Allow all major search engines
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 0.5
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 0.5
 
+User-agent: Slurp
+Allow: /
+Crawl-delay: 0.5
+
+# Social media bots for rich previews
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: LinkedInBot
 Allow: /
 
+User-agent: Slackbot
+Allow: /
+
+# Default for all other bots
+User-agent: *
+Allow: /
+Crawl-delay: 1
+
+# Disallow admin and api routes from crawling
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /dashboard/settings
+
+# Sitemap location
 Sitemap: https://cuer.live/sitemap.xml

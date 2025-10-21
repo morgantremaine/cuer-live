@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Calculator, Plus, Minus, Timer, Copy, Check, TimerIcon } from 'lucide-react';
+import { Clock, Calculator, Plus, Minus, Timer, Copy, Check, TimerIcon, ArrowLeft, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
@@ -18,6 +18,14 @@ import {
 } from '@/utils/timeCalculator';
 import { useAuth } from '@/hooks/useAuth';
 import { SEO } from '@/components/SEO';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 type CalculatorType = 'add-time' | 'subtract-time' | 'add-durations' | 'subtract-durations' | 'time-until';
 
@@ -275,28 +283,55 @@ const TimeCalculator = () => {
 
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": ["SoftwareApplication", "WebApplication"],
-    "name": "Free Time Calculator for Broadcast",
-    "applicationCategory": "UtilityApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "description": "Professional time calculator for broadcast and production. Add/subtract times and durations, calculate show end times, and plan your rundowns with precision.",
-    "featureList": [
-      "Add time and duration",
-      "Subtract times to find duration",
-      "Add multiple durations",
-      "Subtract durations",
-      "Calculate time until target",
-      "24-hour and 12-hour format support"
-    ],
-    "audience": {
-      "@type": "Audience",
-      "audienceType": "Production professionals, broadcast engineers, event planners"
-    }
+    "@graph": [
+      {
+        "@type": ["SoftwareApplication", "WebApplication"],
+        "name": "Free Time Calculator for Broadcast",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Professional time calculator for broadcast and production. Add/subtract times and durations, calculate show end times, and plan your rundowns with precision.",
+        "featureList": [
+          "Add time and duration",
+          "Subtract times to find duration",
+          "Add multiple durations",
+          "Subtract durations",
+          "Calculate time until target",
+          "24-hour and 12-hour format support"
+        ],
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "Production professionals, broadcast engineers, event planners"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://cuer.live"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Free Tools",
+            "item": "https://cuer.live/tools"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Time Calculator",
+            "item": "https://cuer.live/tools/time-calculator"
+          }
+        ]
+      }
+    ]
   };
 
   return (
@@ -311,16 +346,38 @@ const TimeCalculator = () => {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <button onClick={() => navigate('/')} className="hover:opacity-80 transition-opacity">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                aria-label="Back to home"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
               <CuerLogo className="h-8 w-auto" />
-            </button>
+            </div>
             {!user && (
               <Button onClick={() => navigate('/login?tab=signup')} variant="default">
                 Try Cuer Free
               </Button>
             )}
           </div>
+          <Breadcrumb className="ml-14">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-1">
+                  <Home className="h-3 w-3" />
+                  Home
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Time Calculator</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
       </header>
 

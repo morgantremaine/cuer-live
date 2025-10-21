@@ -11,6 +11,8 @@ import { FeatureExplorer } from '@/components/FeatureExplorer';
 import InteractiveRundownImage from '@/components/InteractiveRundownImage';
 import rundownScreenshot from '@/assets/cuer-on-laptop-mockup.png';
 import { SEO } from '@/components/SEO';
+import FAQSection from '@/components/FAQSection';
+import HowToSection from '@/components/HowToSection';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -387,6 +389,12 @@ const LandingPage = () => {
         />
         
       </div>
+
+      {/* How To Section */}
+      <HowToSection />
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* CTA Section */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-24 text-center">
