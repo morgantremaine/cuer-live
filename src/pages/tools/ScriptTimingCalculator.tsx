@@ -226,79 +226,85 @@ const ScriptTimingCalculator = () => {
         )}
 
         {/* How it Works */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>How to Use the Script Timing Calculator</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-              <li>Paste or type your script into the text area above</li>
-              <li>Select your desired speaking speed (slow, normal, fast, or custom WPM)</li>
-              <li>View the estimated reading time instantly</li>
-              <li>Adjust the speed to match your delivery style or production requirements</li>
-            </ol>
-          </CardContent>
-        </Card>
+        {!user && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>How to Use the Script Timing Calculator</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                <li>Paste or type your script into the text area above</li>
+                <li>Select your desired speaking speed (slow, normal, fast, or custom WPM)</li>
+                <li>View the estimated reading time instantly</li>
+                <li>Adjust the speed to match your delivery style or production requirements</li>
+              </ol>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Benefits & Use Cases */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Perfect for Broadcast & Content Professionals</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Our script timing calculator helps broadcast professionals, video producers, voiceover artists, and content creators accurately estimate reading times. 
-              Whether you're planning a news segment, podcast episode, or video production, knowing your script duration is essential for professional timing.
-            </p>
-            <div className="space-y-3">
-              <h3 className="font-semibold">Common Use Cases:</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li><strong>Broadcast News:</strong> Time news scripts to fit segment durations</li>
-                <li><strong>Voiceover Work:</strong> Estimate recording length for commercials and narration</li>
-                <li><strong>Video Production:</strong> Match script length to video timing requirements</li>
-                <li><strong>Podcasting:</strong> Plan episode lengths and segment timing</li>
-                <li><strong>Live Events:</strong> Ensure presentations fit allocated time slots</li>
-                <li><strong>Radio:</strong> Calculate ad read times and show segment lengths</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+        {!user && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Perfect for Broadcast & Content Professionals</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Our script timing calculator helps broadcast professionals, video producers, voiceover artists, and content creators accurately estimate reading times. 
+                Whether you're planning a news segment, podcast episode, or video production, knowing your script duration is essential for professional timing.
+              </p>
+              <div className="space-y-3">
+                <h3 className="font-semibold">Common Use Cases:</h3>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>Broadcast News:</strong> Time news scripts to fit segment durations</li>
+                  <li><strong>Voiceover Work:</strong> Estimate recording length for commercials and narration</li>
+                  <li><strong>Video Production:</strong> Match script length to video timing requirements</li>
+                  <li><strong>Podcasting:</strong> Plan episode lengths and segment timing</li>
+                  <li><strong>Live Events:</strong> Ensure presentations fit allocated time slots</li>
+                  <li><strong>Radio:</strong> Calculate ad read times and show segment lengths</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* More Tools */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>More Free Broadcast Tools</CardTitle>
-            <CardDescription>Professional timing tools for broadcast and production</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <button 
-                onClick={() => navigate('/tools/time-calculator')}
-                className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Time Calculator</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Add and subtract times, calculate show end times, and manage production timing
-                </p>
-              </button>
-              <button 
-                onClick={() => navigate('/tools/countdown-clock')}
-                className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TimerIcon className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Countdown Clock</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Live countdown with fullscreen display, color alerts, and audio cues for broadcasts
-                </p>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+        {!user && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>More Free Broadcast Tools</CardTitle>
+              <CardDescription>Professional timing tools for broadcast and production</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <button 
+                  onClick={() => navigate('/tools/time-calculator')}
+                  className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Time Calculator</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Add and subtract times, calculate show end times, and manage production timing
+                  </p>
+                </button>
+                <button 
+                  onClick={() => navigate('/tools/countdown-clock')}
+                  className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <TimerIcon className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Countdown Clock</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Live countdown with fullscreen display, color alerts, and audio cues for broadcasts
+                  </p>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* CTA */}
         {!user && (

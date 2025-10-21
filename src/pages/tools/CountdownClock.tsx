@@ -313,78 +313,84 @@ const CountdownClock = () => {
             </Card>
 
             {/* How it Works */}
-            <Card className="p-8 space-y-4">
-              <h2 className="text-2xl font-bold">How to Use the Countdown Clock</h2>
-              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                <li>Set your target show time and date</li>
-                <li>Optionally add a show name for display</li>
-                <li>Enable audio alerts if you want beeps at key intervals (60s, 30s, 10s, 5s countdown)</li>
-                <li>Toggle milliseconds if you need precise timing</li>
-                <li>Click "Start Countdown" to begin</li>
-                <li>Use fullscreen mode for maximum visibility</li>
-              </ol>
-            </Card>
+            {!user && (
+              <Card className="p-8 space-y-4">
+                <h2 className="text-2xl font-bold">How to Use the Countdown Clock</h2>
+                <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                  <li>Set your target show time and date</li>
+                  <li>Optionally add a show name for display</li>
+                  <li>Enable audio alerts if you want beeps at key intervals (60s, 30s, 10s, 5s countdown)</li>
+                  <li>Toggle milliseconds if you need precise timing</li>
+                  <li>Click "Start Countdown" to begin</li>
+                  <li>Use fullscreen mode for maximum visibility</li>
+                </ol>
+              </Card>
+            )}
 
             {/* Benefits & Features */}
-            <Card className="p-8 space-y-4">
-              <h2 className="text-2xl font-bold">Professional Broadcast Countdown Features</h2>
-              <p className="text-muted-foreground">
-                Our live countdown clock is designed specifically for broadcast professionals and live event producers. 
-                The large, color-coded display ensures everyone in the control room can see exactly how much time remains until showtime.
-              </p>
-              <div className="space-y-3">
-                <h3 className="font-semibold">Key Features:</h3>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li><strong>Color-Coded Alerts:</strong> Display changes from green to yellow to red as time runs out</li>
-                  <li><strong>Fullscreen Mode:</strong> Maximize the countdown for control room displays</li>
-                  <li><strong>Audio Cues:</strong> Optional beeps at critical intervals (60s, 30s, 10s, final 5s)</li>
-                  <li><strong>Millisecond Precision:</strong> Show exact timing down to hundredths of a second</li>
-                  <li><strong>Quick Presets:</strong> Instantly set 15 min, 30 min, or 1 hour countdowns</li>
-                  <li><strong>Pulsing Alert:</strong> Clock pulses in final seconds for maximum visibility</li>
-                </ul>
-                <h3 className="font-semibold mt-4">Perfect for:</h3>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Live news broadcasts and show countdowns</li>
-                  <li>Control room timing displays</li>
-                  <li>Live event production and stage management</li>
-                  <li>Ceremony and presentation timing</li>
-                  <li>Recording session timing</li>
-                  <li>Webinar and stream countdowns</li>
-                </ul>
-              </div>
-            </Card>
+            {!user && (
+              <Card className="p-8 space-y-4">
+                <h2 className="text-2xl font-bold">Professional Broadcast Countdown Features</h2>
+                <p className="text-muted-foreground">
+                  Our live countdown clock is designed specifically for broadcast professionals and live event producers. 
+                  The large, color-coded display ensures everyone in the control room can see exactly how much time remains until showtime.
+                </p>
+                <div className="space-y-3">
+                  <h3 className="font-semibold">Key Features:</h3>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    <li><strong>Color-Coded Alerts:</strong> Display changes from green to yellow to red as time runs out</li>
+                    <li><strong>Fullscreen Mode:</strong> Maximize the countdown for control room displays</li>
+                    <li><strong>Audio Cues:</strong> Optional beeps at critical intervals (60s, 30s, 10s, final 5s)</li>
+                    <li><strong>Millisecond Precision:</strong> Show exact timing down to hundredths of a second</li>
+                    <li><strong>Quick Presets:</strong> Instantly set 15 min, 30 min, or 1 hour countdowns</li>
+                    <li><strong>Pulsing Alert:</strong> Clock pulses in final seconds for maximum visibility</li>
+                  </ul>
+                  <h3 className="font-semibold mt-4">Perfect for:</h3>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    <li>Live news broadcasts and show countdowns</li>
+                    <li>Control room timing displays</li>
+                    <li>Live event production and stage management</li>
+                    <li>Ceremony and presentation timing</li>
+                    <li>Recording session timing</li>
+                    <li>Webinar and stream countdowns</li>
+                  </ul>
+                </div>
+              </Card>
+            )}
 
             {/* More Tools */}
-            <Card className="p-8 space-y-4">
-              <h2 className="text-2xl font-bold">More Free Broadcast Tools</h2>
-              <p className="text-muted-foreground">Professional timing tools for broadcast and production</p>
-              <div className="grid md:grid-cols-2 gap-4">
-                <button 
-                  onClick={() => navigate('/tools/script-timing')}
-                  className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calculator className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold">Script Timing Calculator</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Calculate how long it takes to read scripts at different speaking speeds
-                  </p>
-                </button>
-                <button 
-                  onClick={() => navigate('/tools/time-calculator')}
-                  className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold">Time Calculator</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Add and subtract times, calculate show end times, and manage production timing
-                  </p>
-                </button>
-              </div>
-            </Card>
+            {!user && (
+              <Card className="p-8 space-y-4">
+                <h2 className="text-2xl font-bold">More Free Broadcast Tools</h2>
+                <p className="text-muted-foreground">Professional timing tools for broadcast and production</p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => navigate('/tools/script-timing')}
+                    className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calculator className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold">Script Timing Calculator</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Calculate how long it takes to read scripts at different speaking speeds
+                    </p>
+                  </button>
+                  <button 
+                    onClick={() => navigate('/tools/time-calculator')}
+                    className="text-left p-4 border rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold">Time Calculator</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Add and subtract times, calculate show end times, and manage production timing
+                    </p>
+                  </button>
+                </div>
+              </Card>
+            )}
 
             {/* CTA */}
             {!user && (
