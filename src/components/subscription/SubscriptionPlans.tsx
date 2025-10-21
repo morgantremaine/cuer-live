@@ -24,7 +24,7 @@ const PLANS = [
   },
   {
     name: 'Pro',
-    description: 'Perfect for small productions',
+    description: 'Perfect for small teams',
     maxMembers: 3,
     teamRange: 'Up to 3 team members',
     monthlyPrice: 25,
@@ -45,7 +45,7 @@ const PLANS = [
   },
   {
     name: 'Premium',
-    description: 'Ideal for growing teams',
+    description: 'Built for digital studios',
     maxMembers: 25,
     teamRange: 'Up to 15 team members',
     monthlyPrice: 75,
