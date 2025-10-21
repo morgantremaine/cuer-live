@@ -35,10 +35,10 @@ class RealtimeReconnectionCoordinatorService {
   private lastVisibilityChange: number = 0;
   private connectionMonitorInterval: NodeJS.Timeout | null = null;
   
-  // Sleep detection properties
-  private lastActiveTime: number = Date.now();
+  // Sleep detection properties using performance API
+  private lastPerformanceTime: number = performance.now();
+  private lastSystemTime: number = Date.now();
   private cumulativeFailureWindow: Array<number> = []; // Track failure timestamps
-  private wasRecentSleep: boolean = false;
   
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
   private readonly WEBSOCKET_CHECK_COOLDOWN_MS = 5000; // Only check every 5 seconds
@@ -81,52 +81,49 @@ class RealtimeReconnectionCoordinatorService {
    */
   private handleVisibilityChange = () => {
     if (!document.hidden) {
-      const now = Date.now();
-      const inactiveDuration = now - this.lastActiveTime;
+      const { isSlept, duration } = this.detectSleep();
       
-      if (inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS) {
-        console.log(`💤 Sleep detected via visibility change (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
+      if (isSlept) {
+        console.log(`💤 Sleep detected via visibility change (${Math.round(duration/1000)}s), forcing reload...`);
         this.forceReload('laptop-sleep-visibility');
         return;
       }
       
-      this.wasRecentSleep = inactiveDuration > 30000; // Flag if inactive >30s
+      console.log('👁️ Tab became visible, no sleep detected');
     }
-    this.lastActiveTime = Date.now();
+    // Don't check on hide - preserve timestamps for when tab becomes visible again
   };
   
   /**
    * Handle pageshow events (browser back/forward cache)
    */
   private handlePageShow = (event: PageTransitionEvent) => {
-    const now = Date.now();
-    const inactiveDuration = now - this.lastActiveTime;
-    
-    // If page was persisted in bfcache and we've been inactive for a while
-    if (event.persisted && inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS) {
-      console.log(`💤 Sleep detected via pageshow (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
-      this.forceReload('laptop-sleep-pageshow');
-      return;
+    if (event.persisted) {
+      const { isSlept, duration } = this.detectSleep();
+      
+      if (isSlept) {
+        console.log(`💤 Sleep detected via pageshow (${Math.round(duration/1000)}s), forcing reload...`);
+        this.forceReload('laptop-sleep-pageshow');
+        return;
+      }
+      
+      console.log('📄 Page shown from bfcache, no sleep detected');
     }
-    
-    this.lastActiveTime = now;
   };
   
   /**
    * Handle window focus events
    */
   private handleFocus = () => {
-    const now = Date.now();
-    const inactiveDuration = now - this.lastActiveTime;
+    const { isSlept, duration } = this.detectSleep();
     
-    if (inactiveDuration > LAPTOP_SLEEP_THRESHOLD_MS) {
-      console.log(`💤 Sleep detected via focus (${Math.round(inactiveDuration/1000)}s inactive), forcing reload...`);
+    if (isSlept) {
+      console.log(`💤 Sleep detected via focus (${Math.round(duration/1000)}s), forcing reload...`);
       this.forceReload('laptop-sleep-focus');
       return;
     }
     
-    this.wasRecentSleep = inactiveDuration > 30000; // Flag if inactive >30s
-    this.lastActiveTime = now;
+    console.log('🎯 Window focused, no sleep detected');
   };
   
   /**
@@ -146,6 +143,33 @@ class RealtimeReconnectionCoordinatorService {
       console.error(`⚠️ ${this.cumulativeFailureWindow.length} failures in ${CUMULATIVE_FAILURE_WINDOW_MS/1000}s - forcing reload`);
       this.forceReload('cumulative-failures');
     }
+  }
+  
+  /**
+   * Detect laptop sleep using performance API
+   * Returns true if system time jumped significantly more than performance time
+   */
+  private detectSleep(): { isSlept: boolean; duration: number } {
+    const nowPerf = performance.now();
+    const nowSystem = Date.now();
+    
+    const perfDelta = nowPerf - this.lastPerformanceTime; // Actual JS execution time
+    const systemDelta = nowSystem - this.lastSystemTime; // System clock time
+    
+    // If system clock jumped more than 60s ahead of JS execution time, laptop slept
+    // This is immune to browser throttling because both clocks are throttled equally
+    const timeDrift = systemDelta - perfDelta;
+    const isSlept = timeDrift > LAPTOP_SLEEP_THRESHOLD_MS;
+    
+    if (isSlept) {
+      console.log(`💤 Sleep detected: system time jumped ${Math.round(systemDelta/1000)}s, but JS only ran for ${Math.round(perfDelta/1000)}s (drift: ${Math.round(timeDrift/1000)}s)`);
+    }
+    
+    // Update timestamps (always update, even if sleep detected, for next check)
+    this.lastPerformanceTime = nowPerf;
+    this.lastSystemTime = nowSystem;
+    
+    return { isSlept, duration: systemDelta };
   }
   
   /**
@@ -171,7 +195,15 @@ class RealtimeReconnectionCoordinatorService {
    * Handle network online event
    */
   private async handleNetworkOnline() {
-    console.log('🌐 ReconnectionCoordinator: Network came online, checking connections...');
+    console.log('🌐 ReconnectionCoordinator: Network came online, checking for sleep...');
+    
+    const { isSlept, duration } = this.detectSleep();
+    
+    if (isSlept) {
+      console.log(`💤 Sleep detected via network online (${Math.round(duration/1000)}s), forcing reload...`);
+      this.forceReload('laptop-sleep-network');
+      return;
+    }
     
     // Give browser 1s to fully establish network
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -211,20 +243,16 @@ class RealtimeReconnectionCoordinatorService {
       
       console.log('⏱️ Periodic connection health check...');
       
-      // Check for long sleep FIRST (before attempting reconnection)
-      const now = Date.now();
-      const timeSinceLastActivity = now - this.lastActiveTime;
+      // Check for sleep (even in background tabs)
+      const { isSlept, duration } = this.detectSleep();
       
-      if (timeSinceLastActivity > LAPTOP_SLEEP_THRESHOLD_MS) {
-        console.log(`💤 Long sleep detected during periodic check (${Math.round(timeSinceLastActivity/1000)}s), forcing reload...`);
-        this.forceReload('laptop-sleep-detected-background');
-        return; // Don't attempt reconnection, just reload
+      if (isSlept) {
+        console.log(`💤 Sleep detected during periodic check (${Math.round(duration/1000)}s), forcing reload...`);
+        this.forceReload('laptop-sleep-periodic');
+        return;
       }
       
-      // Update last active time (no sleep detected)
-      this.lastActiveTime = now;
-      
-      // Import health check utility
+      // No sleep detected, proceed with normal health check
       const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       
       // Quick non-blocking health check
@@ -234,7 +262,7 @@ class RealtimeReconnectionCoordinatorService {
         console.warn('⚠️ Periodic check detected dead WebSocket - triggering recovery');
         await this.executeReconnection();
       } else {
-        console.log('✅ Periodic check: WebSocket healthy');
+        console.log('✅ Periodic check: WebSocket healthy, no sleep detected');
       }
     }, this.CONNECTION_MONITOR_INTERVAL_MS);
   }
@@ -315,22 +343,15 @@ class RealtimeReconnectionCoordinatorService {
     if (!isWebSocketAlive) {
       console.warn('🔌 WebSocket is dead - forcing full reconnection before channel setup');
       
-      // Set stuck offline timer - use shorter timeout if we recently detected a sleep
+      // Set stuck offline timer
       if (this.stuckOfflineTimer) {
         clearTimeout(this.stuckOfflineTimer);
       }
       
-      const timeoutDuration = this.wasRecentSleep 
-        ? this.AGGRESSIVE_STUCK_TIMEOUT_MS 
-        : this.STUCK_OFFLINE_TIMEOUT_MS;
-      
       this.stuckOfflineTimer = setTimeout(() => {
-        console.error(`⚠️ Still offline after ${timeoutDuration/1000}s - forcing page reload`);
+        console.error(`⚠️ Still offline after ${this.STUCK_OFFLINE_TIMEOUT_MS/1000}s - forcing page reload`);
         this.forceReload('stuck-offline-timeout');
-      }, timeoutDuration);
-      
-      // Reset the recent sleep flag after using it
-      this.wasRecentSleep = false;
+      }, this.STUCK_OFFLINE_TIMEOUT_MS);
       
       const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
       
