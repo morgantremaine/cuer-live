@@ -24,7 +24,7 @@ const PLANS = [
   },
   {
     name: 'Pro',
-    description: 'Perfect for small teams',
+    description: 'Ideal for growing teams',
     maxMembers: 3,
     teamRange: 'Up to 3 team members',
     monthlyPrice: 25,
