@@ -80,7 +80,6 @@ const glossaryTerms: GlossaryTerm[] = [
 
   // Communication & Crew Terms
   { term: "10-1", definition: "Radio code indicating someone is going to the bathroom.", category: "Communication & Crew" },
-  { term: "10-2", definition: "Signal strength or readiness confirmation.", category: "Communication & Crew" },
   { term: "Copy That", definition: "Acknowledgment that a message was received.", category: "Communication & Crew" },
   { term: "Stand By", definition: "Prepare for imminent action.", category: "Communication & Crew" },
   { term: "Standby to Roll", definition: "Prepare to start recording.", category: "Communication & Crew" },
