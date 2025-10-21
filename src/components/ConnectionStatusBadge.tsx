@@ -8,6 +8,8 @@ interface ConnectionStatusBadgeProps {
   isConnected: boolean;
   isProcessing?: boolean;
   isDegraded?: boolean;
+  isReconnecting?: boolean;
+  isFlapping?: boolean;
   circuitState?: 'closed' | 'open' | 'half-open';
   retryIn?: number;
   className?: string;
@@ -18,6 +20,8 @@ const ConnectionStatusBadge = ({
   isConnected, 
   isProcessing = false,
   isDegraded = false,
+  isReconnecting = false,
+  isFlapping = false,
   circuitState = 'closed',
   retryIn = 0,
   className,
@@ -35,19 +39,39 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 2: Circuit breaker open - connection failed
-    if (circuitState === 'open') {
+    // Priority 2: Processing/Syncing state (highest priority when active)
+    if (isProcessing) {
+      return {
+        color: 'text-blue-500',
+        bgColor: 'bg-blue-500/10',
+        label: 'Syncing...',
+        title: 'Syncing changes with team'
+      };
+    }
+    
+    // Priority 3: Normal reconnection (within grace period, not flapping)
+    if (isReconnecting && !isFlapping) {
+      return {
+        color: 'text-blue-500',
+        bgColor: 'bg-blue-500/10',
+        label: 'Reconnecting...',
+        title: 'Reconnecting to server...'
+      };
+    }
+    
+    // Priority 4: Circuit breaker open - connection failed (persistent or flapping)
+    if (circuitState === 'open' || (isReconnecting && isFlapping)) {
       const seconds = Math.ceil(retryIn / 1000);
       return {
         icon: WifiOff,
         color: 'text-red-500',
         bgColor: 'bg-red-500/10',
         label: seconds > 0 ? `Retrying in ${seconds}s` : 'Connection Failed',
-        title: 'Connection failed. Retrying shortly...'
+        title: isFlapping ? 'Connection unstable - multiple reconnection attempts' : 'Connection failed. Retrying shortly...'
       };
     }
     
-    // Priority 3: Circuit breaker half-open - testing connection
+    // Priority 5: Circuit breaker half-open - testing connection after failure
     if (circuitState === 'half-open') {
       return {
         color: 'text-yellow-500',
@@ -57,17 +81,7 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 4: Processing/Syncing state
-    if (isProcessing) {
-      return {
-        color: 'text-blue-500',
-        bgColor: 'bg-blue-500/10',
-        label: 'Syncing...',
-        title: 'Syncing changes with team'
-      };
-    } 
-    
-    // Priority 5: Degraded connection
+    // Priority 6: Degraded connection (persistent poor quality)
     if (isConnected && isDegraded) {
       return {
         icon: Wifi,
@@ -78,7 +92,7 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 6: Connected
+    // Priority 7: Connected
     if (isConnected) {
       return {
         icon: Wifi,

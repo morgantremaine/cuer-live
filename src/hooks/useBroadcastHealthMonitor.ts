@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
@@ -10,7 +10,14 @@ interface BroadcastHealthStatus {
   lastChecked: number;
   circuitState?: 'closed' | 'open' | 'half-open';
   retryIn?: number;
+  isReconnecting: boolean;
+  reconnectionStartTime?: number;
+  isFlapping: boolean;
 }
+
+const RECONNECTION_GRACE_PERIOD = 5000; // 5 seconds
+const FLAPPING_WINDOW = 30000; // 30 seconds
+const FLAPPING_THRESHOLD = 3; // 3+ reconnection cycles = flapping
 
 export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => {
   const [healthStatus, setHealthStatus] = useState<BroadcastHealthStatus>({
@@ -18,8 +25,13 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
     isConnected: false,
     successRate: 1,
     totalAttempts: 0,
-    lastChecked: Date.now()
+    lastChecked: Date.now(),
+    isReconnecting: false,
+    isFlapping: false
   });
+
+  // Track reconnection cycles for flapping detection
+  const reconnectionCyclesRef = useRef<number[]>([]);
 
   useEffect(() => {
     if (!enabled || !rundownId) return;
@@ -33,14 +45,51 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
         c.id === `cell-${rundownId}` || c.id === `showcaller-${rundownId}`
       );
       
+      const circuitState = cellConnection?.circuitState || 'closed';
+      const isReconnecting = circuitState !== 'closed';
+      const now = Date.now();
+      
+      // Track reconnection cycles for flapping detection
+      if (isReconnecting && !healthStatus.isReconnecting) {
+        // New reconnection cycle started
+        reconnectionCyclesRef.current.push(now);
+        // Clean up old cycles outside the flapping window
+        reconnectionCyclesRef.current = reconnectionCyclesRef.current.filter(
+          timestamp => now - timestamp < FLAPPING_WINDOW
+        );
+      }
+      
+      // Detect flapping: 3+ reconnection cycles in the last 30 seconds
+      const isFlapping = reconnectionCyclesRef.current.length >= FLAPPING_THRESHOLD;
+      
+      // Calculate time in reconnection state
+      const reconnectionStartTime = isReconnecting 
+        ? (healthStatus.reconnectionStartTime || now)
+        : undefined;
+      
+      const timeInReconnection = reconnectionStartTime 
+        ? now - reconnectionStartTime 
+        : 0;
+      
+      // Only mark as unhealthy if:
+      // 1. Broadcast metrics are unhealthy, OR
+      // 2. Circuit is open/half-open AND (grace period expired OR flapping detected)
+      const isHealthy = metrics.isHealthy && (
+        circuitState === 'closed' ||
+        (timeInReconnection < RECONNECTION_GRACE_PERIOD && !isFlapping)
+      );
+      
       setHealthStatus({
-        isHealthy: metrics.isHealthy && (!cellConnection || cellConnection.circuitState === 'closed'),
+        isHealthy,
         isConnected: metrics.isConnected,
         successRate: metrics.successRate,
         totalAttempts: metrics.total,
-        lastChecked: Date.now(),
-        circuitState: cellConnection?.circuitState || 'closed',
-        retryIn: cellConnection?.retryIn || 0
+        lastChecked: now,
+        circuitState,
+        retryIn: cellConnection?.retryIn || 0,
+        isReconnecting,
+        reconnectionStartTime,
+        isFlapping
       });
     };
 
