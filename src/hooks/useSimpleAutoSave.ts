@@ -1064,7 +1064,14 @@ export const useSimpleAutoSave = (
         if (isPerCellEnabled) {
           // For per-cell mode, use coordinated save
           saveCoordinatedState(state).catch(error => {
-            console.error('⏰ PARANOID SAVE: Per-cell save failed:', error);
+            // "No changes to save" is actually success - flags were out of sync
+            if (error.message === 'No changes to save') {
+              console.log('⏰ PARANOID SAVE: Already saved - clearing stale flags');
+              hasUnsavedChangesRef.current = false;
+              setPerCellHasUnsavedChanges(false);
+            } else {
+              console.error('⏰ PARANOID SAVE: Per-cell save failed:', error);
+            }
           });
         } else {
           // For delta mode, use performSave
