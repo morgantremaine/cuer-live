@@ -11,11 +11,11 @@ const FAQSection = () => {
   const faqs = [
     {
       question: "What is rundown software?",
-      answer: "Rundown software is a digital tool used by broadcast professionals to plan, organize, and execute live productions. It replaces traditional paper rundowns with real-time collaborative tools that help teams coordinate segments, timing, scripts, and resources during live broadcasts, streams, and events."
+      answer: "Rundown software is a digital tool used by broadcast professionals to plan, organize, and execute live productions. It provides real-time collaborative tools that help teams coordinate segments, timing, scripts, and resources during live broadcasts, streams, and events - all in one purpose-built platform."
     },
     {
-      question: "How does Cuer compare to traditional rundown tools?",
-      answer: "Cuer modernizes broadcast production with real-time collaboration, AI-assisted workflows, automatic timing calculations, and cloud-based access. Unlike traditional tools, Cuer offers instant sync across your team, smart templates with Blueprint mode, read-only sharing for stakeholders, and integrated prompter functionality - all in a modern, intuitive interface."
+      question: "How is Cuer different from other rundown solutions?",
+      answer: "Cuer combines the power of enterprise broadcast software with the ease of modern tools. Unlike spreadsheets, Cuer offers automatic timing calculations, purpose-built features for live production, and real-time collaboration that actually works. Unlike complicated enterprise systems, Cuer has an intuitive interface your team can learn in minutes - with features like AI-assisted scripting, Blueprint templates, and integrated prompter functionality."
     },
     {
       question: "What types of shows can I produce with Cuer?",
