@@ -372,6 +372,12 @@ const LandingPage = () => {
       </div>
 
 
+      {/* How To Section */}
+      <HowToSection />
+
+      {/* FAQ Section */}
+      <FAQSection />
+
       {/* Pricing Section */}
       <div id="pricing-section" className="relative z-10 w-full pb-24">
         <div className="text-center mb-16 max-w-7xl mx-auto px-6">
@@ -389,12 +395,6 @@ const LandingPage = () => {
         />
         
       </div>
-
-      {/* How To Section */}
-      <HowToSection />
-
-      {/* FAQ Section */}
-      <FAQSection />
 
       {/* CTA Section */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-24 text-center">
