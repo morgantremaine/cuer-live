@@ -78,11 +78,8 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Landing page for non-authenticated users */}
-      <Route 
-        path="/" 
-        element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
-      />
+      {/* Landing page - always publicly accessible for Google OAuth verification */}
+      <Route path="/" element={<LandingPage />} />
       
       {/* Homepage route for authenticated users */}
       <Route path="/home" element={<LandingPage />} />
