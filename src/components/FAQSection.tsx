@@ -12,7 +12,7 @@ const FAQSection = () => {
   const faqs = [
     {
       question: "What is a rundown?",
-      answer: "A rundown is your show's game plan - a live document that organizes segments, timing, scripts, and production notes in one place. Whether you're running a Twitch stream or a large-scale event, a rundown keeps everyone on the same page about what's happening when. It's the difference between winging it and running a professional show where your team knows exactly what comes next, how long each segment takes, and what they need to execute."
+      answer: "A rundown is your show's game plan - a live document that organizes segments, timing, scripts, and production notes in one place. Whether you're running a solo stream or a large-scale event, a rundown keeps everyone on the same page about what's happening when. It's the difference between winging it and running a professional show where your team knows exactly what comes next, how long each segment takes, and what they need to execute."
     },
     {
       question: "How is Cuer different from other rundown solutions?",
