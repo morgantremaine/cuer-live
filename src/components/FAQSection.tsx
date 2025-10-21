@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CircleHelp } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -60,13 +61,19 @@ const FAQSection = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-24">
-        <Card className="bg-slate-800/30 backdrop-blur-sm border border-slate-600/30">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center text-white">
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <CircleHelp className="w-10 h-10 text-blue-400" />
+            <h2 className="text-3xl font-bold text-white">
               Frequently Asked Questions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <p className="text-slate-400 max-w-2xl mx-auto">
+            Everything you need to know about Cuer's rundown software
+          </p>
+        </div>
+        <Card className="bg-slate-800/30 backdrop-blur-sm border border-slate-600/30">
+          <CardContent className="pt-6">
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
