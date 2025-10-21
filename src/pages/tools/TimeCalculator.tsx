@@ -125,35 +125,6 @@ const TimeCalculator = () => {
     }
   };
 
-  const loadExample = (example: string) => {
-    switch (example) {
-      case 'news-show':
-        setCalculatorType('add-time');
-        setStartTime('06:00:00');
-        setDuration('01:00:00');
-        break;
-      case 'sports':
-        setCalculatorType('add-time');
-        setStartTime('19:00:00');
-        setDuration('03:15:00');
-        break;
-      case 'time-until':
-        setCalculatorType('time-until');
-        setTargetTime('17:00:00');
-        break;
-      case 'add-commercials':
-        setCalculatorType('add-durations');
-        setDuration1('00:02:30');
-        setDuration2('00:01:00');
-        break;
-      case 'remaining-time':
-        setCalculatorType('subtract-durations');
-        setDuration1('01:00:00');
-        setDuration2('00:42:30');
-        break;
-    }
-  };
-
   const renderInputs = () => {
     switch (calculatorType) {
       case 'add-time':
@@ -490,54 +461,6 @@ const TimeCalculator = () => {
           </Card>
         )}
 
-        {/* Quick Examples */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <Label className="text-sm font-semibold text-foreground mb-3 block">💡 Quick Examples</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadExample('news-show')}
-                className="justify-start"
-              >
-                News show: 6:00 AM + 1 hour
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadExample('sports')}
-                className="justify-start"
-              >
-                Sports: 7:00 PM + 3:15:00
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadExample('time-until')}
-                className="justify-start"
-              >
-                How long until 5:00 PM?
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadExample('add-commercials')}
-                className="justify-start"
-              >
-                Add breaks: 2:30 + 1:00
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadExample('remaining-time')}
-                className="justify-start md:col-span-2"
-              >
-                Remaining: 60:00 - 42:30
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* How it Works */}
         {!user && (
