@@ -197,13 +197,16 @@ class RealtimeReconnectionCoordinatorService {
       }
       
       this.stuckOfflineTimer = setTimeout(async () => {
-        console.warn('⚠️ Stuck offline for 30s - forcing recovery');
+        console.warn('⚠️ Stuck offline for 30s - forcing page reload for recovery');
         const { toast } = await import('sonner');
-        toast.warning('Connection issues detected', {
-          description: 'Attempting automatic recovery...',
-          duration: 5000
+        toast.error('Extended connection issues detected. Reloading page...', {
+          duration: 3000
         });
-        this.forceReconnection();
+        
+        // Force reload after brief delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }, this.STUCK_OFFLINE_TIMEOUT_MS);
       
       const reconnected = await websocketHealthCheck.forceWebSocketReconnect();
@@ -223,19 +226,20 @@ class RealtimeReconnectionCoordinatorService {
           this.consecutiveWebSocketFailures = 0;
         }, this.WEBSOCKET_FAILURE_RESET_MS);
         
-        // Show user-facing error after 3 failures and STOP retrying
+        // Force reload after 3 consecutive failures
         if (this.consecutiveWebSocketFailures >= this.MAX_WEBSOCKET_FAILURES) {
+          console.error('🔄 Max WebSocket failures reached - forcing page reload for clean recovery');
+          
           const { toast } = await import('sonner');
-          toast.error('Connection issues detected. Please refresh the page.', {
-            duration: 10000,
-            action: {
-              label: 'Refresh',
-              onClick: () => window.location.reload()
-            }
+          toast.error('Connection issues detected. Reloading page...', {
+            duration: 3000
           });
           
-          // STOP retrying after max failures - require user action
-          console.error('🔄 Max WebSocket failures reached - stopping automatic retries');
+          // Wait briefly for toast to be visible, then force reload
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+          
           return;
         }
         
