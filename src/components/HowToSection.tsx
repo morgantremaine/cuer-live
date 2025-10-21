@@ -6,7 +6,7 @@ const HowToSection = () => {
   const steps = [
     {
       name: "Sign up for free",
-      text: "Create your Cuer account in seconds. No credit card required to start.",
+      text: "Create your Cuer account in seconds. No credit card required for Cuer's free plan.",
       image: "https://cuer.live/lovable-uploads/92cc1c01-74f2-43f6-851d-5043628cac07.png",
       url: "https://cuer.live/login?tab=signup"
     },
