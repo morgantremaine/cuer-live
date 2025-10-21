@@ -16,7 +16,7 @@ const FAQSection = () => {
     },
     {
       question: "How is Cuer different from other rundown solutions?",
-      answer: "Cuer combines the power of enterprise broadcast software with the ease of modern tools. Unlike spreadsheets, Cuer offers automatic timing calculations, purpose-built features for live production, and real-time collaboration that actually works. Unlike complicated enterprise systems, Cuer has an intuitive interface your team can learn in minutes - with features like AI-assisted scripting, Blueprint templates, and integrated prompter functionality."
+      answer: "Cuer combines the power of expensive enterprise broadcast software with the ease of Google Sheets. Unlike spreadsheets, Cuer offers automatic timing calculations, purpose-built features for live production, and real-time collaboration that actually works. Unlike complicated enterprise systems, Cuer has an intuitive interface your team can learn in minutes - with features like AI-assisted scripting, Blueprint templates, and integrated prompter functionality."
     },
     {
       question: "What types of shows can I produce with Cuer?",
