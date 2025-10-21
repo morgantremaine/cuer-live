@@ -17,8 +17,8 @@ const HowToSection = () => {
       url: "https://cuer.live/dashboard"
     },
     {
-      name: "Invite your team",
-      text: "Share rundowns with your team for real-time collaboration. Everyone sees updates instantly. Use read-only links for stakeholders and talent.",
+      name: "Share with your team",
+      text: "Share rundown links with your team, talent, and stakeholders. Upgrade to Pro to invite team members for real-time collaboration where everyone sees updates instantly.",
       image: "https://cuer.live/uploads/mobile-mockups-v2.png",
       url: "https://cuer.live/dashboard"
     },
