@@ -442,6 +442,13 @@ const LandingPage = () => {
             >
               Countdown Clock
             </a>
+            <span className="text-slate-600">•</span>
+            <a
+              href="/tools/broadcast-glossary"
+              className="text-blue-400 hover:text-blue-300 underline transition-colors"
+            >
+              Broadcast Glossary
+            </a>
           </div>
           <div className="flex justify-center space-x-6">
             <a
