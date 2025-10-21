@@ -166,8 +166,27 @@ const BroadcastGlossary = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Order categories by relevance to live broadcasting
+  const categoryOrder = [
+    "Show Production & Timing",
+    "Live Production & Switching",
+    "Communication & Crew",
+    "Talent & Performance",
+    "Directing & Camera",
+    "Technical & Production",
+    "Audio",
+    "Broadcast Specific",
+    "Streaming & Modern",
+    "Editing & Post"
+  ];
+
   const categories = useMemo(() => {
-    return Array.from(new Set(glossaryTerms.map(term => term.category))).sort();
+    const uniqueCategories = Array.from(new Set(glossaryTerms.map(term => term.category)));
+    return uniqueCategories.sort((a, b) => {
+      const indexA = categoryOrder.indexOf(a);
+      const indexB = categoryOrder.indexOf(b);
+      return indexA - indexB;
+    });
   }, []);
 
   const filteredTerms = useMemo(() => {
