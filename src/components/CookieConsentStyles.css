@@ -1,10 +1,20 @@
 /* Minimal Cookie Consent Banner - Built from Scratch */
 
+/* Prevent scroll anchoring and container interference */
+#cc-main,
+#cc-main.show,
+.cc--anim {
+  position: static !important;
+  scroll-margin-bottom: 0 !important;
+  contain: none !important;
+}
+
 /* Base reset and positioning for the consent modal - cover all states */
 #cm,
 #cm.show,
 #cm.cc--anim,
-div#cm {
+div#cm,
+#cm[style] {
   position: fixed !important;
   bottom: 0 !important;
   left: 0 !important;
@@ -24,6 +34,12 @@ div#cm {
   background: hsl(var(--background)) !important;
   border-top: 1px solid hsl(var(--border)) !important;
   transform: none !important;
+  contain: layout !important;
+}
+
+/* Prevent body scroll when banner appears */
+body:has(#cm) {
+  scroll-padding-bottom: 50px;
 }
 
 /* Container for the entire banner body */

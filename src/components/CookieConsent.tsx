@@ -127,6 +127,19 @@ export const CookieConsentComponent = () => {
         }
       },
     });
+
+    // Force fixed positioning after library initializes
+    setTimeout(() => {
+      const consentModal = document.getElementById('cm');
+      if (consentModal) {
+        consentModal.style.position = 'fixed';
+        consentModal.style.bottom = '0';
+        consentModal.style.top = 'auto';
+        consentModal.style.left = '0';
+        consentModal.style.right = '0';
+        consentModal.style.transform = 'none';
+      }
+    }, 100);
   }, []);
 
   return null;
