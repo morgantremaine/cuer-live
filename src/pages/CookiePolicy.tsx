@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
-import * as CookieConsent from 'vanilla-cookieconsent';
 
 const CookiePolicy = () => {
   const navigate = useNavigate();
 
   const handleManageCookies = () => {
-    CookieConsent.showPreferences();
+    window.dispatchEvent(new Event('openCookiePreferences'));
   };
 
   return (

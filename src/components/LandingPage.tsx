@@ -457,8 +457,7 @@ const LandingPage = () => {
             <p>
               <button 
                 onClick={() => {
-                  const CookieConsent = require('vanilla-cookieconsent');
-                  CookieConsent.showPreferences();
+                  window.dispatchEvent(new Event('openCookiePreferences'));
                 }}
                 className="text-blue-400 hover:text-blue-300 underline cursor-pointer bg-transparent border-none"
               >

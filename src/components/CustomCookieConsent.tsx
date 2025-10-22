@@ -64,6 +64,16 @@ export default function CustomCookieConsent() {
     } else {
       setShowBanner(true);
     }
+
+    // Listen for custom event to open preferences
+    const handleOpenPreferences = () => {
+      setShowPreferences(true);
+    };
+
+    window.addEventListener('openCookiePreferences', handleOpenPreferences);
+    return () => {
+      window.removeEventListener('openCookiePreferences', handleOpenPreferences);
+    };
   }, []);
 
   const savePreferences = (prefs: CookiePreferences) => {
