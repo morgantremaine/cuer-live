@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import 'vanilla-cookieconsent/dist/cookieconsent.css';
 import * as CookieConsent from 'vanilla-cookieconsent';
+import './CookieConsentStyles.css';
 
 declare global {
   interface Window {
@@ -37,14 +38,14 @@ export const CookieConsentComponent = () => {
               description:
                 'We use cookies to improve your experience. Essential cookies are required for site functionality. Optional cookies help us provide support (chat) and understand usage. You can customize your preferences at any time.',
               acceptAllBtn: 'Accept All',
-              acceptNecessaryBtn: 'Reject All',
+              acceptNecessaryBtn: 'Essential Only',
               showPreferencesBtn: 'Manage Preferences',
               footer: '<a href="/privacy">Privacy Policy</a> | <a href="/cookie-policy">Cookie Policy</a>',
             },
             preferencesModal: {
               title: 'Cookie Preferences',
               acceptAllBtn: 'Accept All',
-              acceptNecessaryBtn: 'Reject All',
+              acceptNecessaryBtn: 'Essential Only',
               savePreferencesBtn: 'Save Preferences',
               closeIconLabel: 'Close',
               sections: [

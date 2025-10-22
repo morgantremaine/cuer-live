@@ -1,0 +1,128 @@
+/* Compact Cookie Consent Styling */
+
+/* Make consent modal more compact */
+#cm {
+  max-width: 500px !important;
+  padding: 1.5rem !important;
+}
+
+#cm .cm__body {
+  padding: 0 !important;
+}
+
+#cm .cm__title {
+  font-size: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+#cm .cm__desc {
+  font-size: 0.875rem !important;
+  margin-bottom: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+#cm .cm__btns {
+  gap: 0.5rem !important;
+  margin-top: 1rem !important;
+}
+
+#cm .cm__btn {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+#cm .cm__footer {
+  margin-top: 1rem !important;
+  padding-top: 1rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Make preferences modal more compact */
+#s-cnt {
+  max-width: 600px !important;
+}
+
+#s-hdr {
+  padding: 1.5rem !important;
+}
+
+#s-bl {
+  padding: 0 1.5rem 1.5rem 1.5rem !important;
+}
+
+#s-ttl {
+  font-size: 1.25rem !important;
+}
+
+.pm__section-title {
+  font-size: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.pm__section-desc {
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+}
+
+.pm__section {
+  padding: 1rem 0 !important;
+}
+
+#s-bns {
+  padding: 1rem 1.5rem !important;
+  gap: 0.5rem !important;
+}
+
+.pm__btn {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+/* Reduce spacing in sections */
+.pm__section + .pm__section {
+  border-top-width: 1px !important;
+  margin-top: 0.5rem !important;
+  padding-top: 1rem !important;
+}
+
+/* Make toggle switches slightly smaller */
+.pm__switch {
+  transform: scale(0.9);
+}
+
+/* Compact badge */
+.pm__badge {
+  font-size: 0.7rem !important;
+  padding: 0.125rem 0.375rem !important;
+}
+
+/* Mobile responsiveness - even more compact on small screens */
+@media (max-width: 640px) {
+  #cm {
+    max-width: 90vw !important;
+    padding: 1rem !important;
+  }
+  
+  #cm .cm__title {
+    font-size: 1.1rem !important;
+  }
+  
+  #cm .cm__desc {
+    font-size: 0.8rem !important;
+  }
+  
+  #cm .cm__btn {
+    padding: 0.4rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  #s-cnt {
+    max-width: 95vw !important;
+  }
+  
+  #s-hdr,
+  #s-bl,
+  #s-bns {
+    padding: 1rem !important;
+  }
+}
