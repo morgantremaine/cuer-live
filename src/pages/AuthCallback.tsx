@@ -31,6 +31,11 @@ const AuthCallback = () => {
         if (data.session?.user) {
           console.log('User authenticated successfully:', data.session.user.email)
 
+          // Check if this is a new user (created within last 10 seconds)
+          const userCreatedAt = new Date(data.session.user.created_at).getTime()
+          const now = Date.now()
+          const isNewUser = (now - userCreatedAt) < 10000 // 10 seconds
+
           // Check for pending invitation token but don't process it here
           // Let JoinTeam page handle invitation acceptance for better UX
           const pendingToken = localStorage.getItem('pendingInvitationToken')
@@ -47,7 +52,8 @@ const AuthCallback = () => {
               navigate(`/join-team/${pendingToken}`)
             }, 1500)
             return
-          } else {
+          } else if (isNewUser) {
+            // Only show welcome message for new signups
             toast({
               title: 'Success',
               description: 'Email confirmed successfully! Welcome to Cuer.',
