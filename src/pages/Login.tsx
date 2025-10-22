@@ -11,7 +11,7 @@ import Footer from '@/components/Footer'
 import CuerLogo from '@/components/common/CuerLogo'
 
 // Feature flag - set to true once Google OAuth is verified
-const GOOGLE_AUTH_ENABLED = false
+const GOOGLE_AUTH_ENABLED = true
 
 const Login = () => {
   const [searchParams] = useSearchParams()
