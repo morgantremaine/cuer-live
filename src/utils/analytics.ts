@@ -1,5 +1,3 @@
-import * as CookieConsent from 'vanilla-cookieconsent';
-
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
@@ -7,9 +5,18 @@ declare global {
   }
 }
 
+const STORAGE_KEY = 'cookie-consent-preferences';
+
 // Check if analytics is enabled
 export const isAnalyticsEnabled = () => {
-  return CookieConsent.acceptedCategory('analytics');
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return false;
+    const data = JSON.parse(stored);
+    return data.preferences?.analytics === true;
+  } catch {
+    return false;
+  }
 };
 
 // Track page view

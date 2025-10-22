@@ -13,7 +13,7 @@ import { useLoggerAuth } from "@/hooks/useLoggerAuth";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { trackPageView } from "@/utils/analytics";
-import CookieConsentComponent from "@/components/CookieConsent";
+import CustomCookieConsent from "@/components/CustomCookieConsent";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -239,7 +239,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <CookieConsentComponent />
+              <CustomCookieConsent />
               <BrowserRouter>
                 <AppUpdateNotification />
                 <AppRoutes />
