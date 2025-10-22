@@ -26,8 +26,8 @@ interface ConsentData {
 
 const STORAGE_KEY = 'cookie-consent-preferences';
 const GA_ID = 'G-HZY1H01VZ4';
-const TAWK_PROPERTY_ID = '6765f62caf5bfec1dbdc7aca';
-const TAWK_WIDGET_ID = '1ifguimlq';
+const TAWK_PROPERTY_ID = '68cfa27c4ad9d919216ba7a7';
+const TAWK_WIDGET_ID = '1j5lh5dkg';
 
 declare global {
   interface Window {

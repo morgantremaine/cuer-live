@@ -7,8 +7,8 @@ interface UseTawkToOptions {
   widgetId?: string;
 }
 
-const DEFAULT_PROPERTY_ID = '6765f62caf5bfec1dbdc7aca';
-const DEFAULT_WIDGET_ID = '1ifguimlq';
+const DEFAULT_PROPERTY_ID = '68cfa27c4ad9d919216ba7a7';
+const DEFAULT_WIDGET_ID = '1j5lh5dkg';
 const STORAGE_KEY = 'cookie-consent-preferences';
 
 declare global {
