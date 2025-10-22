@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { SEO } from '@/components/SEO';
 
 interface BlogPost {
   id: string;
@@ -68,6 +69,13 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white">
+      <SEO 
+        title="Cuer Blog - Broadcast Production Tips & Best Practices"
+        description="Insights, tips, and best practices for modern broadcast production teams. Learn about rundown management, live streaming, and production workflows."
+        keywords="broadcast production, rundown tips, live streaming, production workflow, broadcast best practices"
+        canonicalUrl="https://cuer.live/blog"
+        ogType="website"
+      />
       {/* Navigation */}
       <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center space-x-4">

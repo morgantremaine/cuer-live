@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { SEO } from '@/components/SEO';
 
 interface BlogPost {
   id: string;
@@ -104,6 +105,14 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white">
+      <SEO 
+        title={`${post.title} - Cuer Blog`}
+        description={post.excerpt}
+        keywords={`${post.category}, broadcast production, rundown management`}
+        canonicalUrl={`https://cuer.live/blog/${post.slug}`}
+        ogImage={post.hero_image || 'https://cuer.live/uploads/cuer-og-image.jpg'}
+        ogType="article"
+      />
       {/* Navigation */}
       <nav className="flex items-center justify-between p-6 max-w-4xl mx-auto">
         <div className="flex items-center space-x-4">

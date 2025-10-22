@@ -32,11 +32,15 @@ User-agent: *
 Allow: /
 Crawl-delay: 1
 
-# Disallow admin and api routes from crawling
+# Disallow admin, api, and auth-protected routes from crawling
 Disallow: /api/
 Disallow: /admin/
 Disallow: /_next/
-Disallow: /dashboard/settings
+Disallow: /dashboard
+Disallow: /rundown
+Disallow: /account
+Disallow: /subscription
+Disallow: /login
 
 # Sitemap location
 Sitemap: https://cuer.live/sitemap.xml

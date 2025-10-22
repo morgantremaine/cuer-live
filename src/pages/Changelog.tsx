@@ -3,12 +3,19 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import aiRundownSummaryImage from '@/assets/changelog/ai-rundown-summary-v122.png';
+import { SEO } from '@/components/SEO';
 
 const Changelog: React.FC = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-900">
+      <SEO 
+        title="Changelog - Cuer Updates & New Features"
+        description="Stay updated with the latest features, improvements, and updates to Cuer broadcast rundown software. See what's new in each version."
+        keywords="Cuer updates, rundown software updates, new features, changelog, product updates"
+        canonicalUrl="https://cuer.live/changelog"
+      />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center mb-8">
           <Button

@@ -5,6 +5,7 @@ import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 const helpSections = [
   { id: 'getting-started', title: 'Getting Started', icon: FileText },
@@ -130,6 +131,12 @@ const Help = () => {
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
+      <SEO 
+        title="Help & User Guide - Cuer Rundown Software"
+        description="Comprehensive user guide for Cuer broadcast rundown software. Learn keyboard shortcuts, collaboration features, AI tools, and production workflow tips."
+        keywords="rundown software help, broadcast production guide, Cuer tutorial, live production workflow"
+        canonicalUrl="https://cuer.live/help"
+      />
       {/* Fixed Header */}
       <div className="flex-shrink-0">
         <DashboardHeader 

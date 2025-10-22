@@ -251,6 +251,7 @@ const BroadcastGlossary = () => {
         description="Comprehensive glossary of 125+ broadcast, television production, and streaming terms. From 10-1 bathroom breaks to floating segments, learn the language of live production professionals."
         keywords="broadcast terminology, production glossary, TV terms, live broadcast, production lingo, 10-1, floating segment, SOT, MOS, blocking, showcaller, rundown terms"
         canonicalUrl="https://cuer.live/tools/broadcast-glossary"
+        ogImage="https://cuer.live/uploads/cuer-og-image.jpg"
         structuredData={structuredData}
       />
 
