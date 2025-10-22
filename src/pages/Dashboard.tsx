@@ -564,21 +564,21 @@ const Dashboard = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="bg-popover">
                       <DropdownMenuItem 
-                        onClick={() => navigate('/tools/script-timing')}
+                        onClick={() => window.open('/tools/script-timing', '_blank', 'noopener,noreferrer')}
                         className="cursor-pointer"
                       >
                         <Calculator className="h-4 w-4 mr-2" />
                         Script Timing Calculator
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => navigate('/tools/time-calculator')}
+                        onClick={() => window.open('/tools/time-calculator', '_blank', 'noopener,noreferrer')}
                         className="cursor-pointer"
                       >
                         <Clock className="h-4 w-4 mr-2" />
                         Time Calculator
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => navigate('/tools/countdown-clock')}
+                        onClick={() => window.open('/tools/countdown-clock', '_blank', 'noopener,noreferrer')}
                         className="cursor-pointer"
                       >
                         <Timer className="h-4 w-4 mr-2" />
