@@ -29,6 +29,14 @@ export const CookieConsentComponent = () => {
         },
       },
 
+      guiOptions: {
+        consentModal: {
+          layout: 'bar',
+          position: 'bottom',
+          flipButtons: false,
+        },
+      },
+
       language: {
         default: 'en',
         translations: {
