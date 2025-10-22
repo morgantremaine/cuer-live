@@ -19,12 +19,14 @@ This document describes the comprehensive realtime collaboration system designed
 **Purpose**: Real-time monitoring of network connectivity and automatic reconnection.
 
 **Features**:
+
 - Detects online/offline status changes
 - Tests actual connectivity to Supabase (not just browser navigator.onLine)
 - Exponential backoff reconnection attempts
 - Connection type tracking (online/offline/reconnecting)
 
 **Key Benefits**:
+
 - Prevents false positives from browser network detection
 - Graceful handling of intermittent connectivity
 - Smart reconnection strategy reduces server load
@@ -34,12 +36,14 @@ This document describes the comprehensive realtime collaboration system designed
 **Purpose**: Persistent storage and processing of operations when offline.
 
 **Features**:
+
 - **Persistent Storage**: Uses localStorage to survive browser restarts
 - **Operation Queuing**: Saves, deletes, and creates are queued when offline
 - **Retry Logic**: Exponential backoff with max retry limits
 - **Field-Level Change Tracking**: Records individual field edits with timestamps
 
 **Key Benefits**:
+
 - **Zero Data Loss**: Even if browser crashes, edits are preserved
 - **Smart Processing**: Automatically processes queue when connection restored
 - **Granular Recovery**: Can apply specific field changes on reconnect
@@ -49,12 +53,14 @@ This document describes the comprehensive realtime collaboration system designed
 **Purpose**: Intelligent bidirectional synchronization with conflict resolution.
 
 **Features**:
+
 - **Stale Data Detection**: Compares timestamps and doc versions
 - **Operational Transformation**: Merges concurrent edits intelligently
 - **Focus-Based Sync**: Checks for updates when tab regains focus
 - **Conflict Resolution**: Preserves user edits while applying remote changes
 
 **Key Benefits**:
+
 - **Always Up-to-Date**: Users see latest data when they start working
 - **Smart Merging**: Conflicting changes are resolved automatically
 - **User Edit Priority**: Local edits take precedence during conflicts
@@ -64,6 +70,7 @@ This document describes the comprehensive realtime collaboration system designed
 **Purpose**: Unified state management that orchestrates all components.
 
 **Features**:
+
 - **Immediate Local Updates**: Changes appear instantly in UI
 - **Background Sync**: Automatic syncing without blocking user
 - **Error Recovery**: Graceful handling of network and server errors
@@ -129,7 +136,7 @@ const mergedData = { ...remoteData };
 // Apply offline changes on top of remote data
 Object.entries(offlineChanges).forEach(([fieldKey, value]) => {
   const [itemId, fieldName] = fieldKey.split('-');
-  
+
   if (fieldName && itemId) {
     // Apply field-level change
     mergedData.items[itemIndex][fieldName] = value;
@@ -186,26 +193,31 @@ The system detects conflicts at multiple levels:
 ## Edge Cases Handled
 
 ### 1. Browser Crash During Edit
+
 - **Problem**: User loses unsaved changes
 - **Solution**: Offline queue persists changes in localStorage
 - **Recovery**: Changes restored on next session
 
 ### 2. Network Hiccup During Save
+
 - **Problem**: Save fails, changes lost
 - **Solution**: Operation queued for retry with exponential backoff
 - **Recovery**: Automatic retry when connection restored
 
 ### 3. Mobile Sleep/Wake
+
 - **Problem**: Stale data when app wakes up
 - **Solution**: Focus event triggers staleness check and sync
 - **Recovery**: Fresh data loaded before user can edit
 
 ### 4. Concurrent Edits Same Field
+
 - **Problem**: One user's changes overwrite another's
 - **Solution**: Timestamp-based conflict resolution with user preference
 - **Recovery**: Latest edit wins, with notification
 
 ### 5. Large Item Deletion Conflict
+
 - **Problem**: User A deletes items while User B adds items
 - **Solution**: Merge operations preserve both delete and add
 - **Recovery**: Deleted items removed, new items preserved
@@ -231,6 +243,7 @@ if (hasConflicts(localState, syncResult.data)) {
 ### Real-time Subscriptions
 
 The system maintains real-time subscriptions for:
+
 - Document updates
 - User presence
 - Conflict notifications
@@ -241,10 +254,10 @@ The system maintains real-time subscriptions for:
 const {
   // State
   items, title, startTime,
-  
+
   // Status
   isConnected, staleness, hasOfflineChanges,
-  
+
   // Actions
   handleFieldChange, syncNow, saveNow
 } = useBulletproofRundownState();
@@ -271,6 +284,6 @@ const onFocusRestore = () => {
 ✅ **Automatic Recovery**: Seamless reconnection and sync  
 ✅ **Stale Data Prevention**: Always shows latest data on focus  
 ✅ **Conflict Resolution**: Handles all multi-user scenarios  
-✅ **Performance Optimized**: Minimal network requests and storage  
+✅ **Performance Optimized**: Minimal network requests and storage
 
 This system provides the **absolute best-case scenario** for realtime collaboration, ensuring users never lose data and always see the most current information while maintaining excellent performance and user experience.
