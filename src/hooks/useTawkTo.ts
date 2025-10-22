@@ -104,10 +104,8 @@ export const useTawkTo = ({
     // Cleanup on unmount or route change
     return () => {
       window.removeEventListener('tawkConsentChanged', handleConsentChange);
-      // Hide widget when leaving the page
-      if (!showOnThisPage) {
-        hideWidget();
-      }
+      // Always hide widget when leaving the page (component unmounts)
+      hideWidget();
     };
   }, [location.pathname, showOnThisPage, propertyId, widgetId]);
 };
