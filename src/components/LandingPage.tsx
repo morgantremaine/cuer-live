@@ -30,48 +30,6 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Load and show Tawk.to chat widget
-  useEffect(() => {
-    // Initialize Tawk_API if not already done
-    (window as any).Tawk_API = (window as any).Tawk_API || {};
-    
-    // Check if script is already loaded
-    const existingScript = document.querySelector('script[src*="tawk.to"]');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = 'https://embed.tawk.to/68cfa27c4ad9d919216ba7a7/1j5lh5dkg';
-      script.charset = 'UTF-8';
-      script.setAttribute('crossorigin', '*');
-      
-      (window as any).Tawk_LoadStart = new Date();
-      document.body.appendChild(script);
-    }
-    
-    // Show the widget when component mounts
-    const showWidget = () => {
-      if ((window as any).Tawk_API && (window as any).Tawk_API.showWidget) {
-        (window as any).Tawk_API.showWidget();
-      }
-    };
-    
-    // If Tawk is already loaded, show immediately, otherwise wait for it to load
-    if ((window as any).Tawk_API && (window as any).Tawk_API.showWidget) {
-      showWidget();
-    } else {
-      (window as any).Tawk_API = (window as any).Tawk_API || {};
-      (window as any).Tawk_API.onLoad = showWidget;
-    }
-    
-    return () => {
-      // Hide the widget when component unmounts
-      if ((window as any).Tawk_API && (window as any).Tawk_API.hideWidget) {
-        (window as any).Tawk_API.hideWidget();
-      }
-    };
-  }, []);
-
   const handleGetStarted = () => {
     if (user) {
       navigate('/dashboard');
@@ -485,12 +443,27 @@ const LandingPage = () => {
               By using this site, you agree to our{' '}
               <a href="/terms" className="text-blue-400 hover:text-blue-300 underline">
                 Terms
-              </a>{' '}
-              and{' '}
+              </a>
+              ,{' '}
               <a href="/privacy" className="text-blue-400 hover:text-blue-300 underline">
                 Privacy Policy
               </a>
+              , and{' '}
+              <a href="/cookie-policy" className="text-blue-400 hover:text-blue-300 underline">
+                Cookie Policy
+              </a>
               .
+            </p>
+            <p>
+              <button 
+                onClick={() => {
+                  const CookieConsent = require('vanilla-cookieconsent');
+                  CookieConsent.showPreferences();
+                }}
+                className="text-blue-400 hover:text-blue-300 underline cursor-pointer bg-transparent border-none"
+              >
+                Cookie Settings
+              </button>
             </p>
           </div>
         </div>

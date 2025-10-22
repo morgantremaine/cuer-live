@@ -10,6 +10,10 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ClockFormatProvider } from "@/contexts/ClockFormatContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { trackPageView } from "@/utils/analytics";
+import CookieConsentComponent from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -31,6 +35,7 @@ import LandingPage from "./components/LandingPage";
 import Changelog from "./pages/Changelog";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import CreateBlog from "./pages/CreateBlog";
@@ -64,9 +69,15 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
+  const location = useLocation();
   
   // Initialize logger auth sync
   useLoggerAuth();
+
+  // Track page views with Google Analytics
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
 
   if (loading) {
     return (
@@ -94,6 +105,7 @@ const AppRoutes = () => {
       <Route path="/changelog" element={<Changelog />} />
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/cookie-policy" element={<CookiePolicy />} />
       <Route path="/blog" element={<Blog />} />
       <Route path="/blog/create" element={<CreateBlog />} />
       <Route path="/blog/edit/:postId" element={<EditBlog />} />
@@ -227,6 +239,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <CookieConsentComponent />
               <BrowserRouter>
                 <AppUpdateNotification />
                 <AppRoutes />

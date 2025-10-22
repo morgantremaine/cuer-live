@@ -128,7 +128,6 @@ const PrivacyPolicy = () => {
                 <h2 className="text-xl font-semibold text-white mb-3">3. What We Do <em>Not</em> Collect</h2>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>We do not access your Gmail, Google Drive, Calendar, or any other Google services beyond basic profile information</li>
-                  <li>We do not use third-party analytics tools (e.g., Google Analytics or Facebook Pixel)</li>
                   <li>We do not collect device fingerprinting or unique hardware identifiers</li>
                   <li>We do not collect location data (timezone is user-selected)</li>
                   <li>We do not track external websites or browsing behavior</li>
@@ -137,7 +136,48 @@ const PrivacyPolicy = () => {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">4. How We Use Your Information</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">4. Analytics and Cookies</h2>
+                <p className="mb-3">
+                  We use cookies and similar technologies to enhance your experience and understand how our service is used.
+                </p>
+                <p className="mb-3">
+                  <strong>Google Analytics:</strong> We use Google Analytics to collect anonymous information about how visitors interact with our website. 
+                  This helps us understand usage patterns and improve our services. Google Analytics collects information such as:
+                </p>
+                <ul className="list-disc pl-6 space-y-1 mb-3">
+                  <li>Pages you visit and features you use</li>
+                  <li>Time spent on pages</li>
+                  <li>Browser type and device information</li>
+                  <li>General geographic location (country/city level)</li>
+                  <li>Referral sources</li>
+                </ul>
+                <p className="mb-3">
+                  You can control analytics cookies through our{' '}
+                  <a href="/cookie-policy" className="text-blue-400 hover:text-blue-300 underline">
+                    Cookie Policy
+                  </a>
+                  . For more information about how Google uses data, see{' '}
+                  <a
+                    href="https://policies.google.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    Google's Privacy Policy
+                  </a>
+                  .
+                </p>
+                <p>
+                  For detailed information about all cookies we use, please review our{' '}
+                  <a href="/cookie-policy" className="text-blue-400 hover:text-blue-300 underline">
+                    Cookie Policy
+                  </a>
+                  .
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold text-white mb-3">5. How We Use Your Information</h2>
                 <p>We use the collected information to:</p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Provide, maintain, and improve the Service</li>
@@ -145,19 +185,20 @@ const PrivacyPolicy = () => {
                   <li>Personalize your experience (e.g., saved layouts and preferences)</li>
                   <li>Offer support and resolve issues</li>
                   <li>Monitor performance and system integrity</li>
+                  <li>Understand usage patterns to enhance features (via analytics)</li>
                 </ul>
                 <p>We do not sell, rent, or share your personal data with advertisers or data brokers.</p>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">5. Data Storage and Security</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">6. Data Storage and Security</h2>
                 <p>All data is securely stored using Supabase, a privacy-conscious cloud database provider. Passwords are securely hashed and cannot be viewed by us. We follow best practices to protect your data from unauthorized access, alteration, or disclosure.</p>
                 <p>Data received from Google Sign-In is treated with the same security standards as all other user data and is never shared with third parties for advertising or marketing purposes.</p>
                 <p>However, no system is 100% secure. By using the Service, you acknowledge and accept this risk.</p>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">6. Data Sharing and Disclosure</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">7. Data Sharing and Disclosure</h2>
                 <p>We may share your data only under these circumstances:</p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>To comply with legal obligations or law enforcement requests</li>
@@ -168,7 +209,7 @@ const PrivacyPolicy = () => {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">7. Your Rights and Choices</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">8. Your Rights and Choices</h2>
                 <p>You can:</p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Access or update your profile information at any time</li>
@@ -185,17 +226,17 @@ const PrivacyPolicy = () => {
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">8. Children's Privacy</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">9. Children's Privacy</h2>
                 <p>Cuer Live is not intended for children under 18. We do not knowingly collect personal information from minors. If we discover that we've inadvertently collected data from a child under 18, we will promptly delete it.</p>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">9. Changes to This Policy</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">10. Changes to This Policy</h2>
                 <p>We may update this Privacy Policy from time to time. If changes are significant, we will notify you via email or platform notice. Continued use of the Service after changes constitutes acceptance of the updated policy.</p>
               </div>
 
               <div>
-                <h2 className="text-xl font-semibold text-white mb-3">10. Contact Us</h2>
+                <h2 className="text-xl font-semibold text-white mb-3">11. Contact Us</h2>
                 <p>For privacy-related questions or requests, contact:</p>
                 <p className="font-mono">info@cuer.live</p>
               </div>
