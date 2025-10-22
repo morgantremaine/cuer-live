@@ -56,7 +56,6 @@ export default function CustomCookieConsent() {
         const data: ConsentData = JSON.parse(stored);
         setPreferences(data.preferences);
         // Load scripts based on stored preferences
-        if (data.preferences.functional) loadTawkTo();
         if (data.preferences.analytics) loadGoogleAnalytics();
       } catch (e) {
         setShowBanner(true);
@@ -85,13 +84,10 @@ export default function CustomCookieConsent() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setPreferences(prefs);
 
-    // Load or remove scripts based on preferences
-    if (prefs.functional) {
-      loadTawkTo();
-    } else {
-      removeTawkTo();
-    }
+    // Dispatch event for Tawk.to to listen to consent changes
+    window.dispatchEvent(new Event('tawkConsentChanged'));
 
+    // Handle Google Analytics
     if (prefs.analytics) {
       loadGoogleAnalytics();
     } else {
@@ -127,26 +123,6 @@ export default function CustomCookieConsent() {
     setShowBanner(false);
   };
 
-  const loadTawkTo = () => {
-    if (document.getElementById('tawk-script')) return;
-
-    const script = document.createElement('script');
-    script.id = 'tawk-script';
-    script.async = true;
-    script.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`;
-    script.charset = 'UTF-8';
-    script.setAttribute('crossorigin', '*');
-    document.body.appendChild(script);
-  };
-
-  const removeTawkTo = () => {
-    const script = document.getElementById('tawk-script');
-    if (script) script.remove();
-    
-    if (window.Tawk_API?.hideWidget) {
-      window.Tawk_API.hideWidget();
-    }
-  };
 
   const loadGoogleAnalytics = () => {
     if (document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${GA_ID}"]`)) return;

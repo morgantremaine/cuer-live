@@ -4,6 +4,7 @@ import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2
 import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
+import { useTawkTo } from '@/hooks/useTawkTo';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 
@@ -87,47 +88,8 @@ const Help = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Load and show Tawk.to chat widget
-  useEffect(() => {
-    // Initialize Tawk_API if not already done
-    (window as any).Tawk_API = (window as any).Tawk_API || {};
-    
-    // Check if script is already loaded
-    const existingScript = document.querySelector('script[src*="tawk.to"]');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      script.src = 'https://embed.tawk.to/68cfa27c4ad9d919216ba7a7/1j5lh5dkg';
-      script.charset = 'UTF-8';
-      script.setAttribute('crossorigin', '*');
-      
-      (window as any).Tawk_LoadStart = new Date();
-      document.body.appendChild(script);
-    }
-    
-    // Show the widget when component mounts
-    const showWidget = () => {
-      if ((window as any).Tawk_API && (window as any).Tawk_API.showWidget) {
-        (window as any).Tawk_API.showWidget();
-      }
-    };
-    
-    // If Tawk is already loaded, show immediately, otherwise wait for it to load
-    if ((window as any).Tawk_API && (window as any).Tawk_API.showWidget) {
-      showWidget();
-    } else {
-      (window as any).Tawk_API = (window as any).Tawk_API || {};
-      (window as any).Tawk_API.onLoad = showWidget;
-    }
-    
-    return () => {
-      // Hide the widget when component unmounts
-      if ((window as any).Tawk_API && (window as any).Tawk_API.hideWidget) {
-        (window as any).Tawk_API.hideWidget();
-      }
-    };
-  }, []);
+  // Load and show Tawk.to chat widget on this page only
+  useTawkTo({ showOnThisPage: true });
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">

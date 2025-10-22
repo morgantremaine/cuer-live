@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
+import { useTawkTo } from '@/hooks/useTawkTo';
 import { LandingPagePricing } from '@/components/LandingPagePricing';
 import { FeatureExplorer } from '@/components/FeatureExplorer';
 import InteractiveRundownImage from '@/components/InteractiveRundownImage';
@@ -19,6 +20,9 @@ const LandingPage = () => {
   const { user } = useAuth();
   const [pricingInterval, setPricingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Show Tawk.to widget on landing page
+  useTawkTo({ showOnThisPage: true });
 
   useEffect(() => {
     const handleScroll = () => {
