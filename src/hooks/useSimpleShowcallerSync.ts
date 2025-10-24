@@ -491,6 +491,102 @@ export const useSimpleShowcallerSync = ({
     }
   }, [items, state.currentSegmentId, state.isPlaying, state.isController, hasLoadedInitialState.current, parseDurationToSeconds, buildStatusMap, broadcastState, stopTimer]);
 
+  // Handle when current segment becomes floated
+  useEffect(() => {
+    if (!state.currentSegmentId || !hasLoadedInitialState.current) {
+      return;
+    }
+
+    // Check if current segment exists and is now floated
+    const currentItem = items.find(item => item.id === state.currentSegmentId);
+    
+    // If item exists but is now floated, move to next valid segment
+    if (currentItem && isFloated(currentItem)) {
+      console.log('📺 Simple: Current segment was floated, finding next segment');
+      
+      // Use the same logic as deletion: find next available segment from current position
+      const currentIndex = items.findIndex(item => item.id === state.currentSegmentId);
+      let nextSegment = null;
+      
+      if (currentIndex !== -1) {
+        console.log('📺 Simple: Floated item was at index:', currentIndex);
+        
+        // Look for the next regular, non-floated item starting after current position
+        for (let i = currentIndex + 1; i < items.length; i++) {
+          const item = items[i];
+          if (item.type === 'regular' && !isFloated(item)) {
+            nextSegment = item;
+            break;
+          }
+        }
+        
+        // If no item found after, look from the beginning
+        if (!nextSegment) {
+          nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+        }
+      } else {
+        // Fallback: just find first available item
+        nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+      }
+      
+      if (nextSegment) {
+        console.log('📺 Simple: Moving showcaller to next segment after floated:', nextSegment.id);
+        
+        const duration = parseDurationToSeconds(nextSegment.duration);
+        const newState = {
+          ...state,
+          currentSegmentId: nextSegment.id,
+          timeRemaining: state.isPlaying ? duration : 0, // Preserve playing state
+          currentItemStatuses: buildStatusMap(nextSegment.id),
+          lastUpdate: new Date().toISOString()
+        };
+        
+        setState(newState);
+        
+        // Broadcast the change if we're the controller
+        if (state.isController) {
+          broadcastState({
+            action: 'jump',
+            isPlaying: state.isPlaying,
+            currentSegmentId: nextSegment.id,
+            timeRemaining: newState.timeRemaining
+          });
+        }
+        
+        // Persist immediately
+        skipNextSaveRef.current = true;
+        immediateSave.current(newState);
+      } else {
+        console.log('📺 Simple: No available segments after float, resetting showcaller');
+        
+        // No segments available, reset to initial state
+        const resetState = {
+          ...state,
+          isPlaying: false,
+          currentSegmentId: null,
+          timeRemaining: 0,
+          currentItemStatuses: {},
+          lastUpdate: new Date().toISOString()
+        };
+        
+        setState(resetState);
+        stopTimer();
+        
+        if (state.isController) {
+          broadcastState({
+            action: 'reset',
+            isPlaying: false,
+            currentSegmentId: null,
+            timeRemaining: 0
+          });
+        }
+        
+        skipNextSaveRef.current = true;
+        immediateSave.current(resetState);
+      }
+    }
+  }, [items, state.currentSegmentId, state.isPlaying, state.isController, hasLoadedInitialState.current, parseDurationToSeconds, buildStatusMap, broadcastState, stopTimer]);
+
   // Update previous items ref whenever items change
   useEffect(() => {
     previousItemsRef.current = items;
