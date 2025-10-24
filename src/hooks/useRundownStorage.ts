@@ -293,6 +293,16 @@ export const useRundownStorage = () => {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }));
 
+    // First, try to get the user's column preferences for the original rundown
+    const { data: originalPrefs } = await supabase
+      .from('user_column_preferences')
+      .select('column_layout')
+      .eq('user_id', user.id)
+      .eq('rundown_id', originalRundown.id)
+      .maybeSingle();
+
+    const columnsToPreserve = originalPrefs?.column_layout || originalRundown.columns;
+
     const { data, error } = await supabase
       .from('rundowns')
       .insert({
@@ -312,6 +322,23 @@ export const useRundownStorage = () => {
       .single();
 
     if (error) throw error;
+
+    // Copy column preferences to the new rundown
+    if (columnsToPreserve && Array.isArray(columnsToPreserve) && columnsToPreserve.length > 0) {
+      const { error: prefsError } = await supabase
+        .from('user_column_preferences')
+        .insert({
+          user_id: user.id,
+          rundown_id: data.id,
+          column_layout: columnsToPreserve
+        });
+      
+      if (prefsError) {
+        console.error('Failed to copy column preferences for duplicated rundown:', prefsError);
+      } else {
+        console.log('✅ Column preferences copied to duplicated rundown');
+      }
+    }
 
     // Add to local state
     const newRundown = {
