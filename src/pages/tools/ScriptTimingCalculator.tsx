@@ -201,7 +201,7 @@ const ScriptTimingCalculator = () => {
                 >
                   Slow
                   <br />
-                  <span className="text-xs opacity-80">120 WPM</span>
+                  <span className="text-xs opacity-80"> 120 WPM</span>
                 </Button>
                 <Button
                   variant={selectedSpeed === 'normal' ? 'default' : 'outline'}
@@ -210,7 +210,7 @@ const ScriptTimingCalculator = () => {
                 >
                   Normal
                   <br />
-                  <span className="text-xs opacity-80">150 WPM</span>
+                  <span className="text-xs opacity-80"> 150 WPM</span>
                 </Button>
                 <Button
                   variant={selectedSpeed === 'fast' ? 'default' : 'outline'}
@@ -219,7 +219,7 @@ const ScriptTimingCalculator = () => {
                 >
                   Fast
                   <br />
-                  <span className="text-xs opacity-80">180 WPM</span>
+                  <span className="text-xs opacity-80"> 180 WPM</span>
                 </Button>
                 <Button
                   variant={selectedSpeed === 'custom' ? 'default' : 'outline'}
