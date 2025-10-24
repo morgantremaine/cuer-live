@@ -81,7 +81,7 @@ function calculateActivityStatus(
     timeAgo = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
     status = 'active';
     color = 'bg-green-500';
-  } else if (hoursDiff < 48) {
+  } else if (hoursDiff < 24) {
     const hours = Math.floor(hoursDiff);
     timeAgo = `${hours} hour${hours !== 1 ? 's' : ''} ago`;
     status = 'active';
