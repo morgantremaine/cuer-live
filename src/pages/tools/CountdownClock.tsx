@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
-import { Clock, Play, Square, Maximize2, Settings, ArrowLeft, Calculator, TimerIcon, Home } from 'lucide-react';
+import { Clock, Play, Square, Maximize2, Settings, ArrowLeft, Calculator, TimerIcon } from 'lucide-react';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
   formatTimeRemaining,
@@ -16,14 +16,6 @@ import {
 } from '@/utils/countdownUtils';
 import { useAuth } from '@/hooks/useAuth';
 import { SEO } from '@/components/SEO';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 
 const CountdownClock = () => {
   const navigate = useNavigate();
@@ -242,8 +234,8 @@ const CountdownClock = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => navigate('/')}
-                  aria-label="Back to home"
+                  onClick={() => navigate(user ? '/dashboard' : '/')}
+                  aria-label={user ? "Back to dashboard" : "Back to home"}
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -255,20 +247,6 @@ const CountdownClock = () => {
                 </Button>
               )}
             </div>
-            <Breadcrumb className="ml-14">
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/" className="flex items-center gap-1">
-                    <Home className="h-3 w-3" />
-                    Home
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Countdown Clock</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
           </div>
         </header>
 

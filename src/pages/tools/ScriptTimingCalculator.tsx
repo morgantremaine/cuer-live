@@ -5,19 +5,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Clock, Calculator, ArrowLeft, TimerIcon, Home } from 'lucide-react';
+import { Clock, Calculator, ArrowLeft, TimerIcon } from 'lucide-react';
 import CuerLogo from '@/components/common/CuerLogo';
 import { countWords, calculateReadingTimeSeconds, secondsToMMSS } from '@/utils/scriptTiming';
 import { useAuth } from '@/hooks/useAuth';
 import { SEO } from '@/components/SEO';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 
 const ScriptTimingCalculator = () => {
   const navigate = useNavigate();
@@ -131,8 +123,8 @@ const ScriptTimingCalculator = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate('/')}
-                aria-label="Back to home"
+                onClick={() => navigate(user ? '/dashboard' : '/')}
+                aria-label={user ? "Back to dashboard" : "Back to home"}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -144,20 +136,6 @@ const ScriptTimingCalculator = () => {
               </Button>
             )}
           </div>
-          <Breadcrumb className="ml-14">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/" className="flex items-center gap-1">
-                  <Home className="h-3 w-3" />
-                  Home
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Script Timing Calculator</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
         </div>
       </header>
 

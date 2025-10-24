@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Calculator, Plus, Minus, Timer, Copy, Check, TimerIcon, ArrowLeft, Home } from 'lucide-react';
+import { Clock, Calculator, Plus, Minus, Timer, Copy, Check, TimerIcon, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
@@ -18,14 +18,6 @@ import {
 } from '@/utils/timeCalculator';
 import { useAuth } from '@/hooks/useAuth';
 import { SEO } from '@/components/SEO';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 
 type CalculatorType = 'add-time' | 'subtract-time' | 'add-durations' | 'subtract-durations' | 'time-until';
 
@@ -351,8 +343,8 @@ const TimeCalculator = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate('/')}
-                aria-label="Back to home"
+                onClick={() => navigate(user ? '/dashboard' : '/')}
+                aria-label={user ? "Back to dashboard" : "Back to home"}
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -364,20 +356,6 @@ const TimeCalculator = () => {
               </Button>
             )}
           </div>
-          <Breadcrumb className="ml-14">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/" className="flex items-center gap-1">
-                  <Home className="h-3 w-3" />
-                  Home
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Time Calculator</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
         </div>
       </header>
 
