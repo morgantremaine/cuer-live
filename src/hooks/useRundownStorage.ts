@@ -301,7 +301,12 @@ export const useRundownStorage = () => {
         user_id: user.id,
         team_id: teamId,
         folder_id: originalRundown.folder_id,
-        archived: false
+        archived: false,
+        timezone: originalRundown.timezone,
+        start_time: originalRundown.start_time,
+        show_date: originalRundown.show_date,
+        columns: originalRundown.columns,
+        icon: originalRundown.icon
       })
       .select()
       .single();
