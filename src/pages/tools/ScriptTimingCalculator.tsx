@@ -199,27 +199,30 @@ const ScriptTimingCalculator = () => {
                   onClick={() => setSelectedSpeed('slow')}
                   className="w-full"
                 >
-                  Slow
-                  <br />
-                  <span className="text-xs opacity-80"> 120 WPM</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span>Slow</span>
+                    <span className="text-xs opacity-80">120 WPM</span>
+                  </div>
                 </Button>
                 <Button
                   variant={selectedSpeed === 'normal' ? 'default' : 'outline'}
                   onClick={() => setSelectedSpeed('normal')}
                   className="w-full"
                 >
-                  Normal
-                  <br />
-                  <span className="text-xs opacity-80"> 150 WPM</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span>Normal</span>
+                    <span className="text-xs opacity-80">150 WPM</span>
+                  </div>
                 </Button>
                 <Button
                   variant={selectedSpeed === 'fast' ? 'default' : 'outline'}
                   onClick={() => setSelectedSpeed('fast')}
                   className="w-full"
                 >
-                  Fast
-                  <br />
-                  <span className="text-xs opacity-80"> 180 WPM</span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span>Fast</span>
+                    <span className="text-xs opacity-80">180 WPM</span>
+                  </div>
                 </Button>
                 <Button
                   variant={selectedSpeed === 'custom' ? 'default' : 'outline'}
