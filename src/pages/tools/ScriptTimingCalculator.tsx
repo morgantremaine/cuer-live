@@ -36,7 +36,10 @@ const ScriptTimingCalculator = () => {
 
   const { wordCount, readingTimeSeconds, readingTimeFormatted, readingTimeHuman } = useMemo(() => {
     const words = countWords(scriptText);
-    const seconds = calculateReadingTimeSeconds(words, currentWPM);
+    // Calculate directly without rounding (shared function rounds to 5 seconds for rundown use)
+    const seconds = words > 0 && currentWPM > 0 
+      ? Math.round((words / currentWPM) * 60) 
+      : 0;
     const formatted = secondsToMMSS(seconds);
     
     const minutes = Math.floor(seconds / 60);
