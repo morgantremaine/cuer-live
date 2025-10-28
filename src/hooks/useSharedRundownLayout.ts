@@ -32,6 +32,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
   const [sharedLayout, setSharedLayout] = useState<SharedRundownLayout | null>(null);
   const [availableLayouts, setAvailableLayouts] = useState<ColumnLayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [rundownTeamId, setRundownTeamId] = useState<string | null>(null);
 
   // Load current shared layout for rundown
   const loadSharedLayout = useCallback(async () => {
@@ -41,6 +42,20 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
     }
 
     try {
+      // Fetch rundown to get its team_id
+      const { data: rundownData, error: rundownError } = await supabase
+        .from('rundowns')
+        .select('team_id')
+        .eq('id', rundownId)
+        .single();
+
+      if (rundownError) {
+        console.error('Error loading rundown:', rundownError);
+      } else {
+        setRundownTeamId(rundownData?.team_id || null);
+      }
+
+      // Fetch shared layout
       const { data, error } = await supabase
         .from('shared_rundown_layouts')
         .select('*')
@@ -64,25 +79,21 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
     if (!user?.id) return;
 
     try {
-      // Get user's team memberships first
-      const { data: teamMemberships, error: teamError } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id);
+      // Build query to only fetch layouts relevant to this rundown
+      let query = supabase
+        .from('column_layouts')
+        .select('*');
 
-      if (teamError) {
-        console.error('Error loading team memberships:', teamError);
-        return;
+      // Filter by user's personal layouts OR the rundown's team layouts
+      if (rundownTeamId) {
+        // For team rundowns: show user's personal layouts + that team's layouts
+        query = query.or(`user_id.eq.${user.id},team_id.eq.${rundownTeamId}`);
+      } else {
+        // For personal rundowns: only show user's personal layouts
+        query = query.eq('user_id', user.id).is('team_id', null);
       }
 
-      const teamIds = teamMemberships?.map(membership => membership.team_id) || [];
-
-      // Load layouts that user can access (own layouts + team layouts) with fresh data
-      const { data: layoutsData, error } = await supabase
-        .from('column_layouts')
-        .select('*')
-        .or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`)
-        .order('updated_at', { ascending: false });
+      const { data: layoutsData, error } = await query.order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Error loading available layouts:', error);
@@ -148,7 +159,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
     } catch (error) {
       console.error('Failed to load available layouts:', error);
     }
-  }, [user?.id]);
+  }, [user?.id, rundownTeamId]);
 
   // Update shared layout
   const updateSharedLayout = useCallback(async (layoutId: string | null) => {
