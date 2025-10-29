@@ -88,9 +88,6 @@ const Help = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Load and show Tawk.to chat widget on this page only
-  useTawkTo({ showOnThisPage: true });
-
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       <SEO 

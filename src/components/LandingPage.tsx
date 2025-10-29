@@ -21,9 +21,6 @@ const LandingPage = () => {
   const [pricingInterval, setPricingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Show Tawk.to widget on landing page
-  useTawkTo({ showOnThisPage: true });
-
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;

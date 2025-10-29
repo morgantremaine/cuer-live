@@ -48,6 +48,7 @@ import ScriptTimingCalculator from "./pages/tools/ScriptTimingCalculator";
 import BroadcastGlossary from "./pages/tools/BroadcastGlossary";
 import TimeCalculator from "./pages/tools/TimeCalculator";
 import CountdownClock from "./pages/tools/CountdownClock";
+import TawkToGlobalManager from "./components/TawkToGlobalManager";
 
 
 // Login wrapper to handle Stream Deck vs normal login flows
@@ -241,6 +242,7 @@ const App = () => (
               <Sonner />
               <CustomCookieConsent />
               <BrowserRouter>
+                <TawkToGlobalManager />
                 <AppUpdateNotification />
                 <AppRoutes />
               </BrowserRouter>
