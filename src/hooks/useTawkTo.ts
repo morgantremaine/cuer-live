@@ -57,15 +57,8 @@ export const useTawkTo = ({
     const showWidget = () => {
       if (window.Tawk_API?.showWidget) {
         window.Tawk_API.showWidget();
-      } else {
-        // If API not ready, set onLoad callback
-        window.Tawk_API = window.Tawk_API || {};
-        window.Tawk_API.onLoad = () => {
-          if (window.Tawk_API?.showWidget) {
-            window.Tawk_API.showWidget();
-          }
-        };
       }
+      // Script loading is handled separately - visibility is controlled by TawkToGlobalManager
     };
 
     const hideWidget = () => {

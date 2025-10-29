@@ -25,7 +25,7 @@ const TawkToGlobalManager = () => {
     const currentPath = location.pathname;
     const shouldShow = allowedPaths.includes(currentPath);
 
-    // Small delay to ensure Tawk_API is ready
+    // Delay to ensure Tawk_API is ready
     const timer = setTimeout(() => {
       if (shouldShow) {
         // Show widget on whitelisted pages
@@ -38,7 +38,7 @@ const TawkToGlobalManager = () => {
           window.Tawk_API.hideWidget();
         }
       }
-    }, 100);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [location.pathname]);
