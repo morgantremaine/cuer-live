@@ -106,7 +106,9 @@ export const useCellLevelSave = (
           body: {
             rundownId,
             fieldUpdates: updatesToSave,
-            contentSignature
+            contentSignature,
+            baselineDocVersion: undefined, // Not used for online saves
+            baselineTimestamp: undefined
           }
         }),
         'per-cell-save',

@@ -18,6 +18,8 @@ interface CellSaveRequest {
   fieldUpdates: FieldUpdate[];
   expectedSignature?: string;
   contentSignature: string;
+  baselineDocVersion?: number;
+  baselineTimestamp?: number;
 }
 
 serve(async (req) => {
@@ -59,12 +61,14 @@ serve(async (req) => {
       )
     }
 
-    const { rundownId, fieldUpdates, contentSignature }: CellSaveRequest = body
+    const { rundownId, fieldUpdates, contentSignature, baselineDocVersion, baselineTimestamp }: CellSaveRequest = body
     
     console.log('📥 Cell save request received:', {
       rundownId,
       fieldUpdateCount: fieldUpdates.length,
-      userId: user.id
+      userId: user.id,
+      baselineDocVersion,
+      hasBaseline: baselineDocVersion !== undefined
     })
 
     if (!rundownId || !fieldUpdates || !Array.isArray(fieldUpdates)) {
@@ -94,8 +98,36 @@ serve(async (req) => {
     const fetchDuration = Date.now() - fetchStartTime;
     console.log('✅ Rundown fetched:', {
       fetchDuration: `${fetchDuration}ms`,
-      itemCount: currentRundown.items?.length || 0
+      itemCount: currentRundown.items?.length || 0,
+      currentDocVersion: currentRundown.doc_version
     })
+
+    // CONFLICT DETECTION: Check if baseline version provided
+    if (baselineDocVersion !== undefined && currentRundown.doc_version > baselineDocVersion) {
+      console.warn(`⚠️ Version conflict detected: baseline=${baselineDocVersion}, current=${currentRundown.doc_version}`);
+      
+      // Return conflict status - client will handle merge
+      return new Response(
+        JSON.stringify({
+          success: false,
+          conflict: true,
+          currentDocVersion: currentRundown.doc_version,
+          currentState: {
+            items: currentRundown.items,
+            title: currentRundown.title,
+            show_date: currentRundown.show_date,
+            timezone: currentRundown.timezone,
+            start_time: currentRundown.start_time,
+            updated_at: currentRundown.updated_at
+          },
+          message: 'Conflict detected - state changed since offline'
+        }),
+        { 
+          status: 409, // Conflict status
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     // Apply field updates
     console.log('⚙️ Processing field updates:', {
@@ -172,6 +204,7 @@ serve(async (req) => {
     }
 
     const updateTimestamp = new Date().toISOString()
+    const newDocVersion = (currentRundown.doc_version || 0) + 1
     const updateData = {
       items: updatedItems,
       title: updatedTitle,
@@ -182,17 +215,18 @@ serve(async (req) => {
       numbering_locked: updatedNumberingLocked,
       locked_row_numbers: updatedLockedRowNumbers,
       updated_at: updateTimestamp,
-      last_updated_by: user.id
+      last_updated_by: user.id,
+      doc_version: newDocVersion
     }
 
     const updateStartTime = Date.now();
-    console.log('💾 Writing updates to database...');
+    console.log('💾 Writing updates to database...', { newDocVersion });
     
     const { data: updatedRundown, error: updateError } = await supabaseClient
       .from('rundowns')
       .update(updateData)
       .eq('id', rundownId)
-      .select('updated_at')
+      .select('updated_at, doc_version')
       .single()
 
     if (updateError) {
@@ -215,13 +249,15 @@ serve(async (req) => {
       updateDuration: `${updateDuration}ms`,
       totalDuration: `${totalDuration}ms`,
       fieldsUpdated: fieldUpdates.length,
-      updatedAt: updatedRundown.updated_at
+      updatedAt: updatedRundown.updated_at,
+      docVersion: updatedRundown.doc_version
     })
 
     return new Response(
       JSON.stringify({
         success: true,
         updatedAt: updatedRundown.updated_at,
+        docVersion: updatedRundown.doc_version,
         fieldsUpdated: fieldUpdates.length,
         contentSignature
       }),

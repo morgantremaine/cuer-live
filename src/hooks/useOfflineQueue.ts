@@ -5,12 +5,15 @@ import { useNetworkStatus } from './useNetworkStatus';
 
 interface QueuedOperation {
   id: string;
-  type: 'save' | 'delete' | 'create';
+  type: 'save' | 'delete' | 'create' | 'cell-updates';
   timestamp: number;
   retryCount: number;
   data: any;
   rundownId: string | null;
   clientTimestamp: string;
+  baselineState?: any; // Snapshot of state when operation was queued
+  baselineTimestamp?: number; // Timestamp of baseline state
+  baselineDocVersion?: number; // Doc version when operation was queued
 }
 
 interface OfflineChange {
@@ -75,11 +78,13 @@ export const useOfflineQueue = (rundownId: string | null) => {
     }
   }, [rundownId]);
 
-  // Add operation to queue
+  // Add operation to queue with optional baseline state
   const queueOperation = useCallback((
     type: QueuedOperation['type'],
     data: any,
-    targetRundownId: string | null = rundownId
+    targetRundownId: string | null = rundownId,
+    baselineState?: any,
+    baselineDocVersion?: number
   ) => {
     const operation: QueuedOperation = {
       id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -88,7 +93,10 @@ export const useOfflineQueue = (rundownId: string | null) => {
       retryCount: 0,
       data,
       rundownId: targetRundownId,
-      clientTimestamp: new Date().toISOString()
+      clientTimestamp: new Date().toISOString(),
+      baselineState: baselineState || data,
+      baselineTimestamp: Date.now(),
+      baselineDocVersion
     };
 
     setQueue(prev => {
@@ -128,6 +136,31 @@ export const useOfflineQueue = (rundownId: string | null) => {
       console.log('🔄 Processing queued operation:', operation.type, operation.id);
 
       switch (operation.type) {
+        case 'cell-updates':
+          // Process cell-level updates with conflict detection
+          const { data: cellData, error: cellError } = await supabase.functions.invoke('cell-field-save', {
+            body: {
+              rundownId: operation.rundownId,
+              fieldUpdates: operation.data.fieldUpdates || [],
+              contentSignature: operation.data.contentSignature || '',
+              baselineDocVersion: operation.baselineDocVersion,
+              baselineTimestamp: operation.baselineTimestamp
+            }
+          });
+
+          if (cellError) throw cellError;
+          
+          if (cellData?.conflict) {
+            // Conflict detected - return false to trigger conflict resolution
+            console.warn('⚠️ Conflict detected during offline sync:', operation.id);
+            return false;
+          }
+          
+          if (!cellData?.success) {
+            throw new Error(cellData?.error || 'Cell update failed');
+          }
+          break;
+
         case 'save':
           if (!operation.rundownId) {
             // Create new rundown
