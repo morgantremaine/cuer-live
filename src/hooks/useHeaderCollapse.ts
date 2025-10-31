@@ -3,7 +3,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export interface HeaderGroup {
   header: RundownItem;
-  items: RundownItem[];
+  itemIds: string[];  // Store IDs instead of references
   headerIndex: number;
   startIndex: number;
   endIndex: number;
@@ -12,7 +12,7 @@ export interface HeaderGroup {
 export const useHeaderCollapse = (items: RundownItem[]) => {
   const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
 
-  // Group items by their headers
+  // Group items by their headers - store IDs not references
   const headerGroups = useMemo((): HeaderGroup[] => {
     const groups: HeaderGroup[] = [];
     let currentGroup: HeaderGroup | null = null;
@@ -25,17 +25,17 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
           groups.push(currentGroup);
         }
         
-        // Start new group
+        // Start new group - store IDs instead of item references
         currentGroup = {
           header: item,
-          items: [],
+          itemIds: [],  // Store IDs only
           headerIndex: index,
           startIndex: index,
           endIndex: index
         };
       } else if (currentGroup) {
-        // Add item to current group
-        currentGroup.items.push(item);
+        // Add item ID to current group
+        currentGroup.itemIds.push(item.id);
       }
     });
 
@@ -93,6 +93,7 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
   }, [collapsedHeaders]);
 
   // Get items that should move together with a header when dragging
+  // CRITICAL: Look up items fresh from current items array using stored IDs
   const getHeaderGroupItems = useCallback((headerId: string): RundownItem[] => {
     const group = headerGroups.find(g => g.header.id === headerId);
     if (!group) {
@@ -100,17 +101,32 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
       return [];
     }
     
-    console.log('🎯 Header group found:', {
+    // Fetch items fresh from current items array using stored IDs
+    const groupItems = group.itemIds
+      .map(id => items.find(item => item.id === id))
+      .filter(Boolean) as RundownItem[];
+    
+    console.log('🎯 Header group resolved from current items:', {
       headerId,
       headerIndex: group.headerIndex,
-      itemCount: group.items.length,
+      storedIdCount: group.itemIds.length,
+      resolvedItemCount: groupItems.length,
       startIndex: group.startIndex,
       endIndex: group.endIndex,
-      items: group.items.map(item => ({ id: item.id, type: item.type, name: item.name }))
+      items: groupItems.map(item => ({ id: item.id, type: item.type, name: item.name }))
     });
     
-    return [group.header, ...group.items];
-  }, [headerGroups]);
+    // Warn if any IDs couldn't be resolved
+    if (groupItems.length !== group.itemIds.length) {
+      console.warn('⚠️ Some header group items missing from current items array:', {
+        expected: group.itemIds.length,
+        found: groupItems.length,
+        missingIds: group.itemIds.filter(id => !items.find(item => item.id === id))
+      });
+    }
+    
+    return [group.header, ...groupItems];
+  }, [headerGroups, items]);
 
   // Get all item IDs in a header group (for drag operations)
   const getHeaderGroupItemIds = useCallback((headerId: string): string[] => {

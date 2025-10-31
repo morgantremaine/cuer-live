@@ -207,19 +207,41 @@ export const useDragAndDrop = (
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = draggedIds.length > 1;
+      
+      // DEFENSIVE VALIDATION: Verify all IDs exist in current items array
+      const validDraggedIds = draggedIds.filter(id => items.find(i => i.id === id));
+      const missingIds = draggedIds.filter(id => !items.find(i => i.id === id));
+      
+      if (missingIds.length > 0) {
+        console.warn('⚠️ VALIDATION: Some header group IDs missing from current items:', {
+          headerId: item.id,
+          expected: draggedIds.length,
+          valid: validDraggedIds.length,
+          missingIds
+        });
+      }
+      
+      draggedIds = validDraggedIds;
+      
       console.log('🎯 HEADER GROUP DRAG - Collapsed header detected:', {
         headerId: item.id,
         isCollapsed: isHeaderCollapsed(item.id),
         itemCount: draggedIds.length,
         itemIds: draggedIds,
-        firstFewNames: draggedIds.slice(0, 3).map(id => {
-          const foundItem = items.find(i => i.id === id);
-          return foundItem ? foundItem.name || foundItem.type : 'Unknown';
+        currentItemPositions: draggedIds.map(id => {
+          const idx = items.findIndex(i => i.id === id);
+          const foundItem = items[idx];
+          return {
+            id: id.slice(-6),
+            position: idx,
+            name: foundItem?.name || 'Unknown',
+            type: foundItem?.type
+          };
         })
       });
       
       if (draggedIds.length === 0) {
-        console.warn('🚨 HEADER GROUP ERROR: No items found for collapsed header:', item.id);
+        console.warn('🚨 HEADER GROUP ERROR: No valid items found for collapsed header:', item.id);
         // Fall back to single item drag
         draggedIds = [item.id];
         isHeaderGroup = false;
@@ -323,10 +345,19 @@ export const useDragAndDrop = (
       let actionDescription = '';
 
       if (draggedIds.length > 1) {
-        // Get all dragged items in their original order
+        // Get all dragged items in their CURRENT order from items array
         const draggedItems = draggedIds
           .map((id: string) => items.find(item => item.id === id))
           .filter(Boolean) as RundownItem[];
+        
+        // DEFENSIVE VALIDATION: Warn if any items were missing
+        if (draggedItems.length !== draggedIds.length) {
+          console.warn('⚠️ DROP VALIDATION: Some dragged items missing:', {
+            expected: draggedIds.length,
+            found: draggedItems.length,
+            missingIds: draggedIds.filter(id => !items.find(item => item.id === id))
+          });
+        }
           
         const remainingItems = items.filter(item => !draggedIds.includes(item.id));
         
