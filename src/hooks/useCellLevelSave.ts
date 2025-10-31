@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownState } from './useRundownState';
 import { createContentSignature } from '@/utils/contentSignature';
@@ -100,6 +100,30 @@ export const useCellLevelSave = (
         showDate: null,
         externalNotes: ''
       });
+
+      // Validate auth session before save
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('❌ Cell-level save: Auth session invalid - re-queuing updates');
+        // Re-queue updates instead of losing them
+        pendingUpdatesRef.current.push(...updatesToSave);
+        if (onUnsavedChanges) onUnsavedChanges();
+        throw new Error('Authentication required');
+      }
+      
+      // Refresh token if expiring soon (< 5 minutes)
+      const expiresAt = session.expires_at || 0;
+      const now = Math.floor(Date.now() / 1000);
+      
+      if (expiresAt - now < 300) {
+        console.log('🔄 Cell-level save: Token expiring soon - refreshing');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError);
+          throw new Error('Token refresh failed');
+        }
+      }
 
       const { data, error } = await saveWithTimeout(
         () => supabase.functions.invoke('cell-field-save', {
@@ -218,6 +242,35 @@ export const useCellLevelSave = (
   const hasPendingUpdates = useCallback(() => {
     return pendingUpdatesRef.current.length > 0;
   }, []);
+
+  // Add beforeunload handler to prevent data loss on tab close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingUpdates()) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        
+        // Best-effort synchronous flush
+        flushPendingUpdates().catch(console.error);
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasPendingUpdates, flushPendingUpdates]);
+
+  // Add visibilitychange handler to prevent data loss from background tab throttling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && hasPendingUpdates()) {
+        console.log('🌙 Tab hidden - flushing cell-level saves immediately');
+        flushPendingUpdates().catch(console.error);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [hasPendingUpdates, flushPendingUpdates]);
 
   return {
     trackCellChange,

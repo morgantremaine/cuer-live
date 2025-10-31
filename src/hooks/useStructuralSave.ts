@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
@@ -47,6 +47,29 @@ export const useStructuralSave = (
     onSaveStart?.();
 
     try {
+      // Validate auth session before processing operations
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('❌ Structural save: Auth session invalid - re-queuing operations');
+        // Re-queue operations instead of losing them
+        pendingOperationsRef.current.unshift(...operations);
+        throw new Error('Authentication required');
+      }
+      
+      // Refresh token if expiring soon (< 5 minutes)
+      const expiresAt = session.expires_at || 0;
+      const now = Math.floor(Date.now() / 1000);
+      
+      if (expiresAt - now < 300) {
+        console.log('🔄 Structural save: Token expiring soon - refreshing');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError);
+          throw new Error('Token refresh failed');
+        }
+      }
+
       for (const operation of operations) {
         // PHASE 1: BROADCAST FIRST (Dual Broadcasting Pattern - immediate broadcast)
         // This ensures other users see changes instantly, before database persistence
@@ -156,6 +179,35 @@ export const useStructuralSave = (
   const hasPendingOperations = useCallback((): boolean => {
     return pendingOperationsRef.current.length > 0;
   }, []);
+
+  // Add beforeunload handler to prevent data loss on tab close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingOperations()) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved structural changes. Are you sure you want to leave?';
+        
+        // Best-effort synchronous flush
+        flushPendingOperations().catch(console.error);
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasPendingOperations, flushPendingOperations]);
+
+  // Add visibilitychange handler to prevent data loss from background tab throttling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && hasPendingOperations()) {
+        console.log('🌙 Tab hidden - flushing structural operations immediately');
+        flushPendingOperations().catch(console.error);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [hasPendingOperations, flushPendingOperations]);
 
   return {
     queueStructuralOperation,
