@@ -50,6 +50,8 @@ export const useConsolidatedRealtimeRundown = ({
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isInitialLoadRef = useRef(true);
   const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Define performCatchupSync before it's used in handleOnline
   const performCatchupSync = useCallback(async () => {
@@ -217,7 +219,35 @@ export const useConsolidatedRealtimeRundown = ({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [enabled, rundownId]);
+  }, [enabled, rundownId, performCatchupSync]);
+  
+  // Database polling fallback when realtime is stale
+  useEffect(() => {
+    if (!enabled || !rundownId || !isConnected) {
+      return;
+    }
+    
+    // Check every 15 seconds if we need to poll
+    const checkStaleAndPoll = async () => {
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+      const STALE_THRESHOLD = 30000; // 30 seconds
+      
+      if (timeSinceLastUpdate > STALE_THRESHOLD) {
+        console.log('⏰ No realtime updates for 30s - polling database for changes');
+        await performCatchupSync();
+        lastUpdateTimeRef.current = Date.now(); // Reset timer after poll
+      }
+    };
+    
+    pollingIntervalRef.current = setInterval(checkStaleAndPoll, 15000);
+    
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [enabled, rundownId, isConnected, performCatchupSync]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
@@ -338,6 +368,9 @@ export const useConsolidatedRealtimeRundown = ({
     if (incomingDocVersion) {
       globalState.lastProcessedDocVersion = incomingDocVersion;
     }
+    
+    // Track update time for polling fallback
+    lastUpdateTimeRef.current = Date.now();
 
     // MOVED: AutoSave blocking will be handled after field protection check in callbacks
 
