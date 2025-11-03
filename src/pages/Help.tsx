@@ -481,6 +481,17 @@ const Help = () => {
               </ul>
               
               <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Keyboard Shortcuts</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Control the showcaller without clicking buttons (shortcuts only work when not typing in a cell):</p>
+                <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Space</kbd> - Play/Pause showcaller</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Left Arrow</kbd> or <kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Up Arrow</kbd> - Move backward</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Right Arrow</kbd> or <kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Down Arrow</kbd> - Move forward</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Reset showcaller</li>
+                </ul>
+              </div>
+              
+              <div className="mt-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Integration with Other Views</h3>
                 <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
                   <li><strong>AD View:</strong> When you control the showcaller, the AD View automatically updates with live timing and progress</li>
