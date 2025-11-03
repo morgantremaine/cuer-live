@@ -76,3 +76,6 @@ verify_jwt = false
 
 [functions.stream-deck-download]
 verify_jwt = false
+
+[functions.mos-send-message]
+verify_jwt = false
