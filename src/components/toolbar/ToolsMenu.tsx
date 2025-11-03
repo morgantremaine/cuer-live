@@ -8,12 +8,15 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History } from 'lucide-react';
+import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History, Cable } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { RundownActionLog } from '@/components/RundownActionLog';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/hooks/useAuth';
+import { useTeam } from '@/hooks/useTeam';
+import { MOSIntegrationDialog } from '@/components/dialogs/MOSIntegrationDialog';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
@@ -33,8 +36,14 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
+  const { user } = useAuth();
+  const { team } = useTeam();
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [showMOSDialog, setShowMOSDialog] = useState(false);
   const historyButtonRef = useRef<HTMLDivElement>(null);
+  
+  // Feature flag for MOS integration
+  const isMOSEnabled = user?.email === 'morgan@cuer.live';
 
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
@@ -201,6 +210,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             AD View
           </DropdownMenuItem>
           
+          {isMOSEnabled && team && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowMOSDialog(true)}>
+                <Cable className="h-4 w-4 mr-2" />
+                MOS Integration
+              </DropdownMenuItem>
+            </>
+          )}
+          
           <DropdownMenuSeparator />
           
           {/* History - only show for non-demo rundowns */}
@@ -228,6 +247,15 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             />
           </div>
         </div>
+      )}
+      
+      {/* MOS Integration Dialog */}
+      {isMOSEnabled && team && (
+        <MOSIntegrationDialog 
+          open={showMOSDialog}
+          onOpenChange={setShowMOSDialog}
+          teamId={team.id}
+        />
       )}
     </>
   );
