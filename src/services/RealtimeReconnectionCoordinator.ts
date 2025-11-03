@@ -13,7 +13,7 @@ interface RegisteredConnection {
 }
 
 // Constants for sleep detection
-const LAPTOP_SLEEP_THRESHOLD_MS = 60000; // 60 seconds
+const LAPTOP_SLEEP_THRESHOLD_MS = 180000; // 3 minutes (reduced false positives from tab switching)
 const CUMULATIVE_FAILURE_WINDOW_MS = 300000; // 5 minutes
 const MAX_CUMULATIVE_FAILURES = 10; // 10 failures in 5 minutes = reload
 
@@ -176,19 +176,9 @@ class RealtimeReconnectionCoordinatorService {
    * Centralized force reload method with reason tracking
    */
   private forceReload(reason: string) {
-    console.error(`🔄 Force reload triggered: ${reason}`);
-    
-    // Show toast before reload
-    import('sonner').then(({ toast }) => {
-      toast.error('Connection issues detected. Reloading page...', {
-        duration: 3000
-      });
-    });
-    
-    // Reload after brief delay to allow toast to show
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    console.log(`🔄 Force reload triggered: ${reason}`);
+    // Instant reload - no toast, no delay, no visible error state
+    window.location.reload();
   }
 
   /**
