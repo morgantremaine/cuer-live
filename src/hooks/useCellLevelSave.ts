@@ -243,35 +243,6 @@ export const useCellLevelSave = (
     return pendingUpdatesRef.current.length > 0;
   }, []);
 
-  // Add beforeunload handler to prevent data loss on tab close
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasPendingUpdates()) {
-        e.preventDefault();
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
-        
-        // Best-effort synchronous flush
-        flushPendingUpdates().catch(console.error);
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasPendingUpdates, flushPendingUpdates]);
-
-  // Add visibilitychange handler to prevent data loss from background tab throttling
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && hasPendingUpdates()) {
-        console.log('🌙 Tab hidden - flushing cell-level saves immediately');
-        flushPendingUpdates().catch(console.error);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [hasPendingUpdates, flushPendingUpdates]);
-
   return {
     trackCellChange,
     flushPendingUpdates,
