@@ -6,6 +6,12 @@ interface UseRundownKeyboardShortcutsProps {
   onAddRow: () => void;
   selectedRows: Set<string>;
   hasClipboardData: boolean;
+  onShowcallerPlay: () => void;
+  onShowcallerPause: () => void;
+  onShowcallerForward: () => void;
+  onShowcallerBackward: () => void;
+  onShowcallerReset: () => void;
+  isShowcallerPlaying: boolean;
 }
 
 export const useRundownKeyboardShortcuts = ({
@@ -13,7 +19,13 @@ export const useRundownKeyboardShortcuts = ({
   onPaste,
   onAddRow,
   selectedRows,
-  hasClipboardData
+  hasClipboardData,
+  onShowcallerPlay,
+  onShowcallerPause,
+  onShowcallerForward,
+  onShowcallerBackward,
+  onShowcallerReset,
+  isShowcallerPlaying
 }: UseRundownKeyboardShortcutsProps) => {
   useEffect(() => {
     const isEditableElement = (target: EventTarget | null): boolean => {
@@ -61,6 +73,39 @@ export const useRundownKeyboardShortcuts = ({
         console.log('⌨️ Keyboard shortcut: Add new segment row');
         onAddRow();
       }
+
+      // Showcaller controls (only when NOT using modifier keys)
+      // Space bar: Play/Pause
+      if (e.key === ' ' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Showcaller play/pause');
+        if (isShowcallerPlaying) {
+          onShowcallerPause();
+        } else {
+          onShowcallerPlay();
+        }
+      }
+
+      // Left or Up arrow: Backward
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Showcaller backward');
+        onShowcallerBackward();
+      }
+
+      // Right or Down arrow: Forward
+      if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Showcaller forward');
+        onShowcallerForward();
+      }
+
+      // Enter/Return: Reset (without modifier keys)
+      if (e.key === 'Enter' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Showcaller reset');
+        onShowcallerReset();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -68,5 +113,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData]);
+  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying]);
 };
