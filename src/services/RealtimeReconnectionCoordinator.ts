@@ -38,6 +38,7 @@ class RealtimeReconnectionCoordinatorService {
   // Sleep detection properties using performance API
   private lastPerformanceTime: number = performance.now();
   private lastSystemTime: number = Date.now();
+  private lastAbsoluteActivityTime: number = Date.now(); // Absolute timestamp for dual detection
   private cumulativeFailureWindow: Array<number> = []; // Track failure timestamps
   
   private readonly RECONNECTION_DEBOUNCE_MS = 5000; // 5 seconds (allow auth propagation)
@@ -74,6 +75,9 @@ class RealtimeReconnectionCoordinatorService {
     
     // Start proactive connection monitoring
     this.startConnectionMonitoring();
+    
+    // Initialize activity timestamps
+    this.updateActivityTimestamps();
   }
 
   /**
@@ -146,8 +150,17 @@ class RealtimeReconnectionCoordinatorService {
   }
   
   /**
-   * Detect laptop sleep using performance API
-   * Returns true if system time jumped significantly more than performance time
+   * Update activity timestamps for sleep detection
+   */
+  private updateActivityTimestamps() {
+    this.lastPerformanceTime = performance.now();
+    this.lastSystemTime = Date.now();
+    this.lastAbsoluteActivityTime = Date.now();
+  }
+  
+  /**
+   * Detect laptop sleep using dual timestamp tracking
+   * Uses both performance time drift AND absolute time to catch all sleep scenarios
    */
   private detectSleep(): { isSlept: boolean; duration: number } {
     const nowPerf = performance.now();
@@ -155,21 +168,28 @@ class RealtimeReconnectionCoordinatorService {
     
     const perfDelta = nowPerf - this.lastPerformanceTime; // Actual JS execution time
     const systemDelta = nowSystem - this.lastSystemTime; // System clock time
+    const absoluteTimeSinceActivity = nowSystem - this.lastAbsoluteActivityTime; // Time since last activity
     
-    // If system clock jumped more than 60s ahead of JS execution time, laptop slept
-    // This is immune to browser throttling because both clocks are throttled equally
+    // Check 1: Performance time drift (original method)
+    // If system clock jumped more than threshold ahead of JS execution time, laptop slept
     const timeDrift = systemDelta - perfDelta;
-    const isSlept = timeDrift > LAPTOP_SLEEP_THRESHOLD_MS;
+    const isDriftSleep = timeDrift > LAPTOP_SLEEP_THRESHOLD_MS;
+    
+    // Check 2: Absolute time check (catches cases where browser resets timers during very long sleep)
+    const isAbsoluteSleep = absoluteTimeSinceActivity > LAPTOP_SLEEP_THRESHOLD_MS;
+    
+    // Sleep detected if EITHER condition is true
+    const isSlept = isDriftSleep || isAbsoluteSleep;
     
     if (isSlept) {
-      console.log(`💤 Sleep detected: system time jumped ${Math.round(systemDelta/1000)}s, but JS only ran for ${Math.round(perfDelta/1000)}s (drift: ${Math.round(timeDrift/1000)}s)`);
+      const reason = isDriftSleep ? 'drift' : 'absolute';
+      console.log(`💤 Sleep detected via ${reason}: ${Math.round(absoluteTimeSinceActivity/1000)}s since last activity (drift: ${Math.round(timeDrift/1000)}s)`);
     }
     
-    // Update timestamps (always update, even if sleep detected, for next check)
-    this.lastPerformanceTime = nowPerf;
-    this.lastSystemTime = nowSystem;
+    // Update timestamps for next check
+    this.updateActivityTimestamps();
     
-    return { isSlept, duration: systemDelta };
+    return { isSlept, duration: Math.max(timeDrift, absoluteTimeSinceActivity) };
   }
   
   /**
@@ -232,6 +252,9 @@ class RealtimeReconnectionCoordinatorService {
       if (this.isReconnecting) return;
       
       console.log('⏱️ Periodic connection health check...');
+      
+      // Update activity timestamps during periodic check
+      this.updateActivityTimestamps();
       
       // Check for sleep (even in background tabs)
       const { isSlept, duration } = this.detectSleep();
@@ -390,6 +413,9 @@ class RealtimeReconnectionCoordinatorService {
       
       // Mark WebSocket as validated
       websocketHealthCheck.markValidated();
+      
+      // Update activity timestamps after successful reconnection
+      this.updateActivityTimestamps();
       
       // Reset all circuit breakers after successful WebSocket reconnection
       console.log('🔄 Resetting all circuit breakers after WebSocket reconnection');
