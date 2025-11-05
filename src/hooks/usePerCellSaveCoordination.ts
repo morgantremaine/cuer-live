@@ -17,6 +17,7 @@ interface PerCellSaveOptions {
   isTypingActive?: () => boolean;
   saveInProgressRef?: React.MutableRefObject<boolean>;
   typingIdleMs?: number;
+  onConflictDetected?: (conflict: { currentState: any; currentDocVersion: number; localUpdates: any[] }) => void;
 }
 
 export const usePerCellSaveCoordination = ({
@@ -29,7 +30,8 @@ export const usePerCellSaveCoordination = ({
   onChangesSaved,
   isTypingActive,
   saveInProgressRef,
-  typingIdleMs
+  typingIdleMs,
+  onConflictDetected
 }: PerCellSaveOptions) => {
   const lastSavedStateRef = useRef<RundownState | null>(null);
 
@@ -47,7 +49,7 @@ export const usePerCellSaveCoordination = ({
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, handleCellSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs);
+  } = useCellLevelSave(rundownId, handleCellSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs, onConflictDetected);
 
   // Structural save system for row operations
   const {

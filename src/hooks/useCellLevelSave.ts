@@ -26,7 +26,8 @@ export const useCellLevelSave = (
   onChangesSaved?: () => void,
   isTypingActive?: () => boolean,
   saveInProgressRef?: React.MutableRefObject<boolean>,
-  typingIdleMs?: number
+  typingIdleMs?: number,
+  onConflictDetected?: (conflict: { currentState: any; currentDocVersion: number; localUpdates: FieldUpdate[] }) => void
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -151,6 +152,33 @@ export const useCellLevelSave = (
           onUnsavedChanges();
         }
         throw error;
+      }
+
+      // CRITICAL: Check for conflict BEFORE checking success
+      if (data?.conflict === true) {
+        console.error('🚨 CONFLICT DETECTED: Server has newer version');
+        console.error('Current server version:', data.currentDocVersion);
+        console.error('Conflict details:', data.currentState);
+        
+        // Call conflict handler if provided
+        if (onConflictDetected) {
+          onConflictDetected({
+            currentState: data.currentState,
+            currentDocVersion: data.currentDocVersion,
+            localUpdates: updatesToSave
+          });
+        } else {
+          // Fallback: Show critical toast if no handler provided
+          toast({
+            title: "Sync Conflict Detected",
+            description: "Someone else modified this rundown. Please refresh to see the latest version.",
+            variant: "destructive",
+          });
+        }
+        
+        // DO NOT add to failedSavesRef - conflicts are not retryable
+        // DO NOT throw - this is a handled conflict, not an error
+        return null;
       }
 
       if (data?.success) {

@@ -27,6 +27,7 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
+import { SaveConflictModal } from '@/components/SaveConflictModal';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -39,6 +40,14 @@ export const useSimplifiedRundownState = () => {
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Conflict resolution state
+  const [conflictData, setConflictData] = useState<{
+    currentState: any;
+    currentDocVersion: number;
+    localUpdates: any[];
+  } | null>(null);
+  const [showConflictModal, setShowConflictModal] = useState(false);
   
   // Pre-warm edge functions to eliminate cold starts
   useEdgeFunctionPrewarming(rundownId, isInitialized);
@@ -798,6 +807,11 @@ export const useSimplifiedRundownState = () => {
     onUnsavedChanges: () => {
       console.log('🧪 STRUCTURAL SAVE: Unsaved changes - updating UI state');
       setHasStructuralUnsavedChanges(true);
+    },
+    onConflictDetected: (conflict) => {
+      console.error('🚨 CONFLICT DETECTED IN SIMPLIFIED STATE:', conflict);
+      setConflictData(conflict);
+      setShowConflictModal(true);
     }
   });
   
@@ -1663,6 +1677,66 @@ export const useSimplifiedRundownState = () => {
     cooldownDuration: 1000  // 1 second cooldown after updates stop
   });
 
+  // Conflict resolution handlers
+  const handleRefreshToLatest = useCallback(async () => {
+    if (!rundownId || !conflictData) return;
+    
+    console.log('🔄 User chose: Refresh to latest version');
+    setShowConflictModal(false);
+    setConflictData(null);
+    
+    // Reload the page to get the latest version
+    window.location.reload();
+  }, [rundownId, conflictData]);
+
+  const handleDownloadMyVersion = useCallback(() => {
+    if (!conflictData) return;
+    
+    console.log('💾 User chose: Download my version as backup');
+    
+    // Download current state as JSON backup
+    const backup = {
+      title: state.title,
+      items: state.items,
+      startTime: state.startTime,
+      timezone: state.timezone,
+      showDate: state.showDate,
+      timestamp: new Date().toISOString(),
+      conflictInfo: {
+        serverVersion: conflictData.currentDocVersion,
+        localUpdates: conflictData.localUpdates
+      }
+    };
+    
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rundown-backup-${new Date().toISOString()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Then refresh
+    setShowConflictModal(false);
+    setConflictData(null);
+    window.location.reload();
+  }, [conflictData, state]);
+
+  const handleKeepEditing = useCallback(() => {
+    console.log('⚠️ User chose: Keep editing (risky)');
+    setShowConflictModal(false);
+    // Don't clear conflictData - keep it for potential re-attempts
+    
+    // Show warning toast
+    import('@/hooks/use-toast').then(({ toast }) => {
+      toast({
+        title: "Warning: Editing Out-of-Sync Version",
+        description: "Your version may be overwritten. Consider refreshing soon.",
+        variant: "destructive",
+      });
+    });
+  }, []);
+
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -1871,6 +1945,17 @@ export const useSimplifiedRundownState = () => {
     
     // Structural change handling
     markStructuralChange,
-    clearStructuralChange
+    clearStructuralChange,
+    
+    // Conflict resolution modal props
+    conflictModalProps: {
+      isOpen: showConflictModal,
+      conflictData,
+      state,
+      rundownId,
+      onRefresh: handleRefreshToLatest,
+      onDownloadAndRefresh: handleDownloadMyVersion,
+      onKeepEditing: handleKeepEditing
+    }
   };
 };
