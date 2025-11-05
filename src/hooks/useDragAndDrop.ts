@@ -515,6 +515,15 @@ export const useDragAndDrop = (
     e.dataTransfer.dropEffect = 'move';
     
     if (targetIndex !== undefined && draggedItemIndex !== null && isDragActiveRef.current) {
+      // Validate targetIndex is within bounds
+      if (targetIndex < 0 || targetIndex >= items.length) {
+        console.warn('⚠️ Drag over invalid target index:', {
+          targetIndex,
+          itemsLength: items.length
+        });
+        return; // Don't update dropTargetIndex with invalid value
+      }
+      
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
@@ -534,6 +543,9 @@ export const useDragAndDrop = (
         // For regular items, use normal logic
         insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
       }
+      
+      // Clamp insertIndex to valid range [0, items.length]
+      insertIndex = Math.max(0, Math.min(insertIndex, items.length));
       
       // Only update if different to avoid unnecessary re-renders
       if (insertIndex !== dropTargetIndex) {
@@ -566,24 +578,51 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🎯 Legacy drop called:', { dropIndex, draggedItemIndex, isDragActive: isDragActiveRef.current });
+    console.log('🎯 Legacy drop called:', { 
+      dropIndex, 
+      draggedItemIndex, 
+      isDragActive: isDragActiveRef.current,
+      itemsLength: items.length 
+    });
     
-    if (!isDragActiveRef.current || draggedItemIndex === null) {
-      console.log('🎯 Legacy drop ignored - no active drag');
-      resetDragState();
-      return;
-    }
+    try {
+      if (!isDragActiveRef.current || draggedItemIndex === null) {
+        console.log('🎯 Legacy drop ignored - no active drag');
+        return; // resetDragState called in finally
+      }
 
-    // Simulate @dnd-kit drop by finding the target item
-    const targetItem = items[dropIndex];
-    if (targetItem) {
-      console.log('🎯 Legacy drop simulating dnd-kit drop to:', targetItem.id);
-      handleDndKitDragEnd({
-        active: { id: items[draggedItemIndex].id },
-        over: { id: targetItem.id }
-      } as any);
-    } else {
-      console.error('🚨 Legacy drop error: Target item not found at index:', dropIndex);
+      // Validate drop index is within bounds
+      if (dropIndex < 0 || dropIndex >= items.length) {
+        console.error('🚨 Legacy drop error: Drop index out of bounds:', {
+          dropIndex,
+          itemsLength: items.length,
+          draggedItemIndex
+        });
+        return; // resetDragState called in finally
+      }
+
+      // Simulate @dnd-kit drop by finding the target item
+      const targetItem = items[dropIndex];
+      if (targetItem) {
+        console.log('🎯 Legacy drop simulating dnd-kit drop to:', targetItem.id);
+        handleDndKitDragEnd({
+          active: { id: items[draggedItemIndex].id },
+          over: { id: targetItem.id }
+        } as any);
+      } else {
+        console.error('🚨 Legacy drop error: Target item not found at index:', {
+          dropIndex,
+          itemsLength: items.length,
+          targetItemExists: !!targetItem
+        });
+        // Don't throw - just log and reset in finally
+      }
+    } catch (error) {
+      console.error('🚨 CRITICAL DROP ERROR:', error);
+    } finally {
+      // ALWAYS reset drag state, even if drop failed
+      console.log('🎯 Drop completed - resetting drag state');
+      resetDragState();
     }
   }, [draggedItemIndex, items, handleDndKitDragEnd, resetDragState]);
 
