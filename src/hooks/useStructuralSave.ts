@@ -4,6 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
+import { structuralBackup } from '@/utils/structuralOperationBackup';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -35,6 +36,8 @@ export const useStructuralSave = (
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const periodicFlushIntervalRef = useRef<NodeJS.Timeout>();
+  const hasLoadedBackupRef = useRef(false);
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -156,6 +159,9 @@ export const useStructuralSave = (
       }
       
       onSaveComplete?.();
+      
+      // Clear localStorage backup on successful save
+      structuralBackup.clear();
     } catch (error) {
       console.error('Structural save batch error:', error);
       
@@ -246,6 +252,10 @@ export const useStructuralSave = (
       };
 
       pendingOperationsRef.current.push(operation);
+      
+      // Backup to localStorage immediately
+      structuralBackup.save(pendingOperationsRef.current);
+      
       onUnsavedChanges?.();
 
       // Debounce save operations
@@ -303,6 +313,77 @@ export const useStructuralSave = (
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [hasPendingOperations, flushPendingOperations]);
+
+  // Periodic auto-flush every 10 seconds to prevent queue buildup
+  useEffect(() => {
+    if (!rundownId) return;
+    
+    const interval = setInterval(() => {
+      if (hasPendingOperations()) {
+        console.log('⏰ Periodic auto-flush: Flushing pending operations');
+        flushPendingOperations().catch(error => {
+          console.error('Periodic flush error:', error);
+        });
+      }
+    }, 10000); // 10 seconds
+    
+    periodicFlushIntervalRef.current = interval;
+    
+    return () => {
+      if (periodicFlushIntervalRef.current) {
+        clearInterval(periodicFlushIntervalRef.current);
+      }
+    };
+  }, [rundownId, hasPendingOperations, flushPendingOperations]);
+
+  // Load backup operations on mount
+  useEffect(() => {
+    if (hasLoadedBackupRef.current || !rundownId) return;
+    hasLoadedBackupRef.current = true;
+    
+    const backup = structuralBackup.load();
+    if (backup && backup.operations.length > 0) {
+      const savedAt = new Date(backup.savedAt);
+      const now = new Date();
+      const minutesAgo = Math.floor((now.getTime() - savedAt.getTime()) / 60000);
+      
+      console.log('💾 Found unsaved operations in localStorage', {
+        count: backup.operations.length,
+        savedAt: backup.savedAt,
+        minutesAgo
+      });
+      
+      // Show recovery UI
+      import('@/components/ui/sonner').then(({ toast }) => {
+        toast.info('Unsaved Changes Found', {
+          description: `Found ${backup.operations.length} unsaved operations from ${minutesAgo} minutes ago. Would you like to recover them?`,
+          duration: Infinity,
+          action: {
+            label: 'Recover',
+            onClick: () => {
+              // Filter operations for this rundown
+              const relevantOps = backup.operations.filter(
+                (op: any) => op.rundownId === rundownId
+              );
+              
+              if (relevantOps.length > 0) {
+                pendingOperationsRef.current = relevantOps as StructuralOperation[];
+                flushPendingOperations().catch(console.error);
+                toast.success(`Recovering ${relevantOps.length} operations...`);
+              }
+            }
+          },
+          cancel: {
+            label: 'Discard',
+            onClick: () => {
+              structuralBackup.clear();
+              toast.success('Discarded unsaved operations');
+            }
+          }
+        });
+      });
+    }
+  }, [rundownId, flushPendingOperations]);
 
   return {
     queueStructuralOperation,
