@@ -664,11 +664,10 @@ export const useSimplifiedRundownState = () => {
             actionsRef.current.loadRemoteState({ items: updatedItems });
           }
       } finally {
-        // Delay resetting flag to ensure useEffect sees it
-        // This prevents the change tracking effect from running for remote updates
-        setTimeout(() => {
-          applyingCellBroadcastRef.current = false;
-        }, 0);
+        // Update previousStateRef BEFORE resetting flag to prevent race conditions
+        // This ensures change tracking won't detect false changes from remote updates
+        previousStateRef.current = stateRef.current;
+        applyingCellBroadcastRef.current = false;
       }
     }, currentUserId);
 
