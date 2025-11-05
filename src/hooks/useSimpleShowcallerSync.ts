@@ -791,6 +791,15 @@ export const useSimpleShowcallerSync = ({
     };
   }, [state, saveShowcallerState]);
 
+  // Flush pending save on unload to prevent losing state on quick refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try { saveShowcallerState(state); } catch {}
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [state, saveShowcallerState]);
+
   // Cleanup
   useEffect(() => {
     return () => {

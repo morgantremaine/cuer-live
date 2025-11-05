@@ -55,33 +55,26 @@ serve(async (req) => {
       );
     }
 
-    // Accept either single operation or array of operations
-    const operations: StructuralOperation[] = Array.isArray(body) ? body : [body];
-    console.log('🏗️ Processing batch of structural operations:', {
-      count: operations.length,
-      rundownId: operations[0]?.rundownId,
-      types: operations.map(op => op.operationType),
-      userId: operations[0]?.userId
+    const operation: StructuralOperation = body;
+    console.log('🏗️ Processing structural operation:', {
+      rundownId: operation.rundownId,
+      operationType: operation.operationType,
+      userId: operation.userId,
+      timestamp: operation.timestamp,
+      hasLockedNumbers: !!operation.operationData.lockedRowNumbers,
+      lockedNumbersCount: Object.keys(operation.operationData.lockedRowNumbers || {}).length,
+      numberingLocked: operation.operationData.numberingLocked
     });
 
-    if (operations.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No operations provided' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // All operations should be for the same rundown
-    const rundownId = operations[0].rundownId;
-    const userId = operations[0].userId;
-    const lockId = parseInt(rundownId.replace(/-/g, '').substring(0, 8), 16);
+    // Start coordination - acquire advisory lock for rundown
+    const lockId = parseInt(operation.rundownId.replace(/-/g, '').substring(0, 8), 16);
     
     // Get the current rundown with coordination timing
-    console.log('🔒 Acquiring coordination lock for rundown:', rundownId);
+    console.log('🔒 Acquiring coordination lock for rundown:', operation.rundownId);
     const { data: currentRundown, error: fetchError } = await supabase
       .from('rundowns')
       .select('*')
-      .eq('id', rundownId)
+      .eq('id', operation.rundownId)
       .single();
 
     if (fetchError) {
@@ -93,7 +86,7 @@ serve(async (req) => {
     }
 
     if (!currentRundown) {
-      console.error('❌ Rundown not found:', rundownId);
+      console.error('❌ Rundown not found:', operation.rundownId);
       return new Response(
         JSON.stringify({ error: 'Rundown not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -101,16 +94,10 @@ serve(async (req) => {
     }
 
     let updatedItems = [...(currentRundown.items || [])];
-    const actionDescriptions: string[] = [];
-    let finalLockedRowNumbers = currentRundown.locked_row_numbers;
-    let finalNumberingLocked = currentRundown.numbering_locked;
+    let actionDescription = '';
 
-    // Process all operations sequentially
-    for (const operation of operations) {
-      let actionDescription = '';
-
-      // Apply the structural operation
-      switch (operation.operationType) {
+    // Apply the structural operation
+    switch (operation.operationType) {
       case 'add_row':
       case 'add_header':
         if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
@@ -169,44 +156,33 @@ serve(async (req) => {
           JSON.stringify({ error: 'Unknown operation type' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      }
-
-      // Track lock state changes from this operation
-      if (operation.operationData.lockedRowNumbers !== undefined) {
-        finalLockedRowNumbers = operation.operationData.lockedRowNumbers;
-      }
-      if (operation.operationData.numberingLocked !== undefined) {
-        finalNumberingLocked = operation.operationData.numberingLocked;
-      }
-
-      actionDescriptions.push(actionDescription);
     }
 
     // SIMPLIFIED: No doc_version logic - just save directly (last write wins)
     
-    // Update the rundown with all changes from the batch
+    // Update the rundown with the new items
     const updateData: any = {
       items: updatedItems,
       updated_at: new Date().toISOString(),
-      last_updated_by: userId
+      last_updated_by: operation.userId
     };
     
-    // Include final locked row numbers if changed
-    if (finalLockedRowNumbers !== currentRundown.locked_row_numbers) {
-      updateData.locked_row_numbers = finalLockedRowNumbers;
-      console.log('🔒 Saving locked row numbers:', Object.keys(finalLockedRowNumbers || {}).length);
+    // Include locked row numbers if provided
+    if (operation.operationData.lockedRowNumbers !== undefined) {
+      updateData.locked_row_numbers = operation.operationData.lockedRowNumbers;
+      console.log('🔒 Saving locked row numbers:', Object.keys(operation.operationData.lockedRowNumbers).length);
     }
     
-    // Include final numbering locked state if changed
-    if (finalNumberingLocked !== currentRundown.numbering_locked) {
-      updateData.numbering_locked = finalNumberingLocked;
-      console.log('🔒 Saving numbering locked state:', finalNumberingLocked);
+    // Include numbering locked state if provided
+    if (operation.operationData.numberingLocked !== undefined) {
+      updateData.numbering_locked = operation.operationData.numberingLocked;
+      console.log('🔒 Saving numbering locked state:', operation.operationData.numberingLocked);
     }
     
     const { data: updatedRundown, error: updateError } = await supabase
       .from('rundowns')
       .update(updateData)
-      .eq('id', rundownId)
+      .eq('id', operation.rundownId)
       .select()
       .single();
 
@@ -218,32 +194,27 @@ serve(async (req) => {
       );
     }
 
-    // Log all operations with enhanced coordination data
-    const operationLogs = operations.map((operation, index) => ({
-      rundown_id: rundownId,
-      user_id: userId,
-      operation_type: `structural_${operation.operationType}`,
-      operation_data: {
-        action: actionDescriptions[index],
-        itemCount: updatedItems.length,
-        operationType: operation.operationType,
-        timestamp: operation.timestamp,
-        sequenceNumber: operation.operationData.sequenceNumber,
-        coordinatedAt: new Date().toISOString(),
-        lockId: lockId,
-        batchIndex: index,
-        batchSize: operations.length
-      }
-    }));
-
+    // Log the operation with enhanced coordination data
     await supabase
       .from('rundown_operations')
-      .insert(operationLogs);
+      .insert({
+        rundown_id: operation.rundownId,
+        user_id: operation.userId,
+        operation_type: `structural_${operation.operationType}`,
+        operation_data: {
+          action: actionDescription,
+          itemCount: updatedItems.length,
+          operationType: operation.operationType,
+          timestamp: operation.timestamp,
+          sequenceNumber: operation.operationData.sequenceNumber,
+          coordinatedAt: new Date().toISOString(),
+          lockId: lockId
+        }
+      });
 
-    console.log('✅ Batch of structural operations completed successfully:', {
-      rundownId,
-      operationCount: operations.length,
-      types: operations.map(op => op.operationType),
+    console.log('✅ Structural operation completed successfully:', {
+      rundownId: operation.rundownId,
+      operationType: operation.operationType,
       itemCount: updatedItems.length
     });
 
@@ -252,8 +223,7 @@ serve(async (req) => {
         success: true,
         updatedAt: updatedRundown.updated_at,
         itemCount: updatedItems.length,
-        operationsProcessed: operations.length,
-        operations: actionDescriptions
+        operation: actionDescription
       }),
       { 
         status: 200,

@@ -235,19 +235,6 @@ export const useSimplifiedRundownState = () => {
       actions.setItems(items);
       actions.setTitle(title);
       
-      // Broadcast the restored state to other users
-      if (rundownId && currentUserId) {
-        const order = items.map(i => i.id);
-        console.log('⏪ UNDO: Broadcasting restored items order to other users:', order.length);
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:reorder',
-          { order },
-          currentUserId
-        );
-      }
-      
       setTimeout(() => {
         actions.markSaved();
         actions.setItems([...items]);
@@ -677,10 +664,11 @@ export const useSimplifiedRundownState = () => {
             actionsRef.current.loadRemoteState({ items: updatedItems });
           }
       } finally {
-        // Update previousStateRef BEFORE resetting flag to prevent race conditions
-        // This ensures change tracking won't detect false changes from remote updates
-        previousStateRef.current = stateRef.current;
-        applyingCellBroadcastRef.current = false;
+        // Delay resetting flag to ensure useEffect sees it
+        // This prevents the change tracking effect from running for remote updates
+        setTimeout(() => {
+          applyingCellBroadcastRef.current = false;
+        }, 0);
       }
     }, currentUserId);
 

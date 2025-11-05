@@ -34,7 +34,6 @@ export const useStructuralSave = (
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const saveInProgressRef = useRef<boolean>(false);
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -42,13 +41,6 @@ export const useStructuralSave = (
       return;
     }
 
-    // Prevent concurrent saves
-    if (saveInProgressRef.current) {
-      console.log('⏳ Save in progress, new operations will be batched next');
-      return;
-    }
-
-    saveInProgressRef.current = true;
     const operations = [...pendingOperationsRef.current];
     pendingOperationsRef.current = [];
     
@@ -78,9 +70,9 @@ export const useStructuralSave = (
         }
       }
 
-      // PHASE 1: BROADCAST ALL OPERATIONS SEQUENTIALLY (maintains order)
-      // This ensures other users see changes instantly, in the correct order
       for (const operation of operations) {
+        // PHASE 1: BROADCAST FIRST (Dual Broadcasting Pattern - immediate broadcast)
+        // This ensures other users see changes instantly, before database persistence
         if (rundownId && currentUserId) {
           // Import mapping functions dynamically to avoid circular dependencies
           const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
@@ -102,40 +94,31 @@ export const useStructuralSave = (
             currentUserId
           );
         }
+        
+        // PHASE 2: DATABASE PERSISTENCE (parallel/after broadcast)
+        const { data, error } = await saveWithTimeout(
+          () => supabase.functions.invoke('structural-operation-save', {
+            body: operation
+          }),
+          `structural-save-${operation.operationType}`,
+          20000
+        );
+
+        if (error) {
+          console.error('Structural save error:', error);
+          throw error;
+        }
+
+        if (data?.success) {
+          // Track our own update to prevent conflict detection via centralized tracker
+          if (data.updatedAt) {
+            const context = rundownId ? `realtime-${rundownId}` : undefined;
+            ownUpdateTracker.track(data.updatedAt, context);
+          }
+          
+          console.log('✅ Structural operation saved to database:', operation.operationType);
+        }
       }
-      
-      // PHASE 2: SAVE ALL OPERATIONS AS A SINGLE BATCH
-      // Send all operations to the edge function in one call for sequential processing
-      console.log(`💾 Saving ${operations.length} structural operations as a batch...`);
-      const saveStartTime = performance.now();
-      
-      const batchSaveResult = await saveWithTimeout(
-        () => supabase.functions.invoke('structural-operation-save', {
-          body: operations
-        }),
-        `structural-save-batch`,
-        30000
-      );
-      
-      const saveEndTime = performance.now();
-      console.log(`✅ Batch save completed in ${Math.round(saveEndTime - saveStartTime)}ms`);
-      
-      // PHASE 3: HANDLE RESULT
-      if (batchSaveResult.error || !batchSaveResult.data?.success) {
-        const errorMsg = batchSaveResult.error || 'Unknown error';
-        console.error('Structural batch save failed:', errorMsg);
-        // Re-queue all operations for retry
-        pendingOperationsRef.current.unshift(...operations);
-        throw new Error(`Batch save failed: ${errorMsg}`);
-      }
-      
-      // Track the batch update to prevent conflict detection
-      if (batchSaveResult.data.updatedAt) {
-        const context = rundownId ? `realtime-${rundownId}` : undefined;
-        ownUpdateTracker.track(batchSaveResult.data.updatedAt, context);
-      }
-      
-      console.log(`✅ ${operations.length}/${operations.length} operations saved successfully`);
       
       onSaveComplete?.();
     } catch (error) {
@@ -143,16 +126,6 @@ export const useStructuralSave = (
       // Re-queue failed operations for retry
       pendingOperationsRef.current.unshift(...operations);
       throw error;
-    } finally {
-      saveInProgressRef.current = false;
-      
-      // If more operations arrived during save, schedule another batch
-      if (pendingOperationsRef.current.length > 0) {
-        console.log(`🔄 ${pendingOperationsRef.current.length} new operations queued, scheduling next batch`);
-        saveTimeoutRef.current = setTimeout(() => {
-          saveStructuralOperations().catch(console.error);
-        }, 100);
-      }
     }
   }, [rundownId, onSaveStart, onSaveComplete, currentUserId]);
 
@@ -180,20 +153,16 @@ export const useStructuralSave = (
       pendingOperationsRef.current.push(operation);
       onUnsavedChanges?.();
 
-      // Debounce save operations - but ONLY if no save is running
+      // Debounce save operations
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
-      // Only schedule a new save if one isn't already in progress
-      if (!saveInProgressRef.current) {
-        saveTimeoutRef.current = setTimeout(() => {
-          saveStructuralOperations().catch(error => {
-            console.error('Structural save error:', error);
-          });
-        }, 100);
-      }
-      // If save is running, operations will queue and be handled by the finally block
+      saveTimeoutRef.current = setTimeout(() => {
+        saveStructuralOperations().catch(error => {
+          console.error('Structural save error:', error);
+        });
+      }, 100);
     },
     [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
@@ -210,6 +179,35 @@ export const useStructuralSave = (
   const hasPendingOperations = useCallback((): boolean => {
     return pendingOperationsRef.current.length > 0;
   }, []);
+
+  // Add beforeunload handler to prevent data loss on tab close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingOperations()) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved structural changes. Are you sure you want to leave?';
+        
+        // Best-effort synchronous flush
+        flushPendingOperations().catch(console.error);
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasPendingOperations, flushPendingOperations]);
+
+  // Add visibilitychange handler to prevent data loss from background tab throttling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && hasPendingOperations()) {
+        console.log('🌙 Tab hidden - flushing structural operations immediately');
+        flushPendingOperations().catch(console.error);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [hasPendingOperations, flushPendingOperations]);
 
   return {
     queueStructuralOperation,
