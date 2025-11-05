@@ -965,8 +965,8 @@ export const useSimplifiedRundownState = () => {
     
     const sessionKey = `${id}-${field}`;
     
-    // Simplified: No field tracking needed - last writer wins
-    // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
+    // ✅ DUAL BROADCASTING PATTERN: Broadcast immediately, save to database in parallel
+    // Cell broadcasts happen instantly below for real-time sync
     
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
@@ -1020,6 +1020,11 @@ export const useSimplifiedRundownState = () => {
           }
         });
         
+        // ✅ DUAL BROADCASTING: Broadcast immediately for real-time sync
+        if (rundownId && currentUserId) {
+          cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+        }
+        
         // CRITICAL: Track custom field change for per-cell save system
         if (cellEditIntegration.isPerCellEnabled) {
           cellEditIntegration.handleCellChange(id, field, value);
@@ -1036,6 +1041,11 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.updateItem(id, { [updateField]: updateValue });
+      
+      // ✅ DUAL BROADCASTING: Broadcast immediately for real-time sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, id, updateField, updateValue, currentUserId);
+      }
       
       // CRITICAL: Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {

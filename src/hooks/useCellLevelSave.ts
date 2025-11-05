@@ -155,24 +155,6 @@ export const useCellLevelSave = (
       if (data?.success) {
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         
-        // ✅ Broadcast cell updates AFTER successful database save
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUserId = session?.user?.id;
-        
-        if (rundownId && currentUserId) {
-          const { cellBroadcast } = await import('@/utils/cellBroadcast');
-          for (const update of updatesToSave) {
-            cellBroadcast.broadcastCellUpdate(
-              rundownId,
-              update.itemId || undefined,
-              update.field,
-              update.value,
-              currentUserId
-            );
-          }
-          debugLogger.autosave(`Broadcast ${updatesToSave.length} cell updates after save`);
-        }
-        
         const context = rundownId ? `realtime-${rundownId}` : undefined;
         ownUpdateTracker.track(data.updatedAt, context);
         
