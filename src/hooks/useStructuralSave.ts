@@ -34,6 +34,7 @@ export const useStructuralSave = (
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveInProgressRef = useRef<boolean>(false);
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -41,6 +42,13 @@ export const useStructuralSave = (
       return;
     }
 
+    // Prevent concurrent saves
+    if (saveInProgressRef.current) {
+      console.log('⏳ Save in progress, new operations will be batched next');
+      return;
+    }
+
+    saveInProgressRef.current = true;
     const operations = [...pendingOperationsRef.current];
     pendingOperationsRef.current = [];
     
@@ -161,6 +169,16 @@ export const useStructuralSave = (
       // Re-queue failed operations for retry
       pendingOperationsRef.current.unshift(...operations);
       throw error;
+    } finally {
+      saveInProgressRef.current = false;
+      
+      // If more operations arrived during save, schedule another batch
+      if (pendingOperationsRef.current.length > 0) {
+        console.log(`🔄 ${pendingOperationsRef.current.length} new operations queued, scheduling next batch`);
+        saveTimeoutRef.current = setTimeout(() => {
+          saveStructuralOperations().catch(console.error);
+        }, 100);
+      }
     }
   }, [rundownId, onSaveStart, onSaveComplete, currentUserId]);
 
@@ -188,16 +206,20 @@ export const useStructuralSave = (
       pendingOperationsRef.current.push(operation);
       onUnsavedChanges?.();
 
-      // Debounce save operations
+      // Debounce save operations - but ONLY if no save is running
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
-      saveTimeoutRef.current = setTimeout(() => {
-        saveStructuralOperations().catch(error => {
-          console.error('Structural save error:', error);
-        });
-      }, 100);
+      // Only schedule a new save if one isn't already in progress
+      if (!saveInProgressRef.current) {
+        saveTimeoutRef.current = setTimeout(() => {
+          saveStructuralOperations().catch(error => {
+            console.error('Structural save error:', error);
+          });
+        }, 100);
+      }
+      // If save is running, operations will queue and be handled by the finally block
     },
     [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
