@@ -399,7 +399,10 @@ export const useRundownStateCoordination = () => {
       
       // Move functions for mobile
       moveItemUp,
-      moveItemDown
+      moveItemDown,
+      
+      // Conflict resolution
+      conflictModalProps: persistedState.conflictModalProps
     },
     interactions,
     uiState,
