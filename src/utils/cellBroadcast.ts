@@ -26,6 +26,7 @@ export class CellBroadcastManager {
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
   private lastProcessedUpdate = new Map<string, string>();
   private userIds = new Map<string, string>(); // Store userId for early filtering
+  private processedUpdates = new Map<string, number>(); // Deduplication: track processed update signatures
   
   // Health monitoring
   private connectionStatus = new Map<string, string>();
@@ -65,11 +66,27 @@ export class CellBroadcastManager {
           return;
         }
         
-        // REMOVED: Deduplication window - accept all updates immediately
-        // React's rendering optimization handles duplicate renders efficiently
+        // ✅ DEDUPLICATION: Prevent same update from being processed multiple times
+        // Multiple components may subscribe to the same channel, so we dedupe at the source
+        const updateKey = `${update.rundownId}-${update.itemId || 'rundown'}-${update.field}-${update.timestamp}`;
+        const lastProcessed = this.processedUpdates.get(updateKey);
+        
+        if (lastProcessed && Date.now() - lastProcessed < 1000) {
+          // Skip duplicate update within 1 second window
+          return;
+        }
+        
+        this.processedUpdates.set(updateKey, Date.now());
+        
+        // Cleanup old entries (keep last 100)
+        if (this.processedUpdates.size > 100) {
+          const entries = Array.from(this.processedUpdates.entries());
+          entries.sort((a, b) => b[1] - a[1]);
+          this.processedUpdates = new Map(entries.slice(0, 100));
+        }
+        
         const fieldKey = `${update.itemId || 'rundown'}-${update.field}`;
         debugLogger.realtime('Cell broadcast received (from other user):', { fieldKey, value: update.value });
-        
         
         const cbs = this.callbacks.get(rundownId);
         if (cbs && cbs.size > 0) {
