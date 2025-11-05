@@ -966,11 +966,7 @@ export const useSimplifiedRundownState = () => {
     const sessionKey = `${id}-${field}`;
     
     // Simplified: No field tracking needed - last writer wins
-    
-    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
-    if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-    }
+    // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
     
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
@@ -1491,10 +1487,7 @@ export const useSimplifiedRundownState = () => {
         // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
-        // Broadcast rundown-level property change
-        if (rundownId && currentUserId) {
-          cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
-        }
+        // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
         
         saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
@@ -1752,10 +1745,7 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(undefined, 'startTime', newStartTime);
       }
       
-      // Broadcast rundown-level property change
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
-      }
+      // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
       
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
@@ -1772,10 +1762,7 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(undefined, 'timezone', newTimezone);
       }
       
-      // Broadcast rundown-level property change
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
-      }
+      // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
       
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
@@ -1792,10 +1779,7 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(undefined, 'showDate', newShowDate);
       }
       
-      // Broadcast rundown-level property change
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
-      }
+      // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
       
       actions.setShowDate(newShowDate);
     }, [actions.setShowDate, rundownId, currentUserId, cellEditIntegration]),
