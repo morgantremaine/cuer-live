@@ -104,64 +104,38 @@ export const useStructuralSave = (
         }
       }
       
-      // PHASE 2: SAVE ALL OPERATIONS TO DATABASE IN PARALLEL
-      // This dramatically improves throughput (20 ops: 6s → 300-500ms)
-      console.log(`💾 Saving ${operations.length} structural operations in parallel...`);
+      // PHASE 2: SAVE ALL OPERATIONS AS A SINGLE BATCH
+      // Send all operations to the edge function in one call for sequential processing
+      console.log(`💾 Saving ${operations.length} structural operations as a batch...`);
       const saveStartTime = performance.now();
       
-      const savePromises = operations.map(operation =>
-        saveWithTimeout(
-          () => supabase.functions.invoke('structural-operation-save', {
-            body: operation
-          }),
-          `structural-save-${operation.operationType}`,
-          20000
-        )
-        .then(result => ({ operation, success: true, result }))
-        .catch(error => ({ operation, success: false, error }))
+      const batchSaveResult = await saveWithTimeout(
+        () => supabase.functions.invoke('structural-operation-save', {
+          body: operations
+        }),
+        `structural-save-batch`,
+        30000
       );
       
-      const saveResults = await Promise.allSettled(savePromises);
       const saveEndTime = performance.now();
-      console.log(`✅ Parallel saves completed in ${Math.round(saveEndTime - saveStartTime)}ms`);
+      console.log(`✅ Batch save completed in ${Math.round(saveEndTime - saveStartTime)}ms`);
       
-      // PHASE 3: HANDLE RESULTS
-      const failedOperations: StructuralOperation[] = [];
-      const successfulResults: Array<{ operation: StructuralOperation; result: any }> = [];
-      
-      for (const settledResult of saveResults) {
-        if (settledResult.status === 'fulfilled') {
-          const saveResult = settledResult.value;
-          
-          if (saveResult.success && 'result' in saveResult && saveResult.result?.data?.success) {
-            successfulResults.push({ operation: saveResult.operation, result: saveResult.result.data });
-          } else {
-            const errorMsg = 'error' in saveResult ? saveResult.error : saveResult.result?.error;
-            console.error('Structural save failed for operation:', saveResult.operation.operationType, errorMsg);
-            failedOperations.push(saveResult.operation);
-          }
-        } else {
-          // Promise itself was rejected (shouldn't happen with our .catch, but handle anyway)
-          console.error('Save promise rejected:', settledResult.reason);
-        }
+      // PHASE 3: HANDLE RESULT
+      if (batchSaveResult.error || !batchSaveResult.data?.success) {
+        const errorMsg = batchSaveResult.error || 'Unknown error';
+        console.error('Structural batch save failed:', errorMsg);
+        // Re-queue all operations for retry
+        pendingOperationsRef.current.unshift(...operations);
+        throw new Error(`Batch save failed: ${errorMsg}`);
       }
       
-      // Track successful operations to prevent conflict detection
-      for (const { result } of successfulResults) {
-        if (result.updatedAt) {
-          const context = rundownId ? `realtime-${rundownId}` : undefined;
-          ownUpdateTracker.track(result.updatedAt, context);
-        }
+      // Track the batch update to prevent conflict detection
+      if (batchSaveResult.data.updatedAt) {
+        const context = rundownId ? `realtime-${rundownId}` : undefined;
+        ownUpdateTracker.track(batchSaveResult.data.updatedAt, context);
       }
       
-      console.log(`✅ ${successfulResults.length}/${operations.length} operations saved successfully`);
-      
-      // Re-queue only failed operations for retry
-      if (failedOperations.length > 0) {
-        console.warn(`⚠️ Re-queuing ${failedOperations.length} failed operations for retry`);
-        pendingOperationsRef.current.unshift(...failedOperations);
-        throw new Error(`${failedOperations.length} operations failed - will retry`);
-      }
+      console.log(`✅ ${operations.length}/${operations.length} operations saved successfully`);
       
       onSaveComplete?.();
     } catch (error) {
