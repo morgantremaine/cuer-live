@@ -787,7 +787,6 @@ export const useSimplifiedRundownState = () => {
       console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
       setIsStructuralSaving(false);
       setHasStructuralUnsavedChanges(false);
-      actions.markSaved();
       if (completionCount !== undefined) {
         setSaveCompletionCount(completionCount);
       }
