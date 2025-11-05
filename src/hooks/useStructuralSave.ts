@@ -72,31 +72,8 @@ export const useStructuralSave = (
       }
 
       for (const operation of operations) {
-        // PHASE 1: BROADCAST FIRST (Dual Broadcasting Pattern - immediate broadcast)
-        // This ensures other users see changes instantly, before database persistence
-        if (rundownId && currentUserId) {
-          // Import mapping functions dynamically to avoid circular dependencies
-          const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
-          
-          const broadcastField = mapOperationToBroadcastField(operation.operationType);
-          const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
-          
-          console.log('📡 Broadcasting structural operation (BEFORE save):', {
-            operationType: operation.operationType,
-            broadcastField,
-            payload
-          });
-          
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            broadcastField,
-            payload,
-            currentUserId
-          );
-        }
-        
-        // PHASE 2: DATABASE PERSISTENCE (parallel/after broadcast)
+        // PHASE 1: DATABASE PERSISTENCE FIRST (Data Safety Pattern)
+        // Save to database before broadcasting to ensure data is persisted
         const { data, error } = await saveWithTimeout(
           () => supabase.functions.invoke('structural-operation-save', {
             body: operation
@@ -104,6 +81,26 @@ export const useStructuralSave = (
           `structural-save-${operation.operationType}`,
           20000
         );
+
+        // Check for conflict (409)
+        if (error?.status === 409 || data?.error === 'Conflict detected') {
+          console.error('🚨 CONFLICT: Another user has made changes. Refreshing...');
+          
+          // Don't re-queue - these operations are stale
+          const { toast } = await import('@/components/ui/sonner');
+          toast.error('Conflict Detected', {
+            description: 'Another user made changes while you were editing. The page will refresh to show the latest version.',
+            duration: Infinity,
+            action: {
+              label: 'Refresh Now',
+              onClick: () => window.location.reload()
+            }
+          });
+          
+          // Auto-refresh after 3 seconds
+          setTimeout(() => window.location.reload(), 3000);
+          return; // Don't process more operations
+        }
 
         if (error) {
           console.error('Structural save error:', error);
@@ -125,14 +122,36 @@ export const useStructuralSave = (
           throw error;
         }
 
-        if (data?.success) {
+        // PHASE 2: BROADCAST ONLY AFTER SUCCESSFUL SAVE (Data Safety Pattern)
+        // Other users only see changes that are actually persisted
+        if (data?.success && rundownId && currentUserId) {
+          // Import mapping functions dynamically to avoid circular dependencies
+          const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
+          
+          const broadcastField = mapOperationToBroadcastField(operation.operationType);
+          const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
+          
+          console.log('📡 Broadcasting structural operation (AFTER successful save):', {
+            operationType: operation.operationType,
+            broadcastField,
+            payload
+          });
+          
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            broadcastField,
+            payload,
+            currentUserId
+          );
+          
           // Track our own update to prevent conflict detection via centralized tracker
           if (data.updatedAt) {
             const context = rundownId ? `realtime-${rundownId}` : undefined;
             ownUpdateTracker.track(data.updatedAt, context);
           }
           
-          console.log('✅ Structural operation saved to database:', operation.operationType);
+          console.log('✅ Structural operation saved and broadcast:', operation.operationType);
         }
       }
       
@@ -188,6 +207,32 @@ export const useStructuralSave = (
       sequenceNumber?: number
     ) => {
       if (!rundownId) return;
+
+      // RATE LIMITING: Detect cascade - if too many operations queued too fast
+      const now = Date.now();
+      const recentOpsCount = pendingOperationsRef.current.filter(op => 
+        new Date(op.timestamp).getTime() > now - 5000 // Last 5 seconds
+      ).length;
+
+      if (recentOpsCount >= 50) {
+        console.error('🚨 CASCADE DETECTED: Too many operations queued', {
+          recentCount: recentOpsCount,
+          totalPending: pendingOperationsRef.current.length
+        });
+        
+        import('@/components/ui/sonner').then(({ toast }) => {
+          toast.error('System Overload', {
+            description: 'Too many operations are queued. Please refresh the page to clear pending changes.',
+            duration: Infinity,
+            action: {
+              label: 'Refresh Now',
+              onClick: () => window.location.reload()
+            }
+          });
+        });
+        
+        return; // Don't queue more operations
+      }
 
       const operation: StructuralOperation = {
         rundownId,
