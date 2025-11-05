@@ -27,7 +27,6 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
-import { SaveConflictModal } from '@/components/SaveConflictModal';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -40,14 +39,6 @@ export const useSimplifiedRundownState = () => {
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Conflict resolution state
-  const [conflictData, setConflictData] = useState<{
-    currentState: any;
-    currentDocVersion: number;
-    localUpdates: any[];
-  } | null>(null);
-  const [showConflictModal, setShowConflictModal] = useState(false);
   
   // Pre-warm edge functions to eliminate cold starts
   useEdgeFunctionPrewarming(rundownId, isInitialized);
@@ -796,6 +787,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
       setIsStructuralSaving(false);
       setHasStructuralUnsavedChanges(false);
+      actions.markSaved();
       if (completionCount !== undefined) {
         setSaveCompletionCount(completionCount);
       }
@@ -807,11 +799,6 @@ export const useSimplifiedRundownState = () => {
     onUnsavedChanges: () => {
       console.log('🧪 STRUCTURAL SAVE: Unsaved changes - updating UI state');
       setHasStructuralUnsavedChanges(true);
-    },
-    onConflictDetected: (conflict) => {
-      console.error('🚨 CONFLICT DETECTED IN SIMPLIFIED STATE:', conflict);
-      setConflictData(conflict);
-      setShowConflictModal(true);
     }
   });
   
@@ -979,8 +966,12 @@ export const useSimplifiedRundownState = () => {
     
     const sessionKey = `${id}-${field}`;
     
-    // ✅ DUAL BROADCASTING PATTERN: Broadcast immediately, save to database in parallel
-    // Cell broadcasts happen instantly below for real-time sync
+    // Simplified: No field tracking needed - last writer wins
+    
+    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+    }
     
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
@@ -1034,11 +1025,6 @@ export const useSimplifiedRundownState = () => {
           }
         });
         
-        // ✅ DUAL BROADCASTING: Broadcast immediately for real-time sync
-        if (rundownId && currentUserId) {
-          cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-        }
-        
         // CRITICAL: Track custom field change for per-cell save system
         if (cellEditIntegration.isPerCellEnabled) {
           cellEditIntegration.handleCellChange(id, field, value);
@@ -1055,11 +1041,6 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.updateItem(id, { [updateField]: updateValue });
-      
-      // ✅ DUAL BROADCASTING: Broadcast immediately for real-time sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, id, updateField, updateValue, currentUserId);
-      }
       
       // CRITICAL: Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1511,7 +1492,10 @@ export const useSimplifiedRundownState = () => {
         // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
-        // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
+        // Broadcast rundown-level property change
+        if (rundownId && currentUserId) {
+          cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
+        }
         
         saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
@@ -1677,66 +1661,6 @@ export const useSimplifiedRundownState = () => {
     cooldownDuration: 1000  // 1 second cooldown after updates stop
   });
 
-  // Conflict resolution handlers
-  const handleRefreshToLatest = useCallback(async () => {
-    if (!rundownId || !conflictData) return;
-    
-    console.log('🔄 User chose: Refresh to latest version');
-    setShowConflictModal(false);
-    setConflictData(null);
-    
-    // Reload the page to get the latest version
-    window.location.reload();
-  }, [rundownId, conflictData]);
-
-  const handleDownloadMyVersion = useCallback(() => {
-    if (!conflictData) return;
-    
-    console.log('💾 User chose: Download my version as backup');
-    
-    // Download current state as JSON backup
-    const backup = {
-      title: state.title,
-      items: state.items,
-      startTime: state.startTime,
-      timezone: state.timezone,
-      showDate: state.showDate,
-      timestamp: new Date().toISOString(),
-      conflictInfo: {
-        serverVersion: conflictData.currentDocVersion,
-        localUpdates: conflictData.localUpdates
-      }
-    };
-    
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rundown-backup-${new Date().toISOString()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    // Then refresh
-    setShowConflictModal(false);
-    setConflictData(null);
-    window.location.reload();
-  }, [conflictData, state]);
-
-  const handleKeepEditing = useCallback(() => {
-    console.log('⚠️ User chose: Keep editing (risky)');
-    setShowConflictModal(false);
-    // Don't clear conflictData - keep it for potential re-attempts
-    
-    // Show warning toast
-    import('@/hooks/use-toast').then(({ toast }) => {
-      toast({
-        title: "Warning: Editing Out-of-Sync Version",
-        description: "Your version may be overwritten. Consider refreshing soon.",
-        variant: "destructive",
-      });
-    });
-  }, []);
-
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -1829,7 +1753,10 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(undefined, 'startTime', newStartTime);
       }
       
-      // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
+      }
       
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
@@ -1846,7 +1773,10 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(undefined, 'timezone', newTimezone);
       }
       
-      // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
+      }
       
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
@@ -1863,7 +1793,10 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(undefined, 'showDate', newShowDate);
       }
       
-      // Note: Cell broadcasts now happen AFTER database save in useCellLevelSave
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
+      }
       
       actions.setShowDate(newShowDate);
     }, [actions.setShowDate, rundownId, currentUserId, cellEditIntegration]),
@@ -1945,17 +1878,6 @@ export const useSimplifiedRundownState = () => {
     
     // Structural change handling
     markStructuralChange,
-    clearStructuralChange,
-    
-    // Conflict resolution modal props
-    conflictModalProps: {
-      isOpen: showConflictModal,
-      conflictData,
-      state,
-      rundownId,
-      onRefresh: handleRefreshToLatest,
-      onDownloadAndRefresh: handleDownloadMyVersion,
-      onKeepEditing: handleKeepEditing
-    }
+    clearStructuralChange
   };
 };

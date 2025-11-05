@@ -4,7 +4,6 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
-import { SaveConflictModal } from '@/components/SaveConflictModal';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
@@ -87,9 +86,7 @@ const RundownIndexContent = () => {
     moveItemDown,
     // Numbering lock
     numberingLocked,
-    toggleLock,
-    // Conflict resolution
-    conflictModalProps
+    toggleLock
   } = coreState;
 
   // Get team data for column deletion
@@ -675,11 +672,6 @@ const RundownIndexContent = () => {
           rundownId={rundownId}
           onClose={() => setShowNotesWindow(false)}
         />
-      )}
-      
-      {/* Conflict Resolution Modal */}
-      {conflictModalProps && (
-        <SaveConflictModal {...conflictModalProps} />
       )}
       
       <CuerChatButton 

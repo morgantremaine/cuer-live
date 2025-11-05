@@ -5,7 +5,6 @@ import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
-import { toast } from '@/hooks/use-toast';
 
 interface FieldUpdate {
   itemId?: string;
@@ -26,8 +25,7 @@ export const useCellLevelSave = (
   onChangesSaved?: () => void,
   isTypingActive?: () => boolean,
   saveInProgressRef?: React.MutableRefObject<boolean>,
-  typingIdleMs?: number,
-  onConflictDetected?: (conflict: { currentState: any; currentDocVersion: number; localUpdates: FieldUpdate[] }) => void
+  typingIdleMs?: number
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -154,33 +152,6 @@ export const useCellLevelSave = (
         throw error;
       }
 
-      // CRITICAL: Check for conflict BEFORE checking success
-      if (data?.conflict === true) {
-        console.error('🚨 CONFLICT DETECTED: Server has newer version');
-        console.error('Current server version:', data.currentDocVersion);
-        console.error('Conflict details:', data.currentState);
-        
-        // Call conflict handler if provided
-        if (onConflictDetected) {
-          onConflictDetected({
-            currentState: data.currentState,
-            currentDocVersion: data.currentDocVersion,
-            localUpdates: updatesToSave
-          });
-        } else {
-          // Fallback: Show critical toast if no handler provided
-          toast({
-            title: "Sync Conflict Detected",
-            description: "Someone else modified this rundown. Please refresh to see the latest version.",
-            variant: "destructive",
-          });
-        }
-        
-        // DO NOT add to failedSavesRef - conflicts are not retryable
-        // DO NOT throw - this is a handled conflict, not an error
-        return null;
-      }
-
       if (data?.success) {
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         
@@ -213,14 +184,6 @@ export const useCellLevelSave = (
 
     } catch (error) {
       console.error('Per-cell save exception:', error);
-      
-      // Show user-visible error notification
-      toast({
-        title: "Save Failed",
-        description: "Your changes couldn't be saved. They will be retried automatically when connection is restored.",
-        variant: "destructive",
-      });
-      
       throw error;
     }
   }, [rundownId]);
@@ -279,6 +242,35 @@ export const useCellLevelSave = (
   const hasPendingUpdates = useCallback(() => {
     return pendingUpdatesRef.current.length > 0;
   }, []);
+
+  // Add beforeunload handler to prevent data loss on tab close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasPendingUpdates()) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        
+        // Best-effort synchronous flush
+        flushPendingUpdates().catch(console.error);
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasPendingUpdates, flushPendingUpdates]);
+
+  // Add visibilitychange handler to prevent data loss from background tab throttling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && hasPendingUpdates()) {
+        console.log('🌙 Tab hidden - flushing cell-level saves immediately');
+        flushPendingUpdates().catch(console.error);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [hasPendingUpdates, flushPendingUpdates]);
 
   return {
     trackCellChange,

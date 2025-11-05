@@ -56,33 +56,14 @@ serve(async (req) => {
     }
 
     const operation: StructuralOperation = body;
-    
-    // CRITICAL FIX: Validate operationData exists before accessing nested properties
-    if (!operation.operationData) {
-      console.error('❌ Invalid operation: missing operationData', {
-        rundownId: operation.rundownId,
-        operationType: operation.operationType,
-        userId: operation.userId,
-        timestamp: operation.timestamp
-      });
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid operation: missing operationData',
-          operationType: operation.operationType,
-          rundownId: operation.rundownId
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
     console.log('🏗️ Processing structural operation:', {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
       userId: operation.userId,
       timestamp: operation.timestamp,
-      hasLockedNumbers: !!operation.operationData?.lockedRowNumbers,
-      lockedNumbersCount: Object.keys(operation.operationData?.lockedRowNumbers || {}).length,
-      numberingLocked: operation.operationData?.numberingLocked
+      hasLockedNumbers: !!operation.operationData.lockedRowNumbers,
+      lockedNumbersCount: Object.keys(operation.operationData.lockedRowNumbers || {}).length,
+      numberingLocked: operation.operationData.numberingLocked
     });
 
     // Start coordination - acquire advisory lock for rundown
@@ -207,36 +188,13 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('❌ Error updating rundown:', updateError);
-      
-      // CRITICAL: Store content snapshot for failed operations only
-      await supabase
-        .from('rundown_operations')
-        .insert({
-          rundown_id: operation.rundownId,
-          user_id: operation.userId,
-          operation_type: `structural_${operation.operationType}_FAILED`,
-          operation_data: {
-            action: actionDescription,
-            error: updateError.message,
-            errorCode: updateError.code,
-            operationType: operation.operationType,
-            timestamp: operation.timestamp,
-            sequenceNumber: operation.operationData.sequenceNumber,
-            failedAt: new Date().toISOString(),
-            
-            // SNAPSHOT: Store full content for recovery
-            contentSnapshot: updatedItems,
-            originalOperationData: operation.operationData
-          }
-        });
-      
       return new Response(
         JSON.stringify({ error: 'Failed to update rundown', details: updateError }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Log the operation (NO SNAPSHOT - successful operations don't need recovery)
+    // Log the operation with enhanced coordination data
     await supabase
       .from('rundown_operations')
       .insert({
@@ -251,7 +209,6 @@ serve(async (req) => {
           sequenceNumber: operation.operationData.sequenceNumber,
           coordinatedAt: new Date().toISOString(),
           lockId: lockId
-          // NO contentSnapshot - not needed for successful operations
         }
       });
 

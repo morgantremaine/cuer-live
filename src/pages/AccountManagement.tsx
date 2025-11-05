@@ -13,7 +13,6 @@ import TeamManagement from '@/components/TeamManagement'
 import { SubscriptionStatus } from '@/components/subscription/SubscriptionStatus'
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans'
 import { IntegrationsSettings } from '@/components/integrations/IntegrationsSettings'
-import MOSIntegrationSettings from '@/components/settings/MOSIntegrationSettings'
 import { useSubscription } from '@/hooks/useSubscription'
 import { useTeam } from '@/hooks/useTeam'
 import { supabase } from '@/integrations/supabase/client'
@@ -510,10 +509,7 @@ const AccountManagement = () => {
           {user?.email === 'morgan@cuer.live' && (
             <TabsContent value="integrations">
               {team ? (
-                <div className="space-y-6">
-                  <IntegrationsSettings teamId={team.id} />
-                  <MOSIntegrationSettings teamId={team.id} />
-                </div>
+                <IntegrationsSettings teamId={team.id} />
               ) : (
                 <Card>
                   <CardHeader>
