@@ -23,6 +23,7 @@ interface StructuralOperation {
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;
+  retryCount?: number; // Track retry attempts to prevent infinite loops
 }
 
 export const useStructuralSave = (
@@ -106,6 +107,21 @@ export const useStructuralSave = (
 
         if (error) {
           console.error('Structural save error:', error);
+          
+          // CRITICAL: Alert user immediately about save failure
+          const { toast } = await import('@/components/ui/sonner');
+          toast.error('Failed to save changes', {
+            description: 'Your structural changes could not be saved. Please check your connection.',
+            duration: 10000, // Show for 10 seconds
+            action: {
+              label: 'Retry Now',
+              onClick: () => {
+                console.log('🔄 User requested manual retry of pending operations');
+                flushPendingOperations().catch(console.error);
+              }
+            }
+          });
+          
           throw error;
         }
 
@@ -123,8 +139,42 @@ export const useStructuralSave = (
       onSaveComplete?.();
     } catch (error) {
       console.error('Structural save batch error:', error);
-      // Re-queue failed operations for retry
-      pendingOperationsRef.current.unshift(...operations);
+      
+      // Separate retriable vs. permanently failed operations
+      const retriableOps = operations.filter(op => (op.retryCount || 0) < 3);
+      const permanentlyFailedOps = operations.filter(op => (op.retryCount || 0) >= 3);
+      
+      // Alert user about permanently failed operations
+      if (permanentlyFailedOps.length > 0) {
+        console.error('❌ CRITICAL: Operations failed after 3 retries', {
+          count: permanentlyFailedOps.length,
+          operations: permanentlyFailedOps.map(op => ({
+            type: op.operationType,
+            timestamp: op.timestamp,
+            retries: op.retryCount
+          }))
+        });
+        
+        const { toast } = await import('@/components/ui/sonner');
+        toast.error('Critical Save Failure', {
+          description: `${permanentlyFailedOps.length} operations could not be saved after multiple attempts. Your changes may be lost. Please refresh the page and contact support.`,
+          duration: Infinity, // Keep visible until dismissed
+          action: {
+            label: 'Refresh Page',
+            onClick: () => window.location.reload()
+          }
+        });
+      }
+      
+      // Re-queue only retriable operations with incremented retry count
+      if (retriableOps.length > 0) {
+        console.log(`🔄 Re-queuing ${retriableOps.length} operations (attempt ${(retriableOps[0].retryCount || 0) + 2}/3)`);
+        pendingOperationsRef.current.unshift(...retriableOps.map(op => ({
+          ...op,
+          retryCount: (op.retryCount || 0) + 1
+        })));
+      }
+      
       throw error;
     }
   }, [rundownId, onSaveStart, onSaveComplete, currentUserId]);

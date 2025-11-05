@@ -56,14 +56,33 @@ serve(async (req) => {
     }
 
     const operation: StructuralOperation = body;
+    
+    // CRITICAL FIX: Validate operationData exists before accessing nested properties
+    if (!operation.operationData) {
+      console.error('❌ Invalid operation: missing operationData', {
+        rundownId: operation.rundownId,
+        operationType: operation.operationType,
+        userId: operation.userId,
+        timestamp: operation.timestamp
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid operation: missing operationData',
+          operationType: operation.operationType,
+          rundownId: operation.rundownId
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     console.log('🏗️ Processing structural operation:', {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
       userId: operation.userId,
       timestamp: operation.timestamp,
-      hasLockedNumbers: !!operation.operationData.lockedRowNumbers,
-      lockedNumbersCount: Object.keys(operation.operationData.lockedRowNumbers || {}).length,
-      numberingLocked: operation.operationData.numberingLocked
+      hasLockedNumbers: !!operation.operationData?.lockedRowNumbers,
+      lockedNumbersCount: Object.keys(operation.operationData?.lockedRowNumbers || {}).length,
+      numberingLocked: operation.operationData?.numberingLocked
     });
 
     // Start coordination - acquire advisory lock for rundown
