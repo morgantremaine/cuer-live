@@ -5,6 +5,7 @@ import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
+import { toast } from '@/hooks/use-toast';
 
 interface FieldUpdate {
   itemId?: string;
@@ -184,6 +185,14 @@ export const useCellLevelSave = (
 
     } catch (error) {
       console.error('Per-cell save exception:', error);
+      
+      // Show user-visible error notification
+      toast({
+        title: "Save Failed",
+        description: "Your changes couldn't be saved. They will be retried automatically when connection is restored.",
+        variant: "destructive",
+      });
+      
       throw error;
     }
   }, [rundownId]);
