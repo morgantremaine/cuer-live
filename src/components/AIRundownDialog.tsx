@@ -243,7 +243,7 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
             <p className="text-lg font-medium">Cuer is generating your rundown...</p>
-            <p className="text-sm text-muted-foreground">This may take a few seconds</p>
+            <p className="text-sm text-muted-foreground">This usually takes about a minute</p>
           </div>
         )}
 
