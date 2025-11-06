@@ -72,17 +72,9 @@ EXAMPLE OF PROPER RUNDOWN STRUCTURE:
     "type": "header",
     "rowNumber": "A",
     "name": "TOP OF SHOW",
-    "startTime": "",
-    "duration": "",
-    "endTime": "",
-    "elapsedTime": "",
-    "talent": "",
-    "script": "",
-    "gfx": "",
-    "video": "",
-    "images": "",
-    "notes": "",
-    "color": "",
+    // All time/content fields MUST be empty strings for headers
+    "startTime": "", "duration": "", "endTime": "", "elapsedTime": "",
+    "talent": "", "script": "", "gfx": "", "video": "", "images": "", "notes": "", "color": "",
     "isFloating": false,
     "customFields": {}
   },
@@ -91,77 +83,19 @@ EXAMPLE OF PROPER RUNDOWN STRUCTURE:
     "type": "regular",
     "rowNumber": "1",
     "name": "Show Open",
-    "startTime": "",
     "duration": "02:00",
-    "endTime": "",
-    "elapsedTime": "00:00",
-    "talent": "Host: Alex",
-    "script": "[ALEX {Blue}]\nWelcome to the show! We've got an incredible lineup for you today.",
+    // These will be auto-calculated, leave empty
+    "startTime": "", "endTime": "", "elapsedTime": "00:00",
+    "talent": "Host: Alex", // Plain names only, NO [NAME {color}] formatting here
+    "script": "[ALEX {Blue}]\nWelcome to the show! We've got an incredible lineup for you today.", // Use [NAME {color}] here
     "gfx": "Logo animation, Show title screen",
     "video": "Intro sizzle reel",
-    "images": "",
-    "notes": "",
-    "color": "",
+    "images": "", "notes": "", "color": "", // Empty fields can be left as ""
     "isFloating": false,
-    "customFields": {"music": "Energetic Theme"}
-  },
-  {
-    "id": "item_1751939846002_def456",
-    "type": "regular",
-    "rowNumber": "2",
-    "name": "Team Introductions",
-    "startTime": "",
-    "duration": "03:00",
-    "endTime": "",
-    "elapsedTime": "00:00",
-    "talent": "Host + Analysts",
-    "script": "[ALEX {Blue}]\nLet's meet today's competitors.\n\n[MOXIE {Green}]\nTeam A has been dominating all season.\n\n[REKKZ {Orange}]\nBut don't count out Team B - they're hungry for this win.",
-    "gfx": "Team logos, Player cards",
-    "video": "Team highlight packages",
-    "images": "",
-    "notes": "",
-    "color": "",
-    "isFloating": false,
-    "customFields": {}
-  },
-  {
-    "id": "header_1751939988191_bdyoqqh5l",
-    "type": "header",
-    "rowNumber": "B",
-    "name": "GAME 1",
-    "startTime": "",
-    "duration": "",
-    "endTime": "",
-    "elapsedTime": "",
-    "talent": "",
-    "script": "",
-    "gfx": "",
-    "video": "",
-    "images": "",
-    "notes": "",
-    "color": "",
-    "isFloating": false,
-    "customFields": {}
-  },
-  {
-    "id": "item_1751939988192_ghi789",
-    "type": "regular",
-    "rowNumber": "3",
-    "name": "Game 1 - Live",
-    "startTime": "",
-    "duration": "30:00",
-    "endTime": "",
-    "elapsedTime": "00:00",
-    "talent": "Casters",
-    "script": "[MOXIE {Green}]\nHere we go! Game 1 is underway and the action is intense from the start!\n\n[REKKZ {Orange}]\nThe teams are already going for aggressive plays!",
-    "gfx": "In-game overlays, Score graphics",
-    "video": "Live gameplay feed",
-    "images": "",
-    "notes": "",
-    "color": "",
-    "isFloating": false,
-    "customFields": {}
+    "customFields": {"music": "Energetic Theme"} // Optional: add custom fields when relevant
   }
+  // ... continue with more headers (B, C, D...) and regular items (2, 3, 4...) following this pattern
+  // Remember: ALWAYS start with a header, use 3-5 headers total, 15-25 items overall
 ]
 
 TALENT vs SCRIPT FORMATTING (CRITICAL):
