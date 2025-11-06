@@ -180,34 +180,9 @@ export const useStructuralSave = (
     return pendingOperationsRef.current.length > 0;
   }, []);
 
-  // Add beforeunload handler to prevent data loss on tab close
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasPendingOperations()) {
-        e.preventDefault();
-        e.returnValue = 'You have unsaved structural changes. Are you sure you want to leave?';
-        
-        // Best-effort synchronous flush
-        flushPendingOperations().catch(console.error);
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasPendingOperations, flushPendingOperations]);
-
-  // Add visibilitychange handler to prevent data loss from background tab throttling
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && hasPendingOperations()) {
-        console.log('🌙 Tab hidden - flushing structural operations immediately');
-        flushPendingOperations().catch(console.error);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [hasPendingOperations, flushPendingOperations]);
+  // REMOVED: Save-on-unmount/beforeunload handlers
+  // Prevents overwriting newer data with stale structural operations
+  // Users should rely on regular auto-save during active editing
 
   return {
     queueStructuralOperation,

@@ -1001,46 +1001,9 @@ export const useSimpleAutoSave = (
     };
   }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
 
-  // Enhanced flush-on-blur/visibility-hidden to guarantee keystroke saving
-  useEffect(() => {
-    const handleFlushOnBlur = async () => {
-      if (state.hasUnsavedChanges && rundownId && rundownId !== DEMO_RUNDOWN_ID) {
-        // Skip flush if per-cell save is handling it
-        if (isPerCellEnabled) {
-          console.log('🧪 AutoSave: per-cell save handling flush - skipping main auto-save flush');
-          return;
-        }
-        
-        console.log('🧯 AutoSave: flushing on tab blur/hidden to preserve keystrokes');
-        try {
-          await performSave(true, isSharedView); // Pass true to indicate this is a flush save
-        } catch (error) {
-          console.error('❌ AutoSave: flush-on-blur failed:', error);
-        }
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        handleFlushOnBlur();
-      }
-    };
-
-    const handleWindowBlur = () => {
-      handleFlushOnBlur();
-    };
-
-    // Add comprehensive flush triggers
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('beforeunload', handleFlushOnBlur);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('beforeunload', handleFlushOnBlur);
-    };
-  }, [state.hasUnsavedChanges, rundownId, performSave]);
+  // REMOVED: Save-on-blur/visibility-hidden logic
+  // Flushing stale state is more dangerous than losing a few keystrokes
+  // Users can manually save if needed
 
   // Paranoid save timer - ensures old unsaved changes get persisted
   // Runs every 30 seconds and force-saves if changes are sitting unsaved
@@ -1097,7 +1060,9 @@ export const useSimpleAutoSave = (
     state
   ]);
 
-  // Flush any pending changes on unmount/view switch to prevent reverts
+  // REMOVED: Save-on-unmount logic
+  // Prevents overwriting newer data with stale state on tab close
+  // Users should manually save or rely on auto-save during active editing
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -1109,21 +1074,6 @@ export const useSimpleAutoSave = (
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = undefined;
-      }
-      if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
-        // Skip unmount flush if per-cell save is handling it
-        if (isPerCellEnabled) {
-          console.log('🧪 AutoSave: per-cell save handling unmount flush - skipping main auto-save flush');
-          return;
-        }
-        
-        console.log('🧯 AutoSave: flushing pending changes on unmount');
-        try {
-          // Fire-and-forget flush save that bypasses tab-hidden checks
-          performSaveRef.current(true);
-        } catch (e) {
-          console.error('❌ AutoSave: flush-on-unmount failed', e);
-        }
       }
     };
   }, []);

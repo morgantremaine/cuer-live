@@ -126,20 +126,17 @@ export const useRundownResumption = ({
           }
           
           if (normalizedLatest !== normalizedKnown) {
+            console.log('🔄 Stale data detected - reloading page for fresh state');
+            toast({
+              title: "Updates detected", 
+              description: "Reloading to sync with latest changes...",
+              duration: 2000,
+            });
             
-            // Removed toast notification - user prefers just the blue icon indicator
-            // toast({
-            //   title: "Updates detected", 
-            //   description: "Your rundown has been updated with the latest changes from your team.",
-            //   duration: 4000,
-            // });
-            
-            onDataRefresh(latestData);
-            
-            // Update our known timestamp
-            if (updateLastKnownTimestamp) {
-              updateLastKnownTimestamp(normalizedLatest);
-            }
+            // Force reload instead of trying to merge stale state
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
           }
         }
       } catch (error) {

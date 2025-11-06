@@ -112,15 +112,16 @@ class RealtimeWatchdog {
         
         // Check if we've missed updates based on doc_version
         if (serverDocVersion > this.lastSeenDocVersion) {
-          console.log('🚨 Watchdog detected stale data:', {
+          console.log('🚨 Watchdog detected stale data - triggering reload:', {
             serverDocVersion,
             lastSeenDocVersion: this.lastSeenDocVersion,
             timeDiff: this.lastKnownTimestamp ? 
               new Date(serverTimestamp).getTime() - new Date(this.lastKnownTimestamp).getTime() : 'unknown'
           });
           
-          this.config.onStaleData(data);
-          this.updateLastSeen(serverDocVersion, serverTimestamp);
+          // Force reload instead of trying to merge
+          console.log('🔄 Reloading page to prevent stale state overwrite');
+          window.location.reload();
         } else {
           // Data is up to date
           this.consecutiveFailures = 0;

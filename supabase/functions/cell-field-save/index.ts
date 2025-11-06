@@ -18,8 +18,7 @@ interface CellSaveRequest {
   fieldUpdates: FieldUpdate[];
   expectedSignature?: string;
   contentSignature: string;
-  baselineDocVersion?: number;
-  baselineTimestamp?: number;
+  // REMOVED: baselineDocVersion - not used in last-write-wins architecture
 }
 
 serve(async (req) => {
@@ -61,14 +60,12 @@ serve(async (req) => {
       )
     }
 
-    const { rundownId, fieldUpdates, contentSignature, baselineDocVersion, baselineTimestamp }: CellSaveRequest = body
+    const { rundownId, fieldUpdates, contentSignature }: CellSaveRequest = body
     
     console.log('📥 Cell save request received:', {
       rundownId,
       fieldUpdateCount: fieldUpdates.length,
-      userId: user.id,
-      baselineDocVersion,
-      hasBaseline: baselineDocVersion !== undefined
+      userId: user.id
     })
 
     if (!rundownId || !fieldUpdates || !Array.isArray(fieldUpdates)) {
@@ -102,32 +99,9 @@ serve(async (req) => {
       currentDocVersion: currentRundown.doc_version
     })
 
-    // CONFLICT DETECTION: Check if baseline version provided
-    if (baselineDocVersion !== undefined && currentRundown.doc_version > baselineDocVersion) {
-      console.warn(`⚠️ Version conflict detected: baseline=${baselineDocVersion}, current=${currentRundown.doc_version}`);
-      
-      // Return conflict status - client will handle merge
-      return new Response(
-        JSON.stringify({
-          success: false,
-          conflict: true,
-          currentDocVersion: currentRundown.doc_version,
-          currentState: {
-            items: currentRundown.items,
-            title: currentRundown.title,
-            show_date: currentRundown.show_date,
-            timezone: currentRundown.timezone,
-            start_time: currentRundown.start_time,
-            updated_at: currentRundown.updated_at
-          },
-          message: 'Conflict detected - state changed since offline'
-        }),
-        { 
-          status: 409, // Conflict status
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    // REMOVED: Doc version conflict detection
+    // Per-cell save system uses "last write wins" architecture
+    // No doc_version checking - aligns with original per-cell design
 
     // Apply field updates
     console.log('⚙️ Processing field updates:', {
