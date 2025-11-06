@@ -12,6 +12,19 @@ export interface TeamCustomColumn {
   created_at: string;
 }
 
+// Helper to retry RPC calls with exponential backoff
+const retryRpc = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => {
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
+    }
+  }
+  throw new Error('Max retries exceeded');
+};
+
 export const useTeamCustomColumns = () => {
   const { user } = useAuth();
   const { team } = useTeam();
@@ -27,9 +40,20 @@ export const useTeamCustomColumns = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc('get_team_custom_columns', {
-        team_uuid: team.id
-      });
+      // Ensure we have a valid session before making the call
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('No valid session, skipping team custom columns load');
+        setTeamColumns([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await retryRpc(async () => 
+        await supabase.rpc('get_team_custom_columns', {
+          team_uuid: team.id
+        })
+      );
 
       if (error) {
         console.error('Error loading team custom columns:', error);
