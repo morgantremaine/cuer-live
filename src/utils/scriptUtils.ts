@@ -118,6 +118,15 @@ export const renderScriptWithBrackets = (
           }
         }, formatText(bracketText))
       );
+
+      // Add line break after bracket for teleprompter
+      if (!inlineDisplay) {
+        parts.push(
+          React.createElement('br', {
+            key: `${cacheKey}-br-${partIndex++}`
+          })
+        );
+      }
     }
 
 
