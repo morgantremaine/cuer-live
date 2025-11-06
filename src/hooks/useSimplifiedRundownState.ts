@@ -91,6 +91,9 @@ export const useSimplifiedRundownState = () => {
   const blockUntilLocalEditRef = useRef(false);
   const cooldownUntilRef = useRef<number>(0);
   
+  // Track userId of last change to prevent spurious "unsaved changes" from remote broadcasts
+  const lastChangeUserIdRef = useRef<string | null>(null);
+  
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
@@ -485,6 +488,8 @@ export const useSimplifiedRundownState = () => {
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
+      // Track that this change came from another user
+      lastChangeUserIdRef.current = update.userId;
       
       try {
         // SIMPLIFIED: No shadow protection - just apply changes immediately (Google Sheets style)
@@ -718,7 +723,9 @@ export const useSimplifiedRundownState = () => {
     if (!perCellEnabled || !isInitialized) return;
     
     // CRITICAL: Skip tracking if we're applying a remote cell broadcast
-    if (applyingCellBroadcastRef.current) {
+    // OR if the last change was from a different user (remote change)
+    if (applyingCellBroadcastRef.current || 
+        (lastChangeUserIdRef.current && lastChangeUserIdRef.current !== currentUserId)) {
       previousStateRef.current = state;
       return;
     }
@@ -970,6 +977,8 @@ export const useSimplifiedRundownState = () => {
     
     // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
     if (rundownId && currentUserId) {
+      // Track that this change was made by the current user
+      lastChangeUserIdRef.current = currentUserId;
       cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
     }
     
@@ -1417,6 +1426,8 @@ export const useSimplifiedRundownState = () => {
       
       // Broadcast row removal for immediate realtime sync
       if (rundownId && currentUserId) {
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         cellBroadcast.broadcastCellUpdate(
           rundownId,
           undefined,
@@ -1440,6 +1451,8 @@ export const useSimplifiedRundownState = () => {
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
       if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         setTimeout(() => {
           cellBroadcast.broadcastCellUpdate(
             rundownId,
@@ -1464,6 +1477,8 @@ export const useSimplifiedRundownState = () => {
       
       if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         setTimeout(() => {
           cellBroadcast.broadcastCellUpdate(
             rundownId,
@@ -1494,6 +1509,8 @@ export const useSimplifiedRundownState = () => {
         
         // Broadcast rundown-level property change
         if (rundownId && currentUserId) {
+          // Track that this change was made by the current user
+          lastChangeUserIdRef.current = currentUserId;
           cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
         }
         
@@ -1575,6 +1592,8 @@ export const useSimplifiedRundownState = () => {
     // Broadcast add at index for immediate realtime sync (use the updated item from array)
     if (rundownId && currentUserId) {
       const itemToBroadcast = newItems.find(i => i.id === newItem.id) || newItem;
+      // Track that this change was made by the current user
+      lastChangeUserIdRef.current = currentUserId;
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
@@ -1628,6 +1647,8 @@ export const useSimplifiedRundownState = () => {
     
     // Broadcast header add at index for immediate realtime sync
     if (rundownId && currentUserId) {
+      // Track that this change was made by the current user
+      lastChangeUserIdRef.current = currentUserId;
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
@@ -1722,6 +1743,8 @@ export const useSimplifiedRundownState = () => {
       
       // Broadcast multiple row removals for immediate realtime sync
       if (rundownId && currentUserId) {
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         cellBroadcast.broadcastCellUpdate(
           rundownId,
           undefined,
@@ -1755,6 +1778,8 @@ export const useSimplifiedRundownState = () => {
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
       }
       
@@ -1775,6 +1800,8 @@ export const useSimplifiedRundownState = () => {
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
       }
       
@@ -1795,6 +1822,8 @@ export const useSimplifiedRundownState = () => {
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
         cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
       }
       
