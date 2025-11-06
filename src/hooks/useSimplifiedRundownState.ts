@@ -484,8 +484,6 @@ export const useSimplifiedRundownState = () => {
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
-      const broadcastTimestamp = Date.now();
-      console.log('🔒 BROADCAST FLAG SET (true) - timestamp:', broadcastTimestamp, 'field:', update.field, 'itemId:', update.itemId);
       applyingCellBroadcastRef.current = true;
       
       try {
@@ -669,11 +667,7 @@ export const useSimplifiedRundownState = () => {
         // Delay resetting flag to ensure useEffect sees it
         // This prevents the change tracking effect from running for remote updates
         // INCREASED from 0ms to 150ms to ensure React's effects process the state update first
-        const resetTimestamp = Date.now();
-        console.log('⏳ BROADCAST FLAG will reset in 150ms - set at:', resetTimestamp);
         setTimeout(() => {
-          const actualResetTime = Date.now();
-          console.log('🔓 BROADCAST FLAG RESET (false) - reset at:', actualResetTime, 'elapsed:', actualResetTime - resetTimestamp, 'ms');
           applyingCellBroadcastRef.current = false;
         }, 150);
       }
@@ -724,28 +718,13 @@ export const useSimplifiedRundownState = () => {
     if (!perCellEnabled || !isInitialized) return;
     
     // CRITICAL: Skip tracking if we're applying a remote cell broadcast
-    const isBroadcastActive = applyingCellBroadcastRef.current;
-    const checkTimestamp = Date.now();
-    
-    const prev = previousStateRef.current;
-    const curr = state;
-    
-    if (isBroadcastActive) {
-      console.log('🚫 CHANGE TRACKING BLOCKED - broadcast flag is true at:', checkTimestamp, {
-        itemsChanged: prev.items !== curr.items,
-        titleChanged: prev.title !== curr.title,
-        flagStatus: 'ACTIVE'
-      });
+    if (applyingCellBroadcastRef.current) {
       previousStateRef.current = state;
       return;
     }
     
-    console.log('✅ CHANGE TRACKING ACTIVE - broadcast flag is false at:', checkTimestamp, {
-      itemsChanged: prev.items !== curr.items,
-      titleChanged: prev.title !== curr.title,
-      flagStatus: 'INACTIVE'
-    });
-    
+    const prev = previousStateRef.current;
+    const curr = state;
     
     // Skip change tracking on initial load (when previous state was empty)
     if (!hasTrackedInitialLoad.current && prev.items.length === 0 && curr.items.length > 0) {
