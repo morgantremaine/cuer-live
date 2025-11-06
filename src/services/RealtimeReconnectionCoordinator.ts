@@ -77,10 +77,28 @@ class RealtimeReconnectionCoordinatorService {
   }
 
   /**
+   * Check if user is authenticated
+   */
+  private async isAuthenticated(): Promise<boolean> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Handle visibility change events (tab switching, minimize, etc.)
    */
-  private handleVisibilityChange = () => {
+  private handleVisibilityChange = async () => {
     if (!document.hidden) {
+      // Skip sleep detection if not authenticated
+      if (!(await this.isAuthenticated())) {
+        console.log('👁️ Tab visible, skipping sleep detection (unauthenticated)');
+        return;
+      }
+      
       const { isSlept, duration } = this.detectSleep();
       
       if (isSlept) {
@@ -97,8 +115,14 @@ class RealtimeReconnectionCoordinatorService {
   /**
    * Handle pageshow events (browser back/forward cache)
    */
-  private handlePageShow = (event: PageTransitionEvent) => {
+  private handlePageShow = async (event: PageTransitionEvent) => {
     if (event.persisted) {
+      // Skip sleep detection if not authenticated
+      if (!(await this.isAuthenticated())) {
+        console.log('📄 Page shown from bfcache, skipping sleep detection (unauthenticated)');
+        return;
+      }
+      
       const { isSlept, duration } = this.detectSleep();
       
       if (isSlept) {
@@ -114,7 +138,13 @@ class RealtimeReconnectionCoordinatorService {
   /**
    * Handle window focus events
    */
-  private handleFocus = () => {
+  private handleFocus = async () => {
+    // Skip sleep detection if not authenticated
+    if (!(await this.isAuthenticated())) {
+      console.log('🎯 Window focused, skipping sleep detection (unauthenticated)');
+      return;
+    }
+    
     const { isSlept, duration } = this.detectSleep();
     
     if (isSlept) {
@@ -177,18 +207,8 @@ class RealtimeReconnectionCoordinatorService {
    */
   private forceReload(reason: string) {
     console.error(`🔄 Force reload triggered: ${reason}`);
-    
-    // Show toast before reload
-    import('sonner').then(({ toast }) => {
-      toast.error('Connection issues detected. Reloading page...', {
-        duration: 3000
-      });
-    });
-    
-    // Reload after brief delay to allow toast to show
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    // Immediate reload - no delays, no messaging
+    window.location.reload();
   }
 
   /**
@@ -196,6 +216,12 @@ class RealtimeReconnectionCoordinatorService {
    */
   private async handleNetworkOnline() {
     console.log('🌐 ReconnectionCoordinator: Network came online, checking for sleep...');
+    
+    // Skip sleep detection if not authenticated
+    if (!(await this.isAuthenticated())) {
+      console.log('🌐 Network online, skipping sleep detection (unauthenticated)');
+      return;
+    }
     
     const { isSlept, duration } = this.detectSleep();
     
@@ -242,6 +268,12 @@ class RealtimeReconnectionCoordinatorService {
       if (this.isReconnecting) return;
       
       console.log('⏱️ Periodic connection health check...');
+      
+      // Skip sleep detection if not authenticated
+      if (!(await this.isAuthenticated())) {
+        console.log('⏱️ Periodic check, skipping sleep detection (unauthenticated)');
+        return;
+      }
       
       // Check for sleep (even in background tabs)
       const { isSlept, duration } = this.detectSleep();
