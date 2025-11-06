@@ -52,16 +52,23 @@ export const renderScriptWithBrackets = (
   let lastIndex = 0;
   let match;
   let partIndex = 0;
+  let lastWasBracket = false;
 
   while ((match = bracketRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
+      let textContent = text.slice(lastIndex, match.index);
+      // Trim leading whitespace if previous part was a bracket in teleprompter mode
+      if (lastWasBracket && !inlineDisplay) {
+        textContent = textContent.trimStart();
+      }
       parts.push(
         React.createElement('span', {
           key: `${cacheKey}-text-${partIndex++}`,
           className: getFontWeight()
-        }, formatText(text.slice(lastIndex, match.index)))
+        }, formatText(textContent))
       );
     }
+    lastWasBracket = false;
 
     const bracketText = match[1];
     const colorName = match[2]?.toLowerCase();
@@ -126,6 +133,7 @@ export const renderScriptWithBrackets = (
             key: `${cacheKey}-br-${partIndex++}`
           })
         );
+        lastWasBracket = true;
       }
     }
 
@@ -134,11 +142,16 @@ export const renderScriptWithBrackets = (
   }
 
   if (lastIndex < text.length) {
+    let textContent = text.slice(lastIndex);
+    // Trim leading whitespace if previous part was a bracket in teleprompter mode
+    if (lastWasBracket && !inlineDisplay) {
+      textContent = textContent.trimStart();
+    }
     parts.push(
       React.createElement('span', {
         key: `${cacheKey}-text-${partIndex++}`,
         className: getFontWeight()
-      }, formatText(text.slice(lastIndex)))
+      }, formatText(textContent))
     );
   }
 
