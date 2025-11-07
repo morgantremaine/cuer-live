@@ -63,18 +63,12 @@ class RealtimeReconnectionCoordinatorService {
   /**
    * Handle visibility change events (tab switching, minimize, etc.)
    */
-  private handleVisibilityChange = async () => {
+  private handleVisibilityChange = () => {
     if (!document.hidden) {
-      // Skip sleep detection if not authenticated
-      if (!(await this.isAuthenticated())) {
-        console.log('👁️ Tab visible, skipping sleep detection (unauthenticated)');
-        return;
-      }
-      
       const { isSlept, duration } = this.detectSleep();
       
       if (isSlept) {
-        console.log(`💤 Sleep detected via visibility change (${Math.round(duration/1000)}s), forcing reload...`);
+        console.log(`💤 Sleep detected via visibility change (${Math.round(duration/1000)}s), forcing immediate reload...`);
         this.forceReload('laptop-sleep-visibility');
         return;
       }
@@ -87,18 +81,12 @@ class RealtimeReconnectionCoordinatorService {
   /**
    * Handle pageshow events (browser back/forward cache)
    */
-  private handlePageShow = async (event: PageTransitionEvent) => {
+  private handlePageShow = (event: PageTransitionEvent) => {
     if (event.persisted) {
-      // Skip sleep detection if not authenticated
-      if (!(await this.isAuthenticated())) {
-        console.log('📄 Page shown from bfcache, skipping sleep detection (unauthenticated)');
-        return;
-      }
-      
       const { isSlept, duration } = this.detectSleep();
       
       if (isSlept) {
-        console.log(`💤 Sleep detected via pageshow (${Math.round(duration/1000)}s), forcing reload...`);
+        console.log(`💤 Sleep detected via pageshow (${Math.round(duration/1000)}s), forcing immediate reload...`);
         this.forceReload('laptop-sleep-pageshow');
         return;
       }
@@ -110,17 +98,11 @@ class RealtimeReconnectionCoordinatorService {
   /**
    * Handle window focus events
    */
-  private handleFocus = async () => {
-    // Skip sleep detection if not authenticated
-    if (!(await this.isAuthenticated())) {
-      console.log('🎯 Window focused, skipping sleep detection (unauthenticated)');
-      return;
-    }
-    
+  private handleFocus = () => {
     const { isSlept, duration } = this.detectSleep();
     
     if (isSlept) {
-      console.log(`💤 Sleep detected via focus (${Math.round(duration/1000)}s), forcing reload...`);
+      console.log(`💤 Sleep detected via focus (${Math.round(duration/1000)}s), forcing immediate reload...`);
       this.forceReload('laptop-sleep-focus');
       return;
     }
