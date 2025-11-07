@@ -9,9 +9,6 @@ interface ConnectionStatusBadgeProps {
   isProcessing?: boolean;
   isDegraded?: boolean;
   isReconnecting?: boolean;
-  isFlapping?: boolean;
-  circuitState?: 'closed' | 'open' | 'half-open';
-  retryIn?: number;
   className?: string;
   showLabel?: boolean;
 }
@@ -21,9 +18,6 @@ const ConnectionStatusBadge = ({
   isProcessing = false,
   isDegraded = false,
   isReconnecting = false,
-  isFlapping = false,
-  circuitState = 'closed',
-  retryIn = 0,
   className,
   showLabel = true 
 }: ConnectionStatusBadgeProps) => {
@@ -49,8 +43,8 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 3: Normal reconnection (within grace period, not flapping)
-    if (isReconnecting && !isFlapping) {
+    // Priority 3: Reconnecting
+    if (isReconnecting) {
       return {
         color: 'text-blue-500',
         bgColor: 'bg-blue-500/10',
@@ -59,29 +53,7 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 4: Circuit breaker open - connection failed (persistent or flapping)
-    if (circuitState === 'open' || (isReconnecting && isFlapping)) {
-      const seconds = Math.ceil(retryIn / 1000);
-      return {
-        icon: WifiOff,
-        color: 'text-red-500',
-        bgColor: 'bg-red-500/10',
-        label: seconds > 0 ? `Retrying in ${seconds}s` : 'Connection Failed',
-        title: isFlapping ? 'Connection unstable - multiple reconnection attempts' : 'Connection failed. Retrying shortly...'
-      };
-    }
-    
-    // Priority 5: Circuit breaker half-open - testing connection after failure
-    if (circuitState === 'half-open') {
-      return {
-        color: 'text-yellow-500',
-        bgColor: 'bg-yellow-500/10',
-        label: 'Testing...',
-        title: 'Testing connection...'
-      };
-    }
-    
-    // Priority 6: Degraded connection (persistent poor quality)
+    // Priority 4: Degraded connection
     if (isConnected && isDegraded) {
       return {
         icon: Wifi,
@@ -92,7 +64,7 @@ const ConnectionStatusBadge = ({
       };
     }
     
-    // Priority 7: Connected
+    // Priority 5: Connected
     if (isConnected) {
       return {
         icon: Wifi,

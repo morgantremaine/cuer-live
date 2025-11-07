@@ -28,9 +28,6 @@ const RealtimeStatusIndicator = ({
       isProcessing={isProcessingUpdate}
       isDegraded={isDegraded}
       isReconnecting={broadcastHealth.isReconnecting}
-      isFlapping={broadcastHealth.isFlapping}
-      circuitState={broadcastHealth.circuitState}
-      retryIn={broadcastHealth.retryIn}
       className={className}
       showLabel={true}
     />
