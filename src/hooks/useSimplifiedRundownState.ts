@@ -228,22 +228,6 @@ export const useSimplifiedRundownState = () => {
   
   // Update the ref so useRundownState can use it
   markActiveTypingRef.current = markActiveTyping;
-
-  // Standalone undo system - now with redo
-  const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
-    onUndo: (items, _, title) => {
-      setUndoActive(true);
-      actions.setItems(items);
-      actions.setTitle(title);
-      
-      setTimeout(() => {
-        actions.markSaved();
-        actions.setItems([...items]);
-        setUndoActive(false);
-      }, 100);
-    },
-    setUndoActive
-  });
  
   // Stable refs to avoid resubscribing on state changes
   const stateRef = useRef(state);
@@ -468,6 +452,39 @@ export const useSimplifiedRundownState = () => {
       setCurrentUserId(user?.id || null);
     });
   }, []);
+
+  // Standalone undo system - now with redo
+  const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
+    onUndo: (items, _, title) => {
+      setUndoActive(true);
+      actions.setItems(items);
+      actions.setTitle(title);
+      
+      // Broadcast the undo/redo as a structural change
+      if (rundownId && currentUserId) {
+        const order = items.map(i => i.id);
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId,
+            getTabId()
+          );
+        }, 0);
+      }
+      
+      setTimeout(() => {
+        actions.markSaved();
+        actions.setItems([...items]);
+        setUndoActive(false);
+      }, 100);
+    },
+    setUndoActive,
+    rundownId,
+    userId: currentUserId
+  });
 
   // Cell-level broadcast system for immediate sync
   useEffect(() => {

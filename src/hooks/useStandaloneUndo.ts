@@ -15,6 +15,8 @@ interface UndoState {
 interface UseStandaloneUndoProps {
   onUndo: (items: RundownItem[], columns: Column[], title: string) => void;
   setUndoActive?: (active: boolean) => void;
+  rundownId?: string | null;
+  userId?: string;
 }
 
 export const useStandaloneUndo = ({ onUndo, setUndoActive }: UseStandaloneUndoProps) => {
