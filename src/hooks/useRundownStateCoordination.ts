@@ -8,6 +8,7 @@ import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
 import { arrayMove } from '@dnd-kit/sortable';
+import { getTabId } from '@/utils/tabUtils';
 import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -120,7 +121,8 @@ export const useRundownStateCoordination = () => {
           undefined,
           'items:reorder',
           { order },
-          userId
+          userId,
+          getTabId()
         );
         console.log('📡 Broadcasting moveUp reorder:', { orderLength: order.length });
       }
@@ -150,7 +152,8 @@ export const useRundownStateCoordination = () => {
           undefined,
           'items:reorder',
           { order },
-          userId
+          userId,
+          getTabId()
         );
         console.log('📡 Broadcasting moveDown reorder:', { orderLength: order.length });
       }

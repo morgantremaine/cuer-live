@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { getTabId } from '@/utils/tabUtils';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -180,7 +181,8 @@ export const useRundownGridHandlers = ({
           undefined,
           'items:copy',
           { items: itemsToPaste, index: insertIndex },
-          currentUserId
+          currentUserId,
+          getTabId()
         );
         debugLogger.grid('📋 Broadcasting copy operation', { itemCount: itemsToPaste.length, insertIndex });
       }

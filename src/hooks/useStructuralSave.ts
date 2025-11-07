@@ -4,6 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
+import { getTabId } from '@/utils/tabUtils';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -91,7 +92,8 @@ export const useStructuralSave = (
             undefined,
             broadcastField,
             payload,
-            currentUserId
+            currentUserId,
+            getTabId()
           );
         }
         

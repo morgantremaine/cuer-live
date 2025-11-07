@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { getTabId } from '@/utils/tabUtils';
 import { RundownItem } from '@/types/rundown';
 
 interface DragInfo {
@@ -442,7 +443,8 @@ export const useDragAndDrop = (
           undefined,
           'items:reorder',
           { order },
-          currentUserId
+          currentUserId,
+          getTabId()
         );
         console.log('📡 Broadcasting reorder for immediate sync:', {
           rundownId,

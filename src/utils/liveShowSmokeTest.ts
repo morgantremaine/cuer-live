@@ -100,7 +100,8 @@ export const runLiveShowSmokeTest = async (): Promise<SmokeTestResult[]> => {
       null,
       'structural:reorder',
       { operationData: { order: ['item1', 'item2'] } },
-      'test-user-2'
+      'test-user-2',
+      'test-tab-2'
     );
     
     // Wait for broadcast processing
@@ -150,7 +151,8 @@ export const runLiveShowSmokeTest = async (): Promise<SmokeTestResult[]> => {
       'item-123',
       'title',
       'Updated Title',
-      'user-1'
+      'user-1',
+      'tab-1'
     );
     
     // User 2 makes a structural change
@@ -159,7 +161,8 @@ export const runLiveShowSmokeTest = async (): Promise<SmokeTestResult[]> => {
       null,
       'structural:add_row',
       { operationData: { itemId: 'new-item' } },
-      'user-2'
+      'user-2',
+      'tab-2'
     );
     
     await new Promise(resolve => setTimeout(resolve, 100));

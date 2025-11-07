@@ -27,6 +27,7 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
+import { getTabId } from '@/utils/tabUtils';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -70,8 +71,6 @@ export const useSimplifiedRundownState = () => {
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
   
-  // Track when cell broadcasts are being applied to prevent AutoSave triggers
-  const applyingCellBroadcastRef = useRef(false);
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
@@ -224,8 +223,7 @@ export const useSimplifiedRundownState = () => {
     undefined, // Legacy ref no longer needed
     (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
     blockUntilLocalEditRef,
-    cooldownUntilRef,
-    applyingCellBroadcastRef // Pass the cell broadcast flag
+    cooldownUntilRef
   );
   
   // Update the ref so useRundownState can use it
@@ -478,16 +476,15 @@ export const useSimplifiedRundownState = () => {
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, async (update) => {
       console.log('📱 Cell broadcast received:', update);
       
-      // Skip our own updates (simplified for single sessions) - now handled early in cellBroadcast
-      if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
-        console.log('📱 Skipping own cell broadcast update');
+      // Skip our own tab's updates (supports multiple tabs per user)
+      const currentTabId = getTabId();
+      if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
+        console.log('📱 Skipping own tab\'s cell broadcast update');
         return;
       }
       
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
-      // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
-      applyingCellBroadcastRef.current = true;
       // Track that this change came from another user
       lastChangeUserIdRef.current = update.userId;
       
@@ -668,15 +665,10 @@ export const useSimplifiedRundownState = () => {
           if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
             actionsRef.current.loadRemoteState({ items: updatedItems });
           }
-      } finally {
-        // Delay resetting flag to ensure useEffect sees it
-        // This prevents the change tracking effect from running for remote updates
-        // INCREASED from 0ms to 150ms to ensure React's effects process the state update first
-        setTimeout(() => {
-          applyingCellBroadcastRef.current = false;
-        }, 150);
+      } catch (error) {
+        console.error('📱 Error applying cell broadcast update:', error);
       }
-    }, currentUserId);
+    }, getTabId());
 
     return () => {
       unsubscribe();
@@ -722,10 +714,8 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     if (!perCellEnabled || !isInitialized) return;
     
-    // CRITICAL: Skip tracking if we're applying a remote cell broadcast
-    // OR if the last change was from a different user (remote change)
-    if (applyingCellBroadcastRef.current || 
-        (lastChangeUserIdRef.current && lastChangeUserIdRef.current !== currentUserId)) {
+    // CRITICAL: Skip tracking if the last change was from a different user (remote change)
+    if (lastChangeUserIdRef.current && lastChangeUserIdRef.current !== currentUserId) {
       previousStateRef.current = state;
       return;
     }
@@ -979,7 +969,7 @@ export const useSimplifiedRundownState = () => {
     if (rundownId && currentUserId) {
       // Track that this change was made by the current user
       lastChangeUserIdRef.current = currentUserId;
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
     }
     
     if (isTypingField) {
@@ -1433,7 +1423,8 @@ export const useSimplifiedRundownState = () => {
           undefined,
           'items:remove',
           { id },
-          currentUserId
+          currentUserId,
+          getTabId()
         );
       }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
@@ -1459,7 +1450,8 @@ export const useSimplifiedRundownState = () => {
             undefined,
             'items:reorder',
             { order },
-            currentUserId
+            currentUserId,
+            getTabId()
           );
         }, 0);
       }
@@ -1485,7 +1477,8 @@ export const useSimplifiedRundownState = () => {
             undefined,
             'items:reorder',
             { order },
-            currentUserId
+            currentUserId,
+            getTabId()
           );
         }, 0);
       }
@@ -1511,7 +1504,7 @@ export const useSimplifiedRundownState = () => {
         if (rundownId && currentUserId) {
           // Track that this change was made by the current user
           lastChangeUserIdRef.current = currentUserId;
-          cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
+          cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId, getTabId());
         }
         
         saveUndoState(state.items, [], state.title, 'Change title');
@@ -1599,7 +1592,8 @@ export const useSimplifiedRundownState = () => {
         undefined,
         'items:add',
         { item: itemToBroadcast, index: actualIndex },
-        currentUserId
+        currentUserId,
+        getTabId()
       );
     }
     
@@ -1654,7 +1648,8 @@ export const useSimplifiedRundownState = () => {
         undefined,
         'items:add',
         { item: newHeader, index: actualIndex },
-        currentUserId
+        currentUserId,
+        getTabId()
       );
     }
     
@@ -1750,7 +1745,8 @@ export const useSimplifiedRundownState = () => {
           undefined,
           'items:remove-multiple',
           { ids: itemIds },
-          currentUserId
+          currentUserId,
+          getTabId()
         );
       }
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
@@ -1780,7 +1776,7 @@ export const useSimplifiedRundownState = () => {
       if (rundownId && currentUserId) {
         // Track that this change was made by the current user
         lastChangeUserIdRef.current = currentUserId;
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId, getTabId());
       }
       
       actions.setStartTime(newStartTime);
@@ -1802,7 +1798,7 @@ export const useSimplifiedRundownState = () => {
       if (rundownId && currentUserId) {
         // Track that this change was made by the current user
         lastChangeUserIdRef.current = currentUserId;
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId, getTabId());
       }
       
       actions.setTimezone(newTimezone);
@@ -1824,7 +1820,7 @@ export const useSimplifiedRundownState = () => {
       if (rundownId && currentUserId) {
         // Track that this change was made by the current user
         lastChangeUserIdRef.current = currentUserId;
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId, getTabId());
       }
       
       actions.setShowDate(newShowDate);

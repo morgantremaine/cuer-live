@@ -943,12 +943,6 @@ export const useSimpleAutoSave = (
         return;
       }
       
-      // CRITICAL: Skip AutoSave if cell broadcast is being applied
-      if (applyingCellBroadcastRef?.current) {
-        console.log('📱 AutoSave: skipped - cell broadcast being applied');
-        return;
-      }
-      
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
       

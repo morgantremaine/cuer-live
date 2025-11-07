@@ -13,6 +13,7 @@ import TeleprompterSidebar from '@/components/teleprompter/TeleprompterSidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 import { printRundownScript } from '@/utils/scriptPrint';
@@ -225,7 +226,7 @@ const Teleprompter = () => {
       // Broadcast the change for real-time collaboration AFTER successful save
       if (user) {
         console.log('📡 Teleprompter: Broadcasting cell update for real-time collaboration', { itemId, scriptLength: script.length });
-        cellBroadcast.broadcastCellUpdate(rundownId!, itemId, 'script', script, user.id);
+        cellBroadcast.broadcastCellUpdate(rundownId!, itemId, 'script', script, user.id, getTabId());
       } else {
         console.log('⚠️ Teleprompter: No user found, skipping cell broadcast');
       }
@@ -333,7 +334,7 @@ const Teleprompter = () => {
     
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
-      cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
+      cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id, getTabId());
     }
     
     // Update local state immediately for responsiveness

@@ -11,6 +11,7 @@ interface CellUpdate {
   field: string;
   value: any;
   userId: string;
+  tabId: string; // Tab identifier for echo prevention (allows multiple tabs per user)
   timestamp: number;
 }
 
@@ -25,7 +26,7 @@ export class CellBroadcastManager {
   private reconnectAttempts = new Map<string, number>();
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
   private lastProcessedUpdate = new Map<string, string>();
-  private userIds = new Map<string, string>(); // Store userId for early filtering
+  private tabIds = new Map<string, string>(); // Store tabId for echo prevention (supports multiple tabs per user)
   
   // Health monitoring
   private connectionStatus = new Map<string, string>();
@@ -58,10 +59,11 @@ export class CellBroadcastManager {
         const update = payload?.payload;
         if (!update || update.rundownId !== rundownId) return;
         
-        // EARLY FILTERING: Skip own messages immediately to prevent memory bloat
-        const currentUserId = this.userIds.get(rundownId);
-        if (currentUserId && update.userId === currentUserId) {
-          // Skip all expensive operations for own messages
+        // EARLY FILTERING: Skip own tab's messages immediately to prevent echo
+        // Uses tabId instead of userId to support multiple tabs per user
+        const currentTabId = this.tabIds.get(rundownId);
+        if (currentTabId && update.tabId === currentTabId) {
+          // Skip all expensive operations for own tab's messages
           return;
         }
         
@@ -151,7 +153,8 @@ export class CellBroadcastManager {
     itemId: string | null, 
     field: string, 
     value: any, 
-    userId: string
+    userId: string,
+    tabId: string
   ) {
     const channel = this.ensureChannel(rundownId);
     const updatePayload = {
@@ -160,6 +163,7 @@ export class CellBroadcastManager {
       field,
       value,
       userId,
+      tabId,
       timestamp: Date.now()
     };
 
@@ -187,24 +191,24 @@ export class CellBroadcastManager {
     }
   }
 
-  // Simple echo prevention using userId (single session per user)
-  isOwnUpdate(update: any, currentUserId: string): boolean {
-    const isOwn = update.userId === currentUserId;
+  // Echo prevention using tabId (supports multiple tabs per user)
+  isOwnUpdate(update: any, currentTabId: string): boolean {
+    const isOwn = update.tabId === currentTabId;
     if (isOwn) {
-      console.log('📱 Identified own cell broadcast update via userId');
+      console.log('📱 Identified own cell broadcast update via tabId');
     }
     return isOwn;
   }
 
-  subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void, currentUserId?: string) {
+  subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void, currentTabId?: string) {
     if (!this.callbacks.has(rundownId)) {
       this.callbacks.set(rundownId, new Set());
     }
     this.callbacks.get(rundownId)!.add(callback);
 
-    // Store userId for early filtering (if provided)
-    if (currentUserId) {
-      this.userIds.set(rundownId, currentUserId);
+    // Store tabId for early filtering (if provided)
+    if (currentTabId) {
+      this.tabIds.set(rundownId, currentTabId);
     }
 
     // Ensure channel is created and subscribed
@@ -270,8 +274,8 @@ export class CellBroadcastManager {
       this.reconnectTimeouts.delete(rundownId);
     }
 
-    // Clear userId for early filtering
-    this.userIds.delete(rundownId);
+    // Clear tabId for early filtering
+    this.tabIds.delete(rundownId);
 
     const ch = this.channels.get(rundownId);
     if (ch) {
@@ -363,7 +367,7 @@ export class CellBroadcastManager {
 
   cleanup(rundownId: string) {
     this.callbacks.delete(rundownId);
-    this.userIds.delete(rundownId);
+    this.tabIds.delete(rundownId);
     
     // Clean up health monitoring data
     this.connectionStatus.delete(rundownId);
