@@ -179,10 +179,9 @@ CRITICAL REMINDERS:
 
 function formatAsPlainText(data: any): string {
   try {
-    return JSON.stringify(data, null, 2)
-      .replace(/[{}[\]"]/g, '')  // remove JSON symbols
-      .replace(/,/g, '')         // remove commas
-      .replace(/\\n/g, '\n')     // ensure line breaks
+    // Keep JSON format - AI models handle JSON well and this preserves all brackets
+    // including functional script brackets like [ALEX {blue}]
+    return JSON.stringify(data, null, 2);
   } catch {
     return 'Error displaying rundown data.';
   }
