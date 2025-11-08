@@ -453,41 +453,49 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Standalone undo system - now with redo
-  const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
-    onUndo: (items, _, title) => {
-      setUndoActive(true);
-      actions.setItems(items);
-      actions.setTitle(title);
-      
-      // Broadcast the undo/redo as a structural change
-      if (rundownId && currentUserId) {
-        const order = items.map(i => i.id);
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId,
-            getTabId()
-          );
-        }, 0);
-      }
-      
-      setTimeout(() => {
-        actions.markSaved();
-        actions.setItems([...items]);
-        setUndoActive(false);
-      }, 100);
-    },
-    setUndoActive,
+  // Operation-based undo system
+  const { 
+    recordOperation, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo, 
+    lastOperation, 
+    nextRedoOperation 
+  } = useOperationUndo({
     rundownId,
-    userId: currentUserId
+    userId: currentUserId,
+    items: state.items,
+    updateItem: actions.updateItem,
+    deleteRow: actions.deleteItem,
+    setItems: actions.setItems,
+    addMultipleRows: (items) => items.forEach(item => actions.addItem(item))
   });
 
   // Cell-level broadcast system for immediate sync
   useEffect(() => {
+    if (!rundownId || !currentUserId) return;
+
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, async (update) => {
+      console.log('📱 Cell broadcast received:', update);
+      
+      // Skip our own tab's updates (supports multiple tabs per user)
+      const currentTabId = getTabId();
+      if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
+        console.log('📱 Skipping own tab\'s cell broadcast update');
+        return;
+      }
+      
+      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
+      
+      // Track that this change came from another user
+      lastChangeUserIdRef.current = update.userId;
+      
+      try {
+        // SIMPLIFIED: No shadow protection - just apply changes immediately (Google Sheets style)
+        // Use loadState to avoid triggering hasUnsavedChanges for remote data
+          // Handle rundown-level property updates (no itemId)
+        if (!update.itemId) {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, async (update) => {
@@ -1005,7 +1013,19 @@ export const useSimplifiedRundownState = () => {
       markFieldAsRecentlyEdited(sessionKey);
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        saveUndoState(state.items, [], state.title, `Edit ${field}`);
+        // Record operation for undo
+        const item = state.items.find(i => i.id === id);
+        if (item) {
+          recordOperation({
+            type: 'cell_edit',
+            data: { 
+              itemId: id, 
+              updates: { [field]: value }, 
+              oldValues: { [field]: (item as any)[field] } 
+            },
+            description: `Edit ${field}`
+          });
+        }
         typingSessionRef.current = {
           fieldKey: sessionKey,
           startTime: Date.now()
@@ -1022,17 +1042,51 @@ export const useSimplifiedRundownState = () => {
         }
       }, 3000); // Reduced to 3 seconds for faster sync
     } else if (field === 'duration') {
-      saveUndoState(state.items, [], state.title, 'Edit duration');
+      // Record operation for undo
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        recordOperation({
+          type: 'cell_edit',
+          data: { 
+            itemId: id, 
+            updates: { duration: value }, 
+            oldValues: { duration: item.duration } 
+          },
+          description: 'Edit duration'
+        });
+      }
     } else if (isImmediateSyncField) {
-      // For immediate sync fields like isFloating, save undo state and trigger immediate save
+      // For immediate sync fields like isFloating, record operation and trigger immediate save
       console.log('🔄 FloatToggle: triggering immediate save for field:', field, 'id:', id);
-      saveUndoState(state.items, [], state.title, `Toggle ${field}`);
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        recordOperation({
+          type: 'cell_edit',
+          data: { 
+            itemId: id, 
+            updates: { [field]: value }, 
+            oldValues: { [field]: (item as any)[field] } 
+          },
+          description: `Toggle ${field}`
+        });
+      }
       // DON'T use markActiveTyping() for floating - that triggers typing delay
       // Instead, trigger an immediate flush save that bypasses the typing delay mechanism
       triggerImmediateSave();
     } else if (field === 'color') {
-      // Handle color changes separately - save undo state and trigger immediate save
-      saveUndoState(state.items, [], state.title, 'Change row color');
+      // Handle color changes separately - record operation and trigger immediate save
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        recordOperation({
+          type: 'cell_edit',
+          data: { 
+            itemId: id, 
+            updates: { color: value }, 
+            oldValues: { color: item.color } 
+          },
+          description: 'Change row color'
+        });
+      }
       // Color changes should trigger immediate save without marking as typing
       triggerImmediateSave();
     }
@@ -1071,7 +1125,7 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(id, updateField, updateValue);
       }
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
+  }, [actions.updateItem, state.items, recordOperation, cellEditIntegration, markActiveTyping, markFieldAsRecentlyEdited, rundownId, currentUserId, triggerImmediateSave]);
 
   // Optimized field tracking with debouncing
   const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {

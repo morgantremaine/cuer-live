@@ -11,19 +11,39 @@ export const useRundownItems = (
   handleStructuralOperation?: (
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: any
-  ) => void
+  ) => void,
+  recordUndoOperation?: (operation: { type: string; data: any; description: string }) => void
 ) => {
   const [items, setItems] = useState<RundownItem[]>([]);
 
   const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
     setItems(prevItems => {
+      // CAPTURE OLD VALUES FIRST
+      const oldItem = prevItems.find(item => item.id === id);
+      if (!oldItem) return prevItems;
+      
+      const oldValues: Record<string, any> = {};
+      Object.keys(updates).forEach(key => {
+        oldValues[key] = (oldItem as any)[key];
+      });
+      
+      // Record undo operation
+      if (recordUndoOperation) {
+        recordUndoOperation({
+          type: 'cell_edit',
+          data: { itemId: id, updates, oldValues },
+          description: `Edit ${Object.keys(updates).join(', ')}`
+        });
+      }
+      
+      // Continue with normal update
       const newItems = prevItems.map(item => 
         item.id === id ? { ...item, ...updates } : item
       );
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged]);
+  }, [markAsChanged, recordUndoOperation]);
 
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
     const newItem: RundownItem = {
@@ -69,6 +89,15 @@ export const useRundownItems = (
 
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
+      
+      // Record undo operation
+      if (recordUndoOperation) {
+        recordUndoOperation({
+          type: 'add_row',
+          data: { addedItemId: newItem.id },
+          description: 'Add row'
+        });
+      }
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
@@ -128,6 +157,15 @@ export const useRundownItems = (
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
       
+      // Record undo operation
+      if (recordUndoOperation) {
+        recordUndoOperation({
+          type: 'add_header',
+          data: { addedItemId: newItem.id },
+          description: 'Add header'
+        });
+      }
+      
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('add_header', {
@@ -143,6 +181,18 @@ export const useRundownItems = (
 
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
+      // CAPTURE DELETED ITEM FIRST
+      const deletedItem = prevItems.find(item => item.id === id);
+      const deletedIndex = prevItems.findIndex(item => item.id === id);
+      
+      if (recordUndoOperation && deletedItem) {
+        recordUndoOperation({
+          type: 'delete_row',
+          data: { deletedItem, deletedIndex },
+          description: `Delete "${deletedItem.name || 'row'}"`
+        });
+      }
+      
       const newItems = prevItems.filter(item => item.id !== id);
       
       // Handle via coordination system if available
@@ -155,7 +205,7 @@ export const useRundownItems = (
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, handleStructuralOperation]);
+  }, [markAsChanged, handleStructuralOperation, recordUndoOperation]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
