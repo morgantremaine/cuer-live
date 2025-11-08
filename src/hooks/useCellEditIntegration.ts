@@ -7,7 +7,6 @@ interface CellEditIntegrationProps {
   onSaveComplete?: (completionCount?: number) => void;
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
-  onBroadcastReady?: (savedUpdates: Array<{ itemId?: string; field: string; value: any }>) => void;
 }
 
 /**
@@ -19,8 +18,7 @@ export const useCellEditIntegration = ({
   isPerCellEnabled,
   onSaveComplete,
   onSaveStart,
-  onUnsavedChanges,
-  onBroadcastReady
+  onUnsavedChanges
 }: CellEditIntegrationProps) => {
   const [isPerCellSaving, setIsPerCellSaving] = useState(false);
   const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
@@ -29,7 +27,6 @@ export const useCellEditIntegration = ({
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
-    onBroadcastReady,
     onSaveComplete: (completionCount?: number) => {
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);

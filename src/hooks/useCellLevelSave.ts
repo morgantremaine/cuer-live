@@ -25,8 +25,7 @@ export const useCellLevelSave = (
   onChangesSaved?: () => void,
   isTypingActive?: () => boolean,
   saveInProgressRef?: React.MutableRefObject<boolean>,
-  typingIdleMs?: number,
-  onBroadcastReady?: (savedUpdates: FieldUpdate[]) => void
+  typingIdleMs?: number
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -164,12 +163,6 @@ export const useCellLevelSave = (
         
         if (onChangesSaved) {
           onChangesSaved();
-        }
-        
-        // CRITICAL: Broadcast AFTER successful save to ensure database consistency
-        if (onBroadcastReady) {
-          console.log('📡 Save complete - triggering broadcasts for', updatesToSave.length, 'updates');
-          onBroadcastReady(updatesToSave);
         }
         
         if (onSaveComplete) {

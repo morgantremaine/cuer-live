@@ -12,7 +12,6 @@ import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { useEdgeFunctionPrewarming } from './useEdgeFunctionPrewarming';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
-import { useBroadcastBatcher } from './useBroadcastBatcher';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -457,17 +456,11 @@ export const useSimplifiedRundownState = () => {
   // Standalone undo system - now with redo
   const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
-      // STEP 1: Capture current state BEFORE undo
-      const previousItems = [...state.items];
-      const previousTitle = state.title;
-      
       setUndoActive(true);
-      
-      // STEP 2: Restore the state
       actions.setItems(items);
       actions.setTitle(title);
       
-      // STEP 3: Broadcast reorder immediately (existing logic)
+      // Broadcast the undo/redo as a structural change
       if (rundownId && currentUserId) {
         const order = items.map(i => i.id);
         setTimeout(() => {
@@ -482,73 +475,7 @@ export const useSimplifiedRundownState = () => {
         }, 0);
       }
       
-      // STEP 4: NEW - Explicitly detect and broadcast actual field changes
       setTimeout(() => {
-        if (rundownId && currentUserId) {
-          const fieldUpdates: any[] = [];
-          
-          // Compare old vs new items to find actual changes
-          items.forEach((newItem) => {
-            const oldItem = previousItems.find(i => i.id === newItem.id);
-            if (oldItem) {
-              // Compare each field
-              Object.keys(newItem).forEach(field => {
-                if (field === 'id') return; // Skip ID
-                
-                // Use JSON stringify for deep comparison
-                const oldValue = JSON.stringify(oldItem[field]);
-                const newValue = JSON.stringify(newItem[field]);
-                
-                if (oldValue !== newValue) {
-                  fieldUpdates.push({
-                    itemId: newItem.id,
-                    field,
-                    value: newItem[field]
-                  });
-                }
-              });
-            } else {
-              // Item was added - broadcast all fields
-              Object.keys(newItem).forEach(field => {
-                if (field !== 'id') {
-                  fieldUpdates.push({
-                    itemId: newItem.id,
-                    field,
-                    value: newItem[field]
-                  });
-                }
-              });
-            }
-          });
-          
-          // Check title changes
-          if (title !== previousTitle) {
-            fieldUpdates.push({
-              itemId: undefined,
-              field: 'title',
-              value: title
-            });
-          }
-          
-          // CRITICAL: Immediately broadcast all detected changes
-          if (fieldUpdates.length > 0) {
-            console.log('📡 Undo: Broadcasting field changes:', {
-              count: fieldUpdates.length,
-              fields: fieldUpdates.map(u => `${u.itemId}-${u.field}`).join(', ')
-            });
-            
-            cellBroadcast.broadcastBatch(
-              rundownId,
-              fieldUpdates,
-              currentUserId,
-              getTabId()
-            );
-          }
-        }
-        
-        // STEP 5: Trigger save for persistence
-        triggerImmediateSave();
-        
         actions.markSaved();
         actions.setItems([...items]);
         setUndoActive(false);
@@ -768,15 +695,6 @@ export const useSimplifiedRundownState = () => {
   // Cell edit integration for per-cell saves (after realtime connection is established)
   const perCellEnabled = Boolean(state.perCellSaveEnabled);
   
-  // Initialize broadcast batcher for batching cell updates
-  const broadcastBatcher = useBroadcastBatcher({
-    rundownId,
-    batchWindowMs: 300,
-    getItemExists: useCallback((itemId: string) => {
-      return state.items.some(item => item.id === itemId);
-    }, [state.items])
-  });
-  
   // CRITICAL: Track per-cell enabled state to coordinate with autosave
   useEffect(() => {
     console.log('🧪 PER-CELL SAVE: State updated', {
@@ -786,41 +704,9 @@ export const useSimplifiedRundownState = () => {
     });
   }, [state.perCellSaveEnabled, rundownId, perCellEnabled]);
   
-  // Callback to broadcast after save completes
-  const handleBroadcastAfterSave = useCallback((savedUpdates: Array<{ itemId?: string; field: string; value: any }>) => {
-    if (!rundownId) return;
-    
-    // DIAGNOSTIC: Log what we received
-    console.log('🔍 Broadcast after save - received updates:', {
-      total: savedUpdates.length,
-      updates: savedUpdates.map(u => ({ itemId: u.itemId, field: u.field, hasValue: !!u.value }))
-    });
-    
-    const validUpdates = savedUpdates
-      .filter(u => u.itemId && u.itemId.trim() !== '') // Only broadcast item-level updates with valid itemId
-      .map(u => ({
-        itemId: u.itemId!,
-        field: u.field,
-        value: u.value
-      }));
-    
-    console.log('🔍 After filtering - valid updates:', {
-      valid: validUpdates.length,
-      dropped: savedUpdates.length - validUpdates.length
-    });
-    
-    if (validUpdates.length > 0) {
-      console.log('📡 Broadcasting saved updates:', validUpdates);
-      cellBroadcast.broadcastBatch(rundownId, validUpdates, currentUserId || '', getTabId());
-    } else {
-      console.warn('⚠️ No valid updates to broadcast - all updates filtered out');
-    }
-  }, [rundownId, currentUserId]);
-  
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
-    onBroadcastReady: handleBroadcastAfterSave,
     onSaveComplete: (completionCount?: number) => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
@@ -846,8 +732,7 @@ export const useSimplifiedRundownState = () => {
     if (!perCellEnabled || !isInitialized) return;
     
     // CRITICAL: Skip tracking if the last change was from a different user (remote change)
-    if (lastChangeUserIdRef.current !== null && lastChangeUserIdRef.current !== currentUserId) {
-      // Skip tracking remote changes (removed excessive logging)
+    if (lastChangeUserIdRef.current && lastChangeUserIdRef.current !== currentUserId) {
       previousStateRef.current = state;
       return;
     }
@@ -1097,20 +982,11 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // Queue broadcast for batch sending (will be sent AFTER save completes)
-    // Only queue if per-cell save is enabled, otherwise use immediate broadcast for backwards compatibility
+    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
     if (rundownId && currentUserId) {
       // Track that this change was made by the current user
       lastChangeUserIdRef.current = currentUserId;
-      
-      if (perCellEnabled) {
-        // Batch mode: Queue for later broadcast
-        console.log('📦 Queueing broadcast for batch (per-cell mode):', { id, field });
-        broadcastBatcher.queueBroadcast(id, field, value);
-      } else {
-        // Legacy mode: Immediate broadcast
-        cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
-      }
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
     }
     
     if (isTypingField) {
