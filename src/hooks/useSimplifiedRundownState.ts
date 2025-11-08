@@ -12,6 +12,7 @@ import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { useEdgeFunctionPrewarming } from './useEdgeFunctionPrewarming';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
+import { useBroadcastBatcher } from './useBroadcastBatcher';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -695,6 +696,15 @@ export const useSimplifiedRundownState = () => {
   // Cell edit integration for per-cell saves (after realtime connection is established)
   const perCellEnabled = Boolean(state.perCellSaveEnabled);
   
+  // Initialize broadcast batcher for batching cell updates
+  const broadcastBatcher = useBroadcastBatcher({
+    rundownId,
+    batchWindowMs: 300,
+    getItemExists: useCallback((itemId: string) => {
+      return state.items.some(item => item.id === itemId);
+    }, [state.items])
+  });
+  
   // CRITICAL: Track per-cell enabled state to coordinate with autosave
   useEffect(() => {
     console.log('🧪 PER-CELL SAVE: State updated', {
@@ -704,9 +714,28 @@ export const useSimplifiedRundownState = () => {
     });
   }, [state.perCellSaveEnabled, rundownId, perCellEnabled]);
   
+  // Callback to broadcast after save completes
+  const handleBroadcastAfterSave = useCallback((savedUpdates: Array<{ itemId?: string; field: string; value: any }>) => {
+    if (!rundownId || !currentUserId) return;
+    
+    const validUpdates = savedUpdates
+      .filter(u => u.itemId) // Only broadcast item-level updates
+      .map(u => ({
+        itemId: u.itemId!,
+        field: u.field,
+        value: u.value
+      }));
+    
+    if (validUpdates.length > 0) {
+      console.log('📡 Broadcasting saved updates:', validUpdates.length);
+      cellBroadcast.broadcastBatch(rundownId, validUpdates, currentUserId, getTabId());
+    }
+  }, [rundownId, currentUserId]);
+  
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
+    onBroadcastReady: handleBroadcastAfterSave,
     onSaveComplete: (completionCount?: number) => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
@@ -982,11 +1011,20 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
+    // Queue broadcast for batch sending (will be sent AFTER save completes)
+    // Only queue if per-cell save is enabled, otherwise use immediate broadcast for backwards compatibility
     if (rundownId && currentUserId) {
       // Track that this change was made by the current user
       lastChangeUserIdRef.current = currentUserId;
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
+      
+      if (perCellEnabled) {
+        // Batch mode: Queue for later broadcast
+        console.log('📦 Queueing broadcast for batch (per-cell mode):', { id, field });
+        broadcastBatcher.queueBroadcast(id, field, value);
+      } else {
+        // Legacy mode: Immediate broadcast
+        cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
+      }
     }
     
     if (isTypingField) {
