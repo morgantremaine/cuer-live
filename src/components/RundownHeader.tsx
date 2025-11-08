@@ -549,7 +549,7 @@ const RundownHeader = ({
                   <Button
                     variant="ghost"
                     className={cn(
-                      "h-8 px-2 justify-start text-xs font-mono border-0 rounded-none",
+                      "h-8 px-2 justify-center text-xs font-mono border-0 rounded-none",
                       clockFormat === '12' ? 'w-28' : 'w-20'
                     )}
                   >
@@ -708,7 +708,7 @@ const RundownHeader = ({
                   <Button
                     variant="ghost"
                     className={cn(
-                      "h-9 px-3 justify-start font-mono text-sm border-0 rounded-none",
+                      "h-9 px-3 justify-center font-mono text-sm border-0 rounded-none",
                       clockFormat === '12' ? 'w-32' : 'w-24'
                     )}
                   >
