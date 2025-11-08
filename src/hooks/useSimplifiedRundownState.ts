@@ -3,7 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useOperationUndo } from './useOperationUndo';
-import { toast } from '@/hooks/use-toast';
+
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
@@ -1984,24 +1984,12 @@ export const useSimplifiedRundownState = () => {
 
     // Undo/Redo functionality - operation-based system
     undo: () => {
-      const undoneAction = undo();
-      if (undoneAction) {
-        toast({
-          title: "Undone",
-          description: undoneAction,
-        });
-      }
+      undo();
     },
     canUndo,
     lastAction,
     redo: () => {
-      const redoneAction = redo();
-      if (redoneAction) {
-        toast({
-          title: "Redone", 
-          description: redoneAction,
-        });
-      }
+      redo();
     },
     canRedo,
     nextRedoAction,
