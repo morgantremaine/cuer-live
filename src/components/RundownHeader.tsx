@@ -549,7 +549,8 @@ const RundownHeader = ({
                   <PopoverTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="h-8 justify-center text-center font-mono text-sm border-0 rounded-none px-3"
+                      size={null}
+                      className="h-8 w-fit justify-center text-center font-mono text-sm border-0 rounded-none px-2"
                     >
                       {formatClockTime(rundownStartTime)}
                     </Button>
