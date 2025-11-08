@@ -48,6 +48,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onTitleChange,
     rundownStartTime,
     onRundownStartTimeChange,
+    rundownEndTime,
+    onRundownEndTimeChange,
     showDate,
     onShowDateChange,
     rundownId,
@@ -246,6 +248,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
+        rundownEndTime={rundownEndTime}
+        onRundownEndTimeChange={onRundownEndTimeChange}
         showDate={showDate}
         onShowDateChange={onShowDateChange}
         rundownId={rundownId}

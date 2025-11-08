@@ -35,6 +35,8 @@ interface RundownHeaderProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  rundownEndTime: string;
+  onRundownEndTimeChange: (endTime: string) => void;
   showDate?: Date | null;
   onShowDateChange?: (date: Date | null) => void;
   items?: any[];
@@ -70,6 +72,8 @@ const RundownHeader = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
+  rundownEndTime,
+  onRundownEndTimeChange,
   showDate,
   onShowDateChange,
   onUndo,
@@ -98,9 +102,11 @@ const RundownHeader = ({
   const [isBrowserOnline, setIsBrowserOnline] = useState(navigator.onLine);
   const { clockFormat, formatTime: formatClockTime } = useClockFormat();
   
-  // Local state for time input to prevent reformatting during typing
+  // Local state for time inputs to prevent reformatting during typing
   const [isEditingStartTime, setIsEditingStartTime] = useState(false);
   const [localStartTime, setLocalStartTime] = useState('');
+  const [isEditingEndTime, setIsEditingEndTime] = useState(false);
+  const [localEndTime, setLocalEndTime] = useState('');
 
   // Initialize local time state when rundownStartTime changes (but not while editing)
   useEffect(() => {
@@ -110,6 +116,15 @@ const RundownHeader = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rundownStartTime, clockFormat, isEditingStartTime]);
+
+  // Initialize local end time state when rundownEndTime changes (but not while editing)
+  useEffect(() => {
+    if (!isEditingEndTime) {
+      const formattedTime = clockFormat === '12' ? formatClockTime(rundownEndTime) : rundownEndTime;
+      setLocalEndTime(formattedTime);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rundownEndTime, clockFormat, isEditingEndTime]);
 
   // Listen to browser network events for immediate WiFi icon updates
   useEffect(() => {
@@ -293,6 +308,32 @@ const RundownHeader = ({
     setLocalStartTime(displayFormatted);
     
     setIsEditingStartTime(false);
+  };
+
+  const handleEndTimeInputFocus = () => {
+    setIsEditingEndTime(true);
+  };
+
+  const handleEndTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Just update local state during typing - no validation or formatting
+    setLocalEndTime(value);
+  };
+
+  const handleEndTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Use the smart parser that handles both 12-hour and 24-hour formats
+    const formattedTime = parseTimeInput(value);
+    
+    // Update with the parsed 24-hour format
+    onRundownEndTimeChange(formattedTime);
+    
+    // Update local state with formatted version
+    const displayFormatted = clockFormat === '12' ? formatClockTime(formattedTime) : formattedTime;
+    setLocalEndTime(displayFormatted);
+    
+    setIsEditingEndTime(false);
   };
 
   const handleTitleEdit = () => {

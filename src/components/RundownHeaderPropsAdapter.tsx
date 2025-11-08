@@ -18,6 +18,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     onTitleChange,
     rundownStartTime,
     onRundownStartTimeChange,
+    rundownEndTime,
+    onRundownEndTimeChange,
     rundownId,
     hasUnsavedChanges,
     isSaving,
@@ -62,6 +64,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onTitleChange={onTitleChange}
       rundownStartTime={rundownStartTime}
       onRundownStartTimeChange={onRundownStartTimeChange}
+      rundownEndTime={rundownEndTime}
+      onRundownEndTimeChange={onRundownEndTimeChange}
       items={items}
       visibleColumns={visibleColumns}
       onUndo={onUndo}

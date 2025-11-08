@@ -12,6 +12,7 @@ interface UseIndexHandlersProps {
   calculateEndTime: (startTime: string, duration: string) => string;
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[], headerGroupItemIds?: string[]) => void;
   setRundownStartTime: (startTime: string) => void;
+  setRundownEndTime: (endTime: string) => void;
   setTimezone: (timezone: string) => void;
   setShowDate?: (showDate: Date | null) => void;
   markAsChanged: () => void;
@@ -26,6 +27,7 @@ export const useIndexHandlers = ({
   calculateEndTime,
   toggleRowSelection,
   setRundownStartTime,
+  setRundownEndTime,
   setTimezone,
   setShowDate,
   markAsChanged
@@ -37,6 +39,12 @@ export const useIndexHandlers = ({
     setRundownStartTime(startTime);
     // Don't call markAsChanged - let the state setter handle save coordination
   }, [setRundownStartTime]);
+
+  const handleRundownEndTimeChange = useCallback((endTime: string) => {
+    console.log('🕐 INDEX HANDLERS: End time changed:', endTime);
+    setRundownEndTime(endTime);
+    // Don't call markAsChanged - let the state setter handle save coordination
+  }, [setRundownEndTime]);
 
   const handleTimezoneChange = useCallback((timezone: string) => {
     console.log('🌍 INDEX HANDLERS: Timezone changed:', timezone);
@@ -75,6 +83,7 @@ export const useIndexHandlers = ({
 
   return {
     handleRundownStartTimeChange,
+    handleRundownEndTimeChange,
     handleTimezoneChange,
     handleShowDateChange,
     handleOpenTeleprompter,

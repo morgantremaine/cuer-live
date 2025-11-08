@@ -13,6 +13,7 @@ export interface RundownState {
   columns: Column[];
   title: string;
   startTime: string;
+  endTime: string;
   timezone: string;
   showDate?: Date | null;
   externalNotes?: any;
@@ -37,6 +38,7 @@ type RundownAction =
   | { type: 'UPDATE_COLUMN'; payload: { id: string; updates: Partial<Column> } }
   | { type: 'SET_TITLE'; payload: string }
   | { type: 'SET_START_TIME'; payload: string }
+  | { type: 'SET_END_TIME'; payload: string }
   | { type: 'SET_TIMEZONE'; payload: string }
   | { type: 'SET_SHOW_DATE'; payload: Date | null }
   | { type: 'SET_EXTERNAL_NOTES'; payload: any }
@@ -55,6 +57,7 @@ const initialState: RundownState = {
   columns: [],
   title: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_TITLE,
   startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
+  endTime: '00:00:00',
   timezone: RUNDOWN_DEFAULTS.DEFAULT_TIMEZONE,
   showDate: null,
   externalNotes: null,
@@ -232,6 +235,11 @@ function rundownReducer(
       // START_TIME is UI preference, not content - don't mark as changed
       debugLogger.autosave('SET_START_TIME applied (UI preference) - no content change flagged');
       return { ...state, startTime: action.payload };
+
+    case 'SET_END_TIME':
+      // END_TIME is UI preference, not content - don't mark as changed
+      debugLogger.autosave('SET_END_TIME applied (UI preference) - no content change flagged');
+      return { ...state, endTime: action.payload };
 
     case 'SET_TIMEZONE':
       // TIMEZONE is UI preference, not content - don't mark as changed
@@ -561,6 +569,13 @@ export const useRundownState = (
       dispatch({ type: 'SET_START_TIME', payload: startTime });
       if (rundownId) {
         broadcastLiveUpdate('live_typing', { startTime });
+      }
+    },
+    
+    setEndTime: (endTime: string) => {
+      dispatch({ type: 'SET_END_TIME', payload: endTime });
+      if (rundownId) {
+        broadcastLiveUpdate('live_typing', { endTime });
       }
     },
     
