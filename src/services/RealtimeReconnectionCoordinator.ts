@@ -169,14 +169,20 @@ class RealtimeReconnectionCoordinatorService {
     }
     
     // Check if WebSocket is dead
-    const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-    const isAlive = await websocketHealthCheck.isWebSocketAlive();
-    
-    if (!isAlive) {
-      console.warn('🔌 Network online but WebSocket dead - forcing reload');
-      this.forceReload('network-online-websocket-dead');
-    } else {
-      console.log('✅ Network online and WebSocket healthy');
+    try {
+      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+      const isAlive = await websocketHealthCheck.isWebSocketAlive();
+      
+      if (!isAlive) {
+        console.warn('🔌 Network online but WebSocket dead - forcing reload');
+        this.forceReload('network-online-websocket-dead');
+      } else {
+        console.log('✅ Network online and WebSocket healthy');
+      }
+    } catch (error: any) {
+      console.error('❌ Error checking WebSocket health on network online:', error);
+      const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
+      handleChunkLoadError(error, 'network-online-websocket-check');
     }
   }
 
@@ -209,14 +215,20 @@ class RealtimeReconnectionCoordinatorService {
       }
       
       // Check WebSocket health
-      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-      const isAlive = await websocketHealthCheck.isWebSocketAlive();
-      
-      if (!isAlive) {
-        console.warn('⚠️ Periodic check detected dead WebSocket - forcing reload');
-        this.forceReload('periodic-check-websocket-dead');
-      } else {
-        console.log('✅ Periodic check: WebSocket healthy');
+      try {
+        const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+        const isAlive = await websocketHealthCheck.isWebSocketAlive();
+        
+        if (!isAlive) {
+          console.warn('⚠️ Periodic check detected dead WebSocket - forcing reload');
+          this.forceReload('periodic-check-websocket-dead');
+        } else {
+          console.log('✅ Periodic check: WebSocket healthy');
+        }
+      } catch (error: any) {
+        console.error('❌ Error in periodic WebSocket check:', error);
+        const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
+        handleChunkLoadError(error, 'periodic-websocket-check');
       }
     }, this.CONNECTION_MONITOR_INTERVAL_MS);
   }
@@ -276,14 +288,20 @@ class RealtimeReconnectionCoordinatorService {
 
     try {
       // Check if WebSocket is actually dead before forcing reload
-      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
-      const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
-      
-      if (!isWebSocketAlive) {
-        console.warn('🔌 WebSocket is dead - forcing immediate page reload');
-        this.forceReload('websocket-dead');
-      } else {
-        console.log('✅ WebSocket is alive - no reload needed');
+      try {
+        const { websocketHealthCheck } = await import('@/utils/websocketHealth');
+        const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
+        
+        if (!isWebSocketAlive) {
+          console.warn('🔌 WebSocket is dead - forcing immediate page reload');
+          this.forceReload('websocket-dead');
+        } else {
+          console.log('✅ WebSocket is alive - no reload needed');
+        }
+      } catch (error: any) {
+        console.error('❌ Error during reconnection WebSocket check:', error);
+        const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
+        handleChunkLoadError(error, 'reconnection-websocket-check');
       }
     } finally {
       this.isReconnecting = false;
