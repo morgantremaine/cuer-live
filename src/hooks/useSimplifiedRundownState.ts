@@ -716,7 +716,7 @@ export const useSimplifiedRundownState = () => {
   
   // Callback to broadcast after save completes
   const handleBroadcastAfterSave = useCallback((savedUpdates: Array<{ itemId?: string; field: string; value: any }>) => {
-    if (!rundownId || !currentUserId) return;
+    if (!rundownId) return;
     
     // DIAGNOSTIC: Log what we received
     console.log('🔍 Broadcast after save - received updates:', {
@@ -739,7 +739,7 @@ export const useSimplifiedRundownState = () => {
     
     if (validUpdates.length > 0) {
       console.log('📡 Broadcasting saved updates:', validUpdates);
-      cellBroadcast.broadcastBatch(rundownId, validUpdates, currentUserId, getTabId());
+      cellBroadcast.broadcastBatch(rundownId, validUpdates, currentUserId || '', getTabId());
     } else {
       console.warn('⚠️ No valid updates to broadcast - all updates filtered out');
     }
