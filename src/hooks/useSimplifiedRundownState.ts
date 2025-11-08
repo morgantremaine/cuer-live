@@ -466,7 +466,21 @@ export const useSimplifiedRundownState = () => {
   } = useOperationUndo({
     items: state.items,
     updateItem: (id: string, updates: Partial<RundownItem>) => {
-      actions.updateItem(id, updates);
+      // Extract all field keys from the updates object
+      const fields = Object.keys(updates);
+      
+      // If this is a single-field update (typical for cell edits during undo/redo),
+      // route it through enhancedUpdateItem to trigger broadcasts
+      if (fields.length === 1) {
+        const field = fields[0];
+        const value = updates[field];
+        
+        // Call enhancedUpdateItem which has the broadcast logic
+        enhancedUpdateItem(id, field, String(value));
+      } else {
+        // Multi-field updates go through the reducer as before
+        actions.updateItem(id, updates);
+      }
     },
     deleteRow: (id: string) => {
       actions.deleteItem(id);
