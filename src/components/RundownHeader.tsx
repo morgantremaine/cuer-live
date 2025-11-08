@@ -296,7 +296,12 @@ const RundownHeader = ({
   const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const formattedTime = parseTimeInput(value);
-    onRundownStartTimeChange(formattedTime);
+    
+    // Only trigger change if value actually changed
+    if (formattedTime !== rundownStartTime) {
+      onRundownStartTimeChange(formattedTime);
+    }
+    
     const displayFormatted = clockFormat === '12' ? formatClockTime(formattedTime) : formattedTime;
     setLocalStartTime(displayFormatted);
     setIsEditingStartTime(false);
@@ -315,7 +320,12 @@ const RundownHeader = ({
     const value = e.target.value;
     if (onRundownEndTimeChange) {
       const formattedTime = parseTimeInput(value);
-      onRundownEndTimeChange(formattedTime);
+      
+      // Only trigger change if value actually changed
+      if (formattedTime !== rundownEndTime) {
+        onRundownEndTimeChange(formattedTime);
+      }
+      
       const displayFormatted = clockFormat === '12' ? formatClockTime(formattedTime) : formattedTime;
       setLocalEndTime(displayFormatted);
     }
