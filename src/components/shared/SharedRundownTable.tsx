@@ -18,6 +18,7 @@ interface SharedRundownTableProps {
   currentSegmentId: string | null;
   isPlaying?: boolean;
   rundownStartTime?: string;
+  rundownEndTime?: string;
   isDark?: boolean;
   onReorderColumns?: (newColumns: any[]) => void;
 }
@@ -58,7 +59,7 @@ const DraggableColumnHeader = ({
       ref={setNodeRef}
       style={{...style, width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
       className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 cursor-grab active:cursor-grabbing text-white bg-blue-600 border-blue-700 ${
-        ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+        ['duration', 'startTime', 'endTime', 'elapsedTime', 'backTime'].includes(column.key) 
           ? 'print-time-column' 
           : 'print-content-column'
       }`}
@@ -96,6 +97,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   currentSegmentId, 
   isPlaying = false,
   rundownStartTime = '09:00:00',
+  rundownEndTime,
   isDark = false,
   onReorderColumns
 }, ref) => {
@@ -355,7 +357,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     const key = column.key || column.id;
     
     // Time-related columns should be narrow
-    if (['duration', 'startTime', 'endTime', 'elapsedTime'].includes(key)) {
+    if (['duration', 'startTime', 'endTime', 'elapsedTime', 'backTime'].includes(key)) {
       return '100px';
     }
     
@@ -536,7 +538,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     if (column.key === 'images' || column.id === 'images') {
       value = item.images || '';
     } else {
-      value = getCellValue(item, column, rundownStartTime, calculatedStartTime, items, itemIndex);
+      value = getCellValue(item, column, rundownStartTime, calculatedStartTime, items, itemIndex, rundownEndTime);
     }
     
     // Special handling for images column
@@ -1200,7 +1202,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                               </div>
                             </td>
                           );
-                        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
+                        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime' || column.key === 'backTime') {
                           // Don't show time fields for headers - empty cells
                           return (
                             <td 
@@ -1248,7 +1250,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         <td
                           key={column.id}
                           className={`px-2 py-2 text-sm border-r print:border-gray-400 print:h-auto print:max-h-none print:overflow-visible bg-background ${
-                            ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+                            ['duration', 'startTime', 'endTime', 'elapsedTime', 'backTime'].includes(column.key) 
                               ? 'print-time-column' 
                               : 'print-content-column'
                           } ${isDark ? 'border-border' : 'border-gray-200'} ${
@@ -1266,9 +1268,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             } : {})
                           }}
                         >
-                           <div className="break-words whitespace-pre-wrap overflow-hidden">
+                          <div className="break-words whitespace-pre-wrap overflow-hidden">
                              {(column.key === 'script' || column.key === 'notes') ? 
-                               renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime, items, originalIndex), item.id, column.key) ||
+                               renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime, items, originalIndex, rundownEndTime), item.id, column.key) ||
                                <div>{renderCellContent(item, column, calculatedStartTime, originalIndex)}</div> :
                                renderCellContent(item, column, calculatedStartTime, originalIndex)
                              }

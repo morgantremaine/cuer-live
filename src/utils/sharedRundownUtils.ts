@@ -43,7 +43,23 @@ const calculateDurationBasedElapsedTime = (items: RundownItem[], itemIndex: numb
   return secondsToTimeNoWrap(cumulativeDurationSeconds);
 };
 
-export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: string, calculatedStartTime?: string, allItems?: RundownItem[], itemIndex?: number) => {
+// Helper function to calculate back time for shared rundowns
+const calculateBackTime = (items: RundownItem[], itemIndex: number, endTime?: string): string => {
+  if (!endTime) return '';
+  
+  // Sum all durations BELOW this row (excluding floated items)
+  let durationsBelowSeconds = 0;
+  for (let i = itemIndex + 1; i < items.length; i++) {
+    const itemBelow = items[i];
+    if (itemBelow && itemBelow.type !== 'header' && !itemBelow.isFloating && !itemBelow.isFloated && itemBelow.duration) {
+      durationsBelowSeconds += timeToSeconds(itemBelow.duration || '00:00');
+    }
+  }
+  
+  return secondsToTimeNoWrap(durationsBelowSeconds);
+};
+
+export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: string, calculatedStartTime?: string, allItems?: RundownItem[], itemIndex?: number, endTime?: string) => {
   let value = '';
   
   if (column.isCustom) {
@@ -79,6 +95,14 @@ export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: 
         } else {
           // Fallback to stored value if context not available
           value = item.elapsedTime || '';
+        }
+        break;
+      case 'backTime':
+        // Calculate back time (time remaining after this item)
+        if (allItems && typeof itemIndex === 'number' && endTime) {
+          value = calculateBackTime(allItems, itemIndex, endTime);
+        } else {
+          value = '';
         }
         break;
       case 'script':
