@@ -39,7 +39,8 @@ export const useDragAndDrop = (
   isHeaderCollapsed?: (headerId: string) => boolean,
   markStructuralChange?: () => void,
   rundownId?: string | null,
-  currentUserId?: string | null
+  currentUserId?: string | null,
+  recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -432,6 +433,19 @@ export const useDragAndDrop = (
       }
       
       console.log('🎯 Setting new items array, length:', newItems.length);
+      
+      // 🎯 NEW: Record reorder operation for undo/redo
+      const oldOrder = items.map(item => item.id);
+      const newOrder = newItems.map(item => item.id);
+      console.log('📝 Recording reorder:', { oldOrderLength: oldOrder.length, newOrderLength: newOrder.length });
+      if (recordOperation) {
+        recordOperation({
+          type: 'reorder',
+          data: { oldOrder, newOrder },
+          description: actionDescription
+        });
+      }
+      
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       

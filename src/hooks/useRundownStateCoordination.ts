@@ -189,7 +189,8 @@ export const useRundownStateCoordination = () => {
     isHeaderCollapsed,
     persistedState.markStructuralChange,
     persistedState.rundownId, // Pass rundownId for broadcasts
-    userId // Pass userId for broadcasts
+    userId, // Pass userId for broadcasts
+    persistedState.recordOperation // Pass recordOperation for operation-based undo
   );
 
   // UI interactions that depend on the core state (NO showcaller interference)

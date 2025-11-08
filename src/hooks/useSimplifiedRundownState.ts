@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
+import { useOperationUndo } from './useOperationUndo';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
@@ -484,6 +485,30 @@ export const useSimplifiedRundownState = () => {
     setUndoActive,
     rundownId,
     userId: currentUserId
+  });
+
+  // NEW: Operation-based undo system (Phase 1)
+  const {
+    recordOperation,
+    undo: undoOperation,
+    redo: redoOperation,
+    canUndo: canUndoOperation,
+    lastAction: lastOperationAction,
+    canRedo: canRedoOperation,
+    nextRedoAction: nextOperationRedoAction
+  } = useOperationUndo({
+    items: state.items,
+    updateItem: (id: string, updates: Partial<RundownItem>) => {
+      actions.updateItem(id, updates);
+    },
+    deleteRow: (id: string) => {
+      actions.deleteItem(id);
+    },
+    setItems: (items: RundownItem[]) => {
+      actions.setItems(items);
+    },
+    setUndoActive,
+    userId: currentUserId || 'anonymous'
   });
 
   // Cell-level broadcast system for immediate sync
@@ -976,6 +1001,12 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    // Get old value FIRST before making any changes for undo recording
+    const item = state.items.find(i => i.id === id);
+    const oldValue = item ? (field.startsWith('customFields.') ? 
+      item.customFields?.[field.replace('customFields.', '')] : 
+      (item as any)[field === 'segmentName' ? 'name' : field]) : undefined;
+    
     // Re-enable autosave after local edit if it was blocked due to teammate update
     if (blockUntilLocalEditRef.current) {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
@@ -987,6 +1018,14 @@ export const useSimplifiedRundownState = () => {
     const isImmediateSyncField = field === 'isFloating'; // Fields that need immediate database sync (removed color)
     
     const sessionKey = `${id}-${field}`;
+    
+    // 🎯 NEW: Record cell edit operation for undo/redo
+    console.log('📝 Recording cell edit:', { id, field, oldValue, newValue: value });
+    recordOperation({
+      type: 'cell_edit',
+      data: { itemId: id, field, oldValue, newValue: value },
+      description: `Edit ${field}`
+    });
     
     // Simplified: No field tracking needed - last writer wins
     
@@ -1959,6 +1998,9 @@ export const useSimplifiedRundownState = () => {
     
     // Structural change handling
     markStructuralChange,
-    clearStructuralChange
+    clearStructuralChange,
+    
+    // Operation-based undo/redo system
+    recordOperation
   };
 };

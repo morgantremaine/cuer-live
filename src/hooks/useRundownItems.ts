@@ -11,7 +11,8 @@ export const useRundownItems = (
   handleStructuralOperation?: (
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: any
-  ) => void
+  ) => void,
+  recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void
 ) => {
   const [items, setItems] = useState<RundownItem[]>([]);
 
@@ -69,6 +70,16 @@ export const useRundownItems = (
 
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
+      
+      // 🎯 NEW: Record add_row operation for undo/redo
+      console.log('📝 Recording add_row:', { addedItemId: newItem.id, insertIndex });
+      if (recordOperation) {
+        recordOperation({
+          type: 'add_row',
+          data: { addedItemId: newItem.id, addedIndex: insertIndex },
+          description: 'Add row'
+        });
+      }
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
@@ -128,6 +139,16 @@ export const useRundownItems = (
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
       
+      // 🎯 NEW: Record add_header operation for undo/redo
+      console.log('📝 Recording add_header:', { addedItemId: newItem.id, insertIndex });
+      if (recordOperation) {
+        recordOperation({
+          type: 'add_header',
+          data: { addedItemId: newItem.id, addedIndex: insertIndex },
+          description: 'Add header'
+        });
+      }
+      
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('add_header', {
@@ -143,7 +164,19 @@ export const useRundownItems = (
 
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
+      const deletedIndex = prevItems.findIndex(item => item.id === id);
+      const deletedItem = prevItems[deletedIndex];
       const newItems = prevItems.filter(item => item.id !== id);
+      
+      // 🎯 NEW: Record delete_row operation for undo/redo
+      console.log('📝 Recording delete_row:', { deletedItem, deletedIndex });
+      if (recordOperation && deletedItem) {
+        recordOperation({
+          type: 'delete_row',
+          data: { deletedItem, deletedIndex },
+          description: `Delete "${deletedItem.name || 'row'}"`
+        });
+      }
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
@@ -155,7 +188,7 @@ export const useRundownItems = (
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, handleStructuralOperation]);
+  }, [markAsChanged, handleStructuralOperation, recordOperation]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
