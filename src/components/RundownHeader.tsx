@@ -548,7 +548,7 @@ const RundownHeader = ({
                 <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                   <PopoverTrigger asChild>
                     <button
-                      className="h-8 px-1 font-mono text-sm bg-transparent hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                      className="h-8 px-2 font-mono text-sm bg-transparent hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
                     >
                       {formatClockTime(rundownStartTime)}
                     </button>
@@ -709,7 +709,7 @@ const RundownHeader = ({
               <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                 <PopoverTrigger asChild>
               <button
-                className="h-9 px-1 font-mono text-sm bg-transparent hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                className="h-9 px-2 font-mono text-sm bg-transparent hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
               >
                 {formatClockTime(rundownStartTime)}
               </button>
