@@ -310,6 +310,36 @@ const RundownHeader = ({
     setIsEditingStartTime(false);
   };
 
+  const handleStartTimeInputFocus = () => {
+    setIsEditingStartTime(true);
+  };
+
+  const handleStartTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalStartTime(value);
+  };
+
+  const handleStartTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formattedTime = parseTimeInput(value);
+    onRundownStartTimeChange(formattedTime);
+    const displayFormatted = clockFormat === '12' ? formatClockTime(formattedTime) : formattedTime;
+    setLocalStartTime(displayFormatted);
+    setIsEditingStartTime(false);
+  };
+
+  const handleStartTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleEndTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
   const handleEndTimeInputFocus = () => {
     setIsEditingEndTime(true);
   };
@@ -559,23 +589,40 @@ const RundownHeader = ({
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
-                <input
-                  ref={timeInputRef}
-                  type="text"
-                  value={localStartTime}
-                  onChange={handleTimeInputChange}
-                  onFocus={handleTimeInputFocus}
-                  onBlur={handleTimeInputBlur}
-                  placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                  className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
-                />
+                <div className="flex flex-col py-1">
+                  <div className="flex items-center px-2 gap-1">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Start:</span>
+                    <input
+                      ref={timeInputRef}
+                      type="text"
+                      value={localStartTime}
+                      onChange={handleTimeInputChange}
+                      onFocus={handleTimeInputFocus}
+                      onBlur={handleTimeInputBlur}
+                      placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                      className={`${clockFormat === '12' ? 'w-24 text-center' : 'w-16'} text-xs bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
+                    />
+                  </div>
+                  <div className="flex items-center px-2 gap-1 border-t border-gray-300 dark:border-gray-600">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">End:</span>
+                    <input
+                      type="text"
+                      value={localEndTime}
+                      onChange={handleEndTimeInputChange}
+                      onFocus={handleEndTimeInputFocus}
+                      onBlur={handleEndTimeInputBlur}
+                      placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                      className={`${clockFormat === '12' ? 'w-24 text-center' : 'w-16'} text-xs bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
+                    />
+                  </div>
+                </div>
                 {onShowDateChange && (
                   <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="ghost"
                         className={cn(
-                          "w-16 h-8 justify-center text-center font-normal text-xs border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
+                          "w-16 h-full justify-center text-center font-normal text-xs border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
                           !showDate && "text-muted-foreground"
                         )}
                       >
@@ -685,23 +732,40 @@ const RundownHeader = ({
           
           <div className="flex items-center space-x-2">
             <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
-              <input
-                ref={timeInputRef}
-                type="text"
-                value={localStartTime}
-                onChange={handleTimeInputChange}
-                onFocus={handleTimeInputFocus}
-                onBlur={handleTimeInputBlur}
-                placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
-              />
+              <div className="flex flex-col py-1">
+                <div className="flex items-center px-3 gap-2">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Start:</span>
+                  <input
+                    ref={timeInputRef}
+                    type="text"
+                    value={localStartTime}
+                    onChange={handleTimeInputChange}
+                    onFocus={handleTimeInputFocus}
+                    onBlur={handleTimeInputBlur}
+                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
+                  />
+                </div>
+                <div className="flex items-center px-3 gap-2 border-t border-gray-300 dark:border-gray-600">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">End:</span>
+                  <input
+                    type="text"
+                    value={localEndTime}
+                    onChange={handleEndTimeInputChange}
+                    onFocus={handleEndTimeInputFocus}
+                    onBlur={handleEndTimeInputBlur}
+                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
+                  />
+                </div>
+              </div>
               {onShowDateChange && (
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-20 h-9 justify-center text-center font-normal text-sm border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
+                        "w-20 h-full justify-center text-center font-normal text-sm border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
                         !showDate && "text-muted-foreground"
                       )}
                     >
