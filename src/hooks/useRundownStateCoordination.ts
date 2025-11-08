@@ -34,7 +34,8 @@ export const useRundownStateCoordination = () => {
     columns: persistedState.columns,
     startTime: persistedState.rundownStartTime,
     numberingLocked: persistedState.numberingLocked,
-    lockedRowNumbers: persistedState.lockedRowNumbers
+    lockedRowNumbers: persistedState.lockedRowNumbers,
+    endTime: persistedState.rundownEndTime
   });
 
   // Add performance monitoring for large rundowns

@@ -11,6 +11,7 @@ interface UseRundownPerformanceOptimizationProps {
   startTime: string;
   numberingLocked?: boolean;
   lockedRowNumbers?: { [itemId: string]: string };
+  endTime?: string;
 }
 
 export const useRundownPerformanceOptimization = ({
@@ -18,7 +19,8 @@ export const useRundownPerformanceOptimization = ({
   columns,
   startTime,
   numberingLocked,
-  lockedRowNumbers
+  lockedRowNumbers,
+  endTime
 }: UseRundownPerformanceOptimizationProps) => {
   
   // Performance monitoring for large rundowns
@@ -50,8 +52,8 @@ export const useRundownPerformanceOptimization = ({
     if (isVeryLargeRundown) {
       // Silently using performance-optimized calculations
     }
-    return calculateItemsWithTiming(items, startTime || '00:00:00', numberingLocked, lockedRowNumbers);
-  }, [items, startTime, numberingLocked, lockedRowNumbers, isVeryLargeRundown, itemCount]);
+    return calculateItemsWithTiming(items, startTime || '00:00:00', numberingLocked, lockedRowNumbers, endTime);
+  }, [items, startTime, numberingLocked, lockedRowNumbers, endTime, isVeryLargeRundown, itemCount]);
 
   // Calculate visible columns (memoized to prevent unnecessary re-renders)
   const visibleColumns = useMemo(() => {

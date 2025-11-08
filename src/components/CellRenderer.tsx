@@ -14,6 +14,7 @@ interface CellRendererProps {
     calculatedEndTime?: string;
     calculatedElapsedTime?: string;
     calculatedRowNumber?: string;
+    calculatedBackTime?: string;
   };
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
@@ -62,6 +63,8 @@ const CellRenderer = ({
         return item.calculatedEndTime || item.endTime || '';
       case 'elapsedTime':
         return item.calculatedElapsedTime || item.elapsedTime || '';
+      case 'backTime':
+        return item.calculatedBackTime || '';
       case 'talent':
         return item.talent || '';
       case 'script':
@@ -86,7 +89,8 @@ const CellRenderer = ({
   const isReadOnly = !column.isEditable || 
     column.key === 'startTime' || 
     column.key === 'endTime' || 
-    column.key === 'elapsedTime';
+    column.key === 'elapsedTime' ||
+    column.key === 'backTime';
 
   // Check if this is the current segment and segment name column for showcaller highlighting
   const isCurrentSegmentName = currentSegmentId === item.id && 
@@ -110,8 +114,8 @@ const CellRenderer = ({
     );
   }
 
-  // Use TimeDisplayCell for time-of-day fields (startTime, endTime)
-  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime')) {
+  // Use TimeDisplayCell for time-of-day fields (startTime, endTime, backTime)
+  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'backTime')) {
     return (
       <TimeDisplayCell 
         value={value} 
@@ -166,7 +170,7 @@ const CellRenderer = ({
   }
 
   // Check if this is a time-related field that should be centered
-  const isTimeField = column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime';
+  const isTimeField = column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime' || column.key === 'backTime';
 
   // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
   return (

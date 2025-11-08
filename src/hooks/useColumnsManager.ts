@@ -23,6 +23,7 @@ const getDefaultColumns = (): Column[] => [
   { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
   { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'backTime', name: 'Back', key: 'backTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
   { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
 ];
 

@@ -7,6 +7,7 @@ export interface CalculatedRundownItem extends RundownItem {
   calculatedEndTime: string;
   calculatedElapsedTime: string;
   calculatedRowNumber: string;
+  calculatedBackTime?: string;
 }
 
 // Pure function to convert time string to seconds - always returns integers
@@ -202,7 +203,8 @@ export const calculateItemsWithTiming = (
   items: RundownItem[],
   rundownStartTime: string,
   numberingLocked?: boolean,
-  lockedRowNumbers?: { [itemId: string]: string }
+  lockedRowNumbers?: { [itemId: string]: string },
+  endTime?: string
 ): CalculatedRundownItem[] => {
   // Clear header row numbers
   const itemsWithClearedHeaders = clearHeaderNumbers(items);
@@ -213,6 +215,25 @@ export const calculateItemsWithTiming = (
   
   // Track last base number for decimal generation
   let lastBaseNumber = 0;
+
+  // Calculate back times if endTime is provided
+  const calculateBackTime = (index: number): string => {
+    if (!endTime) return '';
+    
+    // Sum all durations BELOW this row (excluding floated items)
+    let durationsBelowSeconds = 0;
+    for (let i = index + 1; i < itemsWithClearedHeaders.length; i++) {
+      const itemBelow = itemsWithClearedHeaders[i];
+      if (itemBelow.type === 'regular' && !isFloated(itemBelow)) {
+        durationsBelowSeconds += timeToSeconds(itemBelow.duration || '00:00');
+      }
+    }
+    
+    // Back time = end time - durations below
+    const endTimeSeconds = timeToSeconds(endTime);
+    const backTimeSeconds = endTimeSeconds - durationsBelowSeconds;
+    return secondsToTime(backTimeSeconds);
+  };
 
   return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
@@ -227,13 +248,15 @@ export const calculateItemsWithTiming = (
       calculatedRowNumber = '';
       // Elapsed time for headers is the cumulative duration up to this point
       const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
+      const calculatedBackTime = calculateBackTime(index);
       
       return {
         ...item,
         calculatedStartTime,
         calculatedEndTime,
         calculatedElapsedTime,
-        calculatedRowNumber
+        calculatedRowNumber,
+        calculatedBackTime
       };
     } else {
       // Regular items
@@ -311,13 +334,15 @@ export const calculateItemsWithTiming = (
       
       // Elapsed time INCLUDING this item's duration (where we'll be after this item completes)
       const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
+      const calculatedBackTime = calculateBackTime(index);
 
       return {
         ...item,
         calculatedStartTime,
         calculatedEndTime,
         calculatedElapsedTime,
-        calculatedRowNumber
+        calculatedRowNumber,
+        calculatedBackTime
       };
     }
   });
