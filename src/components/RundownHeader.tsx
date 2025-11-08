@@ -565,7 +565,7 @@ const RundownHeader = ({
                     {localStartTime || '00:00:00'}
                   </Button>
                   </PopoverTrigger>
-                <PopoverContent className="w-64 p-4" align="start">
+                <PopoverContent className="w-auto p-4" align="start">
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Start Time</label>
@@ -724,7 +724,7 @@ const RundownHeader = ({
                     {localStartTime || '00:00:00'}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-4" align="start">
+                <PopoverContent className="w-auto p-4" align="start">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Start Time</label>
