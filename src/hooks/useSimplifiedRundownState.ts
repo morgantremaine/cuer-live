@@ -477,8 +477,16 @@ export const useSimplifiedRundownState = () => {
     setUndoActive,
     userId: currentUserId || 'anonymous',
     onOperationComplete: (operationType, operationData) => {
-      // Broadcast undo/redo operations to other users
-      markStructuralChange(operationType, operationData);
+      // Only broadcast structural operations, not cell edits
+      // Cell edits are handled by the per-cell save system automatically
+      if (operationType === 'add_row' || 
+          operationType === 'add_header' || 
+          operationType === 'delete_row' || 
+          operationType === 'reorder') {
+        markStructuralChange(operationType, operationData);
+      }
+      // cell_edit operations will be broadcast by the per-cell save system
+      // when updateItem triggers the UPDATE_ITEM action
     }
   });
 
