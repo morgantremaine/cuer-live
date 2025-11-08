@@ -718,17 +718,30 @@ export const useSimplifiedRundownState = () => {
   const handleBroadcastAfterSave = useCallback((savedUpdates: Array<{ itemId?: string; field: string; value: any }>) => {
     if (!rundownId || !currentUserId) return;
     
+    // DIAGNOSTIC: Log what we received
+    console.log('🔍 Broadcast after save - received updates:', {
+      total: savedUpdates.length,
+      updates: savedUpdates.map(u => ({ itemId: u.itemId, field: u.field, hasValue: !!u.value }))
+    });
+    
     const validUpdates = savedUpdates
-      .filter(u => u.itemId) // Only broadcast item-level updates
+      .filter(u => u.itemId && u.itemId.trim() !== '') // Only broadcast item-level updates with valid itemId
       .map(u => ({
         itemId: u.itemId!,
         field: u.field,
         value: u.value
       }));
     
+    console.log('🔍 After filtering - valid updates:', {
+      valid: validUpdates.length,
+      dropped: savedUpdates.length - validUpdates.length
+    });
+    
     if (validUpdates.length > 0) {
-      console.log('📡 Broadcasting saved updates:', validUpdates.length);
+      console.log('📡 Broadcasting saved updates:', validUpdates);
       cellBroadcast.broadcastBatch(rundownId, validUpdates, currentUserId, getTabId());
+    } else {
+      console.warn('⚠️ No valid updates to broadcast - all updates filtered out');
     }
   }, [rundownId, currentUserId]);
   
