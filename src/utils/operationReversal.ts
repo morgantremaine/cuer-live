@@ -42,3 +42,45 @@ export const reverseOperation = (
     return false;
   }
 };
+
+export const applyOperationForward = (
+  operation: UndoableOperation,
+  items: RundownItem[],
+  updateItem: (id: string, updates: Partial<RundownItem>) => void,
+  deleteRow: (id: string) => void,
+  setItems: (items: RundownItem[]) => void
+): boolean => {
+  try {
+    switch (operation.type) {
+      case 'cell_edit':
+        updateItem(operation.data.itemId, { 
+          [operation.data.field]: operation.data.newValue 
+        });
+        return true;
+        
+      case 'add_row':
+      case 'add_header':
+        const addItems = [...items];
+        addItems.splice(operation.data.addedIndex, 0, operation.data.addedItem);
+        setItems(addItems);
+        return true;
+        
+      case 'delete_row':
+        deleteRow(operation.data.deletedItem.id);
+        return true;
+        
+      case 'reorder':
+        const reorderedItems = operation.data.newOrder
+          .map((id: string) => items.find(item => item.id === id))
+          .filter(Boolean);
+        setItems(reorderedItems);
+        return true;
+        
+      default:
+        return false;
+    }
+  } catch (error) {
+    console.error('Error applying operation forward:', error);
+    return false;
+  }
+};

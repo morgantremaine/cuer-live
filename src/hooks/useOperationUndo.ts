@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { UndoableOperation } from '@/types/undoOperation';
-import { reverseOperation } from '@/utils/operationReversal';
+import { reverseOperation, applyOperationForward } from '@/utils/operationReversal';
 
 interface UseOperationUndoProps {
   items: RundownItem[];
@@ -104,9 +104,8 @@ export const useOperationUndo = ({
       setUndoActive(true);
     }
     
-    // For redo, we need to reverse the reversal (apply the operation forward)
-    // This is a simplified approach - in Phase 2 we can add proper forward operation logic
-    const success = reverseOperation(
+    // Apply the operation forward (not reverse)
+    const success = applyOperationForward(
       nextOperation,
       items,
       updateItem,
