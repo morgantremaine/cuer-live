@@ -57,6 +57,7 @@ const initialState: RundownState = {
   columns: [],
   title: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_TITLE,
   startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
+  endTime: RUNDOWN_DEFAULTS.DEFAULT_END_TIME,
   timezone: RUNDOWN_DEFAULTS.DEFAULT_TIMEZONE,
   showDate: null,
   externalNotes: null,

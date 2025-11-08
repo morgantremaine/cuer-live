@@ -1337,6 +1337,9 @@ export const useSimplifiedRundownState = () => {
               team_id: activeTeamId,
               folder_id: folderId,
               archived: false,
+              start_time: '09:00:00',
+              end_time: '12:00:00',
+              timezone: 'America/New_York',
               show_date: new Date().toISOString().split('T')[0] // Set current date in YYYY-MM-DD format
             })
             .select()
@@ -1354,6 +1357,7 @@ export const useSimplifiedRundownState = () => {
             columns: [],
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
+            endTime: data.end_time || '12:00:00',
             timezone: data.timezone || 'America/New_York',
             showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null
           });
@@ -1370,6 +1374,7 @@ export const useSimplifiedRundownState = () => {
             columns: [],
             title: 'Untitled Rundown',
             startTime: '09:00:00',
+            endTime: '12:00:00',
             timezone: 'America/New_York'
           });
           setIsInitialized(true);
@@ -1386,6 +1391,7 @@ export const useSimplifiedRundownState = () => {
         columns: [],
         title: 'Untitled Rundown',
         startTime: '09:00:00',
+        endTime: '12:00:00',
         timezone: 'America/New_York'
       });
       setIsLoading(false);

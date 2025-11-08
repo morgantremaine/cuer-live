@@ -198,6 +198,7 @@ export const useRundownStorage = () => {
         columns: rundown.columns,
         timezone: rundown.timezone,
         start_time: rundown.start_time,
+        end_time: rundown.end_time,
         archived: false,
         last_updated_by: user.id,
         show_date: rundown.show_date || new Date().toISOString().split('T')[0], // Set current date if not provided

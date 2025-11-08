@@ -7,6 +7,7 @@ export const RUNDOWN_DEFAULTS = {
   
   // Time defaults
   DEFAULT_START_TIME: '09:00:00',
+  DEFAULT_END_TIME: '12:00:00',
   DEFAULT_ELAPSED_TIME: '00:00:00',
   
   // Basic item properties
