@@ -589,8 +589,8 @@ const RundownHeader = ({
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-3">
               <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">Start:</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground w-10">Start:</span>
                   <input
                     ref={timeInputRef}
                     type="text"
@@ -599,11 +599,11 @@ const RundownHeader = ({
                     onFocus={handleTimeInputFocus}
                     onBlur={handleTimeInputBlur}
                     placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-background/50 px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
+                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} h-6 text-xs bg-background/50 px-2 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
                   />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground">End:</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground w-10">End:</span>
                   <input
                     type="text"
                     value={localEndTime}
@@ -611,7 +611,7 @@ const RundownHeader = ({
                     onFocus={handleEndTimeInputFocus}
                     onBlur={handleEndTimeInputBlur}
                     placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-background/50 px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
+                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} h-6 text-xs bg-background/50 px-2 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
                   />
                 </div>
               </div>
@@ -621,7 +621,7 @@ const RundownHeader = ({
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-[52px] px-3 text-sm",
+                        "h-[50px] px-3 text-sm",
                         !showDate && "text-muted-foreground"
                       )}
                     >
@@ -729,9 +729,9 @@ const RundownHeader = ({
           
           
           <div className="flex items-center space-x-3">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Start:</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground w-11">Start:</span>
                 <input
                   ref={timeInputRef}
                   type="text"
@@ -740,11 +740,11 @@ const RundownHeader = ({
                   onFocus={handleTimeInputFocus}
                   onBlur={handleTimeInputBlur}
                   placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-background/50 px-3 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
+                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} h-7 bg-background/50 px-3 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">End:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground w-11">End:</span>
                 <input
                   type="text"
                   value={localEndTime}
@@ -752,7 +752,7 @@ const RundownHeader = ({
                   onFocus={handleEndTimeInputFocus}
                   onBlur={handleEndTimeInputBlur}
                   placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-background/50 px-3 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
+                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} h-7 bg-background/50 px-3 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
                 />
               </div>
             </div>
@@ -762,7 +762,7 @@ const RundownHeader = ({
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-[60px] px-4",
+                      "h-[58px] px-4",
                       !showDate && "text-muted-foreground"
                     )}
                   >
