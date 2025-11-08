@@ -104,6 +104,7 @@ const RundownHeader = ({
   const [localStartTime, setLocalStartTime] = useState('');
   const [isEditingEndTime, setIsEditingEndTime] = useState(false);
   const [localEndTime, setLocalEndTime] = useState('');
+  const [endTime24h, setEndTime24h] = useState(''); // Store end time in 24-hour format
 
   // Initialize local time states when rundownStartTime changes (but not while editing)
   useEffect(() => {
@@ -114,14 +115,14 @@ const RundownHeader = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rundownStartTime, clockFormat, isEditingStartTime]);
   
-  // Update end time format when clock format changes
+  // Update end time display format when clock format changes
   useEffect(() => {
-    if (!isEditingEndTime && localEndTime && localEndTime !== '') {
-      const formattedTime = clockFormat === '12' ? formatClockTime(localEndTime) : localEndTime;
+    if (!isEditingEndTime && endTime24h && endTime24h !== '') {
+      const formattedTime = clockFormat === '12' ? formatClockTime(endTime24h) : endTime24h;
       setLocalEndTime(formattedTime);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clockFormat, isEditingEndTime]);
+  }, [clockFormat, isEditingEndTime, endTime24h]);
   
   // Handlers for end time
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -134,6 +135,7 @@ const RundownHeader = ({
 
   const handleEndTimeBlur = () => {
     const validatedTime = parseTimeInput(localEndTime);
+    setEndTime24h(validatedTime); // Store in 24-hour format
     const displayFormatted = clockFormat === '12' ? formatClockTime(validatedTime) : validatedTime;
     setLocalEndTime(displayFormatted);
     setIsEditingEndTime(false);
