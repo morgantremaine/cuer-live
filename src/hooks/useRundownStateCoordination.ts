@@ -182,7 +182,7 @@ export const useRundownStateCoordination = () => {
     },
     () => interactionsRef.current?.selectedRows || new Set<string>(), // Get selectedRows from interactions when available
     undefined, // scrollContainerRef - placeholder for now
-    persistedState.saveUndoState,
+    undefined, // saveUndoState - removed, using recordOperation instead
     persistedState.columns,
     persistedState.rundownTitle,
     getHeaderGroupItemIds,
@@ -248,8 +248,8 @@ export const useRundownStateCoordination = () => {
     persistedState.setTitle,
     addRowAtIndex,
     addHeaderAtIndex,
-    // Pass undo-related parameters - use the correct property name now available
-    persistedState.saveUndoState,
+    // Pass undo-related parameters - using recordOperation instead of saveUndoState
+    undefined, // saveUndoState - removed, using operation-based undo
     persistedState.markStructuralChange, // Wire structural change signaling
     persistedState.columns,
     persistedState.rundownTitle,

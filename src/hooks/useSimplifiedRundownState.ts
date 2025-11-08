@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
-import { useStandaloneUndo } from './useStandaloneUndo';
 import { useOperationUndo } from './useOperationUndo';
+import { toast } from '@/hooks/use-toast';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
@@ -454,48 +454,15 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Standalone undo system - now with redo
-  const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
-    onUndo: (items, _, title) => {
-      setUndoActive(true);
-      actions.setItems(items);
-      actions.setTitle(title);
-      
-      // Broadcast the undo/redo as a structural change
-      if (rundownId && currentUserId) {
-        const order = items.map(i => i.id);
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId,
-            getTabId()
-          );
-        }, 0);
-      }
-      
-      setTimeout(() => {
-        actions.markSaved();
-        actions.setItems([...items]);
-        setUndoActive(false);
-      }, 100);
-    },
-    setUndoActive,
-    rundownId,
-    userId: currentUserId
-  });
-
-  // NEW: Operation-based undo system (Phase 1)
+  // Operation-based undo system
   const {
     recordOperation,
-    undo: undoOperation,
-    redo: redoOperation,
-    canUndo: canUndoOperation,
-    lastAction: lastOperationAction,
-    canRedo: canRedoOperation,
-    nextRedoAction: nextOperationRedoAction
+    undo,
+    redo,
+    canUndo,
+    lastAction,
+    canRedo,
+    nextRedoAction
   } = useOperationUndo({
     items: state.items,
     updateItem: (id: string, updates: Partial<RundownItem>) => {
@@ -1044,7 +1011,6 @@ export const useSimplifiedRundownState = () => {
       markFieldAsRecentlyEdited(sessionKey);
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
           fieldKey: sessionKey,
           startTime: Date.now()
@@ -1061,17 +1027,17 @@ export const useSimplifiedRundownState = () => {
         }
       }, 3000); // Reduced to 3 seconds for faster sync
     } else if (field === 'duration') {
-      saveUndoState(state.items, [], state.title, 'Edit duration');
+      // Duration changes already recorded by cell_edit operation
     } else if (isImmediateSyncField) {
       // For immediate sync fields like isFloating, save undo state and trigger immediate save
       console.log('🔄 FloatToggle: triggering immediate save for field:', field, 'id:', id);
-      saveUndoState(state.items, [], state.title, `Toggle ${field}`);
+      // Float toggle already recorded by cell_edit operation
       // DON'T use markActiveTyping() for floating - that triggers typing delay
       // Instead, trigger an immediate flush save that bypasses the typing delay mechanism
       triggerImmediateSave();
     } else if (field === 'color') {
-      // Handle color changes separately - save undo state and trigger immediate save
-      saveUndoState(state.items, [], state.title, 'Change row color');
+      // Handle color changes separately - trigger immediate save
+      // Color changes already recorded by cell_edit operation
       // Color changes should trigger immediate save without marking as typing
       triggerImmediateSave();
     }
@@ -1110,7 +1076,7 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(id, updateField, updateValue);
       }
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
+  }, [actions.updateItem, state.items, state.title, cellEditIntegration]);
 
   // Optimized field tracking with debouncing
   const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
@@ -1468,22 +1434,22 @@ export const useSimplifiedRundownState = () => {
     updateItem: enhancedUpdateItem,
 
     toggleFloatRow: useCallback((id: string) => {
-      saveUndoState(state.items, [], state.title, 'Toggle float');
+      // Float toggle already recorded by cell_edit operation
       const item = state.items.find(i => i.id === id);
       if (item) {
         // Use enhancedUpdateItem for proper cell broadcasting
         enhancedUpdateItem(id, 'isFloating', !item.isFloating ? 'true' : 'false');
       }
-    }, [enhancedUpdateItem, state.items, state.title, saveUndoState]),
+    }, [enhancedUpdateItem, state.items, state.title]),
 
     deleteRow: useCallback((id: string) => {
       // Capture item before deletion for undo recording
       const deletedItem = state.items.find(item => item.id === id);
       const deletedIndex = state.items.findIndex(item => item.id === id);
       
-      saveUndoState(state.items, [], state.title, 'Delete row');
+      // Delete operation already recorded by delete_row operation
       
-      // Record operation before deletion
+      actions.deleteItem(id);
       if (deletedItem && deletedIndex !== -1) {
         console.log('🗑️ Recording delete_row operation:', {
           deletedItem,
@@ -1519,10 +1485,10 @@ export const useSimplifiedRundownState = () => {
           getTabId()
         );
       }
-    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]),
+    }, [actions.deleteItem, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]),
 
     addRow: useCallback(() => {
-      saveUndoState(state.items, [], state.title, 'Add segment');
+      // Add operation already recorded by add_row operation
       helpers.addRow();
       
       // For per-cell saves, use structural save coordination
@@ -1547,10 +1513,10 @@ export const useSimplifiedRundownState = () => {
           );
         }, 0);
       }
-    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+    }, [helpers.addRow, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
-      saveUndoState(state.items, [], state.title, 'Add header');
+      // Add header operation already recorded by add_header operation
       helpers.addHeader();
       
       // For per-cell saves, use structural save coordination
@@ -1574,7 +1540,7 @@ export const useSimplifiedRundownState = () => {
           );
         }, 0);
       }
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+    }, [helpers.addHeader, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
       // Re-enable autosave after local edit if previously blocked
@@ -1599,7 +1565,7 @@ export const useSimplifiedRundownState = () => {
           cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId, getTabId());
         }
         
-        saveUndoState(state.items, [], state.title, 'Change title');
+        // Title changes tracked separately
         actions.setTitle(newTitle);
         
         // Clear typing session after delay
@@ -1609,7 +1575,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 5000); // Extended timeout for title editing
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration])
+    }, [actions.setTitle, state.items, state.title, rundownId, currentUserId, cellEditIntegration])
   };
 
   // Get visible columns from user preferences
@@ -1646,7 +1612,7 @@ export const useSimplifiedRundownState = () => {
   // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
       // Auto-save will handle this change - no special handling needed
-    saveUndoState(state.items, [], state.title, 'Add segment');
+    // Add operation already recorded by add_row operation
     
     const newItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1711,12 +1677,12 @@ export const useSimplifiedRundownState = () => {
         numberingLocked: state.numberingLocked
       });
     }
-  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, saveUndoState, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
+  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     // Auto-save will handle this change - no special handling needed
-    saveUndoState(state.items, [], state.title, 'Add header');
+    // Add header operation already recorded by add_header operation
     
     const newHeader = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1776,7 +1742,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
       markStructuralChange('add_header', { newItems: [newHeader], insertIndex: actualIndex });
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
+  }, [state.items, state.title, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
 
 
   // Clean up timeouts on unmount
@@ -1846,7 +1812,7 @@ export const useSimplifiedRundownState = () => {
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
-      saveUndoState(state.items, [], state.title, 'Delete multiple items');
+      // Delete operations already tracked individually
       actions.deleteMultipleItems(itemIds);
       
       // For per-cell saves, use structural save coordination
@@ -1868,7 +1834,7 @@ export const useSimplifiedRundownState = () => {
           getTabId()
         );
       }
-    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+    }, [actions.deleteMultipleItems, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
     addItem: useCallback((item: any, targetIndex?: number) => {
       // Re-enable autosave after local edit if it was blocked due to teammate update
       if (blockUntilLocalEditRef.current) {
@@ -2006,7 +1972,6 @@ export const useSimplifiedRundownState = () => {
     }, [actions.toggleLock, calculatedItems, cellEditIntegration.isPerCellEnabled, rundownId, currentUserId, state.numberingLocked, state.lockedRowNumbers, state.items, markStructuralChange]),
     
     addColumn: (column: Column) => {
-      saveUndoState(state.items, [], state.title, 'Add column');
       setColumns([...columns, column]);
     },
     
@@ -2017,12 +1982,27 @@ export const useSimplifiedRundownState = () => {
       setColumns(newColumns);
     },
 
-    // Undo/Redo functionality - properly expose these including saveUndoState
-    saveUndoState,
-    undo: () => undo(state.items, columns, state.title),
+    // Undo/Redo functionality - operation-based system
+    undo: () => {
+      const undoneAction = undo();
+      if (undoneAction) {
+        toast({
+          title: "Undone",
+          description: undoneAction,
+        });
+      }
+    },
     canUndo,
     lastAction,
-    redo: () => redo(),
+    redo: () => {
+      const redoneAction = redo();
+      if (redoneAction) {
+        toast({
+          title: "Redone", 
+          description: redoneAction,
+        });
+      }
+    },
     canRedo,
     nextRedoAction,
     
