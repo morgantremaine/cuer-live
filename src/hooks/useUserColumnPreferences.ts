@@ -292,6 +292,27 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
               console.log('✅ Using team default layout:', layoutData.name || 'Unknown');
               debugLogger.preferences('Using team default layout: ' + (layoutData.name || 'Unknown'));
               initialColumns = normalizeColumns(layoutData.columns);
+              
+              // Check if team default is missing new default columns
+              const teamLayoutKeys = new Set(initialColumns.map(c => c.key));
+              const missingDefaults = defaultColumns.filter(dc => !teamLayoutKeys.has(dc.key));
+              
+              if (missingDefaults.length > 0) {
+                console.log(`✨ Team default layout is missing ${missingDefaults.length} new columns, adding them:`, missingDefaults.map(c => c.name));
+                
+                // Insert new defaults at their proper position
+                missingDefaults.forEach(newCol => {
+                  const defaultIndex = defaultColumns.findIndex(dc => dc.key === newCol.key);
+                  let insertIndex = 0;
+                  for (let i = 0; i < initialColumns.length; i++) {
+                    const currentColDefaultIndex = defaultColumns.findIndex(dc => dc.key === initialColumns[i].key);
+                    if (currentColDefaultIndex !== -1 && currentColDefaultIndex < defaultIndex) {
+                      insertIndex = i + 1;
+                    }
+                  }
+                  initialColumns.splice(insertIndex, 0, { ...newCol, isVisible: true });
+                });
+              }
             }
           } catch (error) {
             console.log('ℹ️ No team default layout found, using hardcoded defaults');
