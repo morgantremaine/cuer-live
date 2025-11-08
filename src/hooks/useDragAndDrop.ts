@@ -39,8 +39,7 @@ export const useDragAndDrop = (
   isHeaderCollapsed?: (headerId: string) => boolean,
   markStructuralChange?: () => void,
   rundownId?: string | null,
-  currentUserId?: string | null,
-  recordUndoOperation?: (operation: { type: string; data: any; description: string }) => void
+  currentUserId?: string | null
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -342,9 +341,6 @@ export const useDragAndDrop = (
         draggedIds: draggedIds.slice(0, 5) // Show first 5 IDs
       });
       
-      // CAPTURE OLD ORDER BEFORE MAKING CHANGES
-      const oldOrder = items.map(item => item.id);
-      
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
@@ -429,16 +425,6 @@ export const useDragAndDrop = (
       const itemsAfterRenumber = newItems.map(item => ({ id: item.id, rowNumber: item.rowNumber }));
       console.log('🔢 Row numbers before:', itemsBeforeRenumber.slice(0, 10));
       console.log('🔢 Row numbers after:', itemsAfterRenumber.slice(0, 10));
-      
-      // RECORD UNDO OPERATION FOR REORDER
-      const newOrder = newItems.map(item => item.id);
-      if (recordUndoOperation) {
-        recordUndoOperation({
-          type: 'reorder',
-          data: { oldOrder, newOrder },
-          description: actionDescription
-        });
-      }
       
       if (saveUndoState && columns && title) {
         console.log('🎯 Saving undo state for action:', actionDescription);
