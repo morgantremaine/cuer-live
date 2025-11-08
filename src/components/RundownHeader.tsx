@@ -595,7 +595,7 @@ const RundownHeader = ({
                     variant="outline"
                     className="h-[50px] px-3 text-sm font-mono hover:bg-accent"
                   >
-                    {formatClockTime(localStartTime)} - {formatClockTime(localEndTime)}
+                    {localStartTime} - {localEndTime}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-4" align="start">
@@ -750,7 +750,7 @@ const RundownHeader = ({
                   variant="outline"
                   className="h-[58px] px-4 font-mono hover:bg-accent"
                 >
-                  {formatClockTime(localStartTime)} - {formatClockTime(localEndTime)}
+                  {localStartTime} - {localEndTime}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-4" align="start">
