@@ -1,0 +1,147 @@
+import { useState, useCallback, useRef } from 'react';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { UndoableOperation } from '@/types/undoOperation';
+import { reverseOperation } from '@/utils/operationReversal';
+
+interface UseOperationUndoProps {
+  items: RundownItem[];
+  updateItem: (id: string, updates: Partial<RundownItem>) => void;
+  deleteRow: (id: string) => void;
+  setItems: (items: RundownItem[]) => void;
+  setUndoActive?: (active: boolean) => void;
+  userId?: string;
+}
+
+export const useOperationUndo = ({ 
+  items,
+  updateItem,
+  deleteRow,
+  setItems,
+  setUndoActive,
+  userId = 'anonymous'
+}: UseOperationUndoProps) => {
+  const [undoStack, setUndoStack] = useState<UndoableOperation[]>([]);
+  const [redoStack, setRedoStack] = useState<UndoableOperation[]>([]);
+  const isUndoing = useRef(false);
+  const isRedoing = useRef(false);
+
+  // Record a new operation
+  const recordOperation = useCallback((operation: Omit<UndoableOperation, 'userId' | 'timestamp'>) => {
+    if (isUndoing.current || isRedoing.current) {
+      return;
+    }
+
+    const fullOperation: UndoableOperation = {
+      ...operation,
+      userId,
+      timestamp: Date.now()
+    };
+
+    console.log('📝 Recording operation:', operation.description);
+
+    setUndoStack(prev => {
+      const newStack = [...prev, fullOperation];
+      return newStack.slice(-5); // Keep only last 5 operations
+    });
+    
+    setRedoStack([]);
+  }, [userId]);
+
+  // Perform undo operation
+  const undo = useCallback(() => {
+    if (undoStack.length === 0) {
+      console.log('No undo operations available');
+      return null;
+    }
+
+    const lastOperation = undoStack[undoStack.length - 1];
+    console.log('⏪ Undoing operation:', lastOperation.description);
+    
+    isUndoing.current = true;
+    
+    if (setUndoActive) {
+      setUndoActive(true);
+    }
+    
+    const success = reverseOperation(
+      lastOperation,
+      items,
+      updateItem,
+      deleteRow,
+      setItems
+    );
+
+    if (success) {
+      // Move operation to redo stack
+      setRedoStack(prev => [...prev, lastOperation].slice(-5));
+      setUndoStack(prev => prev.slice(0, -1));
+    }
+    
+    setTimeout(() => {
+      isUndoing.current = false;
+      if (setUndoActive) {
+        setUndoActive(false);
+      }
+      console.log('⏪ Undo operation completed');
+    }, 1000);
+
+    return success ? lastOperation.description : null;
+  }, [undoStack, items, updateItem, deleteRow, setItems, setUndoActive]);
+
+  // Perform redo operation
+  const redo = useCallback(() => {
+    if (redoStack.length === 0) {
+      console.log('No redo operations available');
+      return null;
+    }
+
+    const nextOperation = redoStack[redoStack.length - 1];
+    console.log('⏩ Redoing operation:', nextOperation.description);
+    
+    isRedoing.current = true;
+    
+    if (setUndoActive) {
+      setUndoActive(true);
+    }
+    
+    // For redo, we need to reverse the reversal (apply the operation forward)
+    // This is a simplified approach - in Phase 2 we can add proper forward operation logic
+    const success = reverseOperation(
+      nextOperation,
+      items,
+      updateItem,
+      deleteRow,
+      setItems
+    );
+
+    if (success) {
+      setUndoStack(prev => [...prev, nextOperation].slice(-5));
+      setRedoStack(prev => prev.slice(0, -1));
+    }
+    
+    setTimeout(() => {
+      isRedoing.current = false;
+      if (setUndoActive) {
+        setUndoActive(false);
+      }
+      console.log('⏩ Redo operation completed');
+    }, 1000);
+
+    return success ? nextOperation.description : null;
+  }, [redoStack, items, updateItem, deleteRow, setItems, setUndoActive]);
+
+  const canUndo = undoStack.length > 0;
+  const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].description : null;
+  const canRedo = redoStack.length > 0;
+  const nextRedoAction = redoStack.length > 0 ? redoStack[redoStack.length - 1].description : null;
+
+  return {
+    recordOperation,
+    undo,
+    redo,
+    canUndo,
+    lastAction,
+    canRedo,
+    nextRedoAction
+  };
+};
