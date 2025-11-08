@@ -587,63 +587,61 @@ const RundownHeader = ({
           </div>
           
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
-                <div className="flex flex-col py-1">
-                  <div className="flex items-center px-2 gap-1">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">Start:</span>
-                    <input
-                      ref={timeInputRef}
-                      type="text"
-                      value={localStartTime}
-                      onChange={handleTimeInputChange}
-                      onFocus={handleTimeInputFocus}
-                      onBlur={handleTimeInputBlur}
-                      placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                      className={`${clockFormat === '12' ? 'w-24 text-center' : 'w-16'} text-xs bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
-                    />
-                  </div>
-                  <div className="flex items-center px-2 gap-1 border-t border-gray-300 dark:border-gray-600">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">End:</span>
-                    <input
-                      type="text"
-                      value={localEndTime}
-                      onChange={handleEndTimeInputChange}
-                      onFocus={handleEndTimeInputFocus}
-                      onBlur={handleEndTimeInputBlur}
-                      placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                      className={`${clockFormat === '12' ? 'w-24 text-center' : 'w-16'} text-xs bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono border-0`}
-                    />
-                  </div>
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Start:</span>
+                  <input
+                    ref={timeInputRef}
+                    type="text"
+                    value={localStartTime}
+                    onChange={handleTimeInputChange}
+                    onFocus={handleTimeInputFocus}
+                    onBlur={handleTimeInputBlur}
+                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-background/50 px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
+                  />
                 </div>
-                {onShowDateChange && (
-                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-16 h-full justify-center text-center font-normal text-xs border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
-                          !showDate && "text-muted-foreground"
-                        )}
-                      >
-                        {showDate ? format(showDate, "MMM do") : "Date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={showDate || undefined}
-                        onSelect={(date) => {
-                          onShowDateChange(date || null);
-                          setIsDatePickerOpen(false);
-                        }}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">End:</span>
+                  <input
+                    type="text"
+                    value={localEndTime}
+                    onChange={handleEndTimeInputChange}
+                    onFocus={handleEndTimeInputFocus}
+                    onBlur={handleEndTimeInputBlur}
+                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} text-sm bg-background/50 px-2 py-0.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
+                  />
+                </div>
               </div>
+              {onShowDateChange && (
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-[52px] px-3 text-sm",
+                        !showDate && "text-muted-foreground"
+                      )}
+                    >
+                      {showDate ? format(showDate, "MMM do") : "Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={showDate || undefined}
+                      onSelect={(date) => {
+                        onShowDateChange(date || null);
+                        setIsDatePickerOpen(false);
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
             <span>TRT: {totalRuntime}</span>
           </div>
@@ -730,63 +728,61 @@ const RundownHeader = ({
           />
           
           
-          <div className="flex items-center space-x-2">
-            <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
-              <div className="flex flex-col py-1">
-                <div className="flex items-center px-3 gap-2">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Start:</span>
-                  <input
-                    ref={timeInputRef}
-                    type="text"
-                    value={localStartTime}
-                    onChange={handleTimeInputChange}
-                    onFocus={handleTimeInputFocus}
-                    onBlur={handleTimeInputBlur}
-                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
-                  />
-                </div>
-                <div className="flex items-center px-3 gap-2 border-t border-gray-300 dark:border-gray-600">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">End:</span>
-                  <input
-                    type="text"
-                    value={localEndTime}
-                    onChange={handleEndTimeInputChange}
-                    onFocus={handleEndTimeInputFocus}
-                    onBlur={handleEndTimeInputBlur}
-                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} bg-transparent py-0.5 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0`}
-                  />
-                </div>
+          <div className="flex items-center space-x-3">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Start:</span>
+                <input
+                  ref={timeInputRef}
+                  type="text"
+                  value={localStartTime}
+                  onChange={handleTimeInputChange}
+                  onFocus={handleTimeInputFocus}
+                  onBlur={handleTimeInputBlur}
+                  placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-background/50 px-3 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
+                />
               </div>
-              {onShowDateChange && (
-                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-20 h-full justify-center text-center font-normal text-sm border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
-                        !showDate && "text-muted-foreground"
-                      )}
-                    >
-                      {showDate ? format(showDate, "MMM do") : "Date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={showDate || undefined}
-                      onSelect={(date) => {
-                        onShowDateChange(date || null);
-                        setIsDatePickerOpen(false);
-                      }}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">End:</span>
+                <input
+                  type="text"
+                  value={localEndTime}
+                  onChange={handleEndTimeInputChange}
+                  onFocus={handleEndTimeInputFocus}
+                  onBlur={handleEndTimeInputBlur}
+                  placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} bg-background/50 px-3 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
+                />
+              </div>
             </div>
+            {onShowDateChange && (
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-[60px] px-4",
+                      !showDate && "text-muted-foreground"
+                    )}
+                  >
+                    {showDate ? format(showDate, "MMM do") : "Date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={showDate || undefined}
+                    onSelect={(date) => {
+                      onShowDateChange(date || null);
+                      setIsDatePickerOpen(false);
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
           
           <span className="text-sm text-gray-600 dark:text-gray-400">
