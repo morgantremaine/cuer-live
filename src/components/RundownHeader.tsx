@@ -114,6 +114,15 @@ const RundownHeader = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rundownStartTime, clockFormat, isEditingStartTime]);
   
+  // Update end time format when clock format changes
+  useEffect(() => {
+    if (!isEditingEndTime && localEndTime && localEndTime !== '') {
+      const formattedTime = clockFormat === '12' ? formatClockTime(localEndTime) : localEndTime;
+      setLocalEndTime(formattedTime);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clockFormat, isEditingEndTime]);
+  
   // Handlers for end time
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalEndTime(e.target.value);
