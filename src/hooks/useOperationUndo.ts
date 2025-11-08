@@ -13,6 +13,23 @@ interface UseOperationUndoProps {
   onOperationComplete?: (operationType: string, operationData: any) => void;
 }
 
+// Helper function to map operation types to their reverse for broadcasting
+const getReverseOperationType = (originalType: string): string | null => {
+  switch (originalType) {
+    case 'add_row':
+    case 'add_header':
+      return 'delete_row';
+    case 'delete_row':
+      return 'add_row';
+    case 'reorder':
+      return 'reorder';
+    case 'cell_edit':
+      return null; // Handled by per-cell save
+    default:
+      return null;
+  }
+};
+
 export const useOperationUndo = ({ 
   items,
   updateItem,
@@ -78,9 +95,12 @@ export const useOperationUndo = ({
       setRedoStack(prev => [...prev, lastOperation].slice(-5));
       setUndoStack(prev => prev.slice(0, -1));
       
-      // Trigger broadcast/save via callback
+      // Trigger broadcast/save via callback with REVERSE operation type
       if (onOperationComplete) {
-        onOperationComplete(lastOperation.type, lastOperation.data);
+        const reverseOpType = getReverseOperationType(lastOperation.type);
+        if (reverseOpType) {
+          onOperationComplete(reverseOpType, lastOperation.data);
+        }
       }
     }
     
@@ -124,8 +144,8 @@ export const useOperationUndo = ({
       setUndoStack(prev => [...prev, nextOperation].slice(-5));
       setRedoStack(prev => prev.slice(0, -1));
       
-      // Trigger broadcast/save via callback
-      if (onOperationComplete) {
+      // Trigger broadcast/save via callback (skip cell_edit, handled by per-cell save)
+      if (onOperationComplete && nextOperation.type !== 'cell_edit') {
         onOperationComplete(nextOperation.type, nextOperation.data);
       }
     }
