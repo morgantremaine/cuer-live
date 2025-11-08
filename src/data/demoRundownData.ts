@@ -5,7 +5,8 @@ export const DEMO_RUNDOWN_ID = 'demo-rundown-template';
 export const DEMO_RUNDOWN_DATA = {
   id: DEMO_RUNDOWN_ID,
   title: 'Demo Rundown - Your Template',
-  start_time: '09:00:00',
+  start_time: '13:00:00',
+  end_time: '15:00:00',
   timezone: 'America/New_York',
   items: [
     {

@@ -1162,6 +1162,7 @@ export const useSimplifiedRundownState = () => {
             columns: [],
             title: DEMO_RUNDOWN_DATA.title,
             startTime: DEMO_RUNDOWN_DATA.start_time,
+            endTime: DEMO_RUNDOWN_DATA.end_time,
             timezone: DEMO_RUNDOWN_DATA.timezone
           });
           
