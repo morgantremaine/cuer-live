@@ -238,6 +238,30 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         
         // Normalize any missing fields to prevent dropped columns
         const normalized = normalizeColumns(loadedColumns);
+        
+        // Check if there are new default columns that should be auto-shown
+        const savedKeys = new Set(normalized.map(c => c.key));
+        const missingDefaults = defaultColumns.filter(dc => !savedKeys.has(dc.key));
+        
+        if (missingDefaults.length > 0) {
+          console.log(`✨ Found ${missingDefaults.length} new default columns, adding them:`, missingDefaults.map(c => c.name));
+          debugLogger.preferences('Auto-adding new default columns: ' + missingDefaults.map(c => c.name).join(', '));
+          
+          // Insert new defaults at their proper position in the default order
+          missingDefaults.forEach(newCol => {
+            const defaultIndex = defaultColumns.findIndex(dc => dc.key === newCol.key);
+            // Find the correct position to insert based on default order
+            let insertIndex = 0;
+            for (let i = 0; i < normalized.length; i++) {
+              const currentColDefaultIndex = defaultColumns.findIndex(dc => dc.key === normalized[i].key);
+              if (currentColDefaultIndex !== -1 && currentColDefaultIndex < defaultIndex) {
+                insertIndex = i + 1;
+              }
+            }
+            normalized.splice(insertIndex, 0, { ...newCol, isVisible: true });
+          });
+        }
+        
         const mergedColumns = mergeColumnsWithTeamColumns(normalized);
         setColumns(mergedColumns);
         console.log('✅ Column preferences hydrated:', mergedColumns.length);
