@@ -457,11 +457,17 @@ export const useSimplifiedRundownState = () => {
   // Standalone undo system - now with redo
   const { saveState: saveUndoState, undo, canUndo, lastAction, redo, canRedo, nextRedoAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
+      // STEP 1: Capture current state BEFORE undo
+      const previousItems = [...state.items];
+      const previousTitle = state.title;
+      
       setUndoActive(true);
+      
+      // STEP 2: Restore the state
       actions.setItems(items);
       actions.setTitle(title);
       
-      // Broadcast the undo/redo as a structural change
+      // STEP 3: Broadcast reorder immediately (existing logic)
       if (rundownId && currentUserId) {
         const order = items.map(i => i.id);
         setTimeout(() => {
@@ -476,7 +482,73 @@ export const useSimplifiedRundownState = () => {
         }, 0);
       }
       
+      // STEP 4: NEW - Explicitly detect and broadcast actual field changes
       setTimeout(() => {
+        if (rundownId && currentUserId) {
+          const fieldUpdates: any[] = [];
+          
+          // Compare old vs new items to find actual changes
+          items.forEach((newItem) => {
+            const oldItem = previousItems.find(i => i.id === newItem.id);
+            if (oldItem) {
+              // Compare each field
+              Object.keys(newItem).forEach(field => {
+                if (field === 'id') return; // Skip ID
+                
+                // Use JSON stringify for deep comparison
+                const oldValue = JSON.stringify(oldItem[field]);
+                const newValue = JSON.stringify(newItem[field]);
+                
+                if (oldValue !== newValue) {
+                  fieldUpdates.push({
+                    itemId: newItem.id,
+                    field,
+                    value: newItem[field]
+                  });
+                }
+              });
+            } else {
+              // Item was added - broadcast all fields
+              Object.keys(newItem).forEach(field => {
+                if (field !== 'id') {
+                  fieldUpdates.push({
+                    itemId: newItem.id,
+                    field,
+                    value: newItem[field]
+                  });
+                }
+              });
+            }
+          });
+          
+          // Check title changes
+          if (title !== previousTitle) {
+            fieldUpdates.push({
+              itemId: undefined,
+              field: 'title',
+              value: title
+            });
+          }
+          
+          // CRITICAL: Immediately broadcast all detected changes
+          if (fieldUpdates.length > 0) {
+            console.log('📡 Undo: Broadcasting field changes:', {
+              count: fieldUpdates.length,
+              fields: fieldUpdates.map(u => `${u.itemId}-${u.field}`).join(', ')
+            });
+            
+            cellBroadcast.broadcastBatch(
+              rundownId,
+              fieldUpdates,
+              currentUserId,
+              getTabId()
+            );
+          }
+        }
+        
+        // STEP 5: Trigger save for persistence
+        triggerImmediateSave();
+        
         actions.markSaved();
         actions.setItems([...items]);
         setUndoActive(false);
@@ -775,11 +847,7 @@ export const useSimplifiedRundownState = () => {
     
     // CRITICAL: Skip tracking if the last change was from a different user (remote change)
     if (lastChangeUserIdRef.current !== null && lastChangeUserIdRef.current !== currentUserId) {
-      console.log('⏭️ Skipping change tracking - remote user change:', {
-        remoteUserId: lastChangeUserIdRef.current,
-        currentUserId,
-        reason: 'Change came from another user via broadcast'
-      });
+      // Skip tracking remote changes (removed excessive logging)
       previousStateRef.current = state;
       return;
     }
