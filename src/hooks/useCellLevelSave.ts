@@ -14,7 +14,7 @@ interface FieldUpdate {
 }
 
 // Fields that should save quickly (non-typing interactions like dropdowns/pickers)
-const QUICK_SAVE_FIELDS = ['timezone', 'startTime', 'showDate', 'title'];
+const QUICK_SAVE_FIELDS = ['timezone', 'startTime', 'endTime', 'showDate', 'title'];
 const QUICK_SAVE_DELAY = 300; // 300ms for quick-save fields
 
 export const useCellLevelSave = (

@@ -115,6 +115,7 @@ serve(async (req) => {
     const updatedItems = [...(currentRundown.items || [])]
     let updatedTitle = currentRundown.title
     let updatedStartTime = currentRundown.start_time
+    let updatedEndTime = currentRundown.end_time
     let updatedTimezone = currentRundown.timezone
     let updatedShowDate = currentRundown.show_date
     let updatedExternalNotes = currentRundown.external_notes
@@ -151,6 +152,9 @@ serve(async (req) => {
           case 'startTime':
             updatedStartTime = update.value
             break
+          case 'endTime':
+            updatedEndTime = update.value
+            break
           case 'timezone':
             updatedTimezone = update.value
             break
@@ -183,6 +187,7 @@ serve(async (req) => {
       items: updatedItems,
       title: updatedTitle,
       start_time: updatedStartTime,
+      end_time: updatedEndTime,
       timezone: updatedTimezone,
       show_date: updatedShowDate,
       external_notes: updatedExternalNotes,
