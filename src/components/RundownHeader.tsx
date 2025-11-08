@@ -593,7 +593,7 @@ const RundownHeader = ({
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-[50px] px-3 text-sm font-mono hover:bg-accent"
+                    className="h-10 px-3 text-sm font-mono hover:bg-accent"
                   >
                     {localStartTime} - {localEndTime}
                   </Button>
@@ -632,13 +632,13 @@ const RundownHeader = ({
               {onShowDateChange && (
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "h-[50px] px-3 text-sm",
-                        !showDate && "text-muted-foreground"
-                      )}
-                    >
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-10 px-3 text-sm",
+                      !showDate && "text-muted-foreground"
+                    )}
+                  >
                       {showDate ? format(showDate, "MMM do") : "Date"}
                     </Button>
                   </PopoverTrigger>
@@ -748,7 +748,7 @@ const RundownHeader = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="h-[58px] px-4 font-mono hover:bg-accent"
+                  className="h-10 px-4 font-mono hover:bg-accent"
                 >
                   {localStartTime} - {localEndTime}
                 </Button>
@@ -787,13 +787,13 @@ const RundownHeader = ({
             {onShowDateChange && (
               <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-[58px] px-4",
-                      !showDate && "text-muted-foreground"
-                    )}
-                  >
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-10 px-4",
+                    !showDate && "text-muted-foreground"
+                  )}
+                >
                     {showDate ? format(showDate, "MMM do") : "Date"}
                   </Button>
                 </PopoverTrigger>
