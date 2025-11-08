@@ -6,12 +6,13 @@ import { useLocalSharedColumnOrder } from '@/hooks/useLocalSharedColumnOrder';
 import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/hooks/useTheme';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
+import { calculateTotalRuntime, calculateEndTime } from '@/utils/rundownCalculations';
 
 import { useTabFocus } from '@/hooks/useTabFocus';
 
@@ -291,6 +292,13 @@ const SharedRundown = () => {
 
   const displayData = rundownData;
 
+  // Calculate rundown end time for back time calculations
+  const rundownEndTime = useMemo(() => {
+    if (!displayData?.startTime || !displayData?.items) return undefined;
+    const totalRuntime = calculateTotalRuntime(displayData.items);
+    return calculateEndTime(displayData.startTime, totalRuntime);
+  }, [displayData?.startTime, displayData?.items]);
+
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
       <div className={`h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
@@ -319,6 +327,7 @@ const SharedRundown = () => {
               currentSegmentId={currentSegmentId}
               isPlaying={isPlaying}
               rundownStartTime={displayData.startTime || '09:00:00'}
+              rundownEndTime={rundownEndTime}
               isDark={isDark}
               onReorderColumns={reorderColumns}
             />
