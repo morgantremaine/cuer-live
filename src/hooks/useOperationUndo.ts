@@ -30,6 +30,41 @@ const getReverseOperationType = (originalType: string): string | null => {
   }
 };
 
+// Helper function to transform operation data to match reverse operation's expected format
+const transformDataForReverseOp = (originalType: string, originalData: any): any => {
+  switch (originalType) {
+    case 'add_row':
+    case 'add_header':
+      // Original: { addedItem, addedIndex, addedItemId }
+      // Reverse (delete_row) expects: { deletedItem, deletedIndex, deletedIds }
+      return {
+        deletedItem: originalData.addedItem,
+        deletedIndex: originalData.addedIndex,
+        deletedIds: [originalData.addedItemId]
+      };
+      
+    case 'delete_row':
+      // Original: { deletedItem, deletedIndex }
+      // Reverse (add_row) expects: { addedItem, addedIndex, addedItemId }
+      return {
+        addedItem: originalData.deletedItem,
+        addedIndex: originalData.deletedIndex,
+        addedItemId: originalData.deletedItem.id
+      };
+      
+    case 'reorder':
+      // Original: { oldOrder, newOrder }
+      // Reverse (reorder) expects: { oldOrder, newOrder } but swapped
+      return {
+        oldOrder: originalData.newOrder,
+        newOrder: originalData.oldOrder
+      };
+      
+    default:
+      return originalData;
+  }
+};
+
 export const useOperationUndo = ({ 
   items,
   updateItem,
@@ -95,11 +130,12 @@ export const useOperationUndo = ({
       setRedoStack(prev => [...prev, lastOperation].slice(-5));
       setUndoStack(prev => prev.slice(0, -1));
       
-      // Trigger broadcast/save via callback with REVERSE operation type
+      // Trigger broadcast/save via callback with REVERSE operation type and transformed data
       if (onOperationComplete) {
         const reverseOpType = getReverseOperationType(lastOperation.type);
         if (reverseOpType) {
-          onOperationComplete(reverseOpType, lastOperation.data);
+          const transformedData = transformDataForReverseOp(lastOperation.type, lastOperation.data);
+          onOperationComplete(reverseOpType, transformedData);
         }
       }
     }
