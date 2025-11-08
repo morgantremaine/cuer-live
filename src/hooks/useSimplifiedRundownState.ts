@@ -774,7 +774,12 @@ export const useSimplifiedRundownState = () => {
     if (!perCellEnabled || !isInitialized) return;
     
     // CRITICAL: Skip tracking if the last change was from a different user (remote change)
-    if (lastChangeUserIdRef.current && lastChangeUserIdRef.current !== currentUserId) {
+    if (lastChangeUserIdRef.current !== null && lastChangeUserIdRef.current !== currentUserId) {
+      console.log('⏭️ Skipping change tracking - remote user change:', {
+        remoteUserId: lastChangeUserIdRef.current,
+        currentUserId,
+        reason: 'Change came from another user via broadcast'
+      });
       previousStateRef.current = state;
       return;
     }
