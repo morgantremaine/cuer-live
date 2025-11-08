@@ -104,7 +104,11 @@ const RundownHeader = ({
   const [localStartTime, setLocalStartTime] = useState('');
   const [isEditingEndTime, setIsEditingEndTime] = useState(false);
   const [localEndTime, setLocalEndTime] = useState('');
-  const [endTime24h, setEndTime24h] = useState(''); // Store end time in 24-hour format
+  const [endTime24h, setEndTime24h] = useState(() => {
+    // Load end time from localStorage on mount
+    const saved = localStorage.getItem(`rundown-end-time-${rundownId}`);
+    return saved || '';
+  });
 
   // Initialize local time states when rundownStartTime changes (but not while editing)
   useEffect(() => {
@@ -123,6 +127,13 @@ const RundownHeader = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clockFormat, isEditingEndTime, endTime24h]);
+  
+  // Save end time to localStorage when it changes
+  useEffect(() => {
+    if (endTime24h && rundownId) {
+      localStorage.setItem(`rundown-end-time-${rundownId}`, endTime24h);
+    }
+  }, [endTime24h, rundownId]);
   
   // Handlers for end time
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
