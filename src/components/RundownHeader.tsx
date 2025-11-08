@@ -547,13 +547,11 @@ const RundownHeader = ({
               <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
                 <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size={null}
-                      className="h-8 w-fit justify-center text-center font-mono text-sm border-0 rounded-none px-1"
+                    <button
+                      className="h-8 px-1 font-mono text-sm bg-transparent hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
                     >
                       {formatClockTime(rundownStartTime)}
-                    </Button>
+                    </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <div className="p-4 space-y-3">
