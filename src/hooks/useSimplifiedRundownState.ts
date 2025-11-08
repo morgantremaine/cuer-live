@@ -1191,6 +1191,7 @@ export const useSimplifiedRundownState = () => {
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
+              endTime: data.end_time || '',
               timezone: data.timezone || 'America/New_York',
               showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
               externalNotes: data.external_notes,
@@ -1703,6 +1704,7 @@ export const useSimplifiedRundownState = () => {
     visibleColumns,
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
+    rundownEndTime: state.endTime || '',
     timezone: state.timezone,
     showDate: state.showDate,
     lastKnownTimestamp,
@@ -1798,6 +1800,28 @@ export const useSimplifiedRundownState = () => {
       
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
+    setEndTime: useCallback((newEndTime: string) => {
+      console.log('🧪 SIMPLIFIED STATE: setEndTime called with:', newEndTime);
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking endTime change for per-cell save');
+        cellEditIntegration.handleCellChange(undefined, 'endTime', newEndTime);
+      }
+      
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'endTime', newEndTime, currentUserId, getTabId());
+      }
+      
+      actions.setEndTime(newEndTime);
+    }, [actions.setEndTime, rundownId, currentUserId, cellEditIntegration]),
     setTimezone: useCallback((newTimezone: string) => {
       console.log('🧪 SIMPLIFIED STATE: setTimezone called with:', newTimezone);
       if (blockUntilLocalEditRef.current) {

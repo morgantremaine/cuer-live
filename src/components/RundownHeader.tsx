@@ -35,6 +35,8 @@ interface RundownHeaderProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  rundownEndTime?: string;
+  onRundownEndTimeChange?: (endTime: string) => void;
   showDate?: Date | null;
   onShowDateChange?: (date: Date | null) => void;
   items?: any[];
@@ -70,6 +72,8 @@ const RundownHeader = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
+  rundownEndTime,
+  onRundownEndTimeChange,
   showDate,
   onShowDateChange,
   onUndo,
@@ -104,11 +108,6 @@ const RundownHeader = ({
   const [localStartTime, setLocalStartTime] = useState('');
   const [isEditingEndTime, setIsEditingEndTime] = useState(false);
   const [localEndTime, setLocalEndTime] = useState('');
-  const [endTime24h, setEndTime24h] = useState(() => {
-    // Load end time from localStorage on mount
-    const saved = localStorage.getItem(`rundown-end-time-${rundownId}`);
-    return saved || '';
-  });
 
   // Initialize local time states when rundownStartTime changes (but not while editing)
   useEffect(() => {
@@ -119,21 +118,14 @@ const RundownHeader = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rundownStartTime, clockFormat, isEditingStartTime]);
   
-  // Update end time display format when clock format changes
+  // Update end time display format when rundownEndTime or clock format changes
   useEffect(() => {
-    if (!isEditingEndTime && endTime24h && endTime24h !== '') {
-      const formattedTime = clockFormat === '12' ? formatClockTime(endTime24h) : endTime24h;
+    if (!isEditingEndTime && rundownEndTime) {
+      const formattedTime = clockFormat === '12' ? formatClockTime(rundownEndTime) : rundownEndTime;
       setLocalEndTime(formattedTime);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clockFormat, isEditingEndTime, endTime24h]);
-  
-  // Save end time to localStorage when it changes
-  useEffect(() => {
-    if (endTime24h && rundownId) {
-      localStorage.setItem(`rundown-end-time-${rundownId}`, endTime24h);
-    }
-  }, [endTime24h, rundownId]);
+  }, [clockFormat, isEditingEndTime, rundownEndTime]);
   
   // Handlers for end time
   const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,11 +138,15 @@ const RundownHeader = ({
 
   const handleEndTimeBlur = () => {
     const validatedTime = parseTimeInput(localEndTime);
-    setEndTime24h(validatedTime); // Store in 24-hour format
+    
+    // Save to database using the same pattern as start time
+    if (onRundownEndTimeChange) {
+      onRundownEndTimeChange(validatedTime);
+    }
+    
     const displayFormatted = clockFormat === '12' ? formatClockTime(validatedTime) : validatedTime;
     setLocalEndTime(displayFormatted);
     setIsEditingEndTime(false);
-    // Note: End time doesn't affect rundown yet - will add functionality later
   };
 
   const handleEndTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

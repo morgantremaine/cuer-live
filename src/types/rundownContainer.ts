@@ -67,6 +67,8 @@ export interface RundownContainerProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  rundownEndTime?: string;
+  onRundownEndTimeChange?: (endTime: string) => void;
   showDate?: Date | null;
   onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
