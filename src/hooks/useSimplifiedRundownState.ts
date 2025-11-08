@@ -475,7 +475,11 @@ export const useSimplifiedRundownState = () => {
       actions.setItems(items);
     },
     setUndoActive,
-    userId: currentUserId || 'anonymous'
+    userId: currentUserId || 'anonymous',
+    onOperationComplete: (operationType, operationData) => {
+      // Broadcast undo/redo operations to other users
+      markStructuralChange(operationType, operationData);
+    }
   });
 
   // Cell-level broadcast system for immediate sync

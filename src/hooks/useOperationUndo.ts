@@ -10,6 +10,7 @@ interface UseOperationUndoProps {
   setItems: (items: RundownItem[]) => void;
   setUndoActive?: (active: boolean) => void;
   userId?: string;
+  onOperationComplete?: (operationType: string, operationData: any) => void;
 }
 
 export const useOperationUndo = ({ 
@@ -18,7 +19,8 @@ export const useOperationUndo = ({
   deleteRow,
   setItems,
   setUndoActive,
-  userId = 'anonymous'
+  userId = 'anonymous',
+  onOperationComplete
 }: UseOperationUndoProps) => {
   const [undoStack, setUndoStack] = useState<UndoableOperation[]>([]);
   const [redoStack, setRedoStack] = useState<UndoableOperation[]>([]);
@@ -75,6 +77,11 @@ export const useOperationUndo = ({
       // Move operation to redo stack
       setRedoStack(prev => [...prev, lastOperation].slice(-5));
       setUndoStack(prev => prev.slice(0, -1));
+      
+      // Trigger broadcast/save via callback
+      if (onOperationComplete) {
+        onOperationComplete(lastOperation.type, lastOperation.data);
+      }
     }
     
     setTimeout(() => {
@@ -86,7 +93,7 @@ export const useOperationUndo = ({
     }, 1000);
 
     return success ? lastOperation.description : null;
-  }, [undoStack, items, updateItem, deleteRow, setItems, setUndoActive]);
+  }, [undoStack, items, updateItem, deleteRow, setItems, setUndoActive, onOperationComplete]);
 
   // Perform redo operation
   const redo = useCallback(() => {
@@ -116,6 +123,11 @@ export const useOperationUndo = ({
     if (success) {
       setUndoStack(prev => [...prev, nextOperation].slice(-5));
       setRedoStack(prev => prev.slice(0, -1));
+      
+      // Trigger broadcast/save via callback
+      if (onOperationComplete) {
+        onOperationComplete(nextOperation.type, nextOperation.data);
+      }
     }
     
     setTimeout(() => {
@@ -127,7 +139,7 @@ export const useOperationUndo = ({
     }, 1000);
 
     return success ? nextOperation.description : null;
-  }, [redoStack, items, updateItem, deleteRow, setItems, setUndoActive]);
+  }, [redoStack, items, updateItem, deleteRow, setItems, setUndoActive, onOperationComplete]);
 
   const canUndo = undoStack.length > 0;
   const lastAction = undoStack.length > 0 ? undoStack[undoStack.length - 1].description : null;
