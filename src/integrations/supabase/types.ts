@@ -304,89 +304,6 @@ export type Database = {
         }
         Relationships: []
       }
-      mos_connection_status: {
-        Row: {
-          connected: boolean
-          error_message: string | null
-          last_heartbeat: string | null
-          team_id: string
-          updated_at: string
-          xpression_host: string | null
-        }
-        Insert: {
-          connected?: boolean
-          error_message?: string | null
-          last_heartbeat?: string | null
-          team_id: string
-          updated_at?: string
-          xpression_host?: string | null
-        }
-        Update: {
-          connected?: boolean
-          error_message?: string | null
-          last_heartbeat?: string | null
-          team_id?: string
-          updated_at?: string
-          xpression_host?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mos_connection_status_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: true
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mos_message_log: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          id: string
-          message_payload: Json
-          message_type: string
-          rundown_id: string | null
-          status: string
-          team_id: string
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          message_payload: Json
-          message_type: string
-          rundown_id?: string | null
-          status?: string
-          team_id: string
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          message_payload?: Json
-          message_type?: string
-          rundown_id?: string | null
-          status?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mos_message_log_rundown_id_fkey"
-            columns: ["rundown_id"]
-            isOneToOne: false
-            referencedRelation: "rundowns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mos_message_log_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           created_at: string | null
@@ -630,7 +547,6 @@ export type Database = {
           columns: Json | null
           created_at: string | null
           doc_version: number
-          end_time: string | null
           external_notes: Json | null
           folder_id: string | null
           icon: string | null
@@ -660,7 +576,6 @@ export type Database = {
           columns?: Json | null
           created_at?: string | null
           doc_version?: number
-          end_time?: string | null
           external_notes?: Json | null
           folder_id?: string | null
           icon?: string | null
@@ -690,7 +605,6 @@ export type Database = {
           columns?: Json | null
           created_at?: string | null
           doc_version?: number
-          end_time?: string | null
           external_notes?: Json | null
           folder_id?: string | null
           icon?: string | null
@@ -1096,104 +1010,6 @@ export type Database = {
           },
         ]
       }
-      team_mos_field_mappings: {
-        Row: {
-          created_at: string
-          cuer_column_key: string
-          field_order: number | null
-          id: string
-          is_template_column: boolean | null
-          mos_integration_id: string
-          team_id: string
-          xpression_field_name: string
-        }
-        Insert: {
-          created_at?: string
-          cuer_column_key: string
-          field_order?: number | null
-          id?: string
-          is_template_column?: boolean | null
-          mos_integration_id: string
-          team_id: string
-          xpression_field_name: string
-        }
-        Update: {
-          created_at?: string
-          cuer_column_key?: string
-          field_order?: number | null
-          id?: string
-          is_template_column?: boolean | null
-          mos_integration_id?: string
-          team_id?: string
-          xpression_field_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_mos_field_mappings_mos_integration_id_fkey"
-            columns: ["mos_integration_id"]
-            isOneToOne: false
-            referencedRelation: "team_mos_integrations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_mos_field_mappings_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_mos_integrations: {
-        Row: {
-          auto_take_enabled: boolean | null
-          created_at: string
-          created_by: string
-          debounce_ms: number | null
-          enabled: boolean
-          id: string
-          mos_id: string
-          team_id: string
-          updated_at: string
-          xpression_host: string | null
-          xpression_port: number | null
-        }
-        Insert: {
-          auto_take_enabled?: boolean | null
-          created_at?: string
-          created_by: string
-          debounce_ms?: number | null
-          enabled?: boolean
-          id?: string
-          mos_id: string
-          team_id: string
-          updated_at?: string
-          xpression_host?: string | null
-          xpression_port?: number | null
-        }
-        Update: {
-          auto_take_enabled?: boolean | null
-          created_at?: string
-          created_by?: string
-          debounce_ms?: number | null
-          enabled?: boolean
-          id?: string
-          mos_id?: string
-          team_id?: string
-          updated_at?: string
-          xpression_host?: string | null
-          xpression_port?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_mos_integrations_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: true
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       teams: {
         Row: {
           created_at: string | null
@@ -1302,18 +1118,42 @@ export type Database = {
         Args: { profile_user_id: string }
         Returns: boolean
       }
-      cleanup_accepted_invitations: { Args: never; Returns: undefined }
+      cleanup_accepted_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_deleted_team_column: {
         Args: { column_key: string; team_uuid: string }
         Returns: undefined
       }
-      cleanup_expired_invitations: { Args: never; Returns: undefined }
-      cleanup_expired_invitations_auto: { Args: never; Returns: undefined }
-      cleanup_inactive_showcaller_sessions: { Args: never; Returns: undefined }
-      cleanup_old_backups: { Args: never; Returns: undefined }
-      cleanup_old_operations: { Args: never; Returns: undefined }
-      cleanup_old_presence: { Args: never; Returns: undefined }
-      cleanup_old_revisions: { Args: never; Returns: undefined }
+      cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_invitations_auto: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_inactive_showcaller_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_backups: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_operations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_revisions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_orphaned_custom_columns: {
         Args: { new_owner_id: string; target_team_id: string }
         Returns: Json
@@ -1322,7 +1162,10 @@ export type Database = {
         Args: { new_owner_id: string; target_team_id: string }
         Returns: Json
       }
-      cleanup_orphaned_memberships: { Args: never; Returns: undefined }
+      cleanup_orphaned_memberships: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_demo_content_for_user: {
         Args: { target_team_id: string; target_user_id: string }
         Returns: undefined
@@ -1343,13 +1186,22 @@ export type Database = {
         Args: { member_id: string; team_id_param: string }
         Returns: Json
       }
-      get_next_sequence_number: { Args: never; Returns: number }
-      get_or_create_user_team: { Args: { user_uuid: string }; Returns: string }
+      get_next_sequence_number: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_or_create_user_team: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_public_layout_for_rundown: {
         Args: { layout_uuid: string; rundown_uuid: string }
         Returns: Json
       }
-      get_public_rundown_data: { Args: { rundown_uuid: string }; Returns: Json }
+      get_public_rundown_data: {
+        Args: { rundown_uuid: string }
+        Returns: Json
+      }
       get_rundown_with_field_updates: {
         Args: { rundown_uuid: string }
         Returns: Json
@@ -1380,7 +1232,10 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_user_email_safe: { Args: { user_uuid: string }; Returns: string }
+      get_user_email_safe: {
+        Args: { user_uuid: string }
+        Returns: string
+      }
       get_user_role_in_team: {
         Args: { team_uuid: string; user_uuid: string }
         Returns: string
@@ -1389,12 +1244,18 @@ export type Database = {
         Args: { team_uuid?: string; user_uuid: string }
         Returns: Json
       }
-      get_user_team_ids: { Args: { user_uuid: string }; Returns: string[] }
+      get_user_team_ids: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
       get_user_team_ids_for_layouts: {
         Args: { user_uuid: string }
         Returns: string[]
       }
-      get_user_team_ids_safe: { Args: { user_uuid: string }; Returns: string[] }
+      get_user_team_ids_safe: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
       get_user_team_memberships: {
         Args: { user_uuid: string }
         Returns: {
@@ -1403,8 +1264,14 @@ export type Database = {
           team_id: string
         }[]
       }
-      get_user_teams: { Args: { user_uuid: string }; Returns: string[] }
-      grandfather_existing_admins: { Args: never; Returns: undefined }
+      get_user_teams: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
+      grandfather_existing_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       increment_blog_post_view: {
         Args: { post_uuid: string }
         Returns: undefined
@@ -1465,7 +1332,10 @@ export type Database = {
         Args: { team_id_to_leave: string; user_id_leaving: string }
         Returns: Json
       }
-      migrate_existing_custom_columns: { Args: never; Returns: undefined }
+      migrate_existing_custom_columns: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json

@@ -10,10 +10,8 @@ import { parseTimeInput, isValidTimeInput } from '@/utils/timeInputParser';
 interface HeaderBottomSectionProps {
   totalRuntime: string;
   rundownStartTime: string;
-  rundownEndTime: string;
   timezone: string;
   onRundownStartTimeChange: (startTime: string) => void;
-  onRundownEndTimeChange: (endTime: string) => void;
   items?: RundownItem[];
   isPlaying?: boolean;
   currentSegmentId?: string | null;
@@ -23,10 +21,8 @@ interface HeaderBottomSectionProps {
 const HeaderBottomSection = ({
   totalRuntime,
   rundownStartTime,
-  rundownEndTime,
   timezone,
   onRundownStartTimeChange,
-  onRundownEndTimeChange,
   items = [],
   isPlaying = false,
   currentSegmentId = null,
@@ -34,11 +30,9 @@ const HeaderBottomSection = ({
 }: HeaderBottomSectionProps) => {
   const { formatTime } = useClockFormat();
   
-  // Local state for the inputs to prevent external updates from interfering with typing
+  // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
-  const [localEndTime, setLocalEndTime] = useState(rundownEndTime);
   const [isFocused, setIsFocused] = useState(false);
-  const [isEndFocused, setIsEndFocused] = useState(false);
 
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
@@ -57,13 +51,6 @@ const HeaderBottomSection = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rundownStartTime, isFocused]);
-
-  useEffect(() => {
-    if (!isEndFocused) {
-      setLocalEndTime(formatTime(rundownEndTime));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rundownEndTime, isEndFocused]);
 
   const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartTime = e.target.value;
@@ -94,29 +81,6 @@ const HeaderBottomSection = ({
     }
   };
 
-  const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEndTime = e.target.value;
-    setLocalEndTime(newEndTime);
-  };
-
-  const handleEndFocus = () => {
-    setIsEndFocused(true);
-    setLocalEndTime(formatTime(rundownEndTime));
-  };
-
-  const handleEndBlur = () => {
-    setIsEndFocused(false);
-    const validatedTime = parseTimeInput(localEndTime);
-    onRundownEndTimeChange(validatedTime);
-    setLocalEndTime(formatTime(validatedTime));
-  };
-
-  const handleEndKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    }
-  };
-
   // Display calculated total runtime with proper formatting
   const displayRuntime = totalRuntime && totalRuntime !== '00:00:00' ? totalRuntime : '00:00:00';
   
@@ -127,34 +91,17 @@ const HeaderBottomSection = ({
         <span className="opacity-75">Total Runtime: {displayRuntime}</span>
         <div className="flex items-center space-x-2">
           <Clock className="h-4 w-4 opacity-75" />
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-center space-x-2">
-              <span className="opacity-75 text-xs">Start:</span>
-              <input
-                type="text"
-                value={localStartTime}
-                onChange={handleStartTimeChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-0.5 font-mono text-xs w-32 focus:outline-none focus:border-blue-500"
-                placeholder="00:00:00"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="opacity-75 text-xs">End:</span>
-              <input
-                type="text"
-                value={localEndTime}
-                onChange={handleEndTimeChange}
-                onFocus={handleEndFocus}
-                onBlur={handleEndBlur}
-                onKeyDown={handleEndKeyDown}
-                className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-0.5 font-mono text-xs w-32 focus:outline-none focus:border-blue-500"
-                placeholder="00:00:00"
-              />
-            </div>
-          </div>
+          <span className="opacity-75">Start Time:</span>
+          <input
+            type="text"
+            value={localStartTime}
+            onChange={handleStartTimeChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm w-40 focus:outline-none focus:border-blue-500"
+            placeholder="00:00:00"
+          />
         </div>
       </div>
       <div className="flex items-center space-x-3">

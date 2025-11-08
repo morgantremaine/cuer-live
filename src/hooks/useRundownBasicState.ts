@@ -14,7 +14,6 @@ export const useRundownBasicState = () => {
   const [showColumnManager, setShowColumnManager] = useState(false);
   const [rundownTitle, setRundownTitle] = useState('Live Broadcast Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('09:00:00');
-  const [rundownEndTime, setRundownEndTime] = useState('00:00:00');
   
   // Single initialization flag per app session
   const initRef = useRef<{ [key: string]: boolean }>({});
@@ -78,10 +77,6 @@ export const useRundownBasicState = () => {
     setRundownStartTime(newStartTime);
   };
 
-  const setRundownEndTimeDirectly = (newEndTime: string) => {
-    setRundownEndTime(newEndTime);
-  };
-
   // Change-tracking setters (for user interactions) - stabilize these functions
   const setTimezoneWithChange = (newTimezone: string) => {
     if (timezone !== newTimezone) {
@@ -104,13 +99,6 @@ export const useRundownBasicState = () => {
     }
   };
 
-  const setRundownEndTimeWithChange = (newEndTime: string) => {
-    if (rundownEndTime !== newEndTime) {
-      setRundownEndTime(newEndTime);
-      markAsChanged();
-    }
-  };
-
   return {
     currentTime,
     timezone,
@@ -124,9 +112,6 @@ export const useRundownBasicState = () => {
     rundownStartTime,
     setRundownStartTime: setRundownStartTimeWithChange,
     setRundownStartTimeDirectly,
-    rundownEndTime,
-    setRundownEndTime: setRundownEndTimeWithChange,
-    setRundownEndTimeDirectly,
     rundownId,
     markAsChanged,
     setAutoSaveTrigger

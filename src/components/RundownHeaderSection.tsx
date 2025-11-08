@@ -33,8 +33,6 @@ interface RundownHeaderSectionProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
-  rundownEndTime: string;
-  onRundownEndTimeChange: (endTime: string) => void;
   showDate?: Date | null;
   onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
@@ -100,8 +98,6 @@ const RundownHeaderSection = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
-  rundownEndTime,
-  onRundownEndTimeChange,
   showDate,
   onShowDateChange,
   rundownId,
@@ -150,8 +146,6 @@ const RundownHeaderSection = ({
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
-        rundownEndTime={rundownEndTime}
-        onRundownEndTimeChange={onRundownEndTimeChange}
         showDate={showDate}
         onShowDateChange={onShowDateChange}
         items={items}

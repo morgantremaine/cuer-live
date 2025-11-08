@@ -25,7 +25,7 @@ export const ClockFormatProvider = ({ children }: { children: ReactNode }) => {
   }, [clockFormat]);
 
   const formatTime = useCallback((timeString: string) => {
-    if (!timeString) return timeString;
+    if (!timeString || timeString === '00:00:00') return timeString;
     
     // Handle both HH:MM:SS and HH:MM formats
     const parts = timeString.split(':');

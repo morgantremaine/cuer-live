@@ -10,7 +10,6 @@ export interface SavedRundown {
   columns?: Column[]
   timezone?: string
   start_time?: string
-  end_time?: string
   show_date?: string | null
   icon?: string
   archived?: boolean
@@ -40,8 +39,7 @@ export interface RundownStorage {
     items: RundownItem[], 
     columns?: Column[], 
     timezone?: string, 
-    startTime?: string,
-    endTime?: string,
+    startTime?: string, 
     icon?: string,
     teamId?: string
   ) => Promise<string>
@@ -54,8 +52,7 @@ export interface RundownStorage {
     archived?: boolean, 
     columns?: Column[], 
     timezone?: string, 
-    startTime?: string,
-    endTime?: string,
+    startTime?: string, 
     icon?: string,
     undoHistory?: any[],
     teamId?: string
