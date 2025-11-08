@@ -588,33 +588,47 @@ const RundownHeader = ({
           
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-3">
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground w-10">Start:</span>
-                  <input
-                    ref={timeInputRef}
-                    type="text"
-                    value={localStartTime}
-                    onChange={handleTimeInputChange}
-                    onFocus={handleTimeInputFocus}
-                    onBlur={handleTimeInputBlur}
-                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} h-6 text-xs bg-background/50 px-2 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
-                  />
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground w-10">End:</span>
-                  <input
-                    type="text"
-                    value={localEndTime}
-                    onChange={handleEndTimeInputChange}
-                    onFocus={handleEndTimeInputFocus}
-                    onBlur={handleEndTimeInputBlur}
-                    placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                    className={`${clockFormat === '12' ? 'w-28 text-center' : 'w-20'} h-6 text-xs bg-background/50 px-2 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono border border-border/50`}
-                  />
-                </div>
-              </div>
+              {/* Time Range Display with Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-[50px] px-3 text-sm font-mono hover:bg-accent"
+                  >
+                    {formatClockTime(localStartTime)} - {formatClockTime(localEndTime)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-4" align="start">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-12">Start:</span>
+                      <input
+                        ref={timeInputRef}
+                        type="text"
+                        value={localStartTime}
+                        onChange={handleTimeInputChange}
+                        onFocus={handleTimeInputFocus}
+                        onBlur={handleTimeInputBlur}
+                        placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                        className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} h-8 text-sm bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded font-mono border border-border`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-12">End:</span>
+                      <input
+                        type="text"
+                        value={localEndTime}
+                        onChange={handleEndTimeInputChange}
+                        onFocus={handleEndTimeInputFocus}
+                        onBlur={handleEndTimeInputBlur}
+                        placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                        className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} h-8 text-sm bg-background px-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded font-mono border border-border`}
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
               {onShowDateChange && (
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                   <PopoverTrigger asChild>
@@ -728,34 +742,48 @@ const RundownHeader = ({
           />
           
           
+          {/* Time Range Display with Popover */}
           <div className="flex items-center space-x-3">
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground w-11">Start:</span>
-                <input
-                  ref={timeInputRef}
-                  type="text"
-                  value={localStartTime}
-                  onChange={handleTimeInputChange}
-                  onFocus={handleTimeInputFocus}
-                  onBlur={handleTimeInputBlur}
-                  placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} h-7 bg-background/50 px-3 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground w-11">End:</span>
-                <input
-                  type="text"
-                  value={localEndTime}
-                  onChange={handleEndTimeInputChange}
-                  onFocus={handleEndTimeInputFocus}
-                  onBlur={handleEndTimeInputBlur}
-                  placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
-                  className={`${clockFormat === '12' ? 'w-32 text-center' : 'w-24'} h-7 bg-background/50 px-3 py-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded font-mono text-sm border border-border/50`}
-                />
-              </div>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-[58px] px-4 font-mono hover:bg-accent"
+                >
+                  {formatClockTime(localStartTime)} - {formatClockTime(localEndTime)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="start">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-12">Start:</span>
+                    <input
+                      ref={timeInputRef}
+                      type="text"
+                      value={localStartTime}
+                      onChange={handleTimeInputChange}
+                      onFocus={handleTimeInputFocus}
+                      onBlur={handleTimeInputBlur}
+                      placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                      className={`${clockFormat === '12' ? 'w-36 text-center' : 'w-28'} h-9 bg-background px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded font-mono border border-border`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-12">End:</span>
+                    <input
+                      type="text"
+                      value={localEndTime}
+                      onChange={handleEndTimeInputChange}
+                      onFocus={handleEndTimeInputFocus}
+                      onBlur={handleEndTimeInputBlur}
+                      placeholder={clockFormat === '12' ? "HH:MM:SS AM/PM" : "HH:MM:SS"}
+                      className={`${clockFormat === '12' ? 'w-36 text-center' : 'w-28'} h-9 bg-background px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary rounded font-mono border border-border`}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
             {onShowDateChange && (
               <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                 <PopoverTrigger asChild>
