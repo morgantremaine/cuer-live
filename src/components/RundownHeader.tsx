@@ -546,16 +546,15 @@ const RundownHeader = ({
               <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
                 <Popover open={isTimePopoverOpen} onOpenChange={setIsTimePopoverOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "h-8 px-2 justify-start text-xs font-mono border-0 rounded-none",
-                        clockFormat === '12' ? 'w-28' : 'w-20'
-                      )}
-                    >
-                      {localStartTime || '00:00:00'}
-                      {localEndTime && ` - ${localEndTime}`}
-                    </Button>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "h-8 px-2 justify-start text-xs font-mono border-0 rounded-none",
+                      clockFormat === '12' ? 'w-28' : 'w-20'
+                    )}
+                  >
+                    {localStartTime || '00:00:00'}
+                  </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80 p-4" align="start">
                     <div className="space-y-4">
@@ -714,7 +713,6 @@ const RundownHeader = ({
                     )}
                   >
                     {localStartTime || '00:00:00'}
-                    {localEndTime && ` - ${localEndTime}`}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4" align="start">
