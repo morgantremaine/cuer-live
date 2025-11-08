@@ -9,6 +9,7 @@ export interface CoreRundownState {
   visibleColumns: Column[];
   rundownTitle: string;
   rundownStartTime: string;
+  rundownEndTime?: string;
   timezone: string;
   currentTime: Date;
   rundownId: string | null;
