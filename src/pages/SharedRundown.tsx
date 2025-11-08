@@ -247,6 +247,14 @@ const SharedRundown = () => {
   const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse, rundownId || '');
   const visibleColumns = getVisibleColumns(orderedColumns);
 
+  // Calculate rundown end time for back time calculations (must be before early returns)
+  const displayData = rundownData;
+  const rundownEndTime = useMemo(() => {
+    if (!displayData?.startTime || !displayData?.items) return undefined;
+    const totalRuntime = calculateTotalRuntime(displayData.items);
+    return calculateEndTime(displayData.startTime, totalRuntime);
+  }, [displayData?.startTime, displayData?.items]);
+
   if (loading) {
     return (
       <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
@@ -289,15 +297,6 @@ const SharedRundown = () => {
       </div>
     );
   }
-
-  const displayData = rundownData;
-
-  // Calculate rundown end time for back time calculations
-  const rundownEndTime = useMemo(() => {
-    if (!displayData?.startTime || !displayData?.items) return undefined;
-    const totalRuntime = calculateTotalRuntime(displayData.items);
-    return calculateEndTime(displayData.startTime, totalRuntime);
-  }, [displayData?.startTime, displayData?.items]);
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
