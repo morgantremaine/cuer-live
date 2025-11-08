@@ -35,7 +35,6 @@ const RundownIndexContent = () => {
     timezone,
     rundownTitle,
     rundownStartTime,
-    rundownEndTime,
     showDate,
     rundownId,
     items,
@@ -64,7 +63,6 @@ const RundownIndexContent = () => {
     totalRuntime,
     setTitle,
     setStartTime,
-    setEndTime,
     setTimezone,
     setShowDate,
     undo,
@@ -463,7 +461,6 @@ const RundownIndexContent = () => {
   // Use simplified handlers for common operations (but NOT add operations)
   const {
     handleRundownStartTimeChange,
-    handleRundownEndTimeChange,
     handleTimezoneChange,
     handleShowDateChange,
     handleOpenTeleprompter,
@@ -477,7 +474,6 @@ const RundownIndexContent = () => {
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime: setStartTime,
-    setRundownEndTime: setEndTime,
     setTimezone,
     setShowDate,
     markAsChanged: () => {} // Handled internally by unified state
@@ -632,8 +628,6 @@ const RundownIndexContent = () => {
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={handleRundownStartTimeChange}
-        rundownEndTime={rundownEndTime}
-        onRundownEndTimeChange={handleRundownEndTimeChange}
         showDate={showDate}
         onShowDateChange={handleShowDateChange}
         rundownId={rundownId}

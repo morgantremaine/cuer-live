@@ -9,7 +9,6 @@ interface BroadcastPayload {
   items?: RundownItem[];
   title?: string;
   startTime?: string;
-  endTime?: string;
   timezone?: string;
   userId?: string;
   timestamp: number;
