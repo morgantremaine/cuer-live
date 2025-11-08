@@ -550,7 +550,7 @@ const RundownHeader = ({
                     <Button
                       variant="ghost"
                       size={null}
-                      className="h-8 w-fit justify-center text-center font-mono text-sm border-0 rounded-none px-2"
+                      className="h-8 w-fit justify-center text-center font-mono text-sm border-0 rounded-none px-1"
                     >
                       {formatClockTime(rundownStartTime)}
                     </Button>
