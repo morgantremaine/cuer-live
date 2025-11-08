@@ -1477,7 +1477,27 @@ export const useSimplifiedRundownState = () => {
     }, [enhancedUpdateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
+      // Capture item before deletion for undo recording
+      const deletedItem = state.items.find(item => item.id === id);
+      const deletedIndex = state.items.findIndex(item => item.id === id);
+      
       saveUndoState(state.items, [], state.title, 'Delete row');
+      
+      // Record operation before deletion
+      if (deletedItem && deletedIndex !== -1) {
+        console.log('🗑️ Recording delete_row operation:', {
+          deletedItem,
+          deletedIndex,
+          description: `Delete "${deletedItem.name || 'row'}"`
+        });
+        
+        recordOperation({
+          type: 'delete_row',
+          data: { deletedItem, deletedIndex },
+          description: `Delete "${deletedItem.name || 'row'}"`
+        });
+      }
+      
       actions.deleteItem(id);
       
       // For per-cell saves, use structural save coordination
@@ -1499,7 +1519,7 @@ export const useSimplifiedRundownState = () => {
           getTabId()
         );
       }
-    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
@@ -1654,6 +1674,19 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
+    // Record operation after creation
+    console.log('➕ Recording add_row operation:', {
+      addedItemId: newItem.id,
+      addedIndex: actualIndex,
+      description: 'Add row'
+    });
+    
+    recordOperation({
+      type: 'add_row',
+      data: { addedItemId: newItem.id, addedIndex: actualIndex },
+      description: 'Add row'
+    });
+    
     // Broadcast add at index for immediate realtime sync (use the updated item from array)
     if (rundownId && currentUserId) {
       const itemToBroadcast = newItems.find(i => i.id === newItem.id) || newItem;
@@ -1678,7 +1711,7 @@ export const useSimplifiedRundownState = () => {
         numberingLocked: state.numberingLocked
       });
     }
-  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, saveUndoState, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
+  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, saveUndoState, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
@@ -1711,6 +1744,19 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
+    // Record operation after creation
+    console.log('➕ Recording add_header operation:', {
+      addedItemId: newHeader.id,
+      addedIndex: actualIndex,
+      description: 'Add header'
+    });
+    
+    recordOperation({
+      type: 'add_header',
+      data: { addedItemId: newHeader.id, addedIndex: actualIndex },
+      description: 'Add header'
+    });
+    
     // Broadcast header add at index for immediate realtime sync
     if (rundownId && currentUserId) {
       // Track that this change was made by the current user
@@ -1730,7 +1776,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
       markStructuralChange('add_header', { newItems: [newHeader], insertIndex: actualIndex });
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
+  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
 
 
   // Clean up timeouts on unmount
