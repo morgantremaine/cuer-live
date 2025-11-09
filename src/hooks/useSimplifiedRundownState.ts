@@ -420,7 +420,7 @@ export const useSimplifiedRundownState = () => {
         // REMOVED: blockUntilLocalEditRef blocking - autosave now operates independently
         debugLogger.autosave('AutoSave: Remote update received - autosave continues normally');
        }
-    }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
+    }, [actions, getProtectedFields]),
     enabled: !isLoading
   });
   
