@@ -4,6 +4,10 @@ import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { useActiveTeam } from './useActiveTeam';
 
+// PHASE 3: Module-level cache for request deduplication
+// Prevents multiple simultaneous components from making duplicate RPC calls
+const pendingRequests = new Map<string, Promise<any>>();
+
 interface SubscriptionStatus {
   subscribed: boolean;
   subscription_tier: string | null;
@@ -55,71 +59,108 @@ export const useSubscription = () => {
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }));
       
-      // First sync with Stripe to ensure our database is up to date
-      const { data: syncData, error: syncError } = await supabase.functions.invoke('check-subscription');
+      // PHASE 3: Check if there's already a pending request for this user+team combo
+      const requestKey = `${user.id}-${activeTeamId || 'no-team'}`;
       
-      if (syncError) {
-        console.warn('Failed to sync with Stripe:', syncError);
+      let requestPromise = pendingRequests.get(requestKey);
+      
+      if (!requestPromise) {
+        // No pending request - create a new one
+        console.log('🔍 useSubscription - Creating new request for:', requestKey);
         
-        // If it's an auth error (401, 403), the session is invalid
-        if (syncError.message?.includes('401') || syncError.message?.includes('403') || 
-            syncError.message?.includes('Authentication') || syncError.message?.includes('Forbidden') ||
-            syncError.message?.includes('Invalid or expired session')) {
-          console.warn('Authentication failed - session may be expired');
-          setStatus({
-            subscribed: false,
-            subscription_tier: null,
-            max_team_members: 1,
-            subscription_end: null,
-            grandfathered: false,
-            access_type: 'free',
-            loading: false,
-            error: null,
-          });
-          return;
-        }
-        // Continue anyway for other errors, use local data
+        requestPromise = (async () => {
+          try {
+            // First sync with Stripe to ensure our database is up to date
+            const { data: syncData, error: syncError } = await supabase.functions.invoke('check-subscription');
+            
+            if (syncError) {
+              console.warn('Failed to sync with Stripe:', syncError);
+              
+              // If it's an auth error (401, 403), the session is invalid
+              if (syncError.message?.includes('401') || syncError.message?.includes('403') || 
+                  syncError.message?.includes('Authentication') || syncError.message?.includes('Forbidden') ||
+                  syncError.message?.includes('Invalid or expired session')) {
+                console.warn('Authentication failed - session may be expired');
+                return {
+                  subscribed: false,
+                  subscription_tier: null,
+                  max_team_members: 1,
+                  subscription_end: null,
+                  grandfathered: false,
+                  access_type: 'free',
+                  user_role: undefined,
+                  error: null
+                };
+              }
+              // Continue anyway for other errors, use local data
+            }
+            
+            // Then use the database function to check subscription access
+            const { data, error } = await supabase.rpc('get_user_subscription_access', {
+              user_uuid: user.id,
+              team_uuid: activeTeamId
+            });
+            
+            console.log('🔍 useSubscription - RPC result:', { data, error, userId: user.id, teamId: activeTeamId });
+            
+            if (error) {
+              // Check if it's also an auth error
+              if (error.message?.includes('JWT') || error.message?.includes('authentication') || 
+                  error.message?.includes('permission')) {
+                console.warn('Database authentication failed - session may be expired');
+                return {
+                  subscribed: false,
+                  subscription_tier: null,
+                  max_team_members: 1,
+                  subscription_end: null,
+                  grandfathered: false,
+                  access_type: 'free',
+                  user_role: undefined,
+                  error: null
+                };
+              }
+              throw error;
+            }
+            
+            return {
+              subscribed: data.subscribed || false,
+              subscription_tier: data.subscription_tier,
+              max_team_members: data.max_team_members || 1,
+              subscription_end: data.subscription_end,
+              grandfathered: data.grandfathered || false,
+              access_type: data.access_type === 'none' ? 'free' : (data.access_type || 'free'),
+              user_role: data.user_role,
+              error: null
+            };
+          } finally {
+            // Remove from cache when done (success or error)
+            pendingRequests.delete(requestKey);
+          }
+        })();
+        
+        // Store the promise in the cache
+        pendingRequests.set(requestKey, requestPromise);
+      } else {
+        console.log('🔍 useSubscription - Reusing pending request for:', requestKey);
       }
       
-      // Then use the database function to check subscription access
-      const { data, error } = await supabase.rpc('get_user_subscription_access', {
-        user_uuid: user.id,
-        team_uuid: activeTeamId
-      });
+      // Wait for the request to complete (either new or cached)
+      const result = await requestPromise;
       
-      console.log('🔍 useSubscription - RPC result:', { data, error, userId: user.id, teamId: activeTeamId });
-      
-      if (error) {
-        // Check if it's also an auth error
-        if (error.message?.includes('JWT') || error.message?.includes('authentication') || 
-            error.message?.includes('permission')) {
-          console.warn('Database authentication failed - session may be expired');
-          setStatus({
-            subscribed: false,
-            subscription_tier: null,
-            max_team_members: 1,
-            subscription_end: null,
-            grandfathered: false,
-            access_type: 'free',
-            loading: false,
-            error: null,
-          });
-          return;
-        }
-        throw error;
+      // If result indicates auth error, handle it
+      if (result.error === null && !result.subscribed && result.access_type === 'free' && 
+          result.subscription_tier === null) {
+        // This could be either a genuine free user or an auth error
+        setStatus({
+          ...result,
+          loading: false,
+        });
+        return;
       }
       
       setStatus({
-        subscribed: data.subscribed || false,
-        subscription_tier: data.subscription_tier,
-        max_team_members: data.max_team_members || 1,
-        subscription_end: data.subscription_end,
-        grandfathered: data.grandfathered || false,
-        // If access_type is 'none', treat as 'free' since all users get free tier by default
-        access_type: data.access_type === 'none' ? 'free' : (data.access_type || 'free'),
-        user_role: data.user_role,
+        ...result,
         loading: false,
-        error: null,
       });
     } catch (error) {
       console.error('Error checking subscription:', error);
