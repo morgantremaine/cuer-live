@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo, startTransition } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
@@ -47,58 +47,56 @@ export const useRundownItems = (
       customFields: {}
     };
 
-    startTransition(() => {
-      setItems(prevItems => {
-        let insertIndex = prevItems.length; // Default to end
+    setItems(prevItems => {
+      let insertIndex = prevItems.length; // Default to end
 
-        // Determine insertion point based on selection
-        if (selectedRows && selectedRows.size > 0) {
-          // Find the highest index of selected rows
-          const selectedIndices = Array.from(selectedRows)
-            .map(id => prevItems.findIndex(item => item.id === id))
-            .filter(index => index !== -1);
-          
-          if (selectedIndices.length > 0) {
-            insertIndex = Math.max(...selectedIndices) + 1;
-          }
-        } else if (selectedRowId) {
-          // Find index of single selected row
-          const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-          if (selectedIndex !== -1) {
-            insertIndex = selectedIndex + 1;
-          }
-        }
-
-        const newItems = [...prevItems];
-        newItems.splice(insertIndex, 0, newItem);
+      // Determine insertion point based on selection
+      if (selectedRows && selectedRows.size > 0) {
+        // Find the highest index of selected rows
+        const selectedIndices = Array.from(selectedRows)
+          .map(id => prevItems.findIndex(item => item.id === id))
+          .filter(index => index !== -1);
         
-        // 🎯 NEW: Record add_row operation for undo/redo
-        console.log('📝 Recording add_row:', { addedItemId: newItem.id, insertIndex });
-        if (recordOperation) {
-          recordOperation({
-            type: 'add_row',
-            data: { 
-              addedItem: newItem,
-              addedItemId: newItem.id, 
-              addedIndex: insertIndex 
-            },
-            description: 'Add row'
+        if (selectedIndices.length > 0) {
+          insertIndex = Math.max(...selectedIndices) + 1;
+        }
+      } else if (selectedRowId) {
+        // Find index of single selected row
+        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          insertIndex = selectedIndex + 1;
+        }
+      }
+
+      const newItems = [...prevItems];
+      newItems.splice(insertIndex, 0, newItem);
+      
+      // 🎯 NEW: Record add_row operation for undo/redo
+      console.log('📝 Recording add_row:', { addedItemId: newItem.id, insertIndex });
+      if (recordOperation) {
+        recordOperation({
+          type: 'add_row',
+          data: { 
+            addedItem: newItem,
+            addedItemId: newItem.id, 
+            addedIndex: insertIndex 
+          },
+          description: 'Add row'
+        });
+      }
+      
+      // Debounce structural operation to allow visual update to complete
+      setTimeout(() => {
+        if (handleStructuralOperation) {
+          handleStructuralOperation('add_row', {
+            newItems: [newItem],
+            insertIndex
           });
         }
-        
-        // Debounce structural operation to allow visual update to complete
-        setTimeout(() => {
-          if (handleStructuralOperation) {
-            handleStructuralOperation('add_row', {
-              newItems: [newItem],
-              insertIndex
-            });
-          }
-        }, 50);
-        
-        markAsChanged();
-        return newItems;
-      });
+      }, 50);
+      
+      markAsChanged();
+      return newItems;
     });
   }, [markAsChanged, handleStructuralOperation, recordOperation]);
 
@@ -123,58 +121,56 @@ export const useRundownItems = (
       customFields: {}
     };
 
-    startTransition(() => {
-      setItems(prevItems => {
-        let insertIndex = prevItems.length; // Default to end
+    setItems(prevItems => {
+      let insertIndex = prevItems.length; // Default to end
 
-        // Determine insertion point based on selection
-        if (selectedRows && selectedRows.size > 0) {
-          // Find the highest index of selected rows
-          const selectedIndices = Array.from(selectedRows)
-            .map(id => prevItems.findIndex(item => item.id === id))
-            .filter(index => index !== -1);
-          
-          if (selectedIndices.length > 0) {
-            insertIndex = Math.max(...selectedIndices) + 1;
-          }
-        } else if (selectedRowId) {
-          // Find index of single selected row
-          const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-          if (selectedIndex !== -1) {
-            insertIndex = selectedIndex + 1;
-          }
-        }
-
-        const newItems = [...prevItems];
-        newItems.splice(insertIndex, 0, newItem);
+      // Determine insertion point based on selection
+      if (selectedRows && selectedRows.size > 0) {
+        // Find the highest index of selected rows
+        const selectedIndices = Array.from(selectedRows)
+          .map(id => prevItems.findIndex(item => item.id === id))
+          .filter(index => index !== -1);
         
-        // 🎯 NEW: Record add_header operation for undo/redo
-        console.log('📝 Recording add_header:', { addedItemId: newItem.id, insertIndex });
-        if (recordOperation) {
-          recordOperation({
-            type: 'add_header',
-            data: { 
-              addedItem: newItem,
-              addedItemId: newItem.id, 
-              addedIndex: insertIndex 
-            },
-            description: 'Add header'
+        if (selectedIndices.length > 0) {
+          insertIndex = Math.max(...selectedIndices) + 1;
+        }
+      } else if (selectedRowId) {
+        // Find index of single selected row
+        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          insertIndex = selectedIndex + 1;
+        }
+      }
+
+      const newItems = [...prevItems];
+      newItems.splice(insertIndex, 0, newItem);
+      
+      // 🎯 NEW: Record add_header operation for undo/redo
+      console.log('📝 Recording add_header:', { addedItemId: newItem.id, insertIndex });
+      if (recordOperation) {
+        recordOperation({
+          type: 'add_header',
+          data: { 
+            addedItem: newItem,
+            addedItemId: newItem.id, 
+            addedIndex: insertIndex 
+          },
+          description: 'Add header'
+        });
+      }
+      
+      // Debounce structural operation to allow visual update to complete
+      setTimeout(() => {
+        if (handleStructuralOperation) {
+          handleStructuralOperation('add_header', {
+            newItems: [newItem],
+            insertIndex
           });
         }
-        
-        // Debounce structural operation to allow visual update to complete
-        setTimeout(() => {
-          if (handleStructuralOperation) {
-            handleStructuralOperation('add_header', {
-              newItems: [newItem],
-              insertIndex
-            });
-          }
-        }, 50);
-        
-        markAsChanged();
-        return newItems;
-      });
+      }, 50);
+      
+      markAsChanged();
+      return newItems;
     });
   }, [markAsChanged, handleStructuralOperation, recordOperation]);
 
