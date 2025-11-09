@@ -3,6 +3,32 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { UndoableOperation } from '@/types/undoOperation';
 import { reverseOperation, applyOperationForward } from '@/utils/operationReversal';
 
+// Helper function to transform redo operation data to match structural save format
+const transformDataForStructuralSave = (operationType: string, operationData: any): any => {
+  switch (operationType) {
+    case 'add_row':
+    case 'add_header':
+      // Transform: addedItem + addedIndex -> newItems + insertIndex
+      return {
+        newItems: operationData.addedItem ? [operationData.addedItem] : [],
+        insertIndex: operationData.addedIndex
+      };
+      
+    case 'delete_row':
+      // Already in correct format (deletedIds)
+      return operationData;
+      
+    case 'reorder':
+      // Transform to expected format
+      return {
+        order: operationData.newOrder
+      };
+      
+    default:
+      return operationData;
+  }
+};
+
 interface UseOperationUndoProps {
   items: RundownItem[];
   updateItem: (id: string, updates: Partial<RundownItem>) => void;
@@ -189,7 +215,8 @@ export const useOperationUndo = ({
       
       // Trigger broadcast/save AFTER isRedoing is cleared and state has propagated
       if (success && onOperationComplete && nextOperation.type !== 'cell_edit') {
-        onOperationComplete(nextOperation.type, nextOperation.data);
+        const transformedData = transformDataForStructuralSave(nextOperation.type, nextOperation.data);
+        onOperationComplete(nextOperation.type, transformedData);
       }
       
       console.log('⏩ Redo operation completed');
