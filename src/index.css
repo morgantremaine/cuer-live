@@ -243,6 +243,26 @@
 /* Center align time columns in shared rundown */
 .print-time-column { text-align: center; }
 
+/* Performance optimizations for table rows */
+.rundown-table tbody tr,
+.table-container tbody tr,
+[data-rundown-table="body"] tbody tr {
+  will-change: transform;
+  contain: layout style;
+  content-visibility: auto;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+}
+
+/* Optimize table body for smooth insertions */
+.rundown-table tbody,
+.table-container tbody,
+[data-rundown-table="body"] tbody {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 /* Print styles for rundown */
 @media print {
   .print-rundown-header {
