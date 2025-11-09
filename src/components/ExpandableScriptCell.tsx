@@ -199,12 +199,17 @@ const ExpandableScriptCell = ({
   // Monitor row height changes for dynamic preview sizing
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
+      let timeoutId: NodeJS.Timeout;
+      
       const updateRowHeight = () => {
         const row = containerRef.current?.closest('tr');
         if (row) {
-          // Use offsetHeight for zoom-safe measurement instead of getBoundingClientRect
-          const height = row.offsetHeight;
-          setRowHeight(height);
+          // Debounce height updates to prevent scroll jumps during scrolling
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            const height = row.offsetHeight;
+            setRowHeight(height);
+          }, 100);
         }
       };
 
@@ -219,6 +224,7 @@ const ExpandableScriptCell = ({
       }
 
       return () => {
+        clearTimeout(timeoutId);
         observer.disconnect();
       };
     }
