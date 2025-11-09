@@ -33,6 +33,8 @@ interface UseRundownGridHandlersProps {
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void;
   columns?: any[];
   title?: string;
+  recordOperation?: (operation: { type: string; data: any; description: string }) => void;
+  finalizeAllTypingSessions?: () => void;
 }
 
 export const useRundownGridHandlers = ({
@@ -63,7 +65,9 @@ export const useRundownGridHandlers = ({
   currentUserId,
   saveUndoState,
   columns,
-  title
+  title,
+  recordOperation,
+  finalizeAllTypingSessions
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -146,10 +150,9 @@ export const useRundownGridHandlers = ({
     if (clipboardItems.length > 0) {
       debugLogger.grid('Grid handlers: pasting with targetRowId:', targetRowId);
       
-      // Save undo state BEFORE making changes
-      if (saveUndoState && columns && title) {
-        debugLogger.grid('💾 Saving undo state before paste');
-        saveUndoState(items, columns, title, 'Paste rows');
+      // Finalize any typing sessions before structural change
+      if (finalizeAllTypingSessions) {
+        finalizeAllTypingSessions();
       }
       
       const itemsToPaste = clipboardItems.map(item => ({
@@ -166,6 +169,25 @@ export const useRundownGridHandlers = ({
       } else {
         // Fallback to end if no target specified
         insertIndex = items.length;
+      }
+      
+      // Record paste operation for undo/redo
+      if (recordOperation) {
+        console.log('📋 Recording paste operation:', {
+          itemCount: itemsToPaste.length,
+          insertIndex,
+          description: `Paste ${itemsToPaste.length} rows`
+        });
+        
+        recordOperation({
+          type: 'add_row',
+          data: {
+            addedItems: itemsToPaste,
+            addedIndex: insertIndex,
+            addedItemIds: itemsToPaste.map(item => item.id)
+          },
+          description: `Paste ${itemsToPaste.length} rows`
+        });
       }
       
       setItems(prevItems => {
@@ -196,7 +218,7 @@ export const useRundownGridHandlers = ({
         markAsChanged();
       }
     }
-  }, [clipboardItems, items, setItems, markAsChanged, markStructuralChange, saveUndoState, columns, title]);
+  }, [clipboardItems, items, setItems, markAsChanged, markStructuralChange, recordOperation, finalizeAllTypingSessions]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);

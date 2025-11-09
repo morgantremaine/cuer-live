@@ -274,6 +274,8 @@ export const useRundownStateCoordination = () => {
     isHeaderCollapsed,
     persistedState.rundownId,
     userId,
+    persistedState.recordOperation,
+    persistedState.finalizeAllTypingSessions,
     // Pass drag state from the primary drag instance and use the real selectedRows
     {
       draggedItemIndex: dragAndDrop.draggedItemIndex,

@@ -1868,8 +1868,34 @@ export const useSimplifiedRundownState = () => {
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
-      // Delete operations already tracked individually
+      // Finalize any typing sessions before structural change
+      finalizeAllTypingSessions();
+      
+      // Capture items and their indices before deletion for undo
+      const deletedItemsData = itemIds.map(id => {
+        const index = state.items.findIndex(item => item.id === id);
+        const item = state.items[index];
+        return { item, index, id };
+      }).filter(data => data.item && data.index !== -1);
+      
+      // Perform deletion
       actions.deleteMultipleItems(itemIds);
+      
+      // Record batch delete operation
+      console.log('🗑️ Recording batch delete operation:', {
+        deletedCount: deletedItemsData.length,
+        description: `Delete ${deletedItemsData.length} rows`
+      });
+      
+      recordOperation({
+        type: 'delete_row',
+        data: { 
+          deletedItems: deletedItemsData.map(d => d.item),
+          deletedIndices: deletedItemsData.map(d => d.index),
+          deletedIds: itemIds
+        },
+        description: `Delete ${deletedItemsData.length} rows`
+      });
       
       // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1890,7 +1916,7 @@ export const useSimplifiedRundownState = () => {
           getTabId()
         );
       }
-    }, [actions.deleteMultipleItems, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+    }, [actions.deleteMultipleItems, state.items, finalizeAllTypingSessions, recordOperation, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
     addItem: useCallback((item: any, targetIndex?: number) => {
       // Re-enable autosave after local edit if it was blocked due to teammate update
       if (blockUntilLocalEditRef.current) {
@@ -2071,6 +2097,7 @@ export const useSimplifiedRundownState = () => {
     clearStructuralChange,
     
     // Operation-based undo/redo system
-    recordOperation
+    recordOperation,
+    finalizeAllTypingSessions
   };
 };

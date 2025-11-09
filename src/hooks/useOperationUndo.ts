@@ -61,22 +61,42 @@ const transformDataForReverseOp = (originalType: string, originalData: any): any
   switch (originalType) {
     case 'add_row':
     case 'add_header':
-      // Original: { addedItem, addedIndex, addedItemId }
-      // Reverse (delete_row) expects: { deletedItem, deletedIndex, deletedIds }
-      return {
-        deletedItem: originalData.addedItem,
-        deletedIndex: originalData.addedIndex,
-        deletedIds: [originalData.addedItemId]
-      };
+      // Handle both single and batch adds
+      if (originalData.addedItems && Array.isArray(originalData.addedItems)) {
+        // Batch add -> batch delete
+        return {
+          deletedItems: originalData.addedItems,
+          deletedIndices: originalData.addedItems.map((_: any, idx: number) => 
+            originalData.addedIndex + idx
+          ),
+          deletedIds: originalData.addedItemIds
+        };
+      } else {
+        // Single add -> single delete
+        return {
+          deletedItem: originalData.addedItem,
+          deletedIndex: originalData.addedIndex,
+          deletedIds: [originalData.addedItemId]
+        };
+      }
       
     case 'delete_row':
-      // Original: { deletedItem, deletedIndex }
-      // Reverse (add_row) expects: { addedItem, addedIndex, addedItemId }
-      return {
-        addedItem: originalData.deletedItem,
-        addedIndex: originalData.deletedIndex,
-        addedItemId: originalData.deletedItem.id
-      };
+      // Handle both single and batch deletes
+      if (originalData.deletedItems && Array.isArray(originalData.deletedItems)) {
+        // Batch delete -> batch add
+        return {
+          addedItems: originalData.deletedItems,
+          addedIndex: Math.min(...originalData.deletedIndices),
+          addedItemIds: originalData.deletedIds
+        };
+      } else {
+        // Single delete -> single add
+        return {
+          addedItem: originalData.deletedItem,
+          addedIndex: originalData.deletedIndex,
+          addedItemId: originalData.deletedItem.id
+        };
+      }
       
     case 'reorder':
       // Original: { oldOrder, newOrder }

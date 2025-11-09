@@ -29,6 +29,8 @@ export const useRundownInteractionHandlers = (
   isHeaderCollapsed?: (headerId: string) => boolean,
   rundownId?: string,
   currentUserId?: string,
+  recordOperation?: (operation: { type: string; data: any; description: string }) => void,
+  finalizeAllTypingSessions?: () => void,
   // Accept drag state from primary drag instance
   dragState?: {
     draggedItemIndex: number | null;
@@ -93,7 +95,9 @@ export const useRundownInteractionHandlers = (
     currentUserId,
     saveUndoState,
     columns,
-    title
+    title,
+    recordOperation,
+    finalizeAllTypingSessions
   });
 
   return {
