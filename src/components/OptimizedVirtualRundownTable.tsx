@@ -140,15 +140,20 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
   const bottomSpacerHeight = totalHeight - offsetY - (virtualItems.length * 40);
 
   // Create spacer rows to maintain scroll height
+  // Use inner div to force the row to actually take up space
   const topSpacer = topSpacerHeight > 0 ? (
-    <tr style={{ height: `${topSpacerHeight}px` }} aria-hidden="true">
-      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none' }} />
+    <tr aria-hidden="true">
+      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none', height: 0 }}>
+        <div style={{ height: `${topSpacerHeight}px`, width: '1px' }} />
+      </td>
     </tr>
   ) : null;
 
   const bottomSpacer = bottomSpacerHeight > 0 ? (
-    <tr style={{ height: `${bottomSpacerHeight}px` }} aria-hidden="true">
-      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none' }} />
+    <tr aria-hidden="true">
+      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none', height: 0 }}>
+        <div style={{ height: `${bottomSpacerHeight}px`, width: '1px' }} />
+      </td>
     </tr>
   ) : null;
 
