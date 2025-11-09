@@ -420,8 +420,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               }}
               data-rundown-table="body"
             >
-              {/* Table Body - Content with @dnd-kit wrapper */}
-              {DndContext && SortableContext ? (
+              {/* Table Body - Content with @dnd-kit wrapper (only during active drag) */}
+              {DndContext && SortableContext && activeId !== null ? (
                 <DndContext
                   sensors={sensors}
                   collisionDetection={collisionDetection}
