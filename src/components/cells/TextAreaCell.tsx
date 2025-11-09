@@ -158,10 +158,6 @@ const TextAreaCell = ({
     // Height will be recalculated by useEffect
   };
 
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    onUpdateValue((e.target as HTMLTextAreaElement).value);
-  };
-
   // Enhanced mouse down handler to prevent row dragging when selecting text
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only handle left-clicks - right-clicks should not start editing or stop propagation
@@ -247,7 +243,6 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         }}
         value={value}
         onChange={handleChange}
-        onInput={handleInput}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
         onMouseDown={handleMouseDown}
