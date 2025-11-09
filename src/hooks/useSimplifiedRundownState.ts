@@ -1675,7 +1675,11 @@ export const useSimplifiedRundownState = () => {
     
     recordOperation({
       type: 'add_row',
-      data: { addedItemId: newItem.id, addedIndex: actualIndex },
+      data: { 
+        addedItem: newItem,
+        addedItemId: newItem.id, 
+        addedIndex: actualIndex 
+      },
       description: 'Add row'
     });
     
@@ -1745,7 +1749,11 @@ export const useSimplifiedRundownState = () => {
     
     recordOperation({
       type: 'add_header',
-      data: { addedItemId: newHeader.id, addedIndex: actualIndex },
+      data: { 
+        addedItem: newHeader,
+        addedItemId: newHeader.id, 
+        addedIndex: actualIndex 
+      },
       description: 'Add header'
     });
     

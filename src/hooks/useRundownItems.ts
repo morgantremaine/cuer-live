@@ -76,7 +76,11 @@ export const useRundownItems = (
       if (recordOperation) {
         recordOperation({
           type: 'add_row',
-          data: { addedItemId: newItem.id, addedIndex: insertIndex },
+          data: { 
+            addedItem: newItem,
+            addedItemId: newItem.id, 
+            addedIndex: insertIndex 
+          },
           description: 'Add row'
         });
       }
@@ -144,7 +148,11 @@ export const useRundownItems = (
       if (recordOperation) {
         recordOperation({
           type: 'add_header',
-          data: { addedItemId: newItem.id, addedIndex: insertIndex },
+          data: { 
+            addedItem: newItem,
+            addedItemId: newItem.id, 
+            addedIndex: insertIndex 
+          },
           description: 'Add header'
         });
       }
