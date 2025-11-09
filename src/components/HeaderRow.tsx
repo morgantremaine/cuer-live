@@ -240,18 +240,29 @@ const HeaderRow = (props: HeaderRowProps) => {
 };
 
 // Memoize with custom comparison to prevent unnecessary re-renders
+// Only compare essential props that affect this specific row's rendering
 const areEqual = (prev: HeaderRowProps, next: HeaderRowProps) => {
-  return (
-    prev.item.id === next.item.id &&
-    prev.item.name === next.item.name &&
-    prev.item.color === next.item.color &&
-    prev.isSelected === next.isSelected &&
-    prev.isDragging === next.isDragging &&
-    prev.showColorPicker === next.showColorPicker &&
-    prev.isCollapsed === next.isCollapsed &&
-    prev.headerDuration === next.headerDuration &&
-    prev.rowNumber === next.rowNumber
-  );
+  // Always re-render if item data or visibility state changed
+  if (
+    prev.item.id !== next.item.id ||
+    prev.item.name !== next.item.name ||
+    prev.item.color !== next.item.color ||
+    prev.isCollapsed !== next.isCollapsed ||
+    prev.isSelected !== next.isSelected ||
+    prev.isDragging !== next.isDragging ||
+    prev.showColorPicker !== next.showColorPicker ||
+    prev.rowNumber !== next.rowNumber
+  ) {
+    return false;
+  }
+  
+  // Check if columns changed (by comparing column IDs)
+  if (prev.columns.length !== next.columns.length) return false;
+  for (let i = 0; i < prev.columns.length; i++) {
+    if (prev.columns[i].id !== next.columns[i].id) return false;
+  }
+  
+  return true;
 };
 
 export default React.memo(HeaderRow, areEqual);
