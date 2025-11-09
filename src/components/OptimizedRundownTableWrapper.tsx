@@ -160,16 +160,15 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   const getRowNumber = React.useCallback((index: number) => {
     if (index < 0 || index >= visibleItems.length) return '';
     const visibleItem = visibleItems[index];
-    // Find the corresponding item in itemsWithStatus
-    const enhancedItem = itemsWithStatus.find(item => item.id === visibleItem.id);
-    return enhancedItem?.calculatedRowNumber || '';
-  }, [visibleItems, itemsWithStatus]);
+    // Items already have calculatedRowNumber from calculateItemsWithTiming
+    return (visibleItem as any).calculatedRowNumber || visibleItem.rowNumber || '';
+  }, [visibleItems]);
 
   // Create optimized getRowStatus function
   const getRowStatus = React.useCallback((item: any) => {
-    const enhancedItem = itemsWithStatus.find(enhancedItem => enhancedItem.id === item.id);
-    return enhancedItem?.calculatedStatus || 'upcoming';
-  }, [itemsWithStatus]);
+    // Calculate status based on currentSegmentId
+    return item.id === currentSegmentId ? 'current' : 'upcoming';
+  }, [currentSegmentId]);
 
   // Create optimized getHeaderDuration function - use ORIGINAL items for calculation
   const getHeaderDuration = React.useCallback((index: number) => {

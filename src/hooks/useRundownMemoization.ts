@@ -3,10 +3,7 @@ import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 
 interface MemoizedCalculations {
-  itemsWithStatus: Array<RundownItem & { 
-    calculatedStatus: 'upcoming' | 'current' | 'completed';
-    calculatedRowNumber: string;
-  }>;
+  itemsWithStatus: RundownItem[];
   visibleItemsOnly: RundownItem[];
   headerDurations: Map<string, string>;
   totalCalculatedRuntime: string;
@@ -25,21 +22,8 @@ export const useRundownMemoization = (
     
     // For large rundowns, use memory-optimized calculations while preserving functionality
     if (itemCount > 100) {
-      // Return items with minimal augmentation using stored rowNumber values
-      const itemsWithStatus = items.map((item) => {
-        // For display optimization, use the calculated row numbers from the items
-        let calculatedRowNumber = '';
-        if (item.type !== 'header') {
-          // Use the calculatedRowNumber if available (from calculateItemsWithTiming)
-          calculatedRowNumber = (item as any).calculatedRowNumber || item.rowNumber || '';
-        }
-        
-        return {
-          ...item,
-          calculatedStatus: item.id === currentSegmentId ? 'current' as const : 'upcoming' as const,
-          calculatedRowNumber
-        };
-      });
+      // MEMORY FIX: Return items directly without duplication
+      const itemsWithStatus = items;
       
       // FIXED: Lightweight but functional header durations and total runtime
       const headerDurations = new Map<string, string>();
@@ -101,25 +85,8 @@ export const useRundownMemoization = (
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Memory efficient: Create enhanced items only for small rundowns
-    const itemsWithStatus = items.map((item, index) => {
-      // For display optimization, use the calculated row numbers from the items
-      let calculatedRowNumber = '';
-      if (item.type !== 'header') {
-        // Use the calculatedRowNumber if available (from calculateItemsWithTiming)
-        calculatedRowNumber = (item as any).calculatedRowNumber || item.rowNumber || '';
-      }
-
-      // Calculate status
-      const calculatedStatus: 'upcoming' | 'current' | 'completed' = 
-        item.id === currentSegmentId ? 'current' : 'upcoming';
-
-      return {
-        ...item,
-        calculatedStatus,
-        calculatedRowNumber
-      };
-    });
+    // MEMORY FIX: Return items directly without duplication for small rundowns too
+    const itemsWithStatus = items;
 
     // Calculate header durations - lightweight for small rundowns
     const headerDurations = new Map<string, string>();

@@ -1,7 +1,8 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
+import OptimizedVirtualRundownTable from './OptimizedVirtualRundownTable';
 import RundownTableHeader from './RundownTableHeader';
+import { useRundownMemoization } from '@/hooks/useRundownMemoization';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
@@ -159,6 +160,32 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   // Use localStorage for expanded cells
   const { expandedCells, updateExpandedCells } = useLocalExpandedCells(rundownId);
+  
+  // Use memoized calculations for row numbers and header durations
+  const {
+    itemsWithStatus,
+    headerDurations,
+    totalCalculatedRuntime
+  } = useRundownMemoization(items, visibleColumns, currentSegmentId, startTime);
+
+  // Create optimized functions from memoization
+  const getRowNumberFromMemo = React.useCallback((index: number) => {
+    if (index < 0 || index >= visibleItems.length) return '';
+    const visibleItem = visibleItems[index];
+    // Items already have calculatedRowNumber from calculateItemsWithTiming
+    return (visibleItem as any).calculatedRowNumber || visibleItem.rowNumber || '';
+  }, [visibleItems]);
+
+  const getRowStatusFromMemo = React.useCallback((item: any) => {
+    // Calculate status based on currentSegmentId
+    return item.id === currentSegmentId ? 'current' : 'upcoming';
+  }, [currentSegmentId]);
+
+  const getHeaderDurationFromMemo = React.useCallback((index: number) => {
+    if (index < 0 || index >= visibleItems.length) return '00:00:00';
+    const visibleItem = visibleItems[index];
+    return headerDurations.get(visibleItem.id) || '00:00:00';
+  }, [visibleItems, headerDurations]);
   
   // Toggle individual cell expand state
   const toggleCellExpanded = useCallback((itemId: string, columnKey: string) => {
@@ -430,9 +457,10 @@ const RundownContent = React.memo<RundownContentProps>(({
                   modifiers={modifiers}
                 >
                   <SortableContext items={sortableItems || []} strategy={undefined}>
-                    <OptimizedRundownTableWrapper
-              items={items} // Pass original items for duration calculations
-              visibleItems={visibleItems} // Pass visible items for display
+                    <OptimizedVirtualRundownTable
+              scrollContainerRef={scrollContainerRef}
+              enableVirtualization={true}
+              items={visibleItems}
               visibleColumns={visibleColumns}
               currentTime={currentTime}
               showColorPicker={showColorPicker}
@@ -444,10 +472,12 @@ const RundownContent = React.memo<RundownContentProps>(({
               currentSegmentId={currentSegmentId}
               hasClipboardData={hasClipboardData}
               selectedRowId={selectedRowId}
-              startTime={startTime}
               columnExpandState={columnExpandState}
               expandedCells={expandedCells}
               onToggleCellExpanded={toggleCellExpanded}
+              getRowNumber={getRowNumberFromMemo}
+              getRowStatus={getRowStatusFromMemo}
+              getHeaderDuration={getHeaderDurationFromMemo}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onUpdateItem={onUpdateItem}
@@ -473,18 +503,21 @@ const RundownContent = React.memo<RundownContentProps>(({
               onMoveItemUp={onMoveItemUp}
               onMoveItemDown={onMoveItemDown}
               markActiveTyping={markActiveTyping}
-              // Header collapse functions
-              toggleHeaderCollapse={toggleHeaderCollapse}
+              onToggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
-              />
+            />
                   </SortableContext>
                 </DndContext>
               ) : (
-                <OptimizedRundownTableWrapper
-              items={items} // Pass original items for duration calculations
-              visibleItems={visibleItems} // Pass visible items for display
+                <OptimizedVirtualRundownTable
+              scrollContainerRef={scrollContainerRef}
+              enableVirtualization={true}
+              items={visibleItems}
               visibleColumns={visibleColumns}
+              getRowNumber={getRowNumberFromMemo}
+              getRowStatus={getRowStatusFromMemo}
+              getHeaderDuration={getHeaderDurationFromMemo}
               currentTime={currentTime}
               showColorPicker={showColorPicker}
               cellRefs={cellRefs}
@@ -495,7 +528,6 @@ const RundownContent = React.memo<RundownContentProps>(({
               currentSegmentId={currentSegmentId}
               hasClipboardData={hasClipboardData}
               selectedRowId={selectedRowId}
-              startTime={startTime}
               columnExpandState={columnExpandState}
               expandedCells={expandedCells}
               onToggleCellExpanded={toggleCellExpanded}
@@ -524,11 +556,10 @@ const RundownContent = React.memo<RundownContentProps>(({
               onMoveItemUp={onMoveItemUp}
               onMoveItemDown={onMoveItemDown}
               markActiveTyping={markActiveTyping}
-              // Header collapse functions
-              toggleHeaderCollapse={toggleHeaderCollapse}
+              onToggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
-              />
+            />
               )}
             </table>
           </div>
