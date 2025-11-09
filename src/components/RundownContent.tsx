@@ -174,11 +174,26 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   // Toggle column expand state
   const handleToggleColumnExpand = useCallback((columnKey: string) => {
+    const newState = !columnExpandState[columnKey];
     setColumnExpandState(prev => ({
       ...prev,
-      [columnKey]: !prev[columnKey]
+      [columnKey]: newState
     }));
-  }, []);
+    
+    // Apply to all items in the column
+    const newSet = new Set(expandedCells);
+    items.forEach(item => {
+      const cellKey = `${item.id}-${columnKey}`;
+      if (newState) {
+        newSet.add(cellKey);      // Expand all cells in this column
+      } else {
+        newSet.delete(cellKey);   // Collapse all cells in this column
+      }
+    });
+    
+    // Persist to localStorage
+    updateExpandedCells(newSet);
+  }, [columnExpandState, expandedCells, items, updateExpandedCells]);
 
   // Toggle all header groups expand/collapse state
   const handleToggleAllHeaders = useCallback(() => {
