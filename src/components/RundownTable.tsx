@@ -51,8 +51,10 @@ interface RundownTableProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
-  topSpacer?: React.ReactNode;
-  bottomSpacer?: React.ReactNode;
+  // Virtualization props for transform-based positioning
+  isVirtualized?: boolean;
+  virtualStartIndex?: number;
+  virtualTotalHeight?: number;
 }
 
 const RundownTable = ({
@@ -102,8 +104,9 @@ const RundownTable = ({
   onMoveItemUp,
   onMoveItemDown,
   markActiveTyping,
-  topSpacer,
-  bottomSpacer
+  isVirtualized = false,
+  virtualStartIndex = 0,
+  virtualTotalHeight = 0
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -131,93 +134,115 @@ const RundownTable = ({
     onDragEnd?.(e);
   };
 
+  // Transform-based virtualization wrapper
+  const tbodyContent = (
+    <>
+      {items.map((item, index) => {
+        const rowNumber = getRowNumber(index);
+        const status = getRowStatus(item);
+        const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
+        const isMultiSelected = selectedRows.has(item.id);
+        const isSingleSelected = selectedRowId === item.id;
+        const isActuallySelected = isMultiSelected || isSingleSelected;
+        const isDragging = draggedItemIndex === index;
+        const isCurrentlyPlaying = item.id === currentSegmentId;
+
+        // Calculate absolute position for virtualized rows
+        const virtualPosition = isVirtualized 
+          ? (virtualStartIndex + index) * 40 
+          : undefined;
+
+        return (
+          <React.Fragment key={item.id}>
+            {/* Drop indicator ABOVE this row */}
+            {dropTargetIndex === index && (
+              <tr key={`drop-above-${item.id}`}>
+                <td colSpan={visibleColumns.length + 1} className="p-0">
+                  <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
+                </td>
+              </tr>
+            )}
+            
+            <RundownRow
+              key={item.id}
+              item={item}
+              index={index}
+              rowNumber={rowNumber}
+              status={status}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              columns={visibleColumns}
+              isSelected={isActuallySelected}
+              isCurrentlyPlaying={isCurrentlyPlaying}
+              isDraggingMultiple={isDraggingMultiple}
+              selectedRowsCount={selectedRows.size}
+              selectedRows={selectedRows}
+              headerDuration={headerDuration}
+              hasClipboardData={hasClipboardData}
+              currentSegmentId={currentSegmentId}
+              isDragging={isDragging}
+              isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
+              columnExpandState={columnExpandState}
+              expandedCells={expandedCells}
+              onToggleCellExpanded={onToggleCellExpanded}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              onToggleColorPicker={onToggleColorPicker}
+              onColorSelect={onColorSelect}
+              onDeleteRow={onDeleteRow}
+              onToggleFloat={onToggleFloat}
+              onRowSelect={onRowSelect}
+              onDragStart={onDragStart}
+              onDragOver={(e) => handleRowDragOver(e, index)}
+              onDrop={(e) => handleRowDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onToggleCollapse={onToggleHeaderCollapse}
+              onPasteRows={onPasteRows}
+              onClearSelection={onClearSelection}
+              onAddRow={onAddRow}
+              onAddHeader={onAddHeader}
+              onJumpToHere={onJumpToHere}
+              onMoveUp={() => onMoveItemUp?.(index)}
+              onMoveDown={() => onMoveItemDown?.(index)}
+              markActiveTyping={markActiveTyping}
+              getColumnWidth={getColumnWidth}
+              isHeaderCollapsed={isHeaderCollapsed}
+              getHeaderGroupItemIds={getHeaderGroupItemIds}
+              allItems={items}
+              virtualPosition={virtualPosition}
+            />
+            
+            {/* Drop indicator AFTER the last row */}
+            {dropTargetIndex === items.length && index === items.length - 1 && (
+              <tr key={`drop-after-${item.id}`}>
+                <td colSpan={visibleColumns.length + 1} className="p-0">
+                  <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
+                </td>
+              </tr>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+
+  // Wrap tbody with positioned container for virtualization
+  if (isVirtualized) {
+    return (
+      <div style={{ position: 'relative', height: `${virtualTotalHeight}px` }}>
+        <tbody className="bg-background" style={{ position: 'relative' }}>
+          {tbodyContent}
+        </tbody>
+      </div>
+    );
+  }
+
   return (
     <tbody className="bg-background">
-          {topSpacer}
-          {items.map((item, index) => {
-            const rowNumber = getRowNumber(index);
-            const status = getRowStatus(item);
-            const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
-            const isMultiSelected = selectedRows.has(item.id);
-            const isSingleSelected = selectedRowId === item.id;
-            const isActuallySelected = isMultiSelected || isSingleSelected;
-            const isDragging = draggedItemIndex === index;
-            const isCurrentlyPlaying = item.id === currentSegmentId;
-
-            return (
-              <React.Fragment key={item.id}>
-                {/* Drop indicator ABOVE this row */}
-                {dropTargetIndex === index && (
-                  <tr key={`drop-above-${item.id}`}>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
-                    </td>
-                  </tr>
-                )}
-                
-                <RundownRow
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  rowNumber={rowNumber}
-                  status={status}
-                  showColorPicker={showColorPicker}
-                  cellRefs={cellRefs}
-                  columns={visibleColumns}
-                  isSelected={isActuallySelected}
-                  isCurrentlyPlaying={isCurrentlyPlaying}
-                  isDraggingMultiple={isDraggingMultiple}
-                  selectedRowsCount={selectedRows.size}
-                  selectedRows={selectedRows}
-                  headerDuration={headerDuration}
-                  hasClipboardData={hasClipboardData}
-                  currentSegmentId={currentSegmentId}
-                  isDragging={isDragging}
-                  isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
-                  columnExpandState={columnExpandState}
-                  expandedCells={expandedCells}
-                  onToggleCellExpanded={onToggleCellExpanded}
-                  onUpdateItem={onUpdateItem}
-                  onCellClick={onCellClick}
-                  onKeyDown={onKeyDown}
-                  onToggleColorPicker={onToggleColorPicker}
-                  onColorSelect={onColorSelect}
-                  onDeleteRow={onDeleteRow}
-                  onToggleFloat={onToggleFloat}
-                  onRowSelect={onRowSelect}
-                  onDragStart={onDragStart}
-                  onDragOver={(e) => handleRowDragOver(e, index)}
-                  onDrop={(e) => handleRowDrop(e, index)}
-                  onDragEnd={handleDragEnd}
-                  onCopySelectedRows={onCopySelectedRows}
-                  onDeleteSelectedRows={onDeleteSelectedRows}
-                  onToggleCollapse={onToggleHeaderCollapse}
-                  onPasteRows={onPasteRows}
-                  onClearSelection={onClearSelection}
-                   onAddRow={onAddRow}
-                   onAddHeader={onAddHeader}
-                   onJumpToHere={onJumpToHere}
-                   onMoveUp={() => onMoveItemUp?.(index)}
-                   onMoveDown={() => onMoveItemDown?.(index)}
-                   markActiveTyping={markActiveTyping}
-                   getColumnWidth={getColumnWidth}
-                   isHeaderCollapsed={isHeaderCollapsed}
-                   getHeaderGroupItemIds={getHeaderGroupItemIds}
-                   allItems={items}
-                />
-                
-                {/* Drop indicator AFTER the last row */}
-                {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr key={`drop-after-${item.id}`}>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            );
-          })}
-          {bottomSpacer}
+      {tbodyContent}
     </tbody>
   );
 };

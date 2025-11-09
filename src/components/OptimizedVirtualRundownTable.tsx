@@ -135,29 +135,8 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
     );
   }
 
-  // Calculate spacer heights for virtualization
-  const topSpacerHeight = offsetY;
-  const bottomSpacerHeight = totalHeight - offsetY - (virtualItems.length * 40);
-
-  // Create spacer rows to maintain scroll height
-  // Use inner div to force the row to actually take up space
-  const topSpacer = topSpacerHeight > 0 ? (
-    <tr aria-hidden="true">
-      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none', height: 0 }}>
-        <div style={{ height: `${topSpacerHeight}px`, width: '1px' }} />
-      </td>
-    </tr>
-  ) : null;
-
-  const bottomSpacer = bottomSpacerHeight > 0 ? (
-    <tr aria-hidden="true">
-      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none', height: 0 }}>
-        <div style={{ height: `${bottomSpacerHeight}px`, width: '1px' }} />
-      </td>
-    </tr>
-  ) : null;
-
-  // Virtualized rendering with spacer rows
+  // Transform-based virtualization (TanStack Virtual pattern)
+  // Pass virtualization metadata to RundownTable for absolute positioning
   return (
     <RundownTable
       items={displayItems}
@@ -165,8 +144,9 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
       onDragStart={adjustedOnDragStart}
       onDrop={adjustedOnDrop}
       onRowSelect={adjustedOnRowSelect}
-      topSpacer={topSpacer}
-      bottomSpacer={bottomSpacer}
+      isVirtualized={true}
+      virtualStartIndex={startIndex}
+      virtualTotalHeight={totalHeight}
       {...restProps}
     />
   );
