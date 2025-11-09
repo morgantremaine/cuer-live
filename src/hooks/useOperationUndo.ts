@@ -104,6 +104,16 @@ export const useOperationUndo = ({
   const [redoStack, setRedoStack] = useState<UndoableOperation[]>([]);
   const isUndoing = useRef(false);
   const isRedoing = useRef(false);
+  
+  // Track active typing sessions for batched undo
+  const typingSessionsRef = useRef<Map<string, {
+    itemId: string;
+    field: string;
+    initialValue: any;
+    timeoutId: NodeJS.Timeout | null;
+  }>>(new Map());
+  
+  const TYPING_PAUSE_MS = 1000; // Record undo after 1 second of no typing
 
   // Record a new operation
   const recordOperation = useCallback((operation: Omit<UndoableOperation, 'userId' | 'timestamp'>) => {
@@ -126,6 +136,124 @@ export const useOperationUndo = ({
     
     setRedoStack([]);
   }, [userId]);
+
+  // Record a batched cell edit - groups rapid typing into single undo operation
+  const recordBatchedCellEdit = useCallback((
+    itemId: string,
+    field: string,
+    oldValue: any,
+    newValue: any,
+    finalizeImmediately = false
+  ) => {
+    if (isUndoing.current || isRedoing.current) {
+      return;
+    }
+
+    const sessionKey = `${itemId}-${field}`;
+    const existingSession = typingSessionsRef.current.get(sessionKey);
+    
+    if (!existingSession) {
+      // Start new typing session - capture initial value
+      const session = {
+        itemId,
+        field,
+        initialValue: oldValue,
+        timeoutId: null as NodeJS.Timeout | null
+      };
+      typingSessionsRef.current.set(sessionKey, session);
+      console.log('⌨️ Started typing session:', sessionKey, 'initial:', oldValue);
+    }
+    
+    const session = typingSessionsRef.current.get(sessionKey)!;
+    
+    // Clear existing timeout
+    if (session.timeoutId) {
+      clearTimeout(session.timeoutId);
+    }
+    
+    if (finalizeImmediately) {
+      // Finalize immediately (field blur, focus change, structural op, etc.)
+      console.log('✅ Finalizing typing session immediately:', sessionKey);
+      recordOperation({
+        type: 'cell_edit',
+        data: { itemId, field, oldValue: session.initialValue, newValue },
+        description: `Edit ${field}`
+      });
+      typingSessionsRef.current.delete(sessionKey);
+    } else {
+      // Set timeout to finalize after pause
+      session.timeoutId = setTimeout(() => {
+        console.log('⏱️ Typing pause detected - finalizing session:', sessionKey);
+        recordOperation({
+          type: 'cell_edit',
+          data: { itemId, field, oldValue: session.initialValue, newValue },
+          description: `Edit ${field}`
+        });
+        typingSessionsRef.current.delete(sessionKey);
+      }, TYPING_PAUSE_MS);
+    }
+  }, [recordOperation]);
+
+  // Finalize a specific typing session
+  const finalizeTypingSession = useCallback((sessionKey: string) => {
+    const session = typingSessionsRef.current.get(sessionKey);
+    if (session) {
+      if (session.timeoutId) {
+        clearTimeout(session.timeoutId);
+      }
+      console.log('🔚 Finalizing specific typing session:', sessionKey);
+      // Get current value from items
+      const item = items.find(i => i.id === session.itemId);
+      if (item) {
+        const currentValue = session.field.startsWith('customFields.') 
+          ? item.customFields?.[session.field.replace('customFields.', '')]
+          : (item as any)[session.field === 'segmentName' ? 'name' : session.field];
+        
+        recordOperation({
+          type: 'cell_edit',
+          data: { 
+            itemId: session.itemId, 
+            field: session.field, 
+            oldValue: session.initialValue, 
+            newValue: currentValue 
+          },
+          description: `Edit ${session.field}`
+        });
+      }
+      typingSessionsRef.current.delete(sessionKey);
+    }
+  }, [items, recordOperation]);
+
+  // Finalize all active typing sessions (on structural changes or blur)
+  const finalizeAllTypingSessions = useCallback(() => {
+    if (typingSessionsRef.current.size > 0) {
+      console.log('🔚 Finalizing all typing sessions:', typingSessionsRef.current.size);
+      typingSessionsRef.current.forEach((session, key) => {
+        if (session.timeoutId) {
+          clearTimeout(session.timeoutId);
+        }
+        // Get current value from items
+        const item = items.find(i => i.id === session.itemId);
+        if (item) {
+          const currentValue = session.field.startsWith('customFields.') 
+            ? item.customFields?.[session.field.replace('customFields.', '')]
+            : (item as any)[session.field === 'segmentName' ? 'name' : session.field];
+          
+          recordOperation({
+            type: 'cell_edit',
+            data: { 
+              itemId: session.itemId, 
+              field: session.field, 
+              oldValue: session.initialValue, 
+              newValue: currentValue 
+            },
+            description: `Edit ${session.field}`
+          });
+        }
+      });
+      typingSessionsRef.current.clear();
+    }
+  }, [items, recordOperation]);
 
   // Perform undo operation
   const undo = useCallback(() => {
@@ -234,6 +362,9 @@ export const useOperationUndo = ({
 
   return {
     recordOperation,
+    recordBatchedCellEdit,
+    finalizeTypingSession,
+    finalizeAllTypingSessions,
     undo,
     redo,
     canUndo,

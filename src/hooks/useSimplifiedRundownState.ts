@@ -457,6 +457,9 @@ export const useSimplifiedRundownState = () => {
   // Operation-based undo system
   const {
     recordOperation,
+    recordBatchedCellEdit,
+    finalizeTypingSession,
+    finalizeAllTypingSessions,
     undo,
     redo,
     canUndo,
@@ -1012,13 +1015,19 @@ export const useSimplifiedRundownState = () => {
     
     const sessionKey = `${id}-${field}`;
     
-    // 🎯 NEW: Record cell edit operation for undo/redo
-    console.log('📝 Recording cell edit:', { id, field, oldValue, newValue: value });
-    recordOperation({
-      type: 'cell_edit',
-      data: { itemId: id, field, oldValue, newValue: value },
-      description: `Edit ${field}`
-    });
+    // 🎯 Record cell edit operation for undo/redo (batched for typing fields)
+    console.log('📝 Recording cell edit:', { id, field, oldValue, newValue: value, isTypingField });
+    if (isTypingField) {
+      // Batch text edits - groups rapid typing into single undo operation
+      recordBatchedCellEdit(id, field, oldValue, value, false);
+    } else {
+      // Non-typing fields (color, isFloating, duration) record immediately
+      recordOperation({
+        type: 'cell_edit',
+        data: { itemId: id, field, oldValue, newValue: value },
+        description: `Edit ${field}`
+      });
+    }
     
     // Simplified: No field tracking needed - last writer wins
     
@@ -1037,6 +1046,10 @@ export const useSimplifiedRundownState = () => {
       markFieldAsRecentlyEdited(sessionKey);
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
+        // Finalize previous typing session when switching fields
+        if (typingSessionRef.current) {
+          finalizeTypingSession(typingSessionRef.current.fieldKey);
+        }
         typingSessionRef.current = {
           fieldKey: sessionKey,
           startTime: Date.now()
@@ -1469,6 +1482,9 @@ export const useSimplifiedRundownState = () => {
     }, [enhancedUpdateItem, state.items, state.title]),
 
     deleteRow: useCallback((id: string) => {
+      // Finalize any typing sessions before structural change
+      finalizeAllTypingSessions();
+      
       // Capture item before deletion for undo recording
       const deletedItem = state.items.find(item => item.id === id);
       const deletedIndex = state.items.findIndex(item => item.id === id);
@@ -1511,7 +1527,7 @@ export const useSimplifiedRundownState = () => {
           getTabId()
         );
       }
-    }, [actions.deleteItem, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]),
+    }, [actions.deleteItem, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation, finalizeAllTypingSessions]),
 
     addRow: useCallback(() => {
       // Add operation already recorded by add_row operation
@@ -1637,6 +1653,9 @@ export const useSimplifiedRundownState = () => {
 
   // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
+      // Finalize any typing sessions before structural change
+      finalizeAllTypingSessions();
+      
       // Auto-save will handle this change - no special handling needed
     // Add operation already recorded by add_row operation
     
@@ -1707,10 +1726,13 @@ export const useSimplifiedRundownState = () => {
         numberingLocked: state.numberingLocked
       });
     }
-  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
+  }, [state.items, state.title, state.startTime, state.numberingLocked, state.lockedRowNumbers, actions.setItems, actions.setLockedRowNumbers, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation, finalizeAllTypingSessions]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
+    // Finalize any typing sessions before structural change
+    finalizeAllTypingSessions();
+    
     // Auto-save will handle this change - no special handling needed
     // Add header operation already recorded by add_header operation
     
@@ -1776,7 +1798,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
       markStructuralChange('add_header', { newItems: [newHeader], insertIndex: actualIndex });
     }
-  }, [state.items, state.title, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation]);
+  }, [state.items, state.title, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation, finalizeAllTypingSessions]);
 
 
   // Clean up timeouts on unmount
