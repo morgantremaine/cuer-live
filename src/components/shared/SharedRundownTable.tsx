@@ -402,10 +402,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
   // Helper function to toggle column expand state (expand/collapse all cells in a column)
   const toggleColumnExpand = (columnKey: string) => {
-    // Store the current scroll position and active element
-    const currentScrollTop = window.scrollY;
-    const currentActiveElement = document.activeElement;
-    
     const newState = !columnExpandState[columnKey];
     setColumnExpandState(prev => ({ ...prev, [columnKey]: newState }));
     
@@ -421,20 +417,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
         }
       });
       return newSet;
-    });
-
-    // Restore scroll position and focus after state updates
-    requestAnimationFrame(() => {
-      // Restore the scroll position
-      window.scrollTo(0, currentScrollTop);
-      
-      // If there was an active element that's still in the DOM and focusable, restore focus
-      if (currentActiveElement && 
-          document.contains(currentActiveElement) && 
-          currentActiveElement instanceof HTMLElement &&
-          currentActiveElement.tabIndex >= 0) {
-        currentActiveElement.focus();
-      }
     });
   };
 
