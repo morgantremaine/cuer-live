@@ -114,33 +114,52 @@ export const useSimpleAutoSave = (
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
-  const SIGNATURE_CACHE_TTL = 1000; // FIXED: Reduced from 5000ms to 1000ms for better edit responsiveness
   
-  // Memory cleanup for large rundowns to prevent memory leaks
+  // PHASE 2.2: Dynamic cache TTL based on rundown size for better performance
+  const itemCount = state.items?.length || 0;
+  const SIGNATURE_CACHE_TTL = itemCount > 100 ? 5000 : 1000; // 5s for large rundowns, 1s for small
+  
+  // PHASE 2: Enhanced memory cleanup for signature cache
   useEffect(() => {
-    const itemCount = state.items?.length || 0;
-    if (itemCount > 150) {
-      const interval = setInterval(() => {
-        // Clear old cache entries to prevent memory accumulation
-        const now = Date.now();
-        for (const [key, value] of signatureCache.current.entries()) {
-          if (now - value.timestamp > SIGNATURE_CACHE_TTL) {
-            signatureCache.current.delete(key);
-          }
-        }
-        
-        // Force garbage collection hint for very large rundowns
-        if (itemCount > 200 && signatureCache.current.size > 100) {
-          signatureCache.current.clear();
-          console.log('🧹 AutoSave: Cleared signature cache for memory optimization');
-        }
-      }, 10000); // Clean every 10 seconds for large rundowns
+    const currentItemCount = state.items?.length || 0;
+    
+    // More aggressive cleanup for rundowns >100 items
+    const cleanupInterval = currentItemCount > 100 ? 5000 : 10000;
+    
+    const interval = setInterval(() => {
+      const now = Date.now();
+      let cleanedCount = 0;
       
-      return () => clearInterval(interval);
-    }
-  }, [state.items?.length]);
+      // Clear old cache entries to prevent memory accumulation
+      for (const [key, value] of signatureCache.current.entries()) {
+        if (now - value.timestamp > SIGNATURE_CACHE_TTL) {
+          signatureCache.current.delete(key);
+          cleanedCount++;
+        }
+      }
+      
+      if (cleanedCount > 0) {
+        console.log(`🧹 AutoSave: Cleaned ${cleanedCount} stale signature cache entries`);
+      }
+      
+      // Force garbage collection hint for very large caches
+      if (signatureCache.current.size > 100) {
+        signatureCache.current.clear();
+        console.log('🧹 AutoSave: Cleared signature cache for memory optimization');
+      }
+    }, cleanupInterval);
+    
+    return () => clearInterval(interval);
+  }, [state.items?.length, SIGNATURE_CACHE_TTL]);
 
-  // Create content signature from any state (for use with snapshots) with caching
+  // PHASE 2.3: Debounced signature creation refs
+  const signatureDebounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const pendingSignatureRequestRef = useRef<{
+    state: RundownState;
+    resolve: (signature: string) => void;
+  } | null>(null);
+  
+  // Create content signature from any state (for use with snapshots) with caching and debouncing
   const createContentSignatureFromState = useCallback((targetState: RundownState) => {
     const itemCount = targetState.items?.length || 0;
     
@@ -170,8 +189,8 @@ export const useSimpleAutoSave = (
       return cached.signature;
     }
     
-    // Performance optimization for very large rundowns - use lightweight signature
-    if (itemCount > 200) {
+    // PHASE 2.1: Always use lightweight signatures for better performance (32-bit hash, ~1 in 4B collision chance)
+    if (itemCount > 0) {
       const lightweightSignature = createLightweightContentSignature({
         items: targetState.items || [],
         title: targetState.title || '',
