@@ -18,6 +18,8 @@ interface RundownTableProps {
   hasClipboardData: boolean;
   selectedRowId: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
+  expandedCells?: Set<string>;
+  onToggleCellExpanded?: (itemId: string, columnKey: string) => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -65,6 +67,8 @@ const RundownTable = ({
   hasClipboardData,
   selectedRowId,
   columnExpandState,
+  expandedCells,
+  onToggleCellExpanded,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -165,6 +169,8 @@ const RundownTable = ({
                   isDragging={isDragging}
                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
                   columnExpandState={columnExpandState}
+                  expandedCells={expandedCells}
+                  onToggleCellExpanded={onToggleCellExpanded}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}

@@ -11,6 +11,8 @@ interface ExpandableScriptCellProps {
   textColor?: string;
   columnExpanded?: boolean;
   fieldType?: 'script' | 'notes';
+  isExpanded?: boolean; // NEW: externally managed expanded state
+  onToggleExpanded?: () => void; // NEW: toggle callback
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -23,10 +25,12 @@ const ExpandableScriptCell = ({
   textColor,
   columnExpanded = false,
   fieldType = 'script',
+  isExpanded: externalIsExpanded,
+  onToggleExpanded,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -41,15 +45,16 @@ const ExpandableScriptCell = ({
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
   
-  // Always use local state - column state just sets it initially
+  // Use external state if provided, otherwise use internal state
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
   const effectiveExpanded = isExpanded;
   
   // Sync with column expanded state changes but maintain local control
   useEffect(() => {
-    if (columnExpanded !== undefined) {
-      setIsExpanded(columnExpanded);
+    if (columnExpanded !== undefined && externalIsExpanded === undefined) {
+      setInternalIsExpanded(columnExpanded);
     }
-  }, [columnExpanded]);
+  }, [columnExpanded, externalIsExpanded]);
 
   // Track scroll events to prevent focus-during-scroll expansion AND height recalculations
   useEffect(() => {
@@ -112,8 +117,12 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Always allow local toggle
-    setIsExpanded(!isExpanded);
+    // Use external toggle if provided, otherwise use internal state
+    if (onToggleExpanded) {
+      onToggleExpanded();
+    } else {
+      setInternalIsExpanded(!internalIsExpanded);
+    }
   };
 
   // Handle clicking to focus the textarea (no separate edit mode)
@@ -433,7 +442,11 @@ const ExpandableScriptCell = ({
                 
                 // Otherwise, it's a legitimate Tab or click - allow expansion
                 if (e.relatedTarget || document.activeElement === e.target) {
-                  setIsExpanded(true);
+                  if (onToggleExpanded && externalIsExpanded !== undefined) {
+                    onToggleExpanded();
+                  } else {
+                    setInternalIsExpanded(true);
+                  }
                   setShouldAutoFocus(true);
                 }
               }}

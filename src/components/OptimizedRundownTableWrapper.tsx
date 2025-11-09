@@ -19,6 +19,8 @@ interface OptimizedRundownTableWrapperProps {
   selectedRowId: string | null;
   startTime: string;
   columnExpandState?: { [columnKey: string]: boolean };
+  expandedCells?: Set<string>;
+  onToggleCellExpanded?: (itemId: string, columnKey: string) => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
@@ -57,6 +59,8 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   startTime,
   currentSegmentId,
   columnExpandState,
+  expandedCells,
+  onToggleCellExpanded,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -181,6 +185,8 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       visibleColumns={visibleColumns}
       currentSegmentId={currentSegmentId}
       columnExpandState={columnExpandState}
+      expandedCells={expandedCells}
+      onToggleCellExpanded={onToggleCellExpanded}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
       getHeaderDuration={getHeaderDuration}

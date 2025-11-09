@@ -8,8 +8,10 @@ import { Column } from '@/types/columns';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 import { getMinimumWidth } from '@/utils/columnSizing';
+import { useLocalExpandedCells } from '@/hooks/useLocalExpandedCells';
 
 interface RundownContentProps {
+  rundownId: string;
   title?: string;
   totalRuntime?: string;
   items: RundownItem[];
@@ -82,6 +84,7 @@ interface RundownContentProps {
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
+  rundownId,
   items,
   visibleColumns,
   allColumns,
@@ -153,6 +156,21 @@ const RundownContent = React.memo<RundownContentProps>(({
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
+
+  // Use localStorage for expanded cells
+  const { expandedCells, updateExpandedCells } = useLocalExpandedCells(rundownId);
+  
+  // Toggle individual cell expand state
+  const toggleCellExpanded = useCallback((itemId: string, columnKey: string) => {
+    const cellKey = `${itemId}-${columnKey}`;
+    const newSet = new Set(expandedCells);
+    if (newSet.has(cellKey)) {
+      newSet.delete(cellKey);
+    } else {
+      newSet.add(cellKey);
+    }
+    updateExpandedCells(newSet);
+  }, [expandedCells, updateExpandedCells]);
 
   // Toggle column expand state
   const handleToggleColumnExpand = useCallback((columnKey: string) => {
@@ -413,6 +431,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               selectedRowId={selectedRowId}
               startTime={startTime}
               columnExpandState={columnExpandState}
+              expandedCells={expandedCells}
+              onToggleCellExpanded={toggleCellExpanded}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onUpdateItem={onUpdateItem}
@@ -462,6 +482,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               selectedRowId={selectedRowId}
               startTime={startTime}
               columnExpandState={columnExpandState}
+              expandedCells={expandedCells}
+              onToggleCellExpanded={toggleCellExpanded}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onUpdateItem={onUpdateItem}

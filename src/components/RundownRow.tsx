@@ -23,6 +23,8 @@ interface RundownRowProps {
   currentSegmentId?: string | null;
   isCollapsed?: boolean;
   columnExpandState?: { [columnKey: string]: boolean };
+  expandedCells?: Set<string>;
+  onToggleCellExpanded?: (itemId: string, columnKey: string) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -77,6 +79,8 @@ const RundownRow = (props: RundownRowProps) => {
         currentSegmentId={props.currentSegmentId}
         isCollapsed={props.isCollapsed}
         columnExpandState={props.columnExpandState}
+        expandedCells={props.expandedCells}
+        onToggleCellExpanded={props.onToggleCellExpanded}
         onToggleCollapse={props.onToggleCollapse}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
@@ -104,6 +108,8 @@ const RundownRow = (props: RundownRowProps) => {
       hasClipboardData={props.hasClipboardData}
       currentSegmentId={props.currentSegmentId}
       columnExpandState={props.columnExpandState}
+      expandedCells={props.expandedCells}
+      onToggleCellExpanded={props.onToggleCellExpanded}
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}

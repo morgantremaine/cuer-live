@@ -21,6 +21,8 @@ interface CellRendererProps {
   backgroundColor?: string;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
+  expandedCells?: Set<string>;
+  onToggleCellExpanded?: (itemId: string, columnKey: string) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -36,6 +38,8 @@ const CellRenderer = ({
   backgroundColor,
   currentSegmentId,
   columnExpandState = {},
+  expandedCells,
+  onToggleCellExpanded,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -152,6 +156,9 @@ const CellRenderer = ({
 
   // Use ExpandableScriptCell for script and notes fields (both built-in columns)
   if (column.key === 'script' || column.key === 'notes') {
+    const cellKey = `${item.id}-${column.key}`;
+    const isCellExpanded = expandedCells?.has(cellKey);
+    
     return (
       <ExpandableScriptCell
         value={value}
@@ -161,6 +168,8 @@ const CellRenderer = ({
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
+        isExpanded={isCellExpanded}
+        onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}

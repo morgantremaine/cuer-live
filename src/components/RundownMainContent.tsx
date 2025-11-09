@@ -54,6 +54,7 @@ const RundownMainContent = ({
   return (
     <>
       <RundownContent 
+        rundownId={contentProps.rundownId || ''}
         {...contentProps}
         visibleColumns={visibleColumns}
         allColumns={columns}

@@ -19,6 +19,8 @@ interface RegularRowContentProps {
   isSelected?: boolean;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
+  expandedCells?: Set<string>;
+  onToggleCellExpanded?: (itemId: string, columnKey: string) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -38,6 +40,8 @@ const RegularRowContent = ({
   isSelected = false,
   currentSegmentId,
   columnExpandState = {},
+  expandedCells,
+  onToggleCellExpanded,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -98,6 +102,8 @@ const RegularRowContent = ({
               backgroundColor="transparent"
               currentSegmentId={currentSegmentId}
               columnExpandState={columnExpandState}
+              expandedCells={expandedCells}
+              onToggleCellExpanded={onToggleCellExpanded}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
