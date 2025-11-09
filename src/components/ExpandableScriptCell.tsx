@@ -126,7 +126,8 @@ const ExpandableScriptCell = ({
 
   // Auto-resize textarea based on content (skip during scrolling to prevent jumps)
   useEffect(() => {
-    if (textareaRef.current && !isScrolling) {
+    const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
+    if (textareaRef.current && !isScrolling && timeSinceScroll > 300) {
       const textarea = textareaRef.current;
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
@@ -302,37 +303,35 @@ const ExpandableScriptCell = ({
           <div className="relative">
             {/* Functional textarea (transparent when overlay is visible) */}
             <textarea
-              ref={(el) => {
-                if (el) {
-                  cellRefs.current[cellKey] = el;
-                  textareaRef.current = el;
-                  // Auto-resize on mount (skip if scrolling)
-                  if (!isScrolling) {
+                ref={(el) => {
+                  if (el) {
+                    cellRefs.current[cellKey] = el;
+                    textareaRef.current = el;
+                    // Auto-resize on mount - check scroll state at execution time
                     requestAnimationFrame(() => {
-                      if (el) {
+                      const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
+                      if (el && timeSinceScroll > 300) {
                         el.style.height = 'auto';
                         const scrollHeight = el.scrollHeight;
                         el.style.height = Math.max(scrollHeight, 24) + 'px';
                       }
                     });
+                  } else {
+                    delete cellRefs.current[cellKey];
                   }
-                } else {
-                  delete cellRefs.current[cellKey];
-                }
-              }}
+                }}
               value={value}
               onChange={(e) => {
                 onUpdateValue(e.target.value);
-                // Trigger resize on content change (skip if scrolling)
-                if (!isScrolling) {
-                  requestAnimationFrame(() => {
-                    if (e.target) {
-                      e.target.style.height = 'auto';
-                      const scrollHeight = e.target.scrollHeight;
-                      e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-                    }
-                  });
-                }
+                // Trigger resize on content change - check scroll state at execution time
+                requestAnimationFrame(() => {
+                  const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
+                  if (e.target && timeSinceScroll > 300) {
+                    e.target.style.height = 'auto';
+                    const scrollHeight = e.target.scrollHeight;
+                    e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+                  }
+                });
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
