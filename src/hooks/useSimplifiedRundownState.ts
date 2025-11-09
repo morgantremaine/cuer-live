@@ -56,7 +56,6 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced conflict resolution system with validation
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
-  const recentCellUpdatesRef = useRef<Map<string, { timestamp: number; value: any; clientId?: string }>>(new Map());
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
@@ -119,12 +118,34 @@ export const useSimplifiedRundownState = () => {
   // Cleanup refs on unmount to release memory
   useEffect(() => {
     return () => {
-      recentCellUpdatesRef.current.clear();
       recentlyEditedFieldsRef.current.clear();
       dropdownFieldProtectionRef.current.clear();
       typingSessionRef.current = null;
       activeFocusFieldRef.current = null;
     };
+  }, []);
+
+  // PHASE 1.2: Aggressive cleanup for recentlyEditedFieldsRef to prevent unbounded growth
+  // Removes entries older than 30 seconds every 10 seconds
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      const STALE_THRESHOLD_MS = 30000; // 30 seconds
+      
+      let cleanedCount = 0;
+      for (const [key, timestamp] of recentlyEditedFieldsRef.current.entries()) {
+        if (now - timestamp > STALE_THRESHOLD_MS) {
+          recentlyEditedFieldsRef.current.delete(key);
+          cleanedCount++;
+        }
+      }
+      
+      if (cleanedCount > 0) {
+        console.log(`🧹 Cleaned ${cleanedCount} stale entries from recentlyEditedFieldsRef (${recentlyEditedFieldsRef.current.size} remaining)`);
+      }
+    }, 10000); // Run every 10 seconds
+    
+    return () => clearInterval(cleanupInterval);
   }, []);
 
 
@@ -284,38 +305,13 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // CRITICAL: Check for recent cell updates to prevent overwriting them
-      const recentCellUpdates = recentCellUpdatesRef.current;
-      let hasRecentCellUpdates = false;
-      
-      if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
-        // Check if any item fields have recent cell updates
-        for (const item of updatedRundown.items) {
-          const itemFromState = state.items.find(existing => existing.id === item.id);
-          if (itemFromState) {
-            for (const [field, value] of Object.entries(item)) {
-              if (field === 'id') continue;
-              const updateKey = `${item.id}-${field}`;
-              const recentUpdate = recentCellUpdates.get(updateKey);
-              if (recentUpdate && Date.now() - recentUpdate.timestamp < 3000) {
-                console.log('🚫 Skipping realtime update for recently cell-updated field:', updateKey);
-                hasRecentCellUpdates = true;
-                // Don't override this field
-                (item as any)[field] = itemFromState[field];
-              }
-            }
-          }
-        }
-      }
-      
       // ALWAYS apply updates - never block them. Google Sheets style.
       debugLogger.realtime('Processing realtime update immediately:', {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
         isTyping: isTypingActive(),
-        activeField: typingSessionRef.current?.fieldKey,
-        hasRecentCellUpdates
+        activeField: typingSessionRef.current?.fieldKey
       });
       
       // SIMPLIFIED: Remove complex structural change detection and cooldowns
