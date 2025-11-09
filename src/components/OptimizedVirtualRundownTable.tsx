@@ -135,37 +135,20 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
     );
   }
 
-  // Virtualized rendering with spacers
+  // Virtualized rendering with wrapper div to handle total height
   return (
-    <>
-      {/* Spacer before visible items */}
-      {offsetY > 0 && (
-        <tbody>
-          <tr style={{ height: `${offsetY}px` }}>
-            <td></td>
-          </tr>
-        </tbody>
-      )}
-
-      {/* Visible items */}
-      <RundownTable
-        items={displayItems}
-        getRowNumber={adjustedGetRowNumber}
-        onDragStart={adjustedOnDragStart}
-        onDrop={adjustedOnDrop}
-        onRowSelect={adjustedOnRowSelect}
-        {...restProps}
-      />
-
-      {/* Spacer after visible items */}
-      {totalHeight - offsetY - (displayItems.length * 40) > 0 && (
-        <tbody>
-          <tr style={{ height: `${totalHeight - offsetY - (displayItems.length * 40)}px` }}>
-            <td></td>
-          </tr>
-        </tbody>
-      )}
-    </>
+    <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
+      <div style={{ transform: `translateY(${offsetY}px)` }}>
+        <RundownTable
+          items={displayItems}
+          getRowNumber={adjustedGetRowNumber}
+          onDragStart={adjustedOnDragStart}
+          onDrop={adjustedOnDrop}
+          onRowSelect={adjustedOnRowSelect}
+          {...restProps}
+        />
+      </div>
+    </div>
   );
 };
 
