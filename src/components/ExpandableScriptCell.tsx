@@ -34,6 +34,7 @@ const ExpandableScriptCell = ({
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastScrollTimeRef = useRef<number>(0);
   
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
@@ -47,6 +48,36 @@ const ExpandableScriptCell = ({
       setIsExpanded(columnExpanded);
     }
   }, [columnExpanded]);
+
+  // Track scroll events to prevent focus-during-scroll expansion
+  useEffect(() => {
+    const handleScroll = () => {
+      lastScrollTimeRef.current = Date.now();
+    };
+    
+    // Listen to both window scroll and container scroll
+    window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    
+    // Also listen to the table container scroll
+    const tableContainer = containerRef.current?.closest('.overflow-auto');
+    if (tableContainer) {
+      tableContainer.addEventListener('scroll', handleScroll, { passive: true });
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+      if (tableContainer) {
+        tableContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
+
+  // Clear row height when expanded to prevent stale ResizeObserver measurements
+  useEffect(() => {
+    if (effectiveExpanded) {
+      setRowHeight(0);
+    }
+  }, [effectiveExpanded]);
 
   // Auto-focus the real textarea only when expanded via tab navigation (shouldAutoFocus = true)
   useEffect(() => {
@@ -376,8 +407,18 @@ const ExpandableScriptCell = ({
               tabIndex={0}
               readOnly
               onFocus={(e) => {
-                // Only auto-expand if focus was triggered by Tab or click, not by scrolling
-                // Check if the focus was triggered by keyboard navigation
+                // Prevent expansion if focus happened during scrolling
+                const focusTime = Date.now();
+                const timeSinceLastScroll = focusTime - lastScrollTimeRef.current;
+                
+                // If focus occurred within 150ms of a scroll event, it's scroll-triggered
+                if (timeSinceLastScroll < 150) {
+                  // Blur immediately to prevent focus and expansion
+                  e.target.blur();
+                  return;
+                }
+                
+                // Otherwise, it's a legitimate Tab or click - allow expansion
                 if (e.relatedTarget || document.activeElement === e.target) {
                   setIsExpanded(true);
                   setShouldAutoFocus(true);
