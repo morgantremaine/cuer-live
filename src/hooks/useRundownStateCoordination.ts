@@ -176,10 +176,17 @@ export const useRundownStateCoordination = () => {
     persistedCollapsedHeaders
   );
 
-  // Sync collapsed headers changes to localStorage
+  // Sync collapsed headers changes to localStorage (only when contents actually change)
   useEffect(() => {
-    updateCollapsedHeaders(collapsedHeaders);
-  }, [collapsedHeaders, updateCollapsedHeaders]);
+    const currentIds = Array.from(collapsedHeaders).sort().join(',');
+    const persistedIds = Array.from(persistedCollapsedHeaders).sort().join(',');
+    
+    // Only sync if contents actually differ
+    if (currentIds !== persistedIds) {
+      console.log('💾 Syncing collapsed headers to localStorage:', Array.from(collapsedHeaders));
+      updateCollapsedHeaders(collapsedHeaders);
+    }
+  }, [collapsedHeaders, persistedCollapsedHeaders, updateCollapsedHeaders]);
 
   // Setup drag and drop with structural change integration - initialized early
   const dragAndDrop = useDragAndDrop(
