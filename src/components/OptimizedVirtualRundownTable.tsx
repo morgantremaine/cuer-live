@@ -135,20 +135,35 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
     );
   }
 
-  // Virtualized rendering with wrapper div to handle total height
+  // Calculate spacer heights for virtualization
+  const topSpacerHeight = offsetY;
+  const bottomSpacerHeight = totalHeight - offsetY - (virtualItems.length * 40);
+
+  // Create spacer rows to maintain scroll height
+  const topSpacer = topSpacerHeight > 0 ? (
+    <tr style={{ height: `${topSpacerHeight}px` }} aria-hidden="true">
+      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none' }} />
+    </tr>
+  ) : null;
+
+  const bottomSpacer = bottomSpacerHeight > 0 ? (
+    <tr style={{ height: `${bottomSpacerHeight}px` }} aria-hidden="true">
+      <td colSpan={restProps.visibleColumns.length + 1} style={{ padding: 0, border: 'none' }} />
+    </tr>
+  ) : null;
+
+  // Virtualized rendering with spacer rows
   return (
-    <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
-      <div style={{ transform: `translateY(${offsetY}px)` }}>
-        <RundownTable
-          items={displayItems}
-          getRowNumber={adjustedGetRowNumber}
-          onDragStart={adjustedOnDragStart}
-          onDrop={adjustedOnDrop}
-          onRowSelect={adjustedOnRowSelect}
-          {...restProps}
-        />
-      </div>
-    </div>
+    <RundownTable
+      items={displayItems}
+      getRowNumber={adjustedGetRowNumber}
+      onDragStart={adjustedOnDragStart}
+      onDrop={adjustedOnDrop}
+      onRowSelect={adjustedOnRowSelect}
+      topSpacer={topSpacer}
+      bottomSpacer={bottomSpacer}
+      {...restProps}
+    />
   );
 };
 

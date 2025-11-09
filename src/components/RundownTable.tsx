@@ -51,6 +51,8 @@ interface RundownTableProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
+  topSpacer?: React.ReactNode;
+  bottomSpacer?: React.ReactNode;
 }
 
 const RundownTable = ({
@@ -99,7 +101,9 @@ const RundownTable = ({
   onJumpToHere,
   onMoveItemUp,
   onMoveItemDown,
-  markActiveTyping
+  markActiveTyping,
+  topSpacer,
+  bottomSpacer
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -129,6 +133,7 @@ const RundownTable = ({
 
   return (
     <tbody className="bg-background">
+          {topSpacer}
           {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
@@ -212,6 +217,7 @@ const RundownTable = ({
               </React.Fragment>
             );
           })}
+          {bottomSpacer}
     </tbody>
   );
 };
