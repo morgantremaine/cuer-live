@@ -300,11 +300,6 @@ const BlueprintContent = () => {
           rundown={rundown}
         />
 
-        <RundownSummary 
-          rundownItems={rundown?.items || []}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
-        />
-
         <div 
           data-drop-container
           onDragOver={handleDragOver}
@@ -370,6 +365,11 @@ const BlueprintContent = () => {
             <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>
+
+        <RundownSummary 
+          rundownItems={rundown?.items || []}
+          rundownTitle={rundown?.title || 'Unknown Rundown'}
+        />
       </div>
     </div>
   );
