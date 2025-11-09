@@ -8,18 +8,33 @@ const transformDataForStructuralSave = (operationType: string, operationData: an
   switch (operationType) {
     case 'add_row':
     case 'add_header':
-      // Transform: addedItem + addedIndex -> newItems + insertIndex
+      // Handle both single and batch adds
+      if (operationData.addedItems && Array.isArray(operationData.addedItems)) {
+        // Batch add (e.g., paste operation)
+        return {
+          newItems: operationData.addedItems,
+          insertIndex: operationData.addedIndex
+        };
+      } else if (operationData.addedItem) {
+        // Single add
+        return {
+          newItems: [operationData.addedItem],
+          insertIndex: operationData.addedIndex
+        };
+      }
       return {
-        newItems: operationData.addedItem ? [operationData.addedItem] : [],
-        insertIndex: operationData.addedIndex
+        newItems: [],
+        insertIndex: operationData.addedIndex || 0
       };
       
     case 'delete_row':
-      // Already in correct format (deletedIds)
-      return operationData;
+      // Only pass deletedIds (works for both single and batch)
+      return {
+        deletedIds: operationData.deletedIds || []
+      };
       
     case 'reorder':
-      // Transform to expected format
+      // Transform to expected format (order array)
       return {
         order: operationData.newOrder
       };
