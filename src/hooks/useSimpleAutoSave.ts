@@ -97,23 +97,15 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state]);
 
-  // Set initial load cooldown to prevent false attribution - runs ONCE on load
+  // Set initial load cooldown - reduced to 500ms for faster editing
   useEffect(() => {
     if (isInitiallyLoaded) {
-      // Detect if this is a brand new rundown (created in last 30 seconds)
-      const itemCount = state.items?.length || 0;
-      const hasDefaultTitle = state.title === 'Untitled Rundown' || state.title.startsWith('New Rundown');
-      
-      // For brand new rundowns with few items, use minimal cooldown (500ms)
-      // For existing rundowns, use 3 seconds to prevent false attribution
-      const isNewRundown = itemCount <= 20 && hasDefaultTitle;
-      const cooldownMs = isNewRundown ? 500 : 3000;
+      const cooldownMs = 500;
       initialLoadCooldownRef.current = Date.now() + cooldownMs;
       
-      console.log(`🕐 Initial load cooldown set: ${cooldownMs}ms (runs ONCE)`, {
-        isNewRundown,
+      console.log(`🕐 Initial load cooldown set: ${cooldownMs}ms`, {
         rundownId,
-        itemCount
+        itemCount: state.items?.length || 0
       });
     }
     // CRITICAL: Only run this once on initial load, not on every state change
