@@ -132,16 +132,19 @@ export const useSimplifiedRundownState = () => {
       const now = Date.now();
       const STALE_THRESHOLD_MS = 30000; // 30 seconds
       
-      let cleanedCount = 0;
+      const cleanedKeys: string[] = [];
       for (const [key, timestamp] of recentlyEditedFieldsRef.current.entries()) {
         if (now - timestamp > STALE_THRESHOLD_MS) {
           recentlyEditedFieldsRef.current.delete(key);
-          cleanedCount++;
+          cleanedKeys.push(key);
         }
       }
       
-      if (cleanedCount > 0) {
-        console.log(`🧹 Cleaned ${cleanedCount} stale entries from recentlyEditedFieldsRef (${recentlyEditedFieldsRef.current.size} remaining)`);
+      if (cleanedKeys.length > 0) {
+        console.log(`🧹 Phase 1: Cleaned ${cleanedKeys.length} stale entries from recentlyEditedFieldsRef (${recentlyEditedFieldsRef.current.size} remaining)`, {
+          cleanedKeys: cleanedKeys.slice(0, 5), // Show first 5 keys
+          totalCleaned: cleanedKeys.length
+        });
       }
     }, 10000); // Run every 10 seconds
     
