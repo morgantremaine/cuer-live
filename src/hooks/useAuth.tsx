@@ -146,6 +146,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isTokenValid])
 
+  // Add session refresh on visibility change (for laptop wake, etc.)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      // Only check when tab becomes visible
+      if (document.visibilityState !== 'visible') return
+      
+      // Only check if we have a session
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      if (!currentSession) return
+      
+      logger.debug('🔍 Tab visible - checking session validity...')
+      
+      // Check if token is still valid
+      if (!isTokenValid(currentSession)) {
+        logger.debug('🔄 Session expired or expiring - refreshing...')
+        
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+        
+        if (refreshError) {
+          logger.error('❌ Session refresh failed on visibility change', refreshError)
+          // Session is dead - clear state and redirect to login
+          logger.debug('🚪 Redirecting to login due to expired session')
+          setUser(null)
+          setSession(null)
+          localStorage.removeItem('sb-khdiwrkgahsbjszlwnob-auth-token')
+          window.location.href = '/login'
+        } else if (refreshedSession) {
+          logger.debug('✅ Session refreshed successfully on visibility change')
+          // The onAuthStateChange listener will handle updating state
+        }
+      } else {
+        logger.debug('✅ Session still valid')
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [isTokenValid])
+
   // Memoized auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
     logger.debug('Attempting to sign in', { email });
