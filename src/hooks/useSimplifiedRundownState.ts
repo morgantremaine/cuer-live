@@ -573,12 +573,35 @@ export const useSimplifiedRundownState = () => {
             }
             case 'items:add': {
               const payload = update.value || {};
-              const item = payload.item;
-              const index = Math.max(0, Math.min(payload.index ?? stateRef.current.items.length, stateRef.current.items.length));
-              if (item && !stateRef.current.items.find(i => i.id === item.id)) {
-                const newItems = [...stateRef.current.items];
-                newItems.splice(index, 0, item);
-                actionsRef.current.loadState({ items: newItems });
+              
+              // Check for batch add first (multiple items from undo/redo)
+              if (payload.items && Array.isArray(payload.items)) {
+                const items = payload.items;
+                const index = Math.max(0, Math.min(payload.index ?? stateRef.current.items.length, stateRef.current.items.length));
+                
+                if (items.length > 0) {
+                  // Filter out any items that already exist (prevent duplicates)
+                  const newItemsToAdd = items.filter((item: RundownItem) => 
+                    !stateRef.current.items.find(i => i.id === item.id)
+                  );
+                  
+                  if (newItemsToAdd.length > 0) {
+                    const newItems = [...stateRef.current.items];
+                    newItems.splice(index, 0, ...newItemsToAdd);
+                    actionsRef.current.loadState({ items: newItems });
+                    console.log('📋 Applied batch add broadcast:', { addedCount: newItemsToAdd.length, index });
+                  }
+                }
+              } else {
+                // Single item add (original behavior)
+                const item = payload.item;
+                const index = Math.max(0, Math.min(payload.index ?? stateRef.current.items.length, stateRef.current.items.length));
+                if (item && !stateRef.current.items.find(i => i.id === item.id)) {
+                  const newItems = [...stateRef.current.items];
+                  newItems.splice(index, 0, item);
+                  actionsRef.current.loadState({ items: newItems });
+                  console.log('📋 Applied single add broadcast:', { index });
+                }
               }
               break;
             }
