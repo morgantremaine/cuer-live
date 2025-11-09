@@ -263,7 +263,7 @@ const ExpandableScriptCell = ({
 
   // Calculate dynamic line clamp based on row height
   const getDynamicLineClamp = () => {
-    if (rowHeight === 0) return 2; // Default fallback
+    if (rowHeight === 0) return 1; // Default fallback
     
     const lineHeight = 20; // 1.25rem (20px) as specified in the styling
     const padding = 16; // Account for py-1 (8px top + 8px bottom)
