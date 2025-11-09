@@ -161,7 +161,9 @@ export const useOperationUndo = ({
         const reverseOpType = getReverseOperationType(lastOperation.type);
         if (reverseOpType) {
           const transformedData = transformDataForReverseOp(lastOperation.type, lastOperation.data);
-          onOperationComplete(reverseOpType, transformedData);
+          // Further transform to structural save format (handles reorder: newOrder -> order)
+          const structuralData = transformDataForStructuralSave(reverseOpType, transformedData);
+          onOperationComplete(reverseOpType, structuralData);
         }
       }
     }
