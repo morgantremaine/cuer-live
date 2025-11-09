@@ -18,11 +18,23 @@ export const useHeaderCollapse = (
   );
 
   // Sync internal state when initialCollapsedHeaders changes (e.g., from localStorage load)
+  // Convert Set to array for proper React dependency tracking
   useEffect(() => {
-    if (initialCollapsedHeaders) {
-      setCollapsedHeaders(initialCollapsedHeaders);
+    if (initialCollapsedHeaders && initialCollapsedHeaders.size > 0) {
+      const initialIds = Array.from(initialCollapsedHeaders);
+      const currentIds = Array.from(collapsedHeaders);
+      
+      // Only update if the contents actually differ
+      const hasDifference = 
+        initialIds.length !== currentIds.length ||
+        initialIds.some(id => !collapsedHeaders.has(id));
+      
+      if (hasDifference) {
+        console.log('🔄 Syncing collapsed headers from localStorage:', initialIds);
+        setCollapsedHeaders(new Set(initialIds));
+      }
     }
-  }, [initialCollapsedHeaders]);
+  }, [Array.from(initialCollapsedHeaders || []).sort().join(',')]);
 
   // Group items by their headers - store IDs not references
   const headerGroups = useMemo((): HeaderGroup[] => {
