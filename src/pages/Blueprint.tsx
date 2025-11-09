@@ -366,10 +366,12 @@ const BlueprintContent = () => {
           )}
         </div>
 
-        <RundownSummary 
-          rundownItems={rundown?.items || []}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
-        />
+        <div className="mt-8">
+          <RundownSummary 
+            rundownItems={rundown?.items || []}
+            rundownTitle={rundown?.title || 'Unknown Rundown'}
+          />
+        </div>
       </div>
     </div>
   );
