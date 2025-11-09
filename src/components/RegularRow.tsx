@@ -252,10 +252,7 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
-        style={{ 
-          backgroundColor,
-          contain: 'layout style paint'
-        }}
+        style={{ backgroundColor }}
         data-item-id={item.id}
         data-type="regular"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
@@ -297,38 +294,4 @@ const RegularRow = (props: RegularRowProps) => {
   );
 };
 
-// Memoize with custom comparison to prevent unnecessary re-renders
-// Only compare essential props - allow re-render when any data changes
-const areEqual = (prev: RegularRowProps, next: RegularRowProps) => {
-  // Check all item fields that can change
-  const itemChanged = 
-    prev.item.id !== next.item.id ||
-    prev.item.duration !== next.item.duration ||
-    prev.item.script !== next.item.script ||
-    prev.item.notes !== next.item.notes ||
-    prev.item.talent !== next.item.talent ||
-    prev.item.gfx !== next.item.gfx ||
-    prev.item.video !== next.item.video ||
-    prev.item.color !== next.item.color ||
-    prev.item.isFloating !== next.item.isFloating ||
-    prev.item.isFloated !== next.item.isFloated;
-    
-  // Check row state
-  const stateChanged =
-    prev.isSelected !== next.isSelected ||
-    prev.isDragging !== next.isDragging ||
-    prev.isCurrentlyPlaying !== next.isCurrentlyPlaying ||
-    prev.status !== next.status ||
-    prev.showColorPicker !== next.showColorPicker ||
-    prev.rowNumber !== next.rowNumber ||
-    prev.isDraggingMultiple !== next.isDraggingMultiple;
-  
-  // Check if columns changed (by comparing column IDs)
-  const columnsChanged = prev.columns.length !== next.columns.length ||
-    prev.columns.some((col, i) => col.id !== next.columns[i]?.id);
-  
-  // Re-render if anything changed
-  return !itemChanged && !stateChanged && !columnsChanged;
-};
-
-export default React.memo(RegularRow, areEqual);
+export default RegularRow;

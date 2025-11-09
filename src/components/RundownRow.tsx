@@ -127,5 +127,4 @@ const RundownRow = (props: RundownRowProps) => {
   );
 };
 
-// Memoize to prevent unnecessary re-renders
-export default React.memo(RundownRow);
+export default RundownRow;

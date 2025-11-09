@@ -56,18 +56,6 @@ export const useMemoryMonitor = ({
     // Only show warnings if enough time has passed
     if (now - lastWarningRef.current < WARNING_COOLDOWN) return;
     
-    // For large rundowns, aggressively suggest GC when memory is high
-    if (itemCount > 150 && usedMB > MEMORY_WARNING_MB) {
-      // Try to hint at garbage collection
-      if (typeof window !== 'undefined' && (window as any).gc) {
-        try {
-          (window as any).gc();
-        } catch (e) {
-          // Ignore errors
-        }
-      }
-    }
-    
     if (usedMB > MEMORY_CRITICAL_MB) {
       // Silently handle critical memory usage without user notifications
       lastWarningRef.current = now;
