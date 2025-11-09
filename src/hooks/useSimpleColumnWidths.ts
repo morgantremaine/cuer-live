@@ -1,6 +1,7 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Column } from '@/types/columns';
+import { throttle } from '@/utils/performanceOptimizations';
 
 // Define minimum widths for different column types - optimized for content
 const getMinimumWidth = (column: Column): number => {
@@ -33,6 +34,29 @@ export const useSimpleColumnWidths = (
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const [isResizing, setIsResizing] = useState(false);
 
+  // Phase 3: Throttled callbacks for persistence (avoid excessive saves during resize)
+  const throttledOnColumnWidthChange = useRef(
+    onColumnWidthChange ? throttle(onColumnWidthChange, 300) : null
+  );
+  const throttledOnUpdateColumnWidth = useRef(
+    onUpdateColumnWidth ? throttle(onUpdateColumnWidth, 300) : null
+  );
+
+  // Update throttled refs when callbacks change
+  useEffect(() => {
+    throttledOnColumnWidthChange.current = onColumnWidthChange ? throttle(onColumnWidthChange, 300) : null;
+    throttledOnUpdateColumnWidth.current = onUpdateColumnWidth ? throttle(onUpdateColumnWidth, 300) : null;
+  }, [onColumnWidthChange, onUpdateColumnWidth]);
+
+  // Phase 3: Memoized minimum widths map for faster lookups
+  const minimumWidthsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    columns.forEach(col => {
+      map.set(col.id, getMinimumWidth(col));
+    });
+    return map;
+  }, [columns]);
+
   // Initialize column widths based on columns
   useEffect(() => {
     if (!columns || columns.length === 0) return;
@@ -58,9 +82,8 @@ export const useSimpleColumnWidths = (
   }, [columns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
-    // Find the column to get its minimum width
-    const column = columns.find(col => col.id === columnId);
-    const minimumWidth = column ? getMinimumWidth(column) : 50;
+    // Use memoized minimum width lookup
+    const minimumWidth = minimumWidthsMap.get(columnId) || 50;
     
     setColumnWidths(prev => {
       // Enforce minimum width constraint
@@ -73,30 +96,25 @@ export const useSimpleColumnWidths = (
         setTimeout(() => setIsResizing(false), 1000);
       }
 
-      // Call the callback for each update to trigger save mechanism
-      if (onColumnWidthChange) {
-        setTimeout(() => {
-          onColumnWidthChange(columnId, constrainedWidth);
-        }, 0);
+      // Phase 3: Use throttled callbacks to reduce excessive persistence calls
+      if (throttledOnColumnWidthChange.current) {
+        throttledOnColumnWidthChange.current(columnId, constrainedWidth);
       }
 
-      // Also update the actual column data structure for persistence
-      if (onUpdateColumnWidth) {
-        setTimeout(() => {
-          onUpdateColumnWidth(columnId, constrainedWidth);
-        }, 0);
+      if (throttledOnUpdateColumnWidth.current) {
+        throttledOnUpdateColumnWidth.current(columnId, constrainedWidth);
       }
       
       return newWidths;
     });
-  }, [onColumnWidthChange, onUpdateColumnWidth, columns, isResizing]);
+  }, [minimumWidthsMap, isResizing]);
 
-  // Get column width in pixels - simple fixed width approach
+  // Phase 3: Memoized getColumnWidth for better performance
   const getColumnWidth = useCallback((column: Column) => {
     const width = columnWidths[column.id];
-    const actualWidth = width || getMinimumWidth(column);
+    const actualWidth = width || minimumWidthsMap.get(column.id) || getMinimumWidth(column);
     return `${actualWidth}px`;
-  }, [columnWidths]);
+  }, [columnWidths, minimumWidthsMap]);
 
   // Get column width for table layout - same as getColumnWidth for consistency
   const getColumnWidthForTable = useCallback((column: Column) => {
