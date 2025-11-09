@@ -31,10 +31,12 @@ const ExpandableScriptCell = ({
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollTimeRef = useRef<number>(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
@@ -49,10 +51,17 @@ const ExpandableScriptCell = ({
     }
   }, [columnExpanded]);
 
-  // Track scroll events to prevent focus-during-scroll expansion
+  // Track scroll events to prevent focus-during-scroll expansion AND height recalculations
   useEffect(() => {
     const handleScroll = () => {
       lastScrollTimeRef.current = Date.now();
+      setIsScrolling(true);
+      
+      // Debounce: mark scrolling as stopped after 200ms
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 200);
     };
     
     // Listen to both window scroll and container scroll
@@ -65,6 +74,7 @@ const ExpandableScriptCell = ({
     }
     
     return () => {
+      clearTimeout(scrollTimeoutRef.current);
       window.removeEventListener('scroll', handleScroll, { capture: true });
       if (tableContainer) {
         tableContainer.removeEventListener('scroll', handleScroll);
@@ -114,15 +124,15 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Auto-resize textarea based on content
+  // Auto-resize textarea based on content (skip during scrolling to prevent jumps)
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && !isScrolling) {
       const textarea = textareaRef.current;
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       textarea.style.height = Math.max(scrollHeight, 24) + 'px';
     }
-  }, [value]);
+  }, [value, isScrolling]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -296,14 +306,16 @@ const ExpandableScriptCell = ({
                 if (el) {
                   cellRefs.current[cellKey] = el;
                   textareaRef.current = el;
-                  // Auto-resize on mount
-                  requestAnimationFrame(() => {
-                    if (el) {
-                      el.style.height = 'auto';
-                      const scrollHeight = el.scrollHeight;
-                      el.style.height = Math.max(scrollHeight, 24) + 'px';
-                    }
-                  });
+                  // Auto-resize on mount (skip if scrolling)
+                  if (!isScrolling) {
+                    requestAnimationFrame(() => {
+                      if (el) {
+                        el.style.height = 'auto';
+                        const scrollHeight = el.scrollHeight;
+                        el.style.height = Math.max(scrollHeight, 24) + 'px';
+                      }
+                    });
+                  }
                 } else {
                   delete cellRefs.current[cellKey];
                 }
@@ -311,14 +323,16 @@ const ExpandableScriptCell = ({
               value={value}
               onChange={(e) => {
                 onUpdateValue(e.target.value);
-                // Trigger resize on content change
-                requestAnimationFrame(() => {
-                  if (e.target) {
-                    e.target.style.height = 'auto';
-                    const scrollHeight = e.target.scrollHeight;
-                    e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-                  }
-                });
+                // Trigger resize on content change (skip if scrolling)
+                if (!isScrolling) {
+                  requestAnimationFrame(() => {
+                    if (e.target) {
+                      e.target.style.height = 'auto';
+                      const scrollHeight = e.target.scrollHeight;
+                      e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+                    }
+                  });
+                }
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
