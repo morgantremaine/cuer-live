@@ -1,5 +1,5 @@
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Column } from '@/types/columns';
@@ -40,6 +40,9 @@ const ResizableColumnHeader = ({
   const isResizingRef = useRef<boolean>(false);
   const initialWidthRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
+  
+  // Local state for preview width during resize
+  const [previewWidth, setPreviewWidth] = useState<number | null>(null);
 
   const minimumWidth = getMinimumWidth(column) * zoomLevel;
 
@@ -82,15 +85,15 @@ const ResizableColumnHeader = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
 
-      // Use requestAnimationFrame for smooth updates
+      // Use requestAnimationFrame for smooth visual updates only
       animationFrameRef.current = requestAnimationFrame(() => {
         const deltaX = e.clientX - startX;
         // Strictly enforce minimum width constraint during drag
         const calculatedWidth = initialWidthRef.current + deltaX;
         const newWidth = Math.max(minimumWidth, calculatedWidth);
         
-        // Update immediately during drag for visual feedback
-        onWidthChange(column.id, newWidth);
+        // Only update preview width visually - don't trigger re-renders
+        setPreviewWidth(newWidth);
       });
     };
 
@@ -109,7 +112,10 @@ const ResizableColumnHeader = ({
       const calculatedWidth = initialWidthRef.current + deltaX;
       const finalWidth = Math.max(minimumWidth, calculatedWidth);
       
-      // Final update on mouse up
+      // Clear preview width
+      setPreviewWidth(null);
+      
+      // ONLY update React state on mouse up - this triggers the one re-render
       onWidthChange(column.id, finalWidth);
       
       // Reset global styles
@@ -133,13 +139,16 @@ const ResizableColumnHeader = ({
   // Parse width value and ensure it's a valid pixel value
   const widthValue = parseFloat(width.replace('px', ''));
   const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
+  
+  // Use preview width during resize, otherwise use actual width
+  const displayWidth = previewWidth !== null ? previewWidth : constrainedWidth;
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    width: `${constrainedWidth}px`,
+    transition: previewWidth !== null ? 'none' : transition, // Disable transition during resize
+    width: `${displayWidth}px`,
     minWidth: `${minimumWidth}px`,
-    maxWidth: `${constrainedWidth}px`,
+    maxWidth: `${displayWidth}px`,
     borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
@@ -181,21 +190,34 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
         style={{
-          width: `${constrainedWidth - 16}px`,
+          width: `${displayWidth - 16}px`,
           minWidth: `${minimumWidth - 16}px`,
-          maxWidth: `${constrainedWidth - 16}px`
+          maxWidth: `${displayWidth - 16}px`
         }}
       >
         {children}
       </div>
       
       {!isLastColumn && (
-        <div 
-          className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
-          onMouseDown={handleMouseDown}
-          onDoubleClick={handleDoubleClick}
-          title="Double-click to auto-resize column"
-        />
+        <>
+          <div 
+            className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
+            onMouseDown={handleMouseDown}
+            onDoubleClick={handleDoubleClick}
+            title="Double-click to auto-resize column"
+          />
+          
+          {/* Visual resize indicator - only shown during active resize */}
+          {previewWidth !== null && (
+            <div 
+              className="absolute top-0 bottom-0 w-0.5 bg-blue-400 pointer-events-none z-20 shadow-lg"
+              style={{
+                right: 0,
+                animation: 'pulse 1s ease-in-out infinite'
+              }}
+            />
+          )}
+        </>
       )}
     </th>
   );
