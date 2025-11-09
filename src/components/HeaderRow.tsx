@@ -196,7 +196,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       onMoveDown={onMoveDown}
     >
       <tr 
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16`}
         style={{ backgroundColor }}
         data-item-id={item.id}
         data-type="header"
