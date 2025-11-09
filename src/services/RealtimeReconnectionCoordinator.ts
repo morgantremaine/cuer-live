@@ -27,6 +27,11 @@ class RealtimeReconnectionCoordinatorService {
   private lastPerformanceTime: number = performance.now();
   private lastSystemTime: number = Date.now();
   
+  // Track last visible time to differentiate sleep from long background time
+  private lastVisibleTime: number = Date.now();
+  private readonly LONG_ABSENCE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+  private readonly SHORT_BACKGROUND_MAX_MS = 5 * 60 * 1000; // 5 minutes
+  
   private readonly CONNECTION_MONITOR_INTERVAL_MS = 30000; // Check every 30 seconds
   
   // Connection health tracking
@@ -71,16 +76,17 @@ class RealtimeReconnectionCoordinatorService {
    */
   private handleVisibilityChange = () => {
     if (!document.hidden) {
-      const { isSlept, duration } = this.detectSleep();
+      const { shouldReload, duration } = this.detectSleep();
       
-      if (isSlept) {
-        console.log(`💤 Sleep detected via visibility change (${Math.round(duration/1000)}s), forcing immediate reload...`);
-        this.forceReload('laptop-sleep-visibility');
+      if (shouldReload) {
+        console.log(`🔄 Reload required after ${Math.round(duration/1000)}s, forcing immediate reload...`);
+        this.forceReload('laptop-sleep-or-long-absence-visibility');
         return;
       }
       
-      // Tab became visible, no sleep - just log, don't take action
-      console.log('👁️ Tab became visible, no sleep detected - connection should be fine');
+      // Update last visible time
+      this.lastVisibleTime = Date.now();
+      console.log('👁️ Tab became visible, no reload needed - connection should be fine');
     }
   };
   
@@ -89,15 +95,16 @@ class RealtimeReconnectionCoordinatorService {
    */
   private handlePageShow = (event: PageTransitionEvent) => {
     if (event.persisted) {
-      const { isSlept, duration } = this.detectSleep();
+      const { shouldReload, duration } = this.detectSleep();
       
-      if (isSlept) {
-        console.log(`💤 Sleep detected via pageshow (${Math.round(duration/1000)}s), forcing immediate reload...`);
-        this.forceReload('laptop-sleep-pageshow');
+      if (shouldReload) {
+        console.log(`🔄 Reload required after ${Math.round(duration/1000)}s, forcing immediate reload...`);
+        this.forceReload('laptop-sleep-or-long-absence-pageshow');
         return;
       }
       
-      console.log('📄 Page shown from bfcache, no sleep detected');
+      this.lastVisibleTime = Date.now();
+      console.log('📄 Page shown from bfcache, no reload needed');
     }
   };
   
@@ -105,44 +112,63 @@ class RealtimeReconnectionCoordinatorService {
    * Handle window focus events
    */
   private handleFocus = () => {
-    const { isSlept, duration } = this.detectSleep();
+    const { shouldReload, duration } = this.detectSleep();
     
-    if (isSlept) {
-      console.log(`💤 Sleep detected via focus (${Math.round(duration/1000)}s), forcing immediate reload...`);
-      this.forceReload('laptop-sleep-focus');
+    if (shouldReload) {
+      console.log(`🔄 Reload required after ${Math.round(duration/1000)}s, forcing immediate reload...`);
+      this.forceReload('laptop-sleep-or-long-absence-focus');
       return;
     }
     
-    // Focus event, no sleep - just log, don't take action
-    console.log('🎯 Window focused, no sleep detected - connection should be fine');
+    this.lastVisibleTime = Date.now();
+    console.log('🎯 Window focused, no reload needed - connection should be fine');
   };
   
   
   /**
-   * Detect laptop sleep using performance API
-   * Returns true if system time jumped significantly more than performance time
+   * Detect laptop sleep or long absence
+   * Returns shouldReload=true only if:
+   * 1. Actual laptop sleep detected (large time drift in short background period)
+   * 2. Very long absence (30+ minutes backgrounded)
    */
-  private detectSleep(): { isSlept: boolean; duration: number } {
+  private detectSleep(): { isSlept: boolean; duration: number; shouldReload: boolean } {
     const nowPerf = performance.now();
     const nowSystem = Date.now();
     
     const perfDelta = nowPerf - this.lastPerformanceTime; // Actual JS execution time
     const systemDelta = nowSystem - this.lastSystemTime; // System clock time
+    const timeSinceVisible = nowSystem - this.lastVisibleTime; // Time since tab was last visible
     
-    // If system clock jumped more than 60s ahead of JS execution time, laptop slept
-    // This is immune to browser throttling because both clocks are throttled equally
+    // Calculate time drift (system clock vs JS execution)
     const timeDrift = systemDelta - perfDelta;
-    const isSlept = timeDrift > LAPTOP_SLEEP_THRESHOLD_MS;
+    const hasLargeDrift = timeDrift > LAPTOP_SLEEP_THRESHOLD_MS;
     
-    if (isSlept) {
-      console.log(`💤 Sleep detected: system time jumped ${Math.round(systemDelta/1000)}s, but JS only ran for ${Math.round(perfDelta/1000)}s (drift: ${Math.round(timeDrift/1000)}s)`);
+    // Check for very long absence
+    const isLongAbsence = timeSinceVisible > this.LONG_ABSENCE_THRESHOLD_MS;
+    
+    // Determine if this is actual sleep vs browser throttling
+    // If drift is large BUT tab was only backgrounded for a short time, it's actual sleep
+    // If drift is large and tab was backgrounded for a medium time (5-30 min), it's probably just throttling
+    const isActualSleep = hasLargeDrift && timeSinceVisible < this.SHORT_BACKGROUND_MAX_MS;
+    
+    // Only reload if it's actual sleep OR very long absence
+    const shouldReload = isActualSleep || isLongAbsence;
+    
+    if (hasLargeDrift) {
+      if (isActualSleep) {
+        console.log(`💤 Actual sleep detected: ${Math.round(timeDrift/1000)}s drift in ${Math.round(timeSinceVisible/1000)}s absence - WILL RELOAD`);
+      } else if (isLongAbsence) {
+        console.log(`⏰ Long absence detected: ${Math.round(timeSinceVisible/1000/60)}min backgrounded - WILL RELOAD`);
+      } else {
+        console.log(`🕒 Browser throttling detected: ${Math.round(timeDrift/1000)}s drift in ${Math.round(timeSinceVisible/1000)}s absence - no reload needed`);
+      }
     }
     
     // Update timestamps (always update, even if sleep detected, for next check)
     this.lastPerformanceTime = nowPerf;
     this.lastSystemTime = nowSystem;
     
-    return { isSlept, duration: systemDelta };
+    return { isSlept: hasLargeDrift, duration: systemDelta, shouldReload };
   }
   
   /**
@@ -167,13 +193,15 @@ class RealtimeReconnectionCoordinatorService {
     }
     
     // Check for sleep first
-    const { isSlept } = this.detectSleep();
+    const { shouldReload } = this.detectSleep();
     
-    if (isSlept) {
-      console.warn('💤 Sleep detected via network online - forcing reload');
-      this.forceReload('laptop-sleep-network');
+    if (shouldReload) {
+      console.warn('🔄 Reload required - forcing reload');
+      this.forceReload('laptop-sleep-or-long-absence-network');
       return;
     }
+    
+    this.lastVisibleTime = Date.now();
     
     // Check if WebSocket is dead - but give it a grace period to reconnect
     try {
@@ -223,11 +251,11 @@ class RealtimeReconnectionCoordinatorService {
       }
       
       // Check for sleep first
-      const { isSlept, duration } = this.detectSleep();
+      const { shouldReload, duration } = this.detectSleep();
       
-      if (isSlept) {
-        console.warn(`💤 Periodic check detected system sleep (${Math.round(duration / 1000 / 60)}min) - forcing reload`);
-        this.forceReload('periodic-sleep-detected');
+      if (shouldReload) {
+        console.warn(`🔄 Periodic check detected reload condition (${Math.round(duration / 1000 / 60)}min) - forcing reload`);
+        this.forceReload('periodic-sleep-or-long-absence-detected');
         return;
       }
       

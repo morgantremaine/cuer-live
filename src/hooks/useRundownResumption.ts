@@ -84,7 +84,7 @@ export const useRundownResumption = ({
     })));
   }, []);
 
-  // Debounced check for updates with event source tracking
+  // Non-blocking check for updates with event source tracking
   const performCheck = useCallback(async (eventSource: string) => {
     if (!rundownId || !enabled || !lastKnownTimestamp) {
       return;
@@ -98,51 +98,54 @@ export const useRundownResumption = ({
       clearTimeout(manager.pendingCheck);
     }
 
+    // Reduced debounce to 1 second for faster response, but check is non-blocking
     manager.pendingCheck = setTimeout(async () => {
       const now = Date.now();
       
-      // Avoid rapid checks (increased to 5 seconds)
-      if (now - manager.lastCheck < 5000) {
+      // Avoid rapid checks (reduced to 2 seconds)
+      if (now - manager.lastCheck < 2000) {
         return;
       }
 
       manager.lastCheck = now;
       
-      try {
-        
-        const latestData = await fetchLatestRundownData(rundownId);
-        
-        if (latestData) {
-          const normalizedLatest = normalizeTimestamp(latestData.updated_at);
-          const normalizedKnown = normalizeTimestamp(lastKnownTimestamp);
+      // Perform check in background without blocking UI
+      (async () => {
+        try {
+          const latestData = await fetchLatestRundownData(rundownId);
           
-          // Check if this is a recent save we made
-          if (manager.recentSaves.has(normalizedLatest)) {
-            // Update our known timestamp to this value
-            if (updateLastKnownTimestamp) {
-              updateLastKnownTimestamp(normalizedLatest);
-            }
-            return;
-          }
-          
-          if (normalizedLatest !== normalizedKnown) {
-            console.log('🔄 Stale data detected - fetching latest data (no reload)');
+          if (latestData) {
+            const normalizedLatest = normalizeTimestamp(latestData.updated_at);
+            const normalizedKnown = normalizeTimestamp(lastKnownTimestamp);
             
-            // Just fetch and apply the latest data through the connection
-            onDataRefresh(latestData);
+            // Check if this is a recent save we made
+            if (manager.recentSaves.has(normalizedLatest)) {
+              // Update our known timestamp to this value
+              if (updateLastKnownTimestamp) {
+                updateLastKnownTimestamp(normalizedLatest);
+              }
+              return;
+            }
             
-            // Update our known timestamp
-            if (updateLastKnownTimestamp) {
-              updateLastKnownTimestamp(normalizedLatest);
+            if (normalizedLatest !== normalizedKnown) {
+              console.log('🔄 Stale data detected - fetching latest data (no reload)');
+              
+              // Just fetch and apply the latest data through the connection
+              onDataRefresh(latestData);
+              
+              // Update our known timestamp
+              if (updateLastKnownTimestamp) {
+                updateLastKnownTimestamp(normalizedLatest);
+              }
             }
           }
+        } catch (error) {
+          console.error(`❌ [${eventSource}] Failed to check for updates:`, error);
         }
-      } catch (error) {
-        console.error(`❌ [${eventSource}] Failed to check for updates:`, error);
-      } finally {
-        manager.pendingCheck = null;
-      }
-    }, 5000); // 5 second debounce to avoid aggressive checks during tab switching
+      })();
+      
+      manager.pendingCheck = null;
+    }, 1000); // 1 second debounce - UI remains responsive immediately
   }, [rundownId, enabled, lastKnownTimestamp, onDataRefresh, toast, updateLastKnownTimestamp, createContentSignature]);
 
   // Global listener management and event handling
