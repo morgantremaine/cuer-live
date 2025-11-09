@@ -5,6 +5,7 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getMinimumWidth } from '@/utils/columnSizing';
+import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface HeaderRowContentProps {
   item: RundownItem;
@@ -46,6 +47,13 @@ const HeaderRowContent = ({
   
   // During drag, ensure all cells have header background to maintain solid block appearance
   const cellBackgroundColor = isDragging ? 'hsl(var(--header-background))' : backgroundColor;
+  
+  // Debounced input for header name
+  const [localHeaderName, setDebouncedHeaderName] = useDebouncedInput(
+    item.name || '',
+    (newValue) => onUpdateItem(item.id, 'name', newValue),
+    150
+  );
 
   // Handle collapse toggle
   const handleToggleCollapse = (e: React.MouseEvent) => {
@@ -92,14 +100,13 @@ const HeaderRowContent = ({
         
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
-          const headerName = item.name || '';
             return (
               <td
                 key={column.id}
                 className="align-middle min-h-[115px] relative"
                 style={{ 
                   width: cellBackgroundColor ? 'auto' : normalizedWidth,
-                  minWidth: cellBackgroundColor ? `${Math.max(headerName.length + 15, 20)}ch` : `max(${normalizedWidth}, ${Math.max(headerName.length + 10, 15)}ch)`,
+                  minWidth: cellBackgroundColor ? `${Math.max(localHeaderName.length + 15, 20)}ch` : `max(${normalizedWidth}, ${Math.max(localHeaderName.length + 10, 15)}ch)`,
                   maxWidth: 'none',
                   backgroundColor: cellBackgroundColor,
                   overflow: 'visible',
@@ -121,16 +128,16 @@ const HeaderRowContent = ({
                       if (el) {
                         cellRefs.current[`${item.id}-name`] = el;
                         // Auto-resize with buffer for cross-browser compatibility
-                        const contentLength = headerName.length || 1;
+                        const contentLength = localHeaderName.length || 1;
                         const bufferWidth = contentLength + 3; // Add buffer for PC browsers
                         el.style.width = `${bufferWidth}ch`;
                       }
                     }}
                     type="text"
-                    value={headerName}
+                    value={localHeaderName}
                     onChange={(e) => {
                       markActiveTyping?.();
-                      onUpdateItem(item.id, 'name', e.target.value);
+                      setDebouncedHeaderName(e.target.value);
                       // Auto-resize on change with buffer
                       const contentLength = e.target.value.length || 1;
                       const bufferWidth = contentLength + 3; // Add buffer for PC browsers
@@ -148,7 +155,7 @@ const HeaderRowContent = ({
                       lineHeight: 'inherit',
                       padding: 0,
                       margin: 0,
-                      width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
+                      width: `${Math.max(localHeaderName.length + 3, 4)}ch`, // Add buffer
                       minWidth: '4ch'
                     }}
                     placeholder="Header Name"

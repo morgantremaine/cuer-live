@@ -252,7 +252,10 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
-        style={{ backgroundColor }}
+        style={{ 
+          backgroundColor,
+          contain: 'layout style paint'
+        }}
         data-item-id={item.id}
         data-type="regular"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
@@ -294,4 +297,27 @@ const RegularRow = (props: RegularRowProps) => {
   );
 };
 
-export default RegularRow;
+// Memoize with custom comparison to prevent unnecessary re-renders
+const areEqual = (prev: RegularRowProps, next: RegularRowProps) => {
+  return (
+    prev.item.id === next.item.id &&
+    prev.item.duration === next.item.duration &&
+    prev.item.script === next.item.script &&
+    prev.item.notes === next.item.notes &&
+    prev.item.talent === next.item.talent &&
+    prev.item.gfx === next.item.gfx &&
+    prev.item.video === next.item.video &&
+    prev.item.color === next.item.color &&
+    prev.item.isFloating === next.item.isFloating &&
+    prev.item.isFloated === next.item.isFloated &&
+    prev.isSelected === next.isSelected &&
+    prev.isDragging === next.isDragging &&
+    prev.isCurrentlyPlaying === next.isCurrentlyPlaying &&
+    prev.status === next.status &&
+    prev.showColorPicker === next.showColorPicker &&
+    prev.rowNumber === next.rowNumber &&
+    prev.isDraggingMultiple === next.isDraggingMultiple
+  );
+};
+
+export default React.memo(RegularRow, areEqual);

@@ -197,7 +197,10 @@ const HeaderRow = (props: HeaderRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}
-        style={{ backgroundColor }}
+        style={{ 
+          backgroundColor,
+          contain: 'layout style paint'
+        }}
         data-item-id={item.id}
         data-type="header"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
@@ -236,4 +239,19 @@ const HeaderRow = (props: HeaderRowProps) => {
   );
 };
 
-export default HeaderRow;
+// Memoize with custom comparison to prevent unnecessary re-renders
+const areEqual = (prev: HeaderRowProps, next: HeaderRowProps) => {
+  return (
+    prev.item.id === next.item.id &&
+    prev.item.name === next.item.name &&
+    prev.item.color === next.item.color &&
+    prev.isSelected === next.isSelected &&
+    prev.isDragging === next.isDragging &&
+    prev.showColorPicker === next.showColorPicker &&
+    prev.isCollapsed === next.isCollapsed &&
+    prev.headerDuration === next.headerDuration &&
+    prev.rowNumber === next.rowNumber
+  );
+};
+
+export default React.memo(HeaderRow, areEqual);

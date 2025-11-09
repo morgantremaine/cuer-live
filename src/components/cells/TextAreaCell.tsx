@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
+import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface TextAreaCellProps {
   value: string;
@@ -33,6 +34,9 @@ const TextAreaCell = ({
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  
+  // Debounced input: local state updates instantly, parent updates after 150ms
+  const [localValue, setDebouncedValue] = useDebouncedInput(value, onUpdateValue, 150);
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -61,8 +65,8 @@ const TextAreaCell = ({
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content
-    measurementDiv.textContent = value || ' '; // Use space for empty content
+      // Set the content (use localValue for accurate measurement)
+    measurementDiv.textContent = localValue || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
@@ -88,13 +92,13 @@ const TextAreaCell = ({
     }
   };
 
-  // Recalculate height when value changes
+  // Recalculate height when value changes (use localValue for debounced updates)
   useEffect(() => {
     const timer = setTimeout(() => {
       calculateHeight();
     }, 0);
     return () => clearTimeout(timer);
-  }, [value]);
+  }, [localValue]);
 
   // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
@@ -154,7 +158,7 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onUpdateValue(e.target.value);
+    setDebouncedValue(e.target.value);
     // Height will be recalculated by useEffect
   };
 
@@ -202,7 +206,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
   
   // Check if this cell contains URLs and should show clickable links when not focused
-  const shouldShowClickableUrls = !isFocused && containsUrls(value);
+  const shouldShowClickableUrls = !isFocused && containsUrls(localValue);
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -228,7 +232,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             textAlign: isDuration ? 'center' : 'left'
           }}
         >
-          {renderTextWithClickableUrls(value)}
+          {renderTextWithClickableUrls(localValue)}
         </div>
       )}
       
@@ -241,7 +245,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             delete cellRefs.current[cellKey];
           }
         }}
-        value={value}
+        value={localValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
