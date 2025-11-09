@@ -49,11 +49,20 @@ export function mapOperationDataToPayload(
   switch (operationType) {
     case 'add_row':
     case 'add_header':
-      // For add operations: { item, index }
-      return {
-        item: operationData.newItems?.[0],
-        index: operationData.insertIndex
-      };
+      // Check if this is a batch add (multiple items)
+      if (operationData.newItems && operationData.newItems.length > 1) {
+        // Batch add - broadcast all items (undo batch delete, redo paste)
+        return {
+          items: operationData.newItems,
+          index: operationData.insertIndex
+        };
+      } else {
+        // Single add - broadcast single item
+        return {
+          item: operationData.newItems?.[0],
+          index: operationData.insertIndex
+        };
+      }
     
     case 'copy_rows':
       // For copy operations: { items, index }
