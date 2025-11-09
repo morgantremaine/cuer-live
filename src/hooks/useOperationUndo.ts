@@ -179,11 +179,6 @@ export const useOperationUndo = ({
     if (success) {
       setUndoStack(prev => [...prev, nextOperation].slice(-5));
       setRedoStack(prev => prev.slice(0, -1));
-      
-      // Trigger broadcast/save via callback (skip cell_edit, handled by per-cell save)
-      if (onOperationComplete && nextOperation.type !== 'cell_edit') {
-        onOperationComplete(nextOperation.type, nextOperation.data);
-      }
     }
     
     setTimeout(() => {
@@ -191,6 +186,12 @@ export const useOperationUndo = ({
       if (setUndoActive) {
         setUndoActive(false);
       }
+      
+      // Trigger broadcast/save AFTER isRedoing is cleared and state has propagated
+      if (success && onOperationComplete && nextOperation.type !== 'cell_edit') {
+        onOperationComplete(nextOperation.type, nextOperation.data);
+      }
+      
       console.log('⏩ Redo operation completed');
     }, 1000);
 
