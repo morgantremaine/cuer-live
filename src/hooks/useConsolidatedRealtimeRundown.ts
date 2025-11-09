@@ -247,7 +247,7 @@ export const useConsolidatedRealtimeRundown = ({
         pollingIntervalRef.current = null;
       }
     };
-  }, [enabled, rundownId, isConnected, performCatchupSync]);
+  }, [enabled, rundownId, isConnected]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
