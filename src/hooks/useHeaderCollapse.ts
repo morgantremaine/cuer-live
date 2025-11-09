@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 export interface HeaderGroup {
@@ -16,6 +16,13 @@ export const useHeaderCollapse = (
   const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(
     initialCollapsedHeaders || new Set()
   );
+
+  // Sync internal state when initialCollapsedHeaders changes (e.g., from localStorage load)
+  useEffect(() => {
+    if (initialCollapsedHeaders) {
+      setCollapsedHeaders(initialCollapsedHeaders);
+    }
+  }, [initialCollapsedHeaders]);
 
   // Group items by their headers - store IDs not references
   const headerGroups = useMemo((): HeaderGroup[] => {
