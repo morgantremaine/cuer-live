@@ -49,14 +49,18 @@ export const useRundownKeyboardShortcuts = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip if user is typing in an editable element
       if (isEditableElement(e.target)) {
-        console.log('🚫 Keyboard shortcut skipped: User is typing in editable element');
+        if (import.meta.env.DEV) {
+          console.log('🚫 Keyboard shortcut skipped: User is typing in editable element');
+        }
         return;
       }
 
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
 
-      console.log('⌨️ Key pressed:', e.key, '| Ctrl/Cmd:', isCtrlOrCmd, '| Selected:', selectedRows.size, '| HasClipboard:', hasClipboardData);
+      if (import.meta.env.DEV) {
+        console.log('⌨️ Key pressed:', e.key, '| Ctrl/Cmd:', isCtrlOrCmd, '| Selected:', selectedRows.size, '| HasClipboard:', hasClipboardData);
+      }
 
       // Copy: Ctrl/Cmd + C
       if (isCtrlOrCmd && e.key.toLowerCase() === 'c' && selectedRows.size > 0) {

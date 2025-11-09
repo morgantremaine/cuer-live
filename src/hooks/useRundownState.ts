@@ -79,11 +79,13 @@ function rundownReducer(
     // CRITICAL: If per-cell save is enabled, don't set hasUnsavedChanges
     // Let the per-cell system manage the saved state
     if (state.perCellSaveEnabled) {
-      console.log('📝 CONTENT CHANGE: Per-cell save active', {
-        action: actionType,
-        isContentChange: true,
-        reason: 'Per-cell save system will manage saved state'
-      });
+      if (import.meta.env.DEV) {
+        console.log('📝 CONTENT CHANGE: Per-cell save active', {
+          action: actionType,
+          isContentChange: true,
+          reason: 'Per-cell save system will manage saved state'
+        });
+      }
       debugLogger.autosave('Content change detected but per-cell save active - not flagging hasUnsavedChanges via action:', actionType);
       
       return {
