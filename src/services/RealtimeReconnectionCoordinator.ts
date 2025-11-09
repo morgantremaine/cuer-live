@@ -28,6 +28,12 @@ class RealtimeReconnectionCoordinatorService {
   private lastSystemTime: number = Date.now();
   
   private readonly CONNECTION_MONITOR_INTERVAL_MS = 30000; // Check every 30 seconds
+  
+  // Connection health tracking
+  private consecutiveFailures: number = 0;
+  private readonly MAX_FAILURES_BEFORE_RELOAD = 3;
+  private readonly GRACE_PERIOD_MS = 15000; // 15 second grace period
+  private lastFailureTime: number = 0;
 
   constructor() {
     // Add network online listener for wake-up detection
@@ -73,9 +79,9 @@ class RealtimeReconnectionCoordinatorService {
         return;
       }
       
-      console.log('👁️ Tab became visible, no sleep detected');
+      // Tab became visible, no sleep - just log, don't take action
+      console.log('👁️ Tab became visible, no sleep detected - connection should be fine');
     }
-    // Don't check on hide - preserve timestamps for when tab becomes visible again
   };
   
   /**
@@ -107,7 +113,8 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
     
-    console.log('🎯 Window focused, no sleep detected');
+    // Focus event, no sleep - just log, don't take action
+    console.log('🎯 Window focused, no sleep detected - connection should be fine');
   };
   
   
@@ -168,14 +175,24 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
     
-    // Check if WebSocket is dead
+    // Check if WebSocket is dead - but give it a grace period to reconnect
     try {
       const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       const isAlive = await websocketHealthCheck.isWebSocketAlive();
       
       if (!isAlive) {
-        console.warn('🔌 Network online but WebSocket dead - forcing reload');
-        this.forceReload('network-online-websocket-dead');
+        console.warn('🔌 Network online but WebSocket appears dead - giving grace period...');
+        
+        // Wait 10 seconds and check again before reloading
+        setTimeout(async () => {
+          const retryAlive = await websocketHealthCheck.isWebSocketAlive();
+          if (!retryAlive) {
+            console.error('❌ WebSocket still dead after grace period - forcing reload');
+            this.forceReload('network-online-websocket-dead-confirmed');
+          } else {
+            console.log('✅ WebSocket recovered during grace period');
+          }
+        }, 10000);
       } else {
         console.log('✅ Network online and WebSocket healthy');
       }
@@ -214,19 +231,39 @@ class RealtimeReconnectionCoordinatorService {
         return;
       }
       
-      // Check WebSocket health
+      // Check WebSocket health with grace period and retry logic
       try {
         const { websocketHealthCheck } = await import('@/utils/websocketHealth');
         const isAlive = await websocketHealthCheck.isWebSocketAlive();
         
         if (!isAlive) {
-          console.warn('⚠️ Periodic check detected dead WebSocket - forcing reload');
-          this.forceReload('periodic-check-websocket-dead');
+          this.consecutiveFailures++;
+          this.lastFailureTime = Date.now();
+          
+          console.warn(`⚠️ WebSocket health check failed (${this.consecutiveFailures}/${this.MAX_FAILURES_BEFORE_RELOAD})`);
+          
+          // Only reload after multiple consecutive failures AND grace period has passed
+          if (this.consecutiveFailures >= this.MAX_FAILURES_BEFORE_RELOAD) {
+            const timeSinceFirstFailure = Date.now() - this.lastFailureTime;
+            
+            if (timeSinceFirstFailure >= this.GRACE_PERIOD_MS) {
+              console.error(`❌ WebSocket dead after ${this.consecutiveFailures} failures and ${Math.round(timeSinceFirstFailure/1000)}s grace period - forcing reload`);
+              this.forceReload('periodic-check-websocket-dead-confirmed');
+            } else {
+              console.log(`⏳ Giving WebSocket more time to reconnect (${Math.round((this.GRACE_PERIOD_MS - timeSinceFirstFailure)/1000)}s remaining)`);
+            }
+          }
         } else {
-          console.log('✅ Periodic check: WebSocket healthy');
+          // Reset failure counter on successful health check
+          if (this.consecutiveFailures > 0) {
+            console.log(`✅ WebSocket recovered after ${this.consecutiveFailures} failures`);
+          }
+          this.consecutiveFailures = 0;
+          this.lastFailureTime = 0;
         }
       } catch (error: any) {
         console.error('❌ Error in periodic WebSocket check:', error);
+        this.consecutiveFailures++;
         const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
         handleChunkLoadError(error, 'periodic-websocket-check');
       }

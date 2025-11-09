@@ -101,8 +101,8 @@ export const useRundownResumption = ({
     manager.pendingCheck = setTimeout(async () => {
       const now = Date.now();
       
-      // Avoid rapid checks
-      if (now - manager.lastCheck < 3000) {
+      // Avoid rapid checks (increased to 5 seconds)
+      if (now - manager.lastCheck < 5000) {
         return;
       }
 
@@ -126,17 +126,15 @@ export const useRundownResumption = ({
           }
           
           if (normalizedLatest !== normalizedKnown) {
-            console.log('🔄 Stale data detected - reloading page for fresh state');
-            toast({
-              title: "Updates detected", 
-              description: "Reloading to sync with latest changes...",
-              duration: 2000,
-            });
+            console.log('🔄 Stale data detected - fetching latest data (no reload)');
             
-            // Force reload instead of trying to merge stale state
-            setTimeout(() => {
-              window.location.reload();
-            }, 500);
+            // Just fetch and apply the latest data through the connection
+            onDataRefresh(latestData);
+            
+            // Update our known timestamp
+            if (updateLastKnownTimestamp) {
+              updateLastKnownTimestamp(normalizedLatest);
+            }
           }
         }
       } catch (error) {
@@ -144,7 +142,7 @@ export const useRundownResumption = ({
       } finally {
         manager.pendingCheck = null;
       }
-    }, 500); // Short debounce to coalesce rapid events
+    }, 5000); // 5 second debounce to avoid aggressive checks during tab switching
   }, [rundownId, enabled, lastKnownTimestamp, onDataRefresh, toast, updateLastKnownTimestamp, createContentSignature]);
 
   // Global listener management and event handling
