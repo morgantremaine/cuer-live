@@ -162,7 +162,9 @@ export const useOperationUndo = ({
       timestamp: Date.now()
     };
 
-    console.log('📝 Recording operation:', operation.description);
+    if (import.meta.env.DEV && localStorage.getItem('debugUndo') === '1') {
+      console.log('📝 Recording operation:', operation.description);
+    }
 
     setUndoStack(prev => {
       const newStack = [...prev, fullOperation];
@@ -196,7 +198,9 @@ export const useOperationUndo = ({
         timeoutId: null as NodeJS.Timeout | null
       };
       typingSessionsRef.current.set(sessionKey, session);
-      console.log('⌨️ Started typing session:', sessionKey, 'initial:', oldValue);
+      if (import.meta.env.DEV && localStorage.getItem('debugUndo') === '1') {
+        console.log('⌨️ Started typing session:', sessionKey, 'initial:', oldValue);
+      }
     }
     
     const session = typingSessionsRef.current.get(sessionKey)!;
@@ -208,7 +212,9 @@ export const useOperationUndo = ({
     
     if (finalizeImmediately) {
       // Finalize immediately (field blur, focus change, structural op, etc.)
-      console.log('✅ Finalizing typing session immediately:', sessionKey);
+      if (import.meta.env.DEV && localStorage.getItem('debugUndo') === '1') {
+        console.log('✅ Finalizing typing session immediately:', sessionKey);
+      }
       recordOperation({
         type: 'cell_edit',
         data: { itemId, field, oldValue: session.initialValue, newValue },
@@ -218,7 +224,9 @@ export const useOperationUndo = ({
     } else {
       // Set timeout to finalize after pause
       session.timeoutId = setTimeout(() => {
-        console.log('⏱️ Typing pause detected - finalizing session:', sessionKey);
+        if (import.meta.env.DEV && localStorage.getItem('debugUndo') === '1') {
+          console.log('⏱️ Typing pause detected - finalizing session:', sessionKey);
+        }
         recordOperation({
           type: 'cell_edit',
           data: { itemId, field, oldValue: session.initialValue, newValue },
@@ -236,7 +244,9 @@ export const useOperationUndo = ({
       if (session.timeoutId) {
         clearTimeout(session.timeoutId);
       }
-      console.log('🔚 Finalizing specific typing session:', sessionKey);
+      if (import.meta.env.DEV && localStorage.getItem('debugUndo') === '1') {
+        console.log('🔚 Finalizing specific typing session:', sessionKey);
+      }
       // Get current value from items
       const item = items.find(i => i.id === session.itemId);
       if (item) {

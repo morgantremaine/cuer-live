@@ -239,11 +239,15 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
     console.log('🗑️ Keystroke journal cleared');
   }, [rundownId]);
 
-  // Auto-update snapshot when state changes
+  // Auto-update snapshot when state changes - debounced for performance
   useEffect(() => {
-    if (enabled && state && rundownId) {
+    if (!enabled || !state || !rundownId) return;
+    
+    const debounceTimer = setTimeout(() => {
       updateSnapshot('state change');
-    }
+    }, 300); // Debounce snapshot updates during rapid typing
+    
+    return () => clearTimeout(debounceTimer);
   }, [enabled, state, rundownId, updateSnapshot]);
 
   // Load journal on mount and rundown switch

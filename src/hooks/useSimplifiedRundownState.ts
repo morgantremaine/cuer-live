@@ -767,11 +767,15 @@ export const useSimplifiedRundownState = () => {
       }
     },
     onSaveStart: () => {
-      console.log('🧪 PER-CELL SAVE: Save started');
+      if (import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
+        console.log('🧪 PER-CELL SAVE: Save started');
+      }
       // The isSaving state will be managed by the per-cell save system itself
     },
     onUnsavedChanges: () => {
-      console.log('🧪 PER-CELL SAVE: Unsaved changes detected');
+      if (import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
+        console.log('🧪 PER-CELL SAVE: Unsaved changes detected');
+      }
       // The hasUnsavedChanges will be managed by the per-cell save system itself
     }
   });
@@ -1044,7 +1048,9 @@ export const useSimplifiedRundownState = () => {
     const sessionKey = `${id}-${field}`;
     
     // 🎯 Record cell edit operation for undo/redo (batched for typing fields)
-    console.log('📝 Recording cell edit:', { id, field, oldValue, newValue: value, isTypingField });
+    if (import.meta.env.DEV && localStorage.getItem('debugCellEdit') === '1') {
+      console.log('📝 Recording cell edit:', { id, field, oldValue, newValue: value, isTypingField });
+    }
     if (isTypingField) {
       // Batch text edits - groups rapid typing into single undo operation
       recordBatchedCellEdit(id, field, oldValue, value, false);
@@ -1153,10 +1159,8 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: updateValue });
       
-      // CRITICAL: Track field change for per-cell save system
-      if (cellEditIntegration.isPerCellEnabled) {
-        cellEditIntegration.handleCellChange(id, updateField, updateValue);
-      }
+      // Per-cell save tracking is now handled automatically by the reducer
+      // No need for duplicate handleCellChange call here
     }
   }, [actions.updateItem, state.items, state.title, cellEditIntegration]);
 
