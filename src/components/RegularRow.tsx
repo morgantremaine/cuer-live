@@ -54,8 +54,6 @@ interface RegularRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  // Virtualization props
-  virtualPosition?: number;
 }
 
 const RegularRow = (props: RegularRowProps) => {
@@ -226,17 +224,6 @@ const RegularRow = (props: RegularRowProps) => {
   const backgroundColor = backgroundColorOverride || 
     (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
 
-  // Apply virtualization styles if needed
-  const rowStyle: React.CSSProperties = props.virtualPosition !== undefined
-    ? {
-        backgroundColor,
-        position: 'absolute',
-        transform: `translateY(${props.virtualPosition}px)`,
-        width: '100%',
-        height: '32px' // h-8 = 32px
-      }
-    : { backgroundColor };
-
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -265,7 +252,7 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
-        style={rowStyle}
+        style={{ backgroundColor }}
         data-item-id={item.id}
         data-type="regular"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}

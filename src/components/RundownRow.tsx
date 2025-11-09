@@ -54,8 +54,6 @@ interface RundownRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  // Virtualization props
-  virtualPosition?: number;
 }
 
 const RundownRow = (props: RundownRowProps) => {
@@ -94,7 +92,7 @@ const RundownRow = (props: RundownRowProps) => {
         markActiveTyping={props.markActiveTyping}
         isHeaderCollapsed={props.isHeaderCollapsed}
         getHeaderGroupItemIds={props.getHeaderGroupItemIds}
-        virtualPosition={props.virtualPosition}
+        // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
   }
@@ -125,7 +123,6 @@ const RundownRow = (props: RundownRowProps) => {
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
       allItems={props.allItems}
-      virtualPosition={props.virtualPosition}
     />
   );
 };

@@ -135,20 +135,20 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
     );
   }
 
-  // Transform-based virtualization (TanStack Virtual pattern)
-  // Pass virtualization metadata to RundownTable for absolute positioning
+  // Virtualized rendering with wrapper div to handle total height
   return (
-    <RundownTable
-      items={displayItems}
-      getRowNumber={adjustedGetRowNumber}
-      onDragStart={adjustedOnDragStart}
-      onDrop={adjustedOnDrop}
-      onRowSelect={adjustedOnRowSelect}
-      isVirtualized={true}
-      virtualStartIndex={startIndex}
-      virtualTotalHeight={totalHeight}
-      {...restProps}
-    />
+    <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
+      <div style={{ transform: `translateY(${offsetY}px)` }}>
+        <RundownTable
+          items={displayItems}
+          getRowNumber={adjustedGetRowNumber}
+          onDragStart={adjustedOnDragStart}
+          onDrop={adjustedOnDrop}
+          onRowSelect={adjustedOnRowSelect}
+          {...restProps}
+        />
+      </div>
+    </div>
   );
 };
 

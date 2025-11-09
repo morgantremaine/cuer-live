@@ -50,8 +50,6 @@ interface HeaderRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  // Virtualization props
-  virtualPosition?: number;
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
@@ -176,17 +174,6 @@ const HeaderRow = (props: HeaderRowProps) => {
 
   const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
-  // Apply virtualization styles if needed
-  const rowStyle: React.CSSProperties = props.virtualPosition !== undefined
-    ? {
-        backgroundColor,
-        position: 'absolute',
-        transform: `translateY(${props.virtualPosition}px)`,
-        width: '100%',
-        height: '64px' // h-16 = 64px
-      }
-    : { backgroundColor };
-
   return (
     <RundownContextMenu
       selectedCount={isSelected ? selectedRowsCount : 1}
@@ -210,7 +197,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}
-        style={rowStyle}
+        style={{ backgroundColor }}
         data-item-id={item.id}
         data-type="header"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
