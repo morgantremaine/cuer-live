@@ -251,7 +251,7 @@ const RegularRow = (props: RegularRowProps) => {
       allItems={allItems}
     >
       <tr 
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
         style={{ backgroundColor }}
         data-item-id={item.id}
         data-type="regular"

@@ -85,43 +85,41 @@ export const useRundownItems = (
         });
       }
       
-      // Debounce structural operation to allow visual update to complete
-      setTimeout(() => {
-        if (handleStructuralOperation) {
-          handleStructuralOperation('add_row', {
-            newItems: [newItem],
-            insertIndex
-          });
-        }
-      }, 50);
+      // Handle via coordination system if available
+      if (handleStructuralOperation) {
+        handleStructuralOperation('add_row', {
+          newItems: [newItem],
+          insertIndex
+        });
+      }
       
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, handleStructuralOperation, recordOperation]);
+  }, [markAsChanged]);
 
   const addHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    const newItem: RundownItem = {
-      id: uuidv4(),
-      type: 'header',
-      rowNumber: '', // Will be calculated properly by the calculation layer
-      name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
-      startTime: '',
-      duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
-      endTime: '',
-      elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-      isFloating: false,
-      customFields: {}
-    };
-
     setItems(prevItems => {
+      const newItem: RundownItem = {
+        id: uuidv4(),
+        type: 'header',
+        rowNumber: '', // Will be calculated properly by the calculation layer
+        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
+        startTime: '',
+        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
+        endTime: '',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
+        isFloating: false,
+        customFields: {}
+      };
+
       let insertIndex = prevItems.length; // Default to end
 
       // Determine insertion point based on selection
@@ -159,20 +157,18 @@ export const useRundownItems = (
         });
       }
       
-      // Debounce structural operation to allow visual update to complete
-      setTimeout(() => {
-        if (handleStructuralOperation) {
-          handleStructuralOperation('add_header', {
-            newItems: [newItem],
-            insertIndex
-          });
-        }
-      }, 50);
+      // Handle via coordination system if available
+      if (handleStructuralOperation) {
+        handleStructuralOperation('add_header', {
+          newItems: [newItem],
+          insertIndex
+        });
+      }
       
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, handleStructuralOperation, recordOperation]);
+  }, [markAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
