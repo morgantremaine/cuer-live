@@ -12,6 +12,10 @@ interface UseRundownKeyboardShortcutsProps {
   onShowcallerBackward: () => void;
   onShowcallerReset: () => void;
   isShowcallerPlaying: boolean;
+  onUndo: () => void;
+  canUndo: boolean;
+  onRedo: () => void;
+  canRedo: boolean;
 }
 
 export const useRundownKeyboardShortcuts = ({
@@ -25,7 +29,11 @@ export const useRundownKeyboardShortcuts = ({
   onShowcallerForward,
   onShowcallerBackward,
   onShowcallerReset,
-  isShowcallerPlaying
+  isShowcallerPlaying,
+  onUndo,
+  canUndo,
+  onRedo,
+  canRedo
 }: UseRundownKeyboardShortcutsProps) => {
   useEffect(() => {
     const isEditableElement = (target: EventTarget | null): boolean => {
@@ -74,6 +82,22 @@ export const useRundownKeyboardShortcuts = ({
         onAddRow();
       }
 
+      // Undo: Ctrl/Cmd + Z (without Shift)
+      if (isCtrlOrCmd && e.key.toLowerCase() === 'z' && !e.shiftKey && canUndo) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Undo');
+        onUndo();
+        return;
+      }
+
+      // Redo: Ctrl/Cmd + Shift + Z
+      if (isCtrlOrCmd && e.shiftKey && e.key.toLowerCase() === 'z' && canRedo) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Redo');
+        onRedo();
+        return;
+      }
+
       // Showcaller controls (only when NOT using modifier keys)
       // Space bar: Play/Pause
       if (e.key === ' ' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
@@ -113,5 +137,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying]);
+  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo]);
 };

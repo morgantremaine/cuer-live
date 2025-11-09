@@ -343,7 +343,11 @@ const RundownIndexContent = () => {
     onShowcallerForward: forward,
     onShowcallerBackward: backward,
     onShowcallerReset: reset,
-    isShowcallerPlaying: isPlaying
+    isShowcallerPlaying: isPlaying,
+    onUndo: undo,
+    canUndo: canUndo,
+    onRedo: coreState.redo,
+    canRedo: coreState.canRedo
   });
 
   const { 
