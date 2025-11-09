@@ -9,8 +9,13 @@ export interface HeaderGroup {
   endIndex: number;
 }
 
-export const useHeaderCollapse = (items: RundownItem[]) => {
-  const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
+export const useHeaderCollapse = (
+  items: RundownItem[],
+  initialCollapsedHeaders?: Set<string>
+) => {
+  const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(
+    initialCollapsedHeaders || new Set()
+  );
 
   // Group items by their headers - store IDs not references
   const headerGroups = useMemo((): HeaderGroup[] => {

@@ -5,6 +5,7 @@ import { useShowcallerStateCoordination } from './useShowcallerStateCoordination
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
+import { useLocalCollapsedHeaders } from './useLocalCollapsedHeaders';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -168,8 +169,17 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // Get header collapse functions from useHeaderCollapse
-  const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
+  // Get header collapse functions from useHeaderCollapse with localStorage persistence
+  const { collapsedHeaders: persistedCollapsedHeaders, updateCollapsedHeaders } = useLocalCollapsedHeaders(persistedState.rundownId || '');
+  const { collapsedHeaders, getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(
+    performanceOptimization.calculatedItems,
+    persistedCollapsedHeaders
+  );
+
+  // Sync collapsed headers changes to localStorage
+  useEffect(() => {
+    updateCollapsedHeaders(collapsedHeaders);
+  }, [collapsedHeaders, updateCollapsedHeaders]);
 
   // Setup drag and drop with structural change integration - initialized early
   const dragAndDrop = useDragAndDrop(

@@ -11,6 +11,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { timeToSeconds, secondsToTime, calculateEndTime } from '@/utils/rundownCalculations';
 import { useClockFormat } from '@/contexts/ClockFormatContext';
+import { useLocalExpandedCells } from '@/hooks/useLocalExpandedCells';
+import { useLocalCollapsedHeaders } from '@/hooks/useLocalCollapsedHeaders';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -21,6 +23,7 @@ interface SharedRundownTableProps {
   rundownEndTime?: string;
   isDark?: boolean;
   onReorderColumns?: (newColumns: any[]) => void;
+  rundownId: string;
 }
 
 // Draggable column header component
@@ -99,7 +102,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   rundownStartTime = '09:00:00',
   rundownEndTime,
   isDark = false,
-  onReorderColumns
+  onReorderColumns,
+  rundownId
 }, ref) => {
   const { formatTime } = useClockFormat();
   
@@ -137,10 +141,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     
     setActiveColumn(null);
   };
-  // State for managing expanded script/notes cells
-  const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
-  // State for managing collapsed headers
-  const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
+  
+  // Use persisted hooks for expanded cells and collapsed headers
+  const { expandedCells, updateExpandedCells } = useLocalExpandedCells(rundownId);
+  const { collapsedHeaders, updateCollapsedHeaders } = useLocalCollapsedHeaders(rundownId);
+  
   // State for managing column expand state (expand all cells in a column)
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
 
@@ -383,15 +388,13 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   // Helper function to toggle expanded state of a cell
   const toggleCellExpanded = (itemId: string, columnKey: string) => {
     const cellKey = `${itemId}-${columnKey}`;
-    setExpandedCells(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(cellKey)) {
-        newSet.delete(cellKey);
-      } else {
-        newSet.add(cellKey);
-      }
-      return newSet;
-    });
+    const newSet = new Set(expandedCells);
+    if (newSet.has(cellKey)) {
+      newSet.delete(cellKey);
+    } else {
+      newSet.add(cellKey);
+    }
+    updateExpandedCells(newSet);
   };
 
   // Helper function to check if a cell is expanded
@@ -406,31 +409,27 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     setColumnExpandState(prev => ({ ...prev, [columnKey]: newState }));
     
     // Apply to all items
-    setExpandedCells(prev => {
-      const newSet = new Set(prev);
-      items.forEach(item => {
-        const cellKey = `${item.id}-${columnKey}`;
-        if (newState) {
-          newSet.add(cellKey);
-        } else {
-          newSet.delete(cellKey);
-        }
-      });
-      return newSet;
+    const newSet = new Set(expandedCells);
+    items.forEach(item => {
+      const cellKey = `${item.id}-${columnKey}`;
+      if (newState) {
+        newSet.add(cellKey);
+      } else {
+        newSet.delete(cellKey);
+      }
     });
+    updateExpandedCells(newSet);
   };
 
   // Helper function to toggle header collapse state
   const toggleHeaderCollapse = (headerId: string) => {
-    setCollapsedHeaders(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(headerId)) {
-        newSet.delete(headerId);
-      } else {
-        newSet.add(headerId);
-      }
-      return newSet;
-    });
+    const newSet = new Set(collapsedHeaders);
+    if (newSet.has(headerId)) {
+      newSet.delete(headerId);
+    } else {
+      newSet.add(headerId);
+    }
+    updateCollapsedHeaders(newSet);
   };
 
   // Helper function to check if a header is collapsed

@@ -329,6 +329,7 @@ const SharedRundown = () => {
               rundownEndTime={rundownEndTime}
               isDark={isDark}
               onReorderColumns={reorderColumns}
+              rundownId={rundownId || ''}
             />
           </div>
 
