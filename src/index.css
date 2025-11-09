@@ -248,8 +248,6 @@
 .table-container tbody tr,
 [data-rundown-table="body"] tbody tr {
   will-change: transform;
-  contain: layout style;
-  content-visibility: auto;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
