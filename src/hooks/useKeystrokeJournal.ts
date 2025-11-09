@@ -29,7 +29,7 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
   
   // MEMORY CRISIS: Disable journal entirely for large rundowns to prevent memory leaks
   const itemCount = state.items?.length || 0;
-  const MAX_JOURNAL_ENTRIES = itemCount > 100 ? 0 : itemCount > 50 ? 10 : 50; // Disable for large rundowns
+  const MAX_JOURNAL_ENTRIES = itemCount > 50 ? 0 : itemCount > 30 ? 5 : 20; // Disable for large rundowns
   const PERSIST_INTERVAL_MS = performanceMode ? 30000 : 10000; // Much less frequent
   
   // Memory usage monitoring - much more aggressive

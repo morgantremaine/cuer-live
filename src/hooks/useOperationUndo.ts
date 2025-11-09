@@ -405,6 +405,8 @@ export const useOperationUndo = ({
     canUndo,
     lastAction,
     canRedo,
-    nextRedoAction
+    nextRedoAction,
+    undoStackSize: undoStack.length,
+    redoStackSize: redoStack.length
   };
 };

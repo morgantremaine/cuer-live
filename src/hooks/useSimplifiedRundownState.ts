@@ -465,7 +465,9 @@ export const useSimplifiedRundownState = () => {
     canUndo,
     lastAction,
     canRedo,
-    nextRedoAction
+    nextRedoAction,
+    undoStackSize,
+    redoStackSize
   } = useOperationUndo({
     items: state.items,
     updateItem: (id: string, updates: Partial<RundownItem>) => {
@@ -1840,6 +1842,21 @@ export const useSimplifiedRundownState = () => {
     cooldownDuration: 1000  // 1 second cooldown after updates stop
   });
 
+  // Expose memory stats to DevTools for debugging
+  useEffect(() => {
+    if (typeof window !== 'undefined' && rundownId) {
+      (window as any).__CUER_MEMORY_STATS = {
+        rundownId,
+        undoStackSize,
+        redoStackSize,
+        itemCount: state.items.length,
+        columnCount: columns.length,
+        realtimeSubscriptions: realtimeConnection.isConnected ? 1 : 0,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }, [rundownId, undoStackSize, redoStackSize, state.items.length, columns.length, realtimeConnection.isConnected]);
+
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -2098,6 +2115,15 @@ export const useSimplifiedRundownState = () => {
     },
     canRedo,
     nextRedoAction,
+    
+    // Memory monitoring - expose for DevTools debugging
+    memoryStats: {
+      undoStackSize,
+      redoStackSize,
+      itemCount: state.items.length,
+      columnCount: columns.length,
+      realtimeSubscriptions: realtimeConnection.isConnected ? 1 : 0
+    },
     
     // Teleprompter sync callbacks (exposed globally) + track own update integration
     teleprompterSaveHandlers: {
