@@ -737,6 +737,10 @@ export const useSimplifiedRundownState = () => {
 
     return () => {
       unsubscribe();
+      // Flush any pending debounced broadcasts before cleanup
+      if (rundownId) {
+        cellBroadcast.flushPendingBroadcasts(rundownId);
+      }
     };
   }, [rundownId, currentUserId]);
   
@@ -1055,11 +1059,26 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
+    // Broadcast cell update - debounced for typing fields, instant for others
     if (rundownId && currentUserId) {
       // Track that this change was made by the current user
       lastChangeUserIdRef.current = currentUserId;
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
+      
+      if (isTypingField) {
+        // Debounce broadcasts for typing fields (300ms)
+        cellBroadcast.broadcastCellUpdateDebounced(
+          rundownId, 
+          id, 
+          field, 
+          value, 
+          currentUserId, 
+          getTabId(),
+          300 // 300ms debounce
+        );
+      } else {
+        // Immediate broadcast for non-typing fields (color, isFloating, duration)
+        cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId, getTabId());
+      }
     }
     
     if (isTypingField) {
@@ -2146,6 +2165,13 @@ export const useSimplifiedRundownState = () => {
     
     // Operation-based undo/redo system
     recordOperation,
-    finalizeAllTypingSessions
+    finalizeAllTypingSessions,
+    
+    // Flush pending debounced broadcasts
+    flushPendingBroadcasts: useCallback(() => {
+      if (rundownId) {
+        cellBroadcast.flushPendingBroadcasts(rundownId);
+      }
+    }, [rundownId])
   };
 };

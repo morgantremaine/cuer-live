@@ -28,6 +28,11 @@ export class CellBroadcastManager {
   private lastProcessedUpdate = new Map<string, string>();
   private tabIds = new Map<string, string>(); // Store tabId for echo prevention (supports multiple tabs per user)
   
+  // Debouncing for typing fields
+  private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
+  private pendingBroadcasts = new Map<string, CellUpdate>();
+  private readonly TYPING_DEBOUNCE_MS = 300; // 300ms debounce for typing
+  
   // Health monitoring
   private connectionStatus = new Map<string, string>();
   private broadcastSuccessCount = new Map<string, number>();
@@ -189,6 +194,88 @@ export class CellBroadcastManager {
         this.retryBroadcast(rundownId, updatePayload);
       }, 1000);
     }
+  }
+
+  // Debounced broadcast for typing fields
+  broadcastCellUpdateDebounced(
+    rundownId: string,
+    itemId: string | null,
+    field: string,
+    value: any,
+    userId: string,
+    tabId: string,
+    debounceMs: number = this.TYPING_DEBOUNCE_MS
+  ) {
+    const key = `${rundownId}-${itemId}-${field}`;
+    
+    // Clear existing debounce timer for this field
+    const existingTimer = this.debouncedBroadcasts.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+    
+    // Store the latest value
+    this.pendingBroadcasts.set(key, {
+      rundownId,
+      itemId,
+      field,
+      value,
+      userId,
+      tabId,
+      timestamp: Date.now()
+    });
+    
+    debugLogger.realtime('Debouncing cell update:', { key, debounceMs });
+    
+    // Schedule the broadcast
+    const timer = setTimeout(() => {
+      const update = this.pendingBroadcasts.get(key);
+      if (update) {
+        this.broadcastCellUpdate(
+          update.rundownId,
+          update.itemId,
+          update.field,
+          update.value,
+          update.userId,
+          update.tabId
+        );
+        this.pendingBroadcasts.delete(key);
+        this.debouncedBroadcasts.delete(key);
+      }
+    }, debounceMs);
+    
+    this.debouncedBroadcasts.set(key, timer);
+  }
+  
+  // Flush all pending broadcasts immediately (for cleanup)
+  flushPendingBroadcasts(rundownId?: string) {
+    const keysToFlush = rundownId 
+      ? Array.from(this.debouncedBroadcasts.keys()).filter(k => k.startsWith(rundownId))
+      : Array.from(this.debouncedBroadcasts.keys());
+    
+    debugLogger.realtime('Flushing pending broadcasts:', { count: keysToFlush.length, rundownId });
+    
+    keysToFlush.forEach(key => {
+      const timer = this.debouncedBroadcasts.get(key);
+      if (timer) {
+        clearTimeout(timer);
+      }
+      
+      const update = this.pendingBroadcasts.get(key);
+      if (update) {
+        this.broadcastCellUpdate(
+          update.rundownId,
+          update.itemId,
+          update.field,
+          update.value,
+          update.userId,
+          update.tabId
+        );
+      }
+      
+      this.debouncedBroadcasts.delete(key);
+      this.pendingBroadcasts.delete(key);
+    });
   }
 
   // Echo prevention using tabId (supports multiple tabs per user)
@@ -366,6 +453,9 @@ export class CellBroadcastManager {
   }
 
   cleanup(rundownId: string) {
+    // Flush any pending broadcasts before cleanup
+    this.flushPendingBroadcasts(rundownId);
+    
     this.callbacks.delete(rundownId);
     this.tabIds.delete(rundownId);
     
