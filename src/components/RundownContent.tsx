@@ -10,7 +10,6 @@ import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 import { getMinimumWidth } from '@/utils/columnSizing';
 import { useLocalExpandedCells } from '@/hooks/useLocalExpandedCells';
-import { useVirtualizedRows } from '@/hooks/useVirtualizedRows';
 
 interface RundownContentProps {
   rundownId: string;
@@ -255,24 +254,6 @@ const RundownContent = React.memo<RundownContentProps>(({
     items
   });
 
-  // Apply virtualization for large rundowns
-  const shouldVirtualize = visibleItems.length > 50;
-  const {
-    virtualItems,
-    startIndex,
-    endIndex,
-    totalHeight,
-    offsetY
-  } = useVirtualizedRows({
-    items: visibleItems,
-    containerRef: scrollContainerRef,
-    rowHeight: 40,
-    overscan: 10
-  });
-
-  // Use virtual items if virtualization is enabled, otherwise use all items
-  const displayItems = shouldVirtualize ? virtualItems : visibleItems;
-
   // Initialize drag auto-scroll functionality
   const isDragging = draggedItemIndex !== null;
   const { handleDragAutoScroll } = useDragAutoScroll({
@@ -452,11 +433,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
             }}
           >
-            {/* Virtualization wrapper - creates scroll space */}
-            <div style={{ height: shouldVirtualize ? `${totalHeight}px` : 'auto', position: 'relative' }}>
-              {/* Virtualization offset - positions visible rows */}
-              <div style={{ transform: shouldVirtualize ? `translateY(${offsetY}px)` : 'none' }}>
-                <table 
+            <table
                   className="border-collapse table-container" 
                   style={{ 
                     tableLayout: 'fixed', 
@@ -481,9 +458,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                     >
                       <SortableContext items={sortableItems || []} strategy={undefined}>
                         <OptimizedVirtualRundownTable
-              startIndex={shouldVirtualize ? startIndex : 0}
-              endIndex={shouldVirtualize ? endIndex : visibleItems.length}
-              items={displayItems}
+              items={visibleItems}
               visibleColumns={visibleColumns}
               currentTime={currentTime}
               showColorPicker={showColorPicker}
@@ -534,9 +509,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                     </DndContext>
                   ) : (
                     <OptimizedVirtualRundownTable
-              startIndex={shouldVirtualize ? startIndex : 0}
-              endIndex={shouldVirtualize ? endIndex : visibleItems.length}
-              items={displayItems}
+              items={visibleItems}
               visibleColumns={visibleColumns}
               getRowNumber={getRowNumberFromMemo}
               getRowStatus={getRowStatusFromMemo}
@@ -585,8 +558,6 @@ const RundownContent = React.memo<RundownContentProps>(({
             />
                   )}
                 </table>
-              </div>
-            </div>
           </div>
         </div>
         <ScrollBar orientation="horizontal" />
