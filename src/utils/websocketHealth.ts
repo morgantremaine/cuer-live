@@ -18,15 +18,12 @@ export const websocketHealthCheck = {
   async isWebSocketAlive(): Promise<boolean> {
     // Singleton guard: prevent concurrent health checks
     if (isHealthCheckRunning) {
-      console.log('🔍 WebSocket health check already running, skipping');
       return false;
     }
     
     // Cooldown guard: prevent health check storms
     const now = Date.now();
     if (now - lastHealthCheckTime < HEALTH_CHECK_COOLDOWN_MS) {
-      const waitTime = Math.ceil((HEALTH_CHECK_COOLDOWN_MS - (now - lastHealthCheckTime)) / 1000);
-      console.log(`🔍 WebSocket health check on cooldown, assuming healthy (checked ${waitTime}s ago)`);
       return true; // Assume healthy if recently validated
     }
     
@@ -43,12 +40,12 @@ export const websocketHealthCheck = {
         const timeout = setTimeout(() => {
           if (!resolved) {
             resolved = true;
-            console.log('🔍 WebSocket health check: timeout (dead)');
+            console.log('⚠️ WebSocket health check timeout (dead)');
             // Force cleanup even if subscribe never fires
             try {
               supabase.removeChannel(testChannel);
             } catch (err) {
-              console.warn('🔍 Error cleaning up health check channel:', err);
+              console.warn('⚠️ Error cleaning up health check channel:', err);
             }
             resolve(false);
           }
@@ -59,7 +56,9 @@ export const websocketHealthCheck = {
             resolved = true;
             clearTimeout(timeout);
             const isAlive = status === 'SUBSCRIBED';
-            console.log('🔍 WebSocket health check:', isAlive ? 'alive ✅' : 'dead ❌', `(status: ${status})`);
+            if (!isAlive) {
+              console.log('⚠️ WebSocket health check failed:', `(status: ${status})`);
+            }
             // Cleanup channel
             try {
               supabase.removeChannel(testChannel);

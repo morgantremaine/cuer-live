@@ -92,14 +92,12 @@ class RealtimeReconnectionCoordinatorService {
       
       // Update last visible time
       this.lastVisibleTime = Date.now();
-      console.log('👁️ Tab became visible, no reload needed - connection should be fine');
       
       // Restart monitoring with active interval
       this.restartConnectionMonitoring();
     } else {
       // Tab became hidden - throttle monitoring
       this.isTabVisible = false;
-      console.log('🌙 Tab hidden - throttling health checks');
       this.restartConnectionMonitoring();
     }
   };
@@ -135,7 +133,6 @@ class RealtimeReconnectionCoordinatorService {
     }
     
     this.lastVisibleTime = Date.now();
-    console.log('🎯 Window focused, no reload needed - connection should be fine');
   };
   
   
@@ -271,11 +268,8 @@ class RealtimeReconnectionCoordinatorService {
     this.connectionMonitorInterval = setInterval(async () => {
       if (this.isReconnecting) return;
       
-      console.log('⏱️ Periodic connection health check...');
-      
       // Skip if not authenticated
       if (!(await this.isAuthenticated())) {
-        console.log('⏱️ Periodic check, skipping (unauthenticated)');
         return;
       }
       

@@ -244,7 +244,6 @@ export const useTeam = () => {
       return;
     }
 
-    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, currentActiveTeamId });
     const loadStartTime = Date.now();
     globalLoadingStates.set(loadKey, true);
     isLoadingRef.current = true;
@@ -333,7 +332,6 @@ export const useTeam = () => {
         const targetTeam = userTeams.find(t => t.id === targetTeamId);
         const role = targetTeam?.role || 'member';
 
-        console.log('✅ useTeam - Setting team state:', { teamId: teamData.id, teamName: teamData.name, role });
         setTeam(teamData);
         setUserRole(role);
         

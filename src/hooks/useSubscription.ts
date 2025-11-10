@@ -66,7 +66,6 @@ export const useSubscription = () => {
       
       if (!requestPromise) {
         // No pending request - create a new one
-        console.log('🔍 useSubscription - Creating new request for:', requestKey);
         
         requestPromise = (async () => {
           try {
@@ -100,8 +99,6 @@ export const useSubscription = () => {
               user_uuid: user.id,
               team_uuid: activeTeamId
             });
-            
-            console.log('🔍 useSubscription - RPC result:', { data, error, userId: user.id, teamId: activeTeamId });
             
             if (error) {
               // Check if it's also an auth error
@@ -140,8 +137,6 @@ export const useSubscription = () => {
         
         // Store the promise in the cache
         pendingRequests.set(requestKey, requestPromise);
-      } else {
-        console.log('🔍 useSubscription - Reusing pending request for:', requestKey);
       }
       
       // Wait for the request to complete (either new or cached)

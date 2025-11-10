@@ -616,10 +616,7 @@ export const useConsolidatedRealtimeRundown = ({
               }
               
               const gateCleared = performance.now();
-              console.log('🚪 [PERF] Initial load gate cleared - realtime updates enabled', {
-                timeSinceStart: gateCleared - startTime,
-                totalConnectionSetupTime: gateCleared - startTime
-              });
+              debugLogger.realtime('[PERF] Initial load gate cleared - realtime updates enabled, timeSinceStart: ' + (gateCleared - startTime));
             } else if (error) {
               console.warn('Initial catch-up fetch failed:', error);
               // Fallback: Clear gate after timeout if fetch fails
@@ -627,7 +624,7 @@ export const useConsolidatedRealtimeRundown = ({
                 setIsInitialLoad(false);
                 isInitialLoadRef.current = false;
                 initialLoadTimeoutRef.current = null;
-                console.log('🚪 Initial load gate cleared (fallback) - realtime updates enabled');
+                debugLogger.realtime('Initial load gate cleared (fallback) - realtime updates enabled');
               }, 2000);
             }
           } catch (err) {
@@ -637,7 +634,7 @@ export const useConsolidatedRealtimeRundown = ({
               setIsInitialLoad(false);
               isInitialLoadRef.current = false;
               initialLoadTimeoutRef.current = null;
-              console.log('🚪 Initial load gate cleared (error fallback) - realtime updates enabled');
+              debugLogger.realtime('Initial load gate cleared (error fallback) - realtime updates enabled');
             }, 2000);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {

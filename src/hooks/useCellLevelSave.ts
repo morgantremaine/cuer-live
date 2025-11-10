@@ -263,7 +263,7 @@ export const useCellLevelSave = (
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && hasPendingUpdates()) {
-        console.log('🌙 Tab hidden - flushing cell-level saves immediately');
+        debugLogger.autosave('Tab hidden - flushing cell-level saves immediately');
         flushPendingUpdates().catch(console.error);
       }
     };

@@ -57,12 +57,6 @@ class OwnUpdateTracker {
       }
       
       contextMap.set(updateId, trackedUpdate);
-      
-      console.log(`✅ OwnUpdateTracker: Tracked update [${context}]`, {
-        updateId: updateId.substring(0, 20),
-        cleanupMs,
-        contextSize: contextMap.size
-      });
     } else {
       // Global tracking
       const existing = this.globalTracking.get(updateId);
@@ -71,12 +65,6 @@ class OwnUpdateTracker {
       }
       
       this.globalTracking.set(updateId, trackedUpdate);
-      
-      console.log(`✅ OwnUpdateTracker: Tracked update [global]`, {
-        updateId: updateId.substring(0, 20),
-        cleanupMs,
-        globalSize: this.globalTracking.size
-      });
     }
   }
 

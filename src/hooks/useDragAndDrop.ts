@@ -498,8 +498,6 @@ export const useDragAndDrop = (
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
-    console.log('🎯 Legacy drag start called:', { index, itemsLength: items.length });
-    
     // Prevent text selection from triggering drag
     const target = e.target as HTMLElement;
     const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
@@ -507,7 +505,6 @@ export const useDragAndDrop = (
     const isContentEditable = target.contentEditable === 'true';
     
     if (isTextInput || hasTextSelection || isContentEditable) {
-      console.log('🎯 Legacy drag prevented:', { isTextInput, hasTextSelection, isContentEditable });
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -516,7 +513,6 @@ export const useDragAndDrop = (
     // Let @dnd-kit handle the actual drag logic
     const item = items[index];
     if (item) {
-      console.log('🎯 Initiating dnd-kit drag for item:', item.id);
       // Simulate @dnd-kit drag start
       handleDndKitDragStart({
         active: { id: item.id, data: { current: {} }, rect: { current: {} } }
@@ -553,14 +549,6 @@ export const useDragAndDrop = (
       
       // Only update if different to avoid unnecessary re-renders
       if (insertIndex !== dropTargetIndex) {
-        console.log('🎯 Drag over update:', {
-          targetIndex,
-          targetItemType: targetItem?.type,
-          mouseY,
-          rowMiddle: isTargetHeader ? rect.top + rect.height * 0.4 : rowMiddle,
-          insertIndex,
-          previousDropTarget: dropTargetIndex
-        });
         setDropTargetIndex(insertIndex);
       }
     }

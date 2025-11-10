@@ -264,7 +264,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         
         const mergedColumns = mergeColumnsWithTeamColumns(normalized);
         setColumns(mergedColumns);
-        console.log('✅ Column preferences hydrated:', mergedColumns.length);
         debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
         // No saved preferences (either no data or error like RLS 406)
@@ -321,7 +320,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         
         const mergedDefaults = mergeColumnsWithTeamColumns(initialColumns);
         setColumns(mergedDefaults);
-        console.log('✅ Column preferences hydrated (defaults):', mergedDefaults.length);
         debugLogger.preferences('No saved preferences - using defaults/team default');
       }
     } catch (error) {
@@ -332,7 +330,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       // CRITICAL: Set flag BEFORE clearing loading to prevent race condition
       setHasInitialLoad(true);
       setIsLoading(false);
-      console.log('✅ hasInitialLoad flag set - autosaves now enabled');
     }
   }, [user?.id, rundownId, team?.id, teamColumnsLoading]); // Removed mergeColumnsWithTeamColumns to prevent recreation
 

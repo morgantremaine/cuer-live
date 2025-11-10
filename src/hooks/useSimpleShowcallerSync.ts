@@ -4,6 +4,7 @@ import { isFloated } from '@/utils/rundownCalculations';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 import { supabase } from '@/integrations/supabase/client';
+import { debugLogger } from '@/utils/debugLogger';
 
 export interface SimpleShowcallerState {
   isPlaying: boolean;
@@ -602,7 +603,7 @@ export const useSimpleShowcallerSync = ({
       isLoadingInitialState.current = true;
       
       try {
-        console.log('📺 Simple: Loading initial showcaller state for rundown:', rundownId);
+        debugLogger.focus('Simple: Loading initial showcaller state for rundown: ' + rundownId);
         
         const { data, error } = await supabase
           .from('rundowns')
@@ -617,7 +618,7 @@ export const useSimpleShowcallerSync = ({
         }
 
         if (data?.showcaller_state) {
-          console.log('📺 Simple: Found existing showcaller state:', data.showcaller_state);
+          debugLogger.focus('Simple: Found existing showcaller state');
           
           // Apply the loaded state
           const loadedState = data.showcaller_state;
@@ -627,18 +628,10 @@ export const useSimpleShowcallerSync = ({
                                   loadedState.current_segment_id || 
                                   loadedState.currentSegment;
           
-          // DEBUG: Log the actual loaded state structure
-          console.log('📺 DEBUG: Loaded state structure:', {
-            hasCurrentSegmentId: !!currentSegmentId,
-            currentSegmentId: currentSegmentId,
-            loadedStateKeys: Object.keys(loadedState),
-            fullLoadedState: loadedState
-          });
-          
           // CRITICAL: Always show the showcaller indicator where it was last positioned
           // Even if currentSegmentId is missing, try to preserve any existing position
           if (currentSegmentId) {
-            console.log('📺 Simple: Restoring showcaller to last position:', currentSegmentId);
+            debugLogger.focus('Simple: Restoring showcaller to last position: ' + currentSegmentId);
             
             // Verify this item still exists in the rundown
             const itemExists = items.find(item => item.id === currentSegmentId);
@@ -654,14 +647,11 @@ export const useSimpleShowcallerSync = ({
                 controllerId: loadedState.controllerId || null,
                 lastUpdate: loadedState.lastUpdate || new Date().toISOString()
               });
-              
-              console.log('📺 Simple: Successfully restored showcaller position to:', finalSegmentId);
             } else {
               console.warn('📺 Simple: No valid items found, cannot restore showcaller');
             }
           } else {
-            console.log('📺 Simple: No current segment in saved state, initializing to first item');
-            console.log('📺 DEBUG: LoadedState.currentSegmentId was:', currentSegmentId, 'type:', typeof currentSegmentId);
+            debugLogger.focus('Simple: No current segment in saved state, initializing to first item');
             
             // Initialize to first item when there's no saved position
             const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));

@@ -294,7 +294,7 @@ export const useSimpleAutoSave = (
   
   // Debug log to confirm per-cell save status
   useEffect(() => {
-    if (rundownId) {
+    if (rundownId && import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
       console.log('🧪 PER-CELL SAVE: Auto-save system status', {
         rundownId,
         isPerCellEnabled,
@@ -446,7 +446,6 @@ export const useSimpleAutoSave = (
     // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       debugLogger.autosave('AutoSave: idle timeout reached - triggering save');
-      console.log('💾 Save timeout reached - clearing typing state and saving');
       userTypingRef.current = false; // Clear typing flag before save
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -457,8 +456,7 @@ export const useSimpleAutoSave = (
     
     // Max-delay forced save only if user keeps typing continuously
     maxDelayTimeoutRef.current = setTimeout(() => {
-      console.log('⏲️ AutoSave: max delay reached - forcing save');
-      console.log('💾 Max delay reached - clearing typing state and forcing save');
+      debugLogger.autosave('AutoSave: max delay reached - forcing save');
       userTypingRef.current = false; // Clear typing flag before save
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -615,14 +613,12 @@ export const useSimpleAutoSave = (
   // Only skip save if signatures match, no unsaved changes flag, and we have a baseline
   if (finalSignature === lastSavedRef.current && !state.hasUnsavedChanges && lastSavedRef.current.length > 0) {
     debugLogger.autosave('No changes to save - marking as saved');
-    console.log('ℹ️ AutoSave: no content changes detected - signatures match and no unsaved changes');
-    console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
     onSavedRef.current?.();
     return;
   }
   
   // Proceed with save when we have actual changes or it's the first save
-  console.log('💾 AutoSave: Proceeding with save - hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
+  debugLogger.autosave('AutoSave: Proceeding with save - hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
     
     // Mark save in progress and capture what we're saving
     setIsSaving(true);

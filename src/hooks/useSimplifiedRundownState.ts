@@ -732,18 +732,22 @@ export const useSimplifiedRundownState = () => {
   
   // CRITICAL: Track per-cell enabled state to coordinate with autosave
   useEffect(() => {
-    console.log('🧪 PER-CELL SAVE: State updated', {
-      perCellSaveEnabled: state.perCellSaveEnabled,
-      rundownId,
-      isEnabled: perCellEnabled
-    });
+    if (import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
+      console.log('🧪 PER-CELL SAVE: State updated', {
+        perCellSaveEnabled: state.perCellSaveEnabled,
+        rundownId,
+        isEnabled: perCellEnabled
+      });
+    }
   }, [state.perCellSaveEnabled, rundownId, perCellEnabled]);
   
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
     onSaveComplete: (completionCount?: number) => {
-      console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
+      if (import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
+        console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
+      }
       actions.markSaved();
       if (completionCount !== undefined) {
         setSaveCompletionCount(completionCount);

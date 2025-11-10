@@ -282,14 +282,12 @@ const RundownContent = React.memo<RundownContentProps>(({
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && resetDragState) {
-        console.log('🎯 Tab switched during drag - cancelling drag operation');
         resetDragState();
       }
     };
 
     const handleWindowBlur = () => {
       if (resetDragState && (draggedItemIndex !== null || isDragging)) {
-        console.log('🎯 Window lost focus during drag - cancelling drag operation');
         resetDragState();
       }
     };
