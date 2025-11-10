@@ -9,9 +9,11 @@ export const useSaveStateCoordination = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [failedSavesCount, setFailedSavesCount] = useState(0);
   
   const isTypingRef = useRef(false);
   const lastTypingTimeRef = useRef(0);
+  const retryCallbackRef = useRef<(() => Promise<void>) | null>(null);
   
   // Track when user starts typing to immediately show unsaved state
   const onTypingStart = useCallback(() => {
@@ -98,6 +100,24 @@ export const useSaveStateCoordination = () => {
     setSaveError(null);
     console.log('✅ Save coordination: manually marked as saved');
   }, []);
+
+  // Set failed saves count
+  const setFailedSaves = useCallback((count: number) => {
+    setFailedSavesCount(count);
+  }, []);
+
+  // Set retry callback
+  const setRetryCallback = useCallback((callback: () => Promise<void>) => {
+    retryCallbackRef.current = callback;
+  }, []);
+
+  // Trigger retry
+  const triggerRetry = useCallback(async () => {
+    if (retryCallbackRef.current) {
+      setSaveError(null);
+      await retryCallbackRef.current();
+    }
+  }, []);
   
   return {
     // State
@@ -105,6 +125,7 @@ export const useSaveStateCoordination = () => {
     hasUnsavedChanges,
     lastSaved,
     saveError,
+    failedSavesCount,
     
     // Actions
     onTypingStart,
@@ -114,6 +135,9 @@ export const useSaveStateCoordination = () => {
     onSaveError,
     markAsUnsaved,
     markAsSaved,
+    setFailedSaves,
+    setRetryCallback,
+    triggerRetry,
     
     // Utilities
     isCurrentlyTyping

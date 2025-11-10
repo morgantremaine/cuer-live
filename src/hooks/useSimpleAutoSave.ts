@@ -333,13 +333,28 @@ export const useSimpleAutoSave = (
     setPerCellHasUnsavedChanges(false);
   }, []);
 
+  const handlePerCellSaveError = useCallback((error: string) => {
+    // Store reference for retry button
+    const retryFn = saveCoordinatedStateRef.current?.retryFailedSaves;
+    
+    toast({
+      title: "Save failed",
+      description: error,
+      variant: "destructive",
+      duration: 0 // Persistent until dismissed
+    });
+    
+    // Log retry availability for user
+    if (retryFn) {
+      console.log('💡 To retry failed saves, check the save indicator');
+    }
+  }, [toast]);
+
+  // Store saveCoordinatedState ref for error handler
+  const saveCoordinatedStateRef = useRef<any>(null);
+
   // Unified save coordination - per-cell save is always enabled
-  const {
-    trackFieldChange,
-    saveState: saveCoordinatedState,
-    hasUnsavedChanges: hasCoordinatedUnsavedChanges,
-    handleStructuralOperation
-  } = usePerCellSaveCoordination({
+  const saveCoordination = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
     currentUserId,
@@ -347,10 +362,23 @@ export const useSimpleAutoSave = (
     onSaveComplete: handlePerCellSaveComplete,
     onUnsavedChanges: handlePerCellUnsavedChanges,
     onChangesSaved: handlePerCellChangesSaved,
+    onSaveError: handlePerCellSaveError,
     isTypingActive,
     saveInProgressRef,
     typingIdleMs
   });
+
+  const {
+    trackFieldChange,
+    saveState: saveCoordinatedState,
+    hasUnsavedChanges: hasCoordinatedUnsavedChanges,
+    handleStructuralOperation,
+    retryFailedSaves,
+    getFailedSavesCount
+  } = saveCoordination;
+
+  // Store ref for error handler
+  saveCoordinatedStateRef.current = saveCoordination;
 
   // Per-cell save is always enabled - delta save system removed
 
@@ -707,13 +735,20 @@ export const useSimpleAutoSave = (
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Save error:', error);
+      
+      const errorMessage = error?.message?.includes('timeout') 
+        ? 'Save timeout - will retry automatically'
+        : error?.message?.includes('NetworkError')
+        ? 'Network error - will retry when online'
+        : 'Unable to save changes. Will retry automatically.';
+      
       toast({
         title: "Save failed",
-        description: "Unable to save changes. Will retry automatically.",
+        description: errorMessage,
         variant: "destructive",
-        duration: 3000,
+        duration: 0 // Persistent until dismissed
       });
     } finally {
       setIsSaving(false);
@@ -1022,6 +1057,8 @@ export const useSimpleAutoSave = (
     markActiveTyping,
     isTypingActive,
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
+    retryFailedSaves,
+    getFailedSavesCount,
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,
     setVerboseLogging: keystrokeJournal.setVerboseLogging,

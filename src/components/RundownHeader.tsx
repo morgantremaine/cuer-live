@@ -59,6 +59,7 @@ interface RundownHeaderProps {
   hasActiveTeammates?: boolean;
   activeTeammateNames?: string[];
   saveCompletionCount?: number;
+  onRetry?: () => void;
 }
 
 const RundownHeader = ({
@@ -94,7 +95,8 @@ const RundownHeader = ({
   onUpdateItem,
   hasActiveTeammates,
   activeTeammateNames = [],
-  saveCompletionCount
+  saveCompletionCount,
+  onRetry
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -516,7 +518,13 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} activeTeammateNames={activeTeammateNames} />
+              <RundownSaveIndicator 
+                saveState={saveState} 
+                shouldShowSavedFlash={shouldShowSavedFlash} 
+                isTeammateEditing={showTeammateEditing} 
+                activeTeammateNames={activeTeammateNames}
+                onRetry={onRetry}
+              />
               </>
               )}
             </div>

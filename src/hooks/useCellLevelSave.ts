@@ -25,13 +25,17 @@ export const useCellLevelSave = (
   onChangesSaved?: () => void,
   isTypingActive?: () => boolean,
   saveInProgressRef?: React.MutableRefObject<boolean>,
-  typingIdleMs?: number
+  typingIdleMs?: number,
+  onSaveError?: (error: string) => void
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const failedSavesRef = useRef<FieldUpdate[]>([]);
   const wasOfflineRef = useRef(false);
   const saveCompletionCountRef = useRef(0);
+  const retryTimeoutRef = useRef<NodeJS.Timeout>();
+  const retryAttemptRef = useRef(0);
+  const firstTypingTimeRef = useRef<number>(0);
 
   // Track individual field changes
   const trackCellChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -59,9 +63,22 @@ export const useCellLevelSave = (
       const isQuickSaveField = QUICK_SAVE_FIELDS.includes(field);
       const delay = isQuickSaveField ? QUICK_SAVE_DELAY : (typingIdleMs || 1500);
       
+      // Track first typing timestamp for max timeout
+      if (!isQuickSaveField && !firstTypingTimeRef.current) {
+        firstTypingTimeRef.current = Date.now();
+      }
+      
       saveTimeoutRef.current = setTimeout(() => {
         // Skip typing check for quick-save fields
         if (!isQuickSaveField && isTypingActive && isTypingActive()) {
+          // Force save after 10 seconds of continuous typing to prevent indefinite postponement
+          const typingDuration = Date.now() - (firstTypingTimeRef.current || 0);
+          if (typingDuration > 10000) {
+            console.log('⏱️ Forcing save after 10 seconds of typing');
+            firstTypingTimeRef.current = 0;
+            savePendingUpdates();
+            return;
+          }
           scheduleTypingAwareSave();
           return;
         }
@@ -71,6 +88,7 @@ export const useCellLevelSave = (
           return;
         }
         
+        firstTypingTimeRef.current = 0;
         savePendingUpdates();
       }, delay);
     };
@@ -109,6 +127,7 @@ export const useCellLevelSave = (
         // Re-queue updates instead of losing them
         pendingUpdatesRef.current.push(...updatesToSave);
         if (onUnsavedChanges) onUnsavedChanges();
+        if (onSaveError) onSaveError('Session expired - please refresh page');
         throw new Error('Authentication required');
       }
       
@@ -149,6 +168,21 @@ export const useCellLevelSave = (
         if (onUnsavedChanges) {
           onUnsavedChanges();
         }
+        
+        // Provide specific error feedback
+        const errorMessage = error.message?.includes('timeout') 
+          ? 'Save timeout - will retry automatically'
+          : error.message?.includes('NetworkError')
+          ? 'Network error - will retry when online'
+          : 'Save failed - will retry automatically';
+        
+        if (onSaveError) {
+          onSaveError(errorMessage);
+        }
+        
+        // Schedule auto-retry with exponential backoff
+        scheduleRetry();
+        
         throw error;
       }
 
@@ -179,6 +213,10 @@ export const useCellLevelSave = (
         if (onUnsavedChanges) {
           onUnsavedChanges();
         }
+        if (onSaveError) {
+          onSaveError('Save failed - will retry automatically');
+        }
+        scheduleRetry();
         throw new Error(data?.error || 'Unknown save error');
       }
 
@@ -186,7 +224,35 @@ export const useCellLevelSave = (
       console.error('Per-cell save exception:', error);
       throw error;
     }
-  }, [rundownId]);
+  }, [rundownId, onSaveError]);
+
+  // Schedule retry with exponential backoff (30s, 60s, 120s, then stop)
+  const scheduleRetry = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+    
+    const delays = [30000, 60000, 120000]; // 30s, 60s, 120s
+    const delay = delays[Math.min(retryAttemptRef.current, delays.length - 1)];
+    
+    if (retryAttemptRef.current < 3) {
+      console.log(`⏱️ Scheduling retry attempt ${retryAttemptRef.current + 1} in ${delay / 1000}s`);
+      retryTimeoutRef.current = setTimeout(() => {
+        retryAttemptRef.current++;
+        retryFailedSaves();
+      }, delay);
+    } else {
+      console.log('⚠️ Max retry attempts reached - manual retry required');
+    }
+  }, []);
+  
+  const clearRetrySchedule = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = undefined;
+    }
+    retryAttemptRef.current = 0;
+  }, []);
 
   // Retry failed saves when connection is restored
   const retryFailedSaves = useCallback(async () => {
@@ -194,7 +260,7 @@ export const useCellLevelSave = (
       return;
     }
 
-    console.log('🔄 Retrying', failedSavesRef.current.length, 'failed saves after reconnection');
+    console.log('🔄 Retrying', failedSavesRef.current.length, 'failed saves');
     
     const savesToRetry = [...failedSavesRef.current];
     failedSavesRef.current = [];
@@ -202,12 +268,20 @@ export const useCellLevelSave = (
     // Add them to pending updates for normal save flow
     pendingUpdatesRef.current.push(...savesToRetry);
     
-    // Trigger immediate save
-    await savePendingUpdates();
-  }, [savePendingUpdates]);
+    try {
+      // Trigger immediate save
+      await savePendingUpdates();
+      // Clear retry schedule on success
+      clearRetrySchedule();
+      console.log('✅ Retry successful');
+    } catch (error) {
+      console.error('❌ Retry failed:', error);
+      // Failed saves will be re-added to failedSavesRef by savePendingUpdates
+    }
+  }, [savePendingUpdates, clearRetrySchedule]);
 
   // Monitor browser network status for reconnection
-  useCallback(() => {
+  useEffect(() => {
     const handleOnline = () => {
       if (wasOfflineRef.current) {
         console.log('📶 Network restored - retrying failed saves');
@@ -228,7 +302,23 @@ export const useCellLevelSave = (
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [retryFailedSaves])();
+  }, [retryFailedSaves]);
+  
+  // Monitor auth state for session expiration
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+        console.error('🔐 Auth state changed - session expired');
+        if (onSaveError) {
+          onSaveError('Session expired - please refresh page');
+        }
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [onSaveError]);
 
   // Force immediate save of all pending updates
   const flushPendingUpdates = useCallback(async () => {
@@ -272,10 +362,16 @@ export const useCellLevelSave = (
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [hasPendingUpdates, flushPendingUpdates]);
 
+  // Get count of failed saves for UI display
+  const getFailedSavesCount = useCallback(() => {
+    return failedSavesRef.current.length;
+  }, []);
+
   return {
     trackCellChange,
     flushPendingUpdates,
     hasPendingUpdates,
-    retryFailedSaves
+    retryFailedSaves,
+    getFailedSavesCount
   };
 };

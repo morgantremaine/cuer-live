@@ -9,6 +9,7 @@ interface SaveState {
   saveError: string | null;
   hasContentChanges?: boolean; // Additional flag to distinguish content vs column changes
   saveCompletionCount?: number; // Counter incremented on each save completion
+  failedSavesCount?: number; // Number of failed saves pending retry
 }
 
 interface RundownSaveIndicatorProps {
@@ -17,10 +18,11 @@ interface RundownSaveIndicatorProps {
   isTeammateEditing?: boolean;
   activeTeammateNames?: string[];
   isMobile?: boolean; // Add mobile prop to suppress teammate editing
+  onRetry?: () => void; // Callback to trigger manual retry
 }
 
-const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false }: RundownSaveIndicatorProps) => {
-  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true, saveCompletionCount } = saveState;
+const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false, onRetry }: RundownSaveIndicatorProps) => {
+  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true, saveCompletionCount, failedSavesCount = 0 } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [lastCompletionCount, setLastCompletionCount] = useState(0);
@@ -146,11 +148,23 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     );
   }
 
-  if (saveError) {
+  if (saveError || failedSavesCount > 0) {
+    const errorMessage = failedSavesCount > 0 
+      ? `${failedSavesCount} update${failedSavesCount === 1 ? '' : 's'} failed`
+      : 'Save failed';
+      
     return (
       <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs ml-2">
         <AlertCircle className="h-4 w-4" />
-        <span>Save failed</span>
+        <span>{errorMessage}</span>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="underline hover:no-underline font-medium"
+          >
+            Retry
+          </button>
+        )}
       </div>
     );
   }

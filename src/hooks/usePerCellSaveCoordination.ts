@@ -14,6 +14,7 @@ interface PerCellSaveOptions {
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
   onChangesSaved?: () => void;
+  onSaveError?: (error: string) => void;
   isTypingActive?: () => boolean;
   saveInProgressRef?: React.MutableRefObject<boolean>;
   typingIdleMs?: number;
@@ -27,6 +28,7 @@ export const usePerCellSaveCoordination = ({
   onSaveStart,
   onUnsavedChanges,
   onChangesSaved,
+  onSaveError,
   isTypingActive,
   saveInProgressRef,
   typingIdleMs
@@ -43,11 +45,19 @@ export const usePerCellSaveCoordination = ({
     }
   }, [onSaveComplete]);
 
+  const handleCellSaveError = useCallback((error: string) => {
+    if (onSaveError) {
+      onSaveError(error);
+    }
+  }, [onSaveError]);
+
   const {
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
-    hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, handleCellSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs);
+    hasPendingUpdates: hasPendingCellUpdates,
+    retryFailedSaves,
+    getFailedSavesCount
+  } = useCellLevelSave(rundownId, handleCellSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs, handleCellSaveError);
 
   // Structural save system for row operations
   const {
@@ -133,6 +143,8 @@ export const usePerCellSaveCoordination = ({
     trackFieldChange,
     saveState: enhancedSaveState,
     hasUnsavedChanges,
-    handleStructuralOperation
+    handleStructuralOperation,
+    retryFailedSaves,
+    getFailedSavesCount
   };
 };

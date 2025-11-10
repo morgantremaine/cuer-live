@@ -213,7 +213,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline (no setTrackOwnUpdate needed - uses centralized tracker)
-  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
+  const autoSave = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -227,8 +227,18 @@ export const useSimplifiedRundownState = () => {
         setSaveCompletionCount(meta.completionCount);
       }
       
-      // Track save time for race condition detection in cell broadcasts
-      lastSaveTimeRef.current = Date.now();
+  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave, retryFailedSaves, getFailedSavesCount } = autoSave;
+  
+  // Update failed saves count periodically
+  useEffect(() => {
+    if (getFailedSavesCount) {
+      const count = getFailedSavesCount();
+      saveCoordination.setFailedSaves(count);
+    }
+    if (retryFailedSaves) {
+      saveCoordination.setRetryCallback(retryFailedSaves);
+    }
+  }, [getFailedSavesCount, retryFailedSaves, saveCoordination]);
       
       // Update our timestamp tracking
       if (meta?.updatedAt) {
