@@ -66,7 +66,6 @@ export const useSimpleAutoSave = (
   const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
   const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
-  const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
   // Performance-optimized keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
@@ -97,20 +96,7 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state]);
 
-  // Set initial load cooldown - reduced to 500ms for faster editing
-  useEffect(() => {
-    if (isInitiallyLoaded) {
-      const cooldownMs = 500;
-      initialLoadCooldownRef.current = Date.now() + cooldownMs;
-      
-      console.log(`🕐 Initial load cooldown set: ${cooldownMs}ms`, {
-        rundownId,
-        itemCount: state.items?.length || 0
-      });
-    }
-    // CRITICAL: Only run this once on initial load, not on every state change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitiallyLoaded]);
+  // Initial load cooldown removed - allow instant editing
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
@@ -276,8 +262,8 @@ export const useSimpleAutoSave = (
       lastSavedRef.current = currentSignature;
       lastPrimedRundownRef.current = rundownId;
       
-      // Initialize save coordination system
-      initializeBaseline(state);
+      // Baseline tracking handled by lastSavedRef signature string
+      // No need to initialize full state copy (that was legacy code)
       
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
@@ -364,7 +350,6 @@ export const useSimpleAutoSave = (
   const {
     trackFieldChange,
     saveState: saveCoordinatedState,
-    initializeBaseline,
     hasUnsavedChanges: hasCoordinatedUnsavedChanges,
     handleStructuralOperation
   } = usePerCellSaveCoordination({
@@ -396,11 +381,6 @@ export const useSimpleAutoSave = (
     // Set hasUnsavedChanges regardless of save mode
     // Per-cell save will also trigger this via onUnsavedChanges callback
     hasUnsavedChangesRef.current = true;
-    
-    // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
-    if (initialLoadCooldownRef.current > now) {
-      initialLoadCooldownRef.current = 0;
-    }
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
@@ -534,14 +514,6 @@ export const useSimpleAutoSave = (
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
-      return;
-    }
-
-    // CRITICAL: Prevent saves during initial load period to avoid false attribution
-    if (initialLoadCooldownRef.current > Date.now()) {
-      const remainingMs = initialLoadCooldownRef.current - Date.now();
-      debugLogger.autosave('Save blocked: initial load cooldown active');
-      console.log(`🛑 AutoSave: blocked - initial load cooldown active (${remainingMs}ms remaining)`);
       return;
     }
 

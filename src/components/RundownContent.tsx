@@ -433,34 +433,32 @@ const RundownContent = React.memo<RundownContentProps>(({
               width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
             }}
           >
-            <table 
-              className="border-collapse table-container" 
-              style={{ 
-                tableLayout: 'fixed', 
-                width: `${totalTableWidth}px`,
-                minWidth: `${totalTableWidth}px`,
-                margin: 0,
-                padding: 0,
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden',
-                willChange: 'transform'
-              }}
-              data-rundown-table="body"
-            >
-              {/* Table Body - Content with @dnd-kit wrapper */}
-              {DndContext && SortableContext ? (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={collisionDetection}
-                  onDragStart={dndKitDragStart}
-                  onDragEnd={dndKitDragEnd}
-                  modifiers={modifiers}
+            <table
+                  className="border-collapse table-container" 
+                  style={{ 
+                    tableLayout: 'fixed', 
+                    width: `${totalTableWidth}px`,
+                    minWidth: `${totalTableWidth}px`,
+                    margin: 0,
+                    padding: 0,
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                    willChange: 'transform'
+                  }}
+                  data-rundown-table="body"
                 >
-                  <SortableContext items={sortableItems || []} strategy={undefined}>
-                    <OptimizedVirtualRundownTable
-              scrollContainerRef={scrollContainerRef}
-              enableVirtualization={false}
-              items={items}
+                  {/* Table Body - Content with @dnd-kit wrapper */}
+                  {DndContext && SortableContext ? (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={collisionDetection}
+                      onDragStart={dndKitDragStart}
+                      onDragEnd={dndKitDragEnd}
+                      modifiers={modifiers}
+                    >
+                      <SortableContext items={sortableItems || []} strategy={undefined}>
+                        <OptimizedVirtualRundownTable
+              items={visibleItems}
               visibleColumns={visibleColumns}
               currentTime={currentTime}
               showColorPicker={showColorPicker}
@@ -507,12 +505,10 @@ const RundownContent = React.memo<RundownContentProps>(({
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
             />
-                  </SortableContext>
-                </DndContext>
-              ) : (
-                <OptimizedVirtualRundownTable
-              scrollContainerRef={scrollContainerRef}
-              enableVirtualization={true}
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <OptimizedVirtualRundownTable
               items={visibleItems}
               visibleColumns={visibleColumns}
               getRowNumber={getRowNumberFromMemo}
@@ -560,8 +556,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
             />
-              )}
-            </table>
+                  )}
+                </table>
           </div>
         </div>
         <ScrollBar orientation="horizontal" />

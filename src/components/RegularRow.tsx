@@ -252,7 +252,10 @@ const RegularRow = (props: RegularRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
-        style={{ backgroundColor }}
+        style={{ 
+          backgroundColor,
+          contain: 'style paint'
+        }}
         data-item-id={item.id}
         data-type="regular"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}

@@ -8,6 +8,7 @@ import Teleprompter from '@/pages/Teleprompter';
 import { CellUpdateProvider } from '@/contexts/CellUpdateContext';
 
 const RundownWithTabs = () => {
+  const mountTime = React.useRef(performance.now());
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,10 +42,14 @@ const RundownWithTabs = () => {
   };
 
   useEffect(() => {
-    console.log('🔄 RundownWithTabs mounted for rundown:', id, 'active tab:', activeTab);
+    const timeSinceMount = performance.now() - mountTime.current;
+    console.log('🔄 [PERF] RundownWithTabs mounted for rundown:', id, 'active tab:', activeTab, {
+      timeSinceMount,
+      timestamp: performance.now()
+    });
     
     return () => {
-      console.log('🧹 RundownWithTabs unmounting');
+      console.log('🧹 [PERF] RundownWithTabs unmounting');
     };
   }, [id, activeTab]);
 

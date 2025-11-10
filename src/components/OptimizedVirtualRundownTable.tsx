@@ -1,8 +1,6 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import RundownTable from './RundownTable';
-import { useVirtualizedRows } from '@/hooks/useVirtualizedRows';
 import { Column } from '@/types/columns';
-import { RundownItem } from '@/types/rundown';
 
 interface OptimizedVirtualRundownTableProps {
   items: any[];
@@ -51,104 +49,100 @@ interface OptimizedVirtualRundownTableProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
-  scrollContainerRef: React.RefObject<HTMLElement>;
-  enableVirtualization?: boolean;
+  // Virtualization props passed from parent
+  startIndex?: number;
+  endIndex?: number;
 }
 
 /**
- * Phase 2 Optimization: Windowed/virtualized table wrapper
- * Only renders visible rows for 90-95% reduction in DOM elements
+ * Phase 2 Optimization: Index adjustment wrapper for virtualized table
+ * Adjusts indices to work with virtual window when parent handles virtualization
  */
 const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> = ({
   items,
-  scrollContainerRef,
-  enableVirtualization = true,
   getRowNumber,
   onDragStart,
   onDrop,
   onRowSelect,
+  draggedItemIndex,
+  dropTargetIndex,
+  startIndex = 0,
+  endIndex = items.length,
   ...restProps
 }) => {
   
-  // Apply virtualization if enabled and items count is large
-  const shouldVirtualize = enableVirtualization && items.length > 50;
-
-  const {
-    virtualItems,
-    startIndex,
-    totalHeight,
-    offsetY
-  } = useVirtualizedRows({
-    items,
-    containerRef: scrollContainerRef,
-    rowHeight: 40,
-    overscan: 10
-  });
+  // Check if we're in virtualization mode (parent passed indices)
+  const isVirtualized = startIndex > 0 || endIndex < items.length;
 
   // Adjust functions to work with virtual indices
   const adjustedGetRowNumber = useMemo(() => {
     return (virtualIndex: number) => {
-      if (!shouldVirtualize) return getRowNumber(virtualIndex);
+      if (!isVirtualized) return getRowNumber(virtualIndex);
       const actualIndex = startIndex + virtualIndex;
       return getRowNumber(actualIndex);
     };
-  }, [getRowNumber, startIndex, shouldVirtualize]);
+  }, [getRowNumber, startIndex, isVirtualized]);
 
   const adjustedOnDragStart = useMemo(() => {
     return (e: React.DragEvent, virtualIndex: number) => {
-      if (!shouldVirtualize) return onDragStart(e, virtualIndex);
+      if (!isVirtualized) return onDragStart(e, virtualIndex);
       const actualIndex = startIndex + virtualIndex;
       onDragStart(e, actualIndex);
     };
-  }, [onDragStart, startIndex, shouldVirtualize]);
+  }, [onDragStart, startIndex, isVirtualized]);
 
   const adjustedOnDrop = useMemo(() => {
     return (e: React.DragEvent, virtualIndex: number) => {
-      if (!shouldVirtualize) return onDrop(e, virtualIndex);
+      if (!isVirtualized) return onDrop(e, virtualIndex);
       const actualIndex = startIndex + virtualIndex;
       onDrop(e, actualIndex);
     };
-  }, [onDrop, startIndex, shouldVirtualize]);
+  }, [onDrop, startIndex, isVirtualized]);
 
   const adjustedOnRowSelect = useMemo(() => {
     return (itemId: string, virtualIndex: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-      if (!shouldVirtualize) return onRowSelect(itemId, virtualIndex, isShiftClick, isCtrlClick, headerGroupItemIds);
+      if (!isVirtualized) return onRowSelect(itemId, virtualIndex, isShiftClick, isCtrlClick, headerGroupItemIds);
       const actualIndex = startIndex + virtualIndex;
       onRowSelect(itemId, actualIndex, isShiftClick, isCtrlClick, headerGroupItemIds);
     };
-  }, [onRowSelect, startIndex, shouldVirtualize]);
+  }, [onRowSelect, startIndex, isVirtualized]);
 
-  // Use virtual items if virtualization is enabled, otherwise use all items
-  const displayItems = shouldVirtualize ? virtualItems : items;
+  // Adjust draggedItemIndex to virtual index
+  const adjustedDraggedItemIndex = useMemo(() => {
+    if (!isVirtualized || draggedItemIndex === null || draggedItemIndex === undefined) {
+      return draggedItemIndex;
+    }
+    // Check if draggedItemIndex is within visible range
+    if (draggedItemIndex >= startIndex && draggedItemIndex < endIndex) {
+      return draggedItemIndex - startIndex;
+    }
+    return null;
+  }, [draggedItemIndex, startIndex, endIndex, isVirtualized]);
 
-  if (!shouldVirtualize) {
-    // No virtualization for small lists
-    return (
-      <RundownTable
-        items={displayItems}
-        getRowNumber={adjustedGetRowNumber}
-        onDragStart={adjustedOnDragStart}
-        onDrop={adjustedOnDrop}
-        onRowSelect={adjustedOnRowSelect}
-        {...restProps}
-      />
-    );
-  }
+  // Adjust dropTargetIndex to virtual index
+  const adjustedDropTargetIndex = useMemo(() => {
+    if (!isVirtualized || dropTargetIndex === null || dropTargetIndex === undefined) {
+      return dropTargetIndex;
+    }
+    // Check if dropTargetIndex is within visible range
+    if (dropTargetIndex >= startIndex && dropTargetIndex < endIndex) {
+      return dropTargetIndex - startIndex;
+    }
+    return null;
+  }, [dropTargetIndex, startIndex, endIndex, isVirtualized]);
 
-  // Virtualized rendering with wrapper div to handle total height
+  // No wrapper divs - just return the table body
   return (
-    <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
-      <div style={{ transform: `translateY(${offsetY}px)` }}>
-        <RundownTable
-          items={displayItems}
-          getRowNumber={adjustedGetRowNumber}
-          onDragStart={adjustedOnDragStart}
-          onDrop={adjustedOnDrop}
-          onRowSelect={adjustedOnRowSelect}
-          {...restProps}
-        />
-      </div>
-    </div>
+    <RundownTable
+      items={items}
+      getRowNumber={adjustedGetRowNumber}
+      onDragStart={adjustedOnDragStart}
+      onDrop={adjustedOnDrop}
+      onRowSelect={adjustedOnRowSelect}
+      draggedItemIndex={adjustedDraggedItemIndex}
+      dropTargetIndex={adjustedDropTargetIndex}
+      {...restProps}
+    />
   );
 };
 

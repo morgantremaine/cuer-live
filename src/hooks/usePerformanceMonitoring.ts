@@ -117,16 +117,8 @@ export const usePerformanceMonitoring = ({
     }
   }, [itemCount, enabled, checkPerformance]);
 
-  // Periodic memory check for large rundowns
-  useEffect(() => {
-    if (!enabled || itemCount < LARGE_RUNDOWN_THRESHOLD) return;
-
-    const interval = setInterval(() => {
-      checkPerformance();
-    }, 10000); // Check every 10 seconds for large rundowns
-
-    return () => clearInterval(interval);
-  }, [enabled, itemCount, checkPerformance]);
+  // Periodic memory check disabled to reduce timer overhead
+  // Metrics are still collected on-demand via getMetrics() and forceCheck()
 
   // Get current performance metrics
   const getMetrics = useCallback(() => {

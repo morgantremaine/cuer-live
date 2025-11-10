@@ -168,31 +168,7 @@ const AppRoutes = () => {
         } 
       />
       <Route 
-        path="/rundown/:id" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <RundownWithTabs />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/rundown/:id/blueprint" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <RundownWithTabs />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/rundown/:id/camera-plot-editor" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <RundownWithTabs />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/rundown/:id/teleprompter" 
+        path="/rundown/:id/*" 
         element={
           <ProtectedRoute requiresSubscription={true}>
             <RundownWithTabs />

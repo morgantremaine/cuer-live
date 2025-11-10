@@ -97,10 +97,9 @@ export const useChangeTracking = (
 
   // Enhanced change detection - showcaller blocking removed
   useEffect(() => {
-    // Essential blocking conditions (showcaller blocking removed)
+    // Essential blocking conditions - removed isProcessingRealtimeUpdate to allow typing during catch-up syncs
     if (!isInitialized || 
         isLoading || 
-        isProcessingRealtimeUpdate || 
         isApplyingRemoteUpdateRef.current) {
       return;
     }
@@ -157,13 +156,12 @@ export const useChangeTracking = (
   const markAsChanged = useCallback(() => {
     if (isInitialized && 
         !isLoading && 
-        !isProcessingRealtimeUpdate && 
         !isApplyingRemoteUpdateRef.current &&
         !showcallerActiveRef.current) {
       console.log('📝 Manually marking as changed (not showcaller)');
       setHasUnsavedChanges(true);
     }
-  }, [isInitialized, isLoading, isProcessingRealtimeUpdate]);
+  }, [isInitialized, isLoading]);
 
   // Update saved signature
   const updateSavedSignature = useCallback((

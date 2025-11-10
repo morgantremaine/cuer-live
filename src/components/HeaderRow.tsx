@@ -197,7 +197,10 @@ const HeaderRow = (props: HeaderRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}
-        style={{ backgroundColor }}
+        style={{ 
+          backgroundColor,
+          contain: 'style paint'
+        }}
         data-item-id={item.id}
         data-type="header"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
