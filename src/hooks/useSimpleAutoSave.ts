@@ -262,8 +262,8 @@ export const useSimpleAutoSave = (
       lastSavedRef.current = currentSignature;
       lastPrimedRundownRef.current = rundownId;
       
-      // Initialize save coordination system
-      initializeBaseline(state);
+      // Baseline tracking handled by lastSavedRef signature string
+      // No need to initialize full state copy (that was legacy code)
       
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
@@ -350,7 +350,6 @@ export const useSimpleAutoSave = (
   const {
     trackFieldChange,
     saveState: saveCoordinatedState,
-    initializeBaseline,
     hasUnsavedChanges: hasCoordinatedUnsavedChanges,
     handleStructuralOperation
   } = usePerCellSaveCoordination({
