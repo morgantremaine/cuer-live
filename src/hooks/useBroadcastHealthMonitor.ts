@@ -41,13 +41,11 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
       });
     };
 
-    // Initial check
+    // Initial check only - removed periodic interval to reduce timer overhead
     checkHealth();
 
-    // Set up periodic health monitoring
-    const interval = setInterval(checkHealth, 10000); // Check every 10 seconds
-
-    return () => clearInterval(interval);
+    // Cleanup (no interval to clear)
+    return () => {};
   }, [rundownId, enabled]);
 
   return healthStatus;
