@@ -96,11 +96,11 @@ const TextAreaCell = ({
     }
   };
 
-  // Recalculate height when value changes
+  // Debounced height recalculation - only recalculate after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
       calculateHeight();
-    }, 0);
+    }, 100); // 100ms debounce for height recalculation
     return () => clearTimeout(timer);
   }, [debouncedValue.value]);
 
@@ -108,13 +108,17 @@ const TextAreaCell = ({
   useEffect(() => {
     if (!textareaRef.current) return;
     
+    let resizeTimer: NodeJS.Timeout;
+    
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const newWidth = entry.contentRect.width;
-        if (newWidth !== currentWidth) {
-          const timer = setTimeout(() => {
+        if (newWidth !== currentWidth && Math.abs(newWidth - currentWidth) > 1) {
+          // Debounce resize events too
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
             calculateHeight();
-          }, 0);
+          }, 50);
         }
       }
     });
@@ -122,6 +126,7 @@ const TextAreaCell = ({
     resizeObserver.observe(textareaRef.current);
     
     return () => {
+      clearTimeout(resizeTimer);
       resizeObserver.disconnect();
     };
   }, [currentWidth]);
