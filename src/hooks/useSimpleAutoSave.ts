@@ -413,13 +413,11 @@ export const useSimpleAutoSave = (
     
     // Set timeout to automatically clear typing state and schedule save if needed
     typingTimeoutRef.current = setTimeout(() => {
-      console.log('⌨️ Typing timeout - clearing typing state');
       userTypingRef.current = false;
       typingTimeoutRef.current = undefined;
       
       // If there are still unsaved changes, schedule a save
       if (hasUnsavedChangesRef.current && !saveInProgressRef.current) {
-        console.log('💾 Typing timeout: scheduling delayed save for remaining changes');
         setTimeout(() => {
           if (!saveInProgressRef.current && !userTypingRef.current) {
             performSave(false, isSharedView);
@@ -667,35 +665,17 @@ export const useSimpleAutoSave = (
           }
           // Update lastSavedRef immediately to prevent retry race condition
           lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef immediately after NEW rundown save:', finalSignature.length);
           
           // Update lastSavedRef to current state signature after successful save
           const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
-          console.log('📝 Setting lastSavedRef to current state after full save:', currentSignatureAfterSave.length);
-
-          // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
-          if (currentSignatureAfterSave !== finalSignature) {
-            console.log('📝 Content continued to change during save - next save cycle will capture changes');
-          }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        console.log('⚡ AutoSave: per-cell save active for rundown', { 
-          rundownId, 
-          itemCount: saveState.items?.length || 0,
-          isFlushSave
-        });
-        
         try {
           // Per-cell save is always active - per-cell system handles all persistence
-          console.log('🧪 AutoSave: per-cell save handles all persistence - returning without action');
           const updatedAt = new Date().toISOString();
-          
-          console.log('✅ AutoSave: per-cell save response', { 
-            updatedAt
-          });
 
           // Track the actual timestamp returned by the database via centralized tracker
           if (updatedAt) {
@@ -710,12 +690,6 @@ export const useSimpleAutoSave = (
           // Update lastSavedRef to current state signature after successful save
           const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
-          console.log('📝 Setting lastSavedRef to current state after per-cell save:', currentSignatureAfterSave.length);
-
-          // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
-          if (currentSignatureAfterSave !== finalSignature) {
-            console.log('📝 Content continued to change during save - next save cycle will capture changes');
-          }
 
           // Invoke callback with metadata
           onSavedRef.current?.({ 
@@ -762,7 +736,6 @@ export const useSimpleAutoSave = (
       if (Date.now() - lastEditAtRef.current < typingIdleMs) {
         if (!maxDelayTimeoutRef.current) {
           maxDelayTimeoutRef.current = setTimeout(() => {
-            console.log('⏲️ AutoSave: max delay reached post-save - forcing save');
             performSaveRef.current(true);
             maxDelayTimeoutRef.current = null;
           }, maxSaveDelay);

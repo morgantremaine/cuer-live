@@ -261,10 +261,6 @@ function rundownReducer(
       return { ...state, isPlaying: action.payload };
 
     case 'MARK_SAVED':
-      console.log('✅ MARKED AS SAVED: hasUnsavedChanges=false', {
-        previousState: state.hasUnsavedChanges,
-        reason: 'Save operation completed'
-      });
       return { ...state, hasUnsavedChanges: false };
 
     case 'SET_DOC_VERSION':
