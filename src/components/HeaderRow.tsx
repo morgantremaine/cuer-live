@@ -199,7 +199,7 @@ const HeaderRow = (props: HeaderRowProps) => {
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}
         style={{ 
           backgroundColor,
-          contain: 'layout style paint'
+          contain: 'style paint'
         }}
         data-item-id={item.id}
         data-type="header"
