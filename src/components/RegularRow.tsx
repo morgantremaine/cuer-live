@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
@@ -56,7 +56,7 @@ interface RegularRowProps {
   getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
-const RegularRowBase = (props: RegularRowProps) => {
+const RegularRow = (props: RegularRowProps) => {
   const {
     item,
     index,
@@ -293,58 +293,5 @@ const RegularRowBase = (props: RegularRowProps) => {
     </RundownContextMenu>
   );
 };
-
-/**
- * Phase 2: Row memoization to prevent unnecessary re-renders
- * Custom comparison function that checks all relevant props
- */
-const areEqual = (prevProps: RegularRowProps, nextProps: RegularRowProps) => {
-  // Check if item data changed
-  if (prevProps.item.id !== nextProps.item.id) return false;
-  if (prevProps.item.name !== nextProps.item.name) return false;
-  if (prevProps.item.duration !== nextProps.item.duration) return false;
-  if (prevProps.item.script !== nextProps.item.script) return false;
-  if (prevProps.item.color !== nextProps.item.color) return false;
-  if (prevProps.item.isFloating !== nextProps.item.isFloating) return false;
-  
-  // Check if row state changed
-  if (prevProps.isSelected !== nextProps.isSelected) return false;
-  if (prevProps.rowNumber !== nextProps.rowNumber) return false;
-  if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.isCurrentlyPlaying !== nextProps.isCurrentlyPlaying) return false;
-  if (prevProps.isDragging !== nextProps.isDragging) return false;
-  if (prevProps.isDraggingMultiple !== nextProps.isDraggingMultiple) return false;
-  
-  // Check if current segment changed (affects styling)
-  if (prevProps.currentSegmentId !== nextProps.currentSegmentId) return false;
-  
-  // Check if columns changed (length or order)
-  if (prevProps.columns.length !== nextProps.columns.length) return false;
-  for (let i = 0; i < prevProps.columns.length; i++) {
-    if (prevProps.columns[i].id !== nextProps.columns[i].id) return false;
-  }
-  
-  // Check cell expand state
-  if (prevProps.expandedCells !== nextProps.expandedCells) return false;
-  
-  // Check UI state
-  if (prevProps.showColorPicker !== nextProps.showColorPicker) return false;
-  
-  // Check custom fields (shallow comparison of keys and values)
-  const prevCustomFields = prevProps.item.customFields || {};
-  const nextCustomFields = nextProps.item.customFields || {};
-  const prevKeys = Object.keys(prevCustomFields);
-  const nextKeys = Object.keys(nextCustomFields);
-  
-  if (prevKeys.length !== nextKeys.length) return false;
-  for (const key of prevKeys) {
-    if (prevCustomFields[key] !== nextCustomFields[key]) return false;
-  }
-  
-  // All checks passed - props are equal, skip re-render
-  return true;
-};
-
-const RegularRow = memo(RegularRowBase, areEqual);
 
 export default RegularRow;

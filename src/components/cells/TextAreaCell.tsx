@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
-import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface TextAreaCellProps {
   value: string;
@@ -14,7 +13,6 @@ interface TextAreaCellProps {
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   fieldKeyForProtection?: string; // ensures focus-based protection matches merge keys
-  markActiveTyping?: () => void;
 }
 
 const TextAreaCell = ({
@@ -28,12 +26,8 @@ const TextAreaCell = ({
   onUpdateValue,
   onCellClick,
   onKeyDown,
-  fieldKeyForProtection,
-  markActiveTyping
+  fieldKeyForProtection
 }: TextAreaCellProps) => {
-  // Phase 1: Debounced input to prevent parent updates on every keystroke
-  const debouncedInput = useDebouncedInput(value, onUpdateValue, 150);
-  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
@@ -68,7 +62,7 @@ const TextAreaCell = ({
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
     // Set the content
-    measurementDiv.textContent = debouncedInput.value || ' '; // Use space for empty content
+    measurementDiv.textContent = value || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
@@ -100,7 +94,7 @@ const TextAreaCell = ({
       calculateHeight();
     }, 0);
     return () => clearTimeout(timer);
-  }, [debouncedInput.value]);
+  }, [value]);
 
   // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
@@ -139,9 +133,8 @@ const TextAreaCell = ({
       // Insert line break at cursor position
       const newValue = currentValue.substring(0, start) + '\n' + currentValue.substring(end);
       
-      // Update the value immediately (force update)
-      debouncedInput.onChange(newValue);
-      debouncedInput.forceUpdate();
+      // Update the value
+      onUpdateValue(newValue);
       
       // Set cursor position after the inserted line break
       setTimeout(() => {
@@ -160,11 +153,10 @@ const TextAreaCell = ({
     // Allow other keys to work normally
   };
 
-  // Handle value changes with debouncing
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    markActiveTyping?.();
-    debouncedInput.onChange(e.target.value);
-  }, [debouncedInput, markActiveTyping]);
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onUpdateValue(e.target.value);
+    // Height will be recalculated by useEffect
+  };
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -188,9 +180,8 @@ const TextAreaCell = ({
     }
   };
 
-  // Enhanced blur handler to re-enable row dragging and force update
-  const handleBlur = useCallback((e: React.FocusEvent) => {
-    debouncedInput.forceUpdate(); // Force update on blur to ensure data is saved immediately
+  // Enhanced blur handler to re-enable row dragging
+  const handleBlur = (e: React.FocusEvent) => {
     setIsFocused(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
@@ -200,7 +191,7 @@ const TextAreaCell = ({
         row.setAttribute('draggable', 'true');
       }, 50);
     }
-  }, [debouncedInput]);
+  };
 
 // Create the proper cell ref key
 const cellKey = `${itemId}-${cellRefKey}`;
@@ -211,7 +202,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
   
   // Check if this cell contains URLs and should show clickable links when not focused
-  const shouldShowClickableUrls = !isFocused && containsUrls(debouncedInput.value);
+  const shouldShowClickableUrls = !isFocused && containsUrls(value);
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -237,7 +228,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             textAlign: isDuration ? 'center' : 'left'
           }}
         >
-          {renderTextWithClickableUrls(debouncedInput.value)}
+          {renderTextWithClickableUrls(value)}
         </div>
       )}
       
@@ -250,7 +241,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             delete cellRefs.current[cellKey];
           }
         }}
-        value={debouncedInput.value}
+        value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
