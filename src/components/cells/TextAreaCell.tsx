@@ -167,7 +167,7 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    debouncedValue.onChange(e.target.value);
+    debouncedValue.onChange(e.target.value, e.target as HTMLTextAreaElement);
     // Height will be recalculated by useEffect
   };
 

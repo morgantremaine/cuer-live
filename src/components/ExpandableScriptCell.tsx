@@ -346,7 +346,7 @@ const ExpandableScriptCell = ({
                 }}
               value={debouncedValue.value}
               onChange={(e) => {
-                debouncedValue.onChange(e.target.value);
+                debouncedValue.onChange(e.target.value, e.target as HTMLTextAreaElement);
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
