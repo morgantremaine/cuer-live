@@ -263,69 +263,37 @@ export const useConsolidatedRealtimeRundown = ({
       window.removeEventListener('offline', handleOffline);
     };
   }, [enabled, rundownId, performCatchupSync]);
-  
-  // Ref for tracking tab refocus grace period
-  const lastTabRefocusRef = useRef<number>(0);
-  const TAB_REFOCUS_GRACE_PERIOD = 5000; // 5 seconds grace period after tab refocus
 
-  // Database polling fallback when realtime is stale
+  // Simplified polling fallback - only catch up when genuinely needed
   useEffect(() => {
-    if (!enabled || !rundownId || !isConnected) {
+    if (!enabled || !rundownId) {
       return;
     }
     
-    // Check every 15 seconds if we need to poll
-    const checkStaleAndPoll = async () => {
-      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const timeSinceTabRefocus = Date.now() - lastTabRefocusRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes (increased from 30s)
-      
-      // Skip if we're in the grace period after tab refocus
-      if (timeSinceTabRefocus < TAB_REFOCUS_GRACE_PERIOD) {
-        console.log('⏳ Skipping catch-up sync - within tab refocus grace period');
-        return;
-      }
-      
-      // Check WebSocket health before assuming staleness
+    const checkInterval = setInterval(async () => {
       const state = globalSubscriptions.get(rundownId);
-      if (state?.isConnected && timeSinceLastUpdate > STALE_THRESHOLD) {
-        console.log('⏰ No realtime updates for 3m but WebSocket connected - checking for updates');
+      if (!state) return;
+      
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+      const STALE_THRESHOLD = 180000; // 3 minutes
+      
+      // Only catch up if:
+      // 1. WebSocket is disconnected OR
+      // 2. WebSocket connected but no updates for 3+ minutes (rare edge case)
+      if (!state.isConnected) {
+        console.log('🔄 WebSocket disconnected - performing catch-up sync');
+        await performCatchupSync();
+      } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
+        console.log('⚠️ WebSocket connected but no updates for 3m - checking for stale data');
         const hadUpdates = await performCatchupSync();
         if (!hadUpdates) {
-          // WebSocket is alive and no updates - reset timer
-          lastUpdateTimeRef.current = Date.now();
+          lastUpdateTimeRef.current = Date.now(); // Reset timer
         }
       }
-    };
+    }, 30000); // Check every 30 seconds
     
-    pollingIntervalRef.current = setInterval(checkStaleAndPoll, 15000);
-    
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
+    return () => clearInterval(checkInterval);
   }, [enabled, rundownId, isConnected, performCatchupSync]);
-
-  // Track tab visibility changes and reset timers
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // Tab became visible - reset timers to prevent immediate catch-up sync
-        const now = Date.now();
-        lastUpdateTimeRef.current = now;
-        lastTabRefocusRef.current = now;
-        console.log('👁️ Tab became visible - reset catch-up sync timers (5s grace period)');
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({

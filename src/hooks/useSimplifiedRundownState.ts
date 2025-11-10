@@ -279,7 +279,6 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced realtime connection with sync-before-write protection
   const deferredUpdateRef = useRef<any>(null);
-  const initialLoadGateRef = useRef(true);
   const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
   const syncBeforeWriteRef = useRef(false);
   
@@ -287,13 +286,6 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
-      // SIMPLIFIED: Remove initial load gating - just apply updates immediately
-      if (initialLoadGateRef.current) {
-        console.log('⏳ Initial load in progress but applying update anyway');
-        // Don't defer - just set the gate to false and continue
-        initialLoadGateRef.current = false;
-      }
-      
       // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
         const incomingTime = new Date(updatedRundown.updated_at).getTime();
@@ -429,16 +421,6 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeConnection.isConnected);
     console.log('🔌 Realtime connection status changed:', realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
-  
-  // Clear initial load gate after initialization and implement sync-before-write
-  useEffect(() => {
-    if (isInitialized) {
-      setTimeout(() => {
-        initialLoadGateRef.current = false;
-        console.log('🚪 Initial load gate cleared - realtime updates enabled');
-      }, 500);
-    }
-  }, [isInitialized]);
 
   // Connect realtime to auto-save typing/unsaved state
   realtimeConnection.setTypingChecker(() => isTypingActive());
