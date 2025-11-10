@@ -200,7 +200,8 @@ const HeaderRow = (props: HeaderRowProps) => {
         style={{ 
           backgroundColor,
           contain: 'layout style paint',
-          contentVisibility: 'auto'
+          contentVisibility: 'auto',
+          containIntrinsicSize: 'auto 64px'
         }}
         data-item-id={item.id}
         data-type="header"

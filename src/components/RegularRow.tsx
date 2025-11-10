@@ -255,7 +255,8 @@ const RegularRow = (props: RegularRowProps) => {
         style={{ 
           backgroundColor,
           contain: 'layout style paint',
-          contentVisibility: 'auto'
+          contentVisibility: 'auto',
+          containIntrinsicSize: 'auto 32px'
         }}
         data-item-id={item.id}
         data-type="regular"
