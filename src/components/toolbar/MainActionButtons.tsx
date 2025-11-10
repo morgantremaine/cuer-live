@@ -124,47 +124,47 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-        {onToggleLock && (
-          <div className="col-span-2">
-            <NumberLockButton 
-              isLocked={numberingLocked} 
-              onToggle={onToggleLock}
+          {onToggleLock && (
+            <div className="col-span-2">
+              <NumberLockButton 
+                isLocked={numberingLocked} 
+                onToggle={onToggleLock}
+                size={buttonSize}
+                className="w-full justify-start"
+              />
+            </div>
+          )}
+          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span>Segment</span>
+          </Button>
+          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span>Header</span>
+          </Button>
+          {/* Undo/Redo Button Group - spans 2 columns */}
+          <div className="col-span-2 inline-flex rounded-md shadow-sm w-full" role="group">
+            <Button 
+              onClick={onUndo} 
+              variant="outline" 
               size={buttonSize}
-              className="w-full justify-start"
-            />
+              disabled={!canUndo}
+              title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+              className="flex-1 rounded-r-none border-r-0 justify-center"
+            >
+              <Undo className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={onRedo} 
+              variant="outline" 
+              size={buttonSize}
+              disabled={!canRedo}
+              title={nextRedoAction ? `Redo: ${nextRedoAction}` : 'Nothing to redo'}
+              className="flex-1 rounded-l-none justify-center"
+            >
+              <Redo className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-        {/* Undo/Redo Button Group - spans 2 columns */}
-        <div className="col-span-2 inline-flex rounded-md shadow-sm w-full" role="group">
-          <Button 
-            onClick={onUndo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canUndo}
-            title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-            className="flex-1 rounded-r-none border-r-0 justify-center"
-          >
-            <Undo className="h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={onRedo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canRedo}
-            title={nextRedoAction ? `Redo: ${nextRedoAction}` : 'Nothing to redo'}
-            className="flex-1 rounded-l-none justify-center"
-          >
-            <Redo className="h-4 w-4" />
-          </Button>
-        </div>
-        <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
-          <Plus className="h-4 w-4" />
-          <span>Segment</span>
-        </Button>
-        <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
-          <Plus className="h-4 w-4" />
-          <span>Header</span>
-        </Button>
           <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Eye className="h-4 w-4" />
             <span>Layouts</span>
@@ -234,6 +234,14 @@ const MainActionButtons = ({
           size={buttonSize}
         />
       )}
+      <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
+        <Plus className="h-4 w-4" />
+        <span>Segment</span>
+      </Button>
+      <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
+        <Plus className="h-4 w-4" />
+        <span>Header</span>
+      </Button>
       {/* Undo/Redo Button Group */}
       <div className="inline-flex rounded-md shadow-sm" role="group">
         <Button 
@@ -257,14 +265,6 @@ const MainActionButtons = ({
           <Redo className="h-4 w-4" />
         </Button>
       </div>
-      <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
-        <Plus className="h-4 w-4" />
-        <span>Segment</span>
-      </Button>
-      <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
-        <Plus className="h-4 w-4" />
-        <span>Header</span>
-      </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Eye className="h-4 w-4" />
         <span>Layouts</span>
