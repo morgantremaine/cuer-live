@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
+import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -41,6 +42,13 @@ const ExpandableScriptCell = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollTimeRef = useRef<number>(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Debounced input handling - immediate UI updates, batched parent updates
+  const debouncedValue = useDebouncedInput(
+    value,
+    (newValue) => onUpdateValue(newValue),
+    150 // 150ms delay matches other cells
+  );
   
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
@@ -329,9 +337,9 @@ const ExpandableScriptCell = ({
                     delete cellRefs.current[cellKey];
                   }
                 }}
-              value={value}
+              value={debouncedValue.value}
               onChange={(e) => {
-                onUpdateValue(e.target.value);
+                debouncedValue.onChange(e.target.value);
                 // Trigger resize on content change - check scroll state at execution time
                 requestAnimationFrame(() => {
                   const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
@@ -350,6 +358,7 @@ const ExpandableScriptCell = ({
               onBlur={() => {
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
+                debouncedValue.forceUpdate(); // Force immediate save on blur
               }}
               onSelect={() => {
                 setShowOverlay(false); // Hide overlay when text is selected
@@ -391,15 +400,15 @@ const ExpandableScriptCell = ({
                   zIndex: 1
                 }}
               >
-                {value ? (
+                {debouncedValue.value ? (
                   fieldType === 'script' ? (
-                    renderScriptWithBrackets(value, { 
+                    renderScriptWithBrackets(debouncedValue.value, { 
                       inlineDisplay: true, 
                       fontSize: 14,
                       showNullAsText: true // Show [null] as text in main rundown
                     })
                   ) : (
-                    renderTextWithClickableUrls(value)
+                    renderTextWithClickableUrls(debouncedValue.value)
                   )
                 ) : (
                   <span className="text-muted-foreground">
@@ -423,7 +432,7 @@ const ExpandableScriptCell = ({
                   delete cellRefs.current[cellKey];
                 }
               }}
-              value={value}
+              value={debouncedValue.value}
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
               tabIndex={0}
@@ -467,7 +476,7 @@ const ExpandableScriptCell = ({
                 overflow: 'hidden'
               }}
             >
-              {value ? (
+              {debouncedValue.value ? (
                 <div 
                   style={{ 
                     maxWidth: '100%',
@@ -483,13 +492,13 @@ const ExpandableScriptCell = ({
                   }}
                 >
                   {fieldType === 'script' ? (
-                    renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
+                    renderScriptWithBrackets(debouncedValue.value.replace(/]\s*\n\s*/g, '] '), { 
                       inlineDisplay: true, 
                       fontSize: 14,
                       showNullAsText: true // Show [null] as text in main rundown
                     })
                   ) : (
-                    renderTextWithClickableUrls(value.replace(/]\s*\n\s*/g, '] '))
+                    renderTextWithClickableUrls(debouncedValue.value.replace(/]\s*\n\s*/g, '] '))
                   )}
                 </div>
               ) : (
