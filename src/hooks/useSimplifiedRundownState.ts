@@ -219,8 +219,13 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    (meta?: { updatedAt?: string }) => {
+    (meta?: { updatedAt?: string; completionCount?: number }) => {
       actions.markSaved();
+      
+      // Handle completion count for save indicator
+      if (meta?.completionCount !== undefined) {
+        setSaveCompletionCount(meta.completionCount);
+      }
       
       // Track save time for race condition detection in cell broadcasts
       lastSaveTimeRef.current = Date.now();

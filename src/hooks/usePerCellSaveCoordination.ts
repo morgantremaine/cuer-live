@@ -38,7 +38,7 @@ export const usePerCellSaveCoordination = ({
 
   // Cell-level save system - per-cell save is always enabled
   const handleCellSaveComplete = useCallback((savedUpdates?: any[], completionCount?: number) => {
-    if (onSaveComplete) {
+    if (onSaveComplete && completionCount !== undefined) {
       onSaveComplete(completionCount);
     }
   }, [onSaveComplete]);

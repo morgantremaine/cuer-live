@@ -18,7 +18,7 @@ import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: (meta?: { updatedAt?: string }) => void,
+  onSaved: (meta?: { updatedAt?: string; completionCount?: number }) => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
   isInitiallyLoaded?: boolean,
@@ -317,9 +317,11 @@ export const useSimpleAutoSave = (
     setIsSaving(true);
   }, []);
 
-  const handlePerCellSaveComplete = useCallback(() => {
+  const handlePerCellSaveComplete = useCallback((completionCount?: number) => {
     setIsSaving(false);
-  }, []);
+    // Forward completion count to parent so UI indicator can show "Saved"
+    onSaved({ completionCount });
+  }, [onSaved]);
 
   const handlePerCellUnsavedChanges = useCallback(() => {
     hasUnsavedChangesRef.current = true;
