@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
+import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface TextAreaCellProps {
   value: string;
@@ -34,6 +35,13 @@ const TextAreaCell = ({
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
+  // Debounced input handling - immediate UI updates, batched parent updates
+  const debouncedValue = useDebouncedInput(
+    value,
+    (newValue) => onUpdateValue(newValue),
+    150
+  );
+
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
     if (!textareaRef.current || !measurementRef.current) return;
@@ -62,7 +70,7 @@ const TextAreaCell = ({
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
     // Set the content
-    measurementDiv.textContent = value || ' '; // Use space for empty content
+    measurementDiv.textContent = debouncedValue.value || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
@@ -94,7 +102,7 @@ const TextAreaCell = ({
       calculateHeight();
     }, 0);
     return () => clearTimeout(timer);
-  }, [value]);
+  }, [debouncedValue.value]);
 
   // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
@@ -133,8 +141,8 @@ const TextAreaCell = ({
       // Insert line break at cursor position
       const newValue = currentValue.substring(0, start) + '\n' + currentValue.substring(end);
       
-      // Update the value
-      onUpdateValue(newValue);
+      // Update the value using debounced handler
+      debouncedValue.onChange(newValue);
       
       // Set cursor position after the inserted line break
       setTimeout(() => {
@@ -154,7 +162,7 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onUpdateValue(e.target.value);
+    debouncedValue.onChange(e.target.value);
     // Height will be recalculated by useEffect
   };
 
@@ -182,6 +190,9 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
+    // Force immediate update to parent on blur to ensure data is saved
+    debouncedValue.forceUpdate();
+    
     setIsFocused(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
@@ -202,7 +213,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
   
   // Check if this cell contains URLs and should show clickable links when not focused
-  const shouldShowClickableUrls = !isFocused && containsUrls(value);
+  const shouldShowClickableUrls = !isFocused && containsUrls(debouncedValue.value);
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -228,7 +239,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             textAlign: isDuration ? 'center' : 'left'
           }}
         >
-          {renderTextWithClickableUrls(value)}
+          {renderTextWithClickableUrls(debouncedValue.value)}
         </div>
       )}
       
@@ -241,7 +252,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             delete cellRefs.current[cellKey];
           }
         }}
-        value={value}
+        value={debouncedValue.value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onClick={onCellClick}
