@@ -433,82 +433,86 @@ const RundownContent = React.memo<RundownContentProps>(({
               width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
             }}
           >
-            <table
-                  className="border-collapse table-container" 
-                  style={{ 
-                    tableLayout: 'fixed', 
-                    width: `${totalTableWidth}px`,
-                    minWidth: `${totalTableWidth}px`,
-                    margin: 0,
-                    padding: 0,
-                    transform: 'translateZ(0)',
-                    backfaceVisibility: 'hidden',
-                    willChange: 'transform'
-                  }}
-                  data-rundown-table="body"
+            <table 
+              className="border-collapse table-container" 
+              style={{ 
+                tableLayout: 'fixed', 
+                width: `${totalTableWidth}px`,
+                minWidth: `${totalTableWidth}px`,
+                margin: 0,
+                padding: 0,
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                willChange: 'transform'
+              }}
+              data-rundown-table="body"
+            >
+              {/* Table Body - Content with @dnd-kit wrapper */}
+              {DndContext && SortableContext ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={collisionDetection}
+                  onDragStart={dndKitDragStart}
+                  onDragEnd={dndKitDragEnd}
+                  modifiers={modifiers}
                 >
-                  {/* Table Body - Content with @dnd-kit wrapper */}
-                  {DndContext && SortableContext ? (
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={collisionDetection}
-                      onDragStart={dndKitDragStart}
-                      onDragEnd={dndKitDragEnd}
-                      modifiers={modifiers}
-                    >
-                      <SortableContext items={sortableItems || []} strategy={undefined}>
-                        <OptimizedVirtualRundownTable
-              items={visibleItems}
-              visibleColumns={visibleColumns}
-              currentTime={currentTime}
-              showColorPicker={showColorPicker}
-              cellRefs={cellRefs}
-              selectedRows={selectedRows}
-              draggedItemIndex={draggedItemIndex}
-              isDraggingMultiple={isDraggingMultiple}
-              dropTargetIndex={dropTargetIndex}
-              currentSegmentId={currentSegmentId}
-              hasClipboardData={hasClipboardData}
-              selectedRowId={selectedRowId}
-              columnExpandState={columnExpandState}
-              expandedCells={expandedCells}
-              onToggleCellExpanded={toggleCellExpanded}
-              getRowNumber={getRowNumberFromMemo}
-              getRowStatus={getRowStatusFromMemo}
-              getHeaderDuration={getHeaderDurationFromMemo}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-              onToggleColorPicker={onToggleColorPicker}
-              onColorSelect={onColorSelect}
-              onDeleteRow={onDeleteRow}
-              onToggleFloat={onToggleFloat}
-              onRowSelect={onRowSelect}
-              onDragStart={onDragStart}
-              onDragOver={handleEnhancedDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-              onCopySelectedRows={onCopySelectedRows}
-              onDeleteSelectedRows={onDeleteSelectedRows}
-              onPasteRows={onPasteRows || (() => {})}
-              onClearSelection={onClearSelection || (() => {})}
-              onAddRow={onAddRow || (() => {})}
-              onAddHeader={onAddHeader || (() => {})}
-              onJumpToHere={onJumpToHere}
-              onMoveItemUp={onMoveItemUp}
-              onMoveItemDown={onMoveItemDown}
-              markActiveTyping={markActiveTyping}
-              onToggleHeaderCollapse={toggleHeaderCollapse}
-              isHeaderCollapsed={isHeaderCollapsed}
-              getHeaderGroupItemIds={getHeaderGroupItemIds}
-            />
-                      </SortableContext>
-                    </DndContext>
-                  ) : (
+                  <SortableContext items={sortableItems || []} strategy={undefined}>
                     <OptimizedVirtualRundownTable
+              scrollContainerRef={scrollContainerRef}
+              enableVirtualization={false}
+              items={items}
+              visibleColumns={visibleColumns}
+              currentTime={currentTime}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              selectedRows={selectedRows}
+              draggedItemIndex={draggedItemIndex}
+              isDraggingMultiple={isDraggingMultiple}
+              dropTargetIndex={dropTargetIndex}
+              currentSegmentId={currentSegmentId}
+              hasClipboardData={hasClipboardData}
+              selectedRowId={selectedRowId}
+              columnExpandState={columnExpandState}
+              expandedCells={expandedCells}
+              onToggleCellExpanded={toggleCellExpanded}
+              getRowNumber={getRowNumberFromMemo}
+              getRowStatus={getRowStatusFromMemo}
+              getHeaderDuration={getHeaderDurationFromMemo}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              onToggleColorPicker={onToggleColorPicker}
+              onColorSelect={onColorSelect}
+              onDeleteRow={onDeleteRow}
+              onToggleFloat={onToggleFloat}
+              onRowSelect={onRowSelect}
+              onDragStart={onDragStart}
+              onDragOver={handleEnhancedDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onPasteRows={onPasteRows || (() => {})}
+              onClearSelection={onClearSelection || (() => {})}
+              onAddRow={onAddRow || (() => {})}
+              onAddHeader={onAddHeader || (() => {})}
+              onJumpToHere={onJumpToHere}
+              onMoveItemUp={onMoveItemUp}
+              onMoveItemDown={onMoveItemDown}
+              markActiveTyping={markActiveTyping}
+              onToggleHeaderCollapse={toggleHeaderCollapse}
+              isHeaderCollapsed={isHeaderCollapsed}
+              getHeaderGroupItemIds={getHeaderGroupItemIds}
+            />
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <OptimizedVirtualRundownTable
+              scrollContainerRef={scrollContainerRef}
+              enableVirtualization={true}
               items={visibleItems}
               visibleColumns={visibleColumns}
               getRowNumber={getRowNumberFromMemo}
@@ -556,8 +560,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
             />
-                  )}
-                </table>
+              )}
+            </table>
           </div>
         </div>
         <ScrollBar orientation="horizontal" />

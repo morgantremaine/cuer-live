@@ -12,7 +12,7 @@ import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, Hist
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-// import { RundownActionLog } from '@/components/RundownActionLog';
+import { RundownActionLog } from '@/components/RundownActionLog';
 import { useSubscription } from '@/hooks/useSubscription';
 
 interface ToolsMenuProps {
@@ -204,14 +204,12 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           <DropdownMenuSeparator />
           
           {/* History - only show for non-demo rundowns */}
-          {/* Temporarily disabled due to memory concerns with large rundowns
           {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
             <DropdownMenuItem onClick={() => setShowHistoryDialog(true)}>
               <History className="h-4 w-4 mr-2" />
               History
             </DropdownMenuItem>
           )}
-          */}
           
           <DropdownMenuItem onClick={handleOpenHelp}>
             <HelpCircle className="h-4 w-4 mr-2" />
@@ -221,7 +219,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       </DropdownMenu>
       
       {/* History Dialog - hidden but ready to be triggered */}
-      {/* Temporarily disabled due to memory concerns with large rundowns
       {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
         <div style={{ position: 'absolute', left: '-9999px', visibility: 'hidden', pointerEvents: 'none' }}>
           <div ref={historyButtonRef}>
@@ -232,7 +229,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           </div>
         </div>
       )}
-      */}
     </>
   );
 };
