@@ -31,10 +31,15 @@ export const useStructuralSave = (
   onSaveComplete?: () => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void,
-  currentUserId?: string
+  currentUserId?: string,
+  onSaveError?: (error: string) => void
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const failedOperationsRef = useRef<StructuralOperation[]>([]);
+  const retryTimeoutRef = useRef<NodeJS.Timeout>();
+  const retryCountRef = useRef(0);
+  const maxRetries = 5;
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -44,6 +49,9 @@ export const useStructuralSave = (
 
     const operations = [...pendingOperationsRef.current];
     pendingOperationsRef.current = [];
+    
+    console.log(`📦 Batching ${operations.length} structural operations:`, 
+      operations.map(op => op.operationType).join(', '));
     
     onSaveStart?.();
 
@@ -123,13 +131,26 @@ export const useStructuralSave = (
       }
       
       onSaveComplete?.();
+      console.log(`✅ Structural batch saved successfully: ${operations.length} operations`);
     } catch (error) {
-      console.error('Structural save batch error:', error);
-      // Re-queue failed operations for retry
-      pendingOperationsRef.current.unshift(...operations);
-      throw error;
+      console.error(`❌ Structural batch failed: ${operations.length} operations - re-queued for retry`, error);
+      
+      // Store failed operations separately for retry UI
+      failedOperationsRef.current.push(...operations);
+      
+      // Notify parent about the error
+      if (onSaveError) {
+        const errorMessage = error instanceof Error ? error.message : 'Structural save failed';
+        onSaveError(`${operations.length} operations failed: ${errorMessage}`);
+      }
+      
+      // Schedule auto-retry with exponential backoff
+      scheduleRetry();
+      
+      // Error already handled - stored for retry, UI notified, retry scheduled
+      return;
     }
-  }, [rundownId, onSaveStart, onSaveComplete, currentUserId]);
+  }, [rundownId, onSaveStart, onSaveComplete, currentUserId, onSaveError]);
 
   // Queue a structural operation with coordination
   const queueStructuralOperation = useCallback(
@@ -164,7 +185,7 @@ export const useStructuralSave = (
         saveStructuralOperations().catch(error => {
           console.error('Structural save error:', error);
         });
-      }, 100);
+      }, 500); // Increased from 100ms - better batching for rapid operations
     },
     [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
@@ -182,6 +203,55 @@ export const useStructuralSave = (
     return pendingOperationsRef.current.length > 0;
   }, []);
 
+  // Schedule retry with exponential backoff
+  const scheduleRetry = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+
+    // Exponential backoff: 30s, 60s, 120s, 240s, 480s
+    const retryDelay = Math.min(30000 * Math.pow(2, retryCountRef.current), 480000);
+    retryCountRef.current++;
+
+    console.log(`⏳ Scheduling structural operation retry in ${retryDelay / 1000}s (attempt ${retryCountRef.current})`);
+
+    retryTimeoutRef.current = setTimeout(() => {
+      retryFailedStructuralOperations();
+    }, retryDelay);
+  }, []);
+
+  // Retry failed structural operations
+  const retryFailedStructuralOperations = useCallback(async () => {
+    if (failedOperationsRef.current.length === 0) {
+      return;
+    }
+
+    console.log(`🔄 Retrying ${failedOperationsRef.current.length} failed structural operations (attempt ${retryCountRef.current})`);
+
+    // Move failed operations to pending for retry
+    pendingOperationsRef.current.push(...failedOperationsRef.current);
+    failedOperationsRef.current = [];
+
+    try {
+      await saveStructuralOperations();
+      // Success - reset retry count
+      retryCountRef.current = 0;
+      console.log('✅ Structural operation retry successful');
+    } catch (error) {
+      console.error('❌ Structural operation retry failed:', error);
+      if (retryCountRef.current < maxRetries) {
+        scheduleRetry();
+      } else {
+        console.error('❌ Max retries reached for structural operations');
+      }
+    }
+  }, [saveStructuralOperations, scheduleRetry]);
+
+  // Get count of failed structural operations
+  const getFailedStructuralOperationsCount = useCallback(() => {
+    return failedOperationsRef.current.length;
+  }, []);
+
   // REMOVED: Save-on-unmount/beforeunload handlers
   // Prevents overwriting newer data with stale structural operations
   // Users should rely on regular auto-save during active editing
@@ -189,6 +259,8 @@ export const useStructuralSave = (
   return {
     queueStructuralOperation,
     flushPendingOperations,
-    hasPendingOperations
+    hasPendingOperations,
+    retryFailedStructuralOperations,
+    getFailedStructuralOperationsCount
   };
 };

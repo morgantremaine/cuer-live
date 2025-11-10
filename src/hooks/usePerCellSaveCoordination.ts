@@ -63,8 +63,10 @@ export const usePerCellSaveCoordination = ({
   const {
     queueStructuralOperation,
     flushPendingOperations: flushStructuralOperations,
-    hasPendingOperations: hasPendingStructuralOperations
-  } = useStructuralSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId);
+    hasPendingOperations: hasPendingStructuralOperations,
+    retryFailedStructuralOperations,
+    getFailedStructuralOperationsCount
+  } = useStructuralSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId, handleCellSaveError);
 
   // Unified field tracking - always uses per-cell save
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -139,12 +141,23 @@ export const usePerCellSaveCoordination = ({
     return;
   }, [hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, coordination]);
 
+  // Combine cell and structural failed saves count
+  const getTotalFailedSavesCount = useCallback(() => {
+    return getFailedSavesCount() + getFailedStructuralOperationsCount();
+  }, [getFailedSavesCount, getFailedStructuralOperationsCount]);
+
+  // Retry both cell and structural failures
+  const retryAllFailedSaves = useCallback(async () => {
+    await retryFailedSaves();
+    await retryFailedStructuralOperations();
+  }, [retryFailedSaves, retryFailedStructuralOperations]);
+
   return {
     trackFieldChange,
     saveState: enhancedSaveState,
     hasUnsavedChanges,
     handleStructuralOperation,
-    retryFailedSaves,
-    getFailedSavesCount
+    retryFailedSaves: retryAllFailedSaves,
+    getFailedSavesCount: getTotalFailedSavesCount
   };
 };
