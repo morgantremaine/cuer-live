@@ -42,6 +42,7 @@ const ExpandableScriptCell = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrollTimeRef = useRef<number>(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const isMountingRef = useRef<boolean>(true);
   
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -146,9 +147,23 @@ const ExpandableScriptCell = ({
     const timeSinceScroll = Date.now() - lastScrollTimeRef.current;
     if (textareaRef.current && !isScrolling && timeSinceScroll > 300) {
       const textarea = textareaRef.current;
-      textarea.style.height = 'auto';
-      const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = Math.max(scrollHeight, 24) + 'px';
+      
+      // Defer height calculation on initial mount to prevent layout thrashing
+      if (isMountingRef.current) {
+        requestAnimationFrame(() => {
+          if (textarea) {
+            textarea.style.height = 'auto';
+            const scrollHeight = textarea.scrollHeight;
+            textarea.style.height = Math.max(scrollHeight, 24) + 'px';
+          }
+          isMountingRef.current = false;
+        });
+      } else {
+        // Normal synchronous update after mount
+        textarea.style.height = 'auto';
+        const scrollHeight = textarea.scrollHeight;
+        textarea.style.height = Math.max(scrollHeight, 24) + 'px';
+      }
     }
   }, [value, isScrolling]);
 
