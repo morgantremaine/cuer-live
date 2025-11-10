@@ -53,12 +53,51 @@ export const useConsolidatedRealtimeRundown = ({
   const lastUpdateTimeRef = useRef<number>(Date.now());
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Define performCatchupSync before it's used in handleOnline
-  const performCatchupSync = useCallback(async () => {
+  // Quick version check - lightweight pre-check before full sync
+  const performQuickVersionCheck = useCallback(async (): Promise<{ needsSync: boolean; serverVersion?: number }> => {
     const state = globalSubscriptions.get(rundownId || '');
-    if (!rundownId || !state) return;
+    if (!rundownId || !state) return { needsSync: false };
+    
     try {
-      // Manual catch-up sync should show processing indicator (not initial load)
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('doc_version, updated_at')
+        .eq('id', rundownId)
+        .single();
+      
+      if (!error && data) {
+        const serverDoc = data.doc_version || 0;
+        const needsSync = serverDoc > state.lastProcessedDocVersion;
+        
+        console.log('⚡ Quick version check:', {
+          serverVersion: serverDoc,
+          lastKnownVersion: state.lastProcessedDocVersion,
+          needsSync
+        });
+        
+        return { needsSync, serverVersion: serverDoc };
+      }
+    } catch (error) {
+      console.warn('⚠️ Quick version check failed:', error);
+    }
+    
+    return { needsSync: false };
+  }, [rundownId]);
+
+  // Define performCatchupSync before it's used in handleOnline
+  const performCatchupSync = useCallback(async (): Promise<boolean> => {
+    const state = globalSubscriptions.get(rundownId || '');
+    if (!rundownId || !state) return false;
+    
+    try {
+      // Step 1: Quick version check first (50ms vs 500ms)
+      const versionCheck = await performQuickVersionCheck();
+      if (!versionCheck.needsSync) {
+        console.log('✅ Quick check: No updates needed');
+        return false; // No updates found
+      }
+      
+      // Step 2: Only do full sync if version check shows updates
       setIsProcessingUpdate(true);
       
       const knownDocVersion = state.lastProcessedDocVersion;
@@ -98,11 +137,14 @@ export const useConsolidatedRealtimeRundown = ({
           if (missedUpdates > 0) {
             toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} made while offline`);
           }
+          return true; // Updates were found and applied
         } else {
           console.log('✅ No missed updates - already up to date');
+          return false; // No updates
         }
       } else if (error) {
         console.warn('❌ Manual catch-up fetch failed:', error);
+        return false;
       }
     } finally {
       // Keep processing indicator active briefly for UI feedback  
@@ -110,7 +152,8 @@ export const useConsolidatedRealtimeRundown = ({
         setIsProcessingUpdate(false);
       }, 500);
     }
-  }, [rundownId]);
+    return false;
+  }, [rundownId, performQuickVersionCheck]);
 
   // Track actual channel connection status from globalSubscriptions + browser network
   useEffect(() => {
@@ -221,6 +264,10 @@ export const useConsolidatedRealtimeRundown = ({
     };
   }, [enabled, rundownId, performCatchupSync]);
   
+  // Ref for tracking tab refocus grace period
+  const lastTabRefocusRef = useRef<number>(0);
+  const TAB_REFOCUS_GRACE_PERIOD = 5000; // 5 seconds grace period after tab refocus
+
   // Database polling fallback when realtime is stale
   useEffect(() => {
     if (!enabled || !rundownId || !isConnected) {
@@ -230,12 +277,24 @@ export const useConsolidatedRealtimeRundown = ({
     // Check every 15 seconds if we need to poll
     const checkStaleAndPoll = async () => {
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 30000; // 30 seconds
+      const timeSinceTabRefocus = Date.now() - lastTabRefocusRef.current;
+      const STALE_THRESHOLD = 180000; // 3 minutes (increased from 30s)
       
-      if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        console.log('⏰ No realtime updates for 30s - polling database for changes');
-        await performCatchupSync();
-        lastUpdateTimeRef.current = Date.now(); // Reset timer after poll
+      // Skip if we're in the grace period after tab refocus
+      if (timeSinceTabRefocus < TAB_REFOCUS_GRACE_PERIOD) {
+        console.log('⏳ Skipping catch-up sync - within tab refocus grace period');
+        return;
+      }
+      
+      // Check WebSocket health before assuming staleness
+      const state = globalSubscriptions.get(rundownId);
+      if (state?.isConnected && timeSinceLastUpdate > STALE_THRESHOLD) {
+        console.log('⏰ No realtime updates for 3m but WebSocket connected - checking for updates');
+        const hadUpdates = await performCatchupSync();
+        if (!hadUpdates) {
+          // WebSocket is alive and no updates - reset timer
+          lastUpdateTimeRef.current = Date.now();
+        }
       }
     };
     
@@ -247,7 +306,26 @@ export const useConsolidatedRealtimeRundown = ({
         pollingIntervalRef.current = null;
       }
     };
-  }, [enabled, rundownId, isConnected]);
+  }, [enabled, rundownId, isConnected, performCatchupSync]);
+
+  // Track tab visibility changes and reset timers
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Tab became visible - reset timers to prevent immediate catch-up sync
+        const now = Date.now();
+        lastUpdateTimeRef.current = now;
+        lastTabRefocusRef.current = now;
+        console.log('👁️ Tab became visible - reset catch-up sync timers (5s grace period)');
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({

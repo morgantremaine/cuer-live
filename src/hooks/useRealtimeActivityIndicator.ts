@@ -2,15 +2,20 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface UseRealtimeActivityIndicatorProps {
   isProcessingUpdate: boolean;
+  hadActualUpdate?: boolean; // Whether the sync actually found updates
   minimumDuration?: number; // Minimum time to show indicator (prevents flickering)
   cooldownDuration?: number; // Time to wait after last update before hiding
 }
 
 export const useRealtimeActivityIndicator = ({
   isProcessingUpdate,
-  minimumDuration = 1500, // 1.5 seconds minimum
+  hadActualUpdate = true, // Default to true for backward compatibility
+  minimumDuration = 1500, // 1.5 seconds minimum for actual updates
   cooldownDuration = 1000   // 1 second cooldown after last update
 }: UseRealtimeActivityIndicatorProps) => {
+  // Conditional durations based on whether updates were found
+  const effectiveMinimumDuration = hadActualUpdate ? minimumDuration : 300; // 300ms flash for no-update
+  const effectiveCooldown = hadActualUpdate ? cooldownDuration : 500; // 500ms cooldown for no-update
   const [isShowingActivity, setIsShowingActivity] = useState(false);
   const showStartTimeRef = useRef<number | null>(null);
   const cooldownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -42,12 +47,14 @@ export const useRealtimeActivityIndicator = ({
   const stopActivity = useCallback(() => {
     const now = Date.now();
     const showDuration = showStartTimeRef.current ? now - showStartTimeRef.current : 0;
-    const remainingMinimumTime = minimumDuration - showDuration;
+    const remainingMinimumTime = effectiveMinimumDuration - showDuration;
 
     console.log('📺 Realtime activity: Processing stopped', {
       showDuration,
       remainingMinimumTime,
-      needsMinimumWait: remainingMinimumTime > 0
+      needsMinimumWait: remainingMinimumTime > 0,
+      hadActualUpdate,
+      effectiveMinimumDuration
     });
 
     if (remainingMinimumTime > 0) {
@@ -60,7 +67,7 @@ export const useRealtimeActivityIndicator = ({
           console.log('📺 Realtime activity: Cooldown complete, hiding indicator');
           setIsShowingActivity(false);
           showStartTimeRef.current = null;
-        }, cooldownDuration);
+        }, effectiveCooldown);
       }, remainingMinimumTime);
     } else {
       // Minimum duration already met, start cooldown immediately
@@ -69,9 +76,9 @@ export const useRealtimeActivityIndicator = ({
         console.log('📺 Realtime activity: Cooldown complete, hiding indicator');
         setIsShowingActivity(false);
         showStartTimeRef.current = null;
-      }, cooldownDuration);
+      }, effectiveCooldown);
     }
-  }, [minimumDuration, cooldownDuration]);
+  }, [effectiveMinimumDuration, effectiveCooldown, hadActualUpdate]);
 
   // React to processing state changes
   useEffect(() => {
