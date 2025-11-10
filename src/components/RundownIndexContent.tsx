@@ -290,15 +290,13 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Show skeleton until ALL systems are ready, including layout stabilization
+  // Show skeleton until core rundown is ready (non-blocking for subscription/layout)
   const isFullyLoading = (
     isLoading ||
     !isInitialized ||
     !hasLoadedInitialState ||
     !rundownId ||
-    !items || items.length === 0 ||
-    isLoadingSharedLayout ||
-    !isLayoutStabilized
+    !items || items.length === 0
   );
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
