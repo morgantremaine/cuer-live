@@ -202,6 +202,13 @@ const ExpandableScriptCell = ({
     return () => clearTimeout(timer);
   }, [debouncedValue.value]);
 
+  // Recalculate height when cell expands
+  useEffect(() => {
+    if (effectiveExpanded) {
+      calculateHeight();
+    }
+  }, [effectiveExpanded]);
+
   // ResizeObserver for column width changes
   useEffect(() => {
     if (!textareaRef.current) return;
