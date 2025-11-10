@@ -127,19 +127,15 @@ const Teleprompter = () => {
   useEffect(() => {
     if (!rundownId) return;
     
-    console.log(`🎬 [Teleprompter] Setting up cell broadcast subscription for rundown ${rundownId.slice(0, 8)}`);
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      console.log(`🎬 [Teleprompter] Cell broadcast CALLBACK invoked:`, update);
       // Skip own updates using tab ID for correct echo prevention
       const currentTabId = getTabId();
       if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
-        console.log('📱 Teleprompter skipping own cell broadcast update');
         return;
       }
 
       // Handle structural events for instant collaboration (add/remove/reorder)
       if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
-        console.log('📱 Teleprompter applying structural broadcast:', update.field);
         setRundownData(prev => {
           if (!prev) return prev;
 
@@ -182,26 +178,23 @@ const Teleprompter = () => {
         return;
       }
 
-      // Handle script field updates and rundown-level updates for teleprompter
-      if (update.itemId && update.field === 'script') {
+      // Handle script and name field updates for teleprompter
+      if (update.itemId && (update.field === 'script' || update.field === 'name')) {
         // Check if actively editing this field
-        const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-script`;
+        const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
         if (isActivelyEditing) {
-          console.log('🛡️ Teleprompter skipping cell broadcast - actively editing:', update.itemId, update.field);
           return;
         }
 
-        console.log('📱 Teleprompter applying cell broadcast script update:', update.itemId, update.value);
         setRundownData(prev => {
           if (!prev) return prev;
           const updatedItems = prev.items.map(item =>
-            item.id === update.itemId ? { ...item, script: update.value } : item
+            item.id === update.itemId ? { ...item, [update.field]: update.value } : item
           );
           return { ...prev, items: updatedItems };
         });
       } else if (!update.itemId) {
         // Rundown-level updates (title changes, etc.)
-        console.log('📱 Teleprompter applying rundown-level broadcast update:', update.field, update.value);
         setRundownData(prev => (prev ? { ...prev, [update.field]: update.value } : prev));
       }
     }, getTabId());
