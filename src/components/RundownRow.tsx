@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -56,7 +56,7 @@ interface RundownRowProps {
   getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
-const RundownRow = (props: RundownRowProps) => {
+const RundownRowBase = (props: RundownRowProps) => {
   // Only use multi-selection state for determining if selected
   const isActuallySelected = props.isSelected || false;
 
@@ -126,5 +126,16 @@ const RundownRow = (props: RundownRowProps) => {
     />
   );
 };
+
+/**
+ * Phase 2: Memoize the wrapper component to prevent unnecessary re-renders
+ * This is a simple wrapper so we just check if the item ID changed
+ */
+const RundownRow = memo(RundownRowBase, (prevProps, nextProps) => {
+  // Since this is just a routing component, we only need to check if the item changed
+  // The actual comparison logic is in HeaderRow and RegularRow
+  return prevProps.item.id === nextProps.item.id && 
+         prevProps.item.type === nextProps.item.type;
+});
 
 export default RundownRow;

@@ -5,6 +5,7 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getMinimumWidth } from '@/utils/columnSizing';
+import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface HeaderRowContentProps {
   item: RundownItem;
@@ -41,6 +42,13 @@ const HeaderRowContent = ({
   markActiveTyping,
   getColumnWidth
 }: HeaderRowContentProps) => {
+  // Phase 1: Debounced input for header name to prevent parent updates on every keystroke
+  const debouncedHeaderName = useDebouncedInput(
+    item.name || '',
+    (value) => onUpdateItem(item.id, 'name', value),
+    150
+  );
+
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
   
@@ -92,7 +100,7 @@ const HeaderRowContent = ({
         
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
-          const headerName = item.name || '';
+          const headerName = debouncedHeaderName.value;
             return (
               <td
                 key={column.id}
@@ -130,12 +138,13 @@ const HeaderRowContent = ({
                     value={headerName}
                     onChange={(e) => {
                       markActiveTyping?.();
-                      onUpdateItem(item.id, 'name', e.target.value);
+                      debouncedHeaderName.onChange(e.target.value);
                       // Auto-resize on change with buffer
                       const contentLength = e.target.value.length || 1;
                       const bufferWidth = contentLength + 3; // Add buffer for PC browsers
                       e.target.style.width = `${bufferWidth}ch`;
                     }}
+                    onBlur={() => debouncedHeaderName.forceUpdate()}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
                     data-field-key={`${item.id}-name`}

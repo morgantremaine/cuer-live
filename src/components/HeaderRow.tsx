@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { memo } from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
@@ -52,7 +51,7 @@ interface HeaderRowProps {
   getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
-const HeaderRow = (props: HeaderRowProps) => {
+const HeaderRowBase = (props: HeaderRowProps) => {
   const {
     item,
     index,
@@ -235,5 +234,33 @@ const HeaderRow = (props: HeaderRowProps) => {
     </RundownContextMenu>
   );
 };
+
+/**
+ * Phase 2: Row memoization to prevent unnecessary re-renders
+ * Custom comparison function that checks all relevant props including collapse state
+ */
+const areEqual = (prevProps: HeaderRowProps, nextProps: HeaderRowProps) => {
+  // Check if item changed
+  if (prevProps.item.id !== nextProps.item.id) return false;
+  if (prevProps.item.name !== nextProps.item.name) return false;
+  if (prevProps.item.color !== nextProps.item.color) return false;
+  
+  // Check if row state changed
+  if (prevProps.isSelected !== nextProps.isSelected) return false;
+  if (prevProps.isCollapsed !== nextProps.isCollapsed) return false; // Critical for collapse functionality
+  if (prevProps.rowNumber !== nextProps.rowNumber) return false;
+  if (prevProps.headerDuration !== nextProps.headerDuration) return false;
+  
+  // Check if current segment changed (affects styling)
+  if (prevProps.currentSegmentId !== nextProps.currentSegmentId) return false;
+  
+  // Check if columns changed
+  if (prevProps.columns.length !== nextProps.columns.length) return false;
+  
+  // All checks passed - props are equal, skip re-render
+  return true;
+};
+
+const HeaderRow = memo(HeaderRowBase, areEqual);
 
 export default HeaderRow;
