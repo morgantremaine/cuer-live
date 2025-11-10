@@ -183,7 +183,8 @@ export const useCellLevelSave = (
         // Schedule auto-retry with exponential backoff
         scheduleRetry();
         
-        throw error;
+        // Error already handled - stored for retry, UI notified, retry scheduled
+        return;
       }
 
       if (data?.success) {
