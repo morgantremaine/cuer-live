@@ -16,6 +16,7 @@ interface RundownContentProps {
   title?: string;
   totalRuntime?: string;
   items: RundownItem[];
+  visibleItems: RundownItem[];
   visibleColumns: Column[];
   allColumns?: Column[];
   currentTime: Date;
@@ -66,7 +67,6 @@ interface RundownContentProps {
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
   getHeaderGroupItemIds: (headerId: string) => string[];
-  visibleItems: RundownItem[];
   savedLayouts?: any[];
   onLoadLayout?: (columns: Column[]) => void;
   // Zoom functionality
@@ -87,6 +87,7 @@ interface RundownContentProps {
 const RundownContent = React.memo<RundownContentProps>(({
   rundownId,
   items,
+  visibleItems,
   visibleColumns,
   allColumns,
   currentTime,
@@ -139,7 +140,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   toggleHeaderCollapse,
   isHeaderCollapsed,
   getHeaderGroupItemIds,
-  visibleItems,
   savedLayouts,
   onLoadLayout,
   zoomLevel = 1.0,
@@ -457,6 +457,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                       <SortableContext items={sortableItems || []} strategy={undefined}>
                         <OptimizedVirtualRundownTable
               items={visibleItems}
+              fullItems={items}
               visibleColumns={visibleColumns}
               currentTime={currentTime}
               showColorPicker={showColorPicker}
@@ -506,9 +507,10 @@ const RundownContent = React.memo<RundownContentProps>(({
                       </SortableContext>
                     </DndContext>
                   ) : (
-                    <OptimizedVirtualRundownTable
-              items={visibleItems}
-              visibleColumns={visibleColumns}
+                      <OptimizedVirtualRundownTable
+            items={visibleItems}
+            fullItems={items}
+            visibleColumns={visibleColumns}
               getRowNumber={getRowNumberFromMemo}
               getRowStatus={getRowStatusFromMemo}
               getHeaderDuration={getHeaderDurationFromMemo}

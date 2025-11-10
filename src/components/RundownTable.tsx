@@ -6,6 +6,7 @@ import { Column } from '@/types/columns';
 
 interface RundownTableProps {
   items: any[];
+  fullItems?: any[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
@@ -55,6 +56,7 @@ interface RundownTableProps {
 
 const RundownTable = ({
   items,
+  fullItems,
   visibleColumns,
   currentTime,
   showColorPicker,
@@ -198,7 +200,7 @@ const RundownTable = ({
                    getColumnWidth={getColumnWidth}
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}
-                   allItems={items}
+                   allItems={fullItems || items}
                 />
                 
                 {/* Drop indicator AFTER the last row */}

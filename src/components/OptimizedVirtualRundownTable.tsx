@@ -4,6 +4,7 @@ import { Column } from '@/types/columns';
 
 interface OptimizedVirtualRundownTableProps {
   items: any[];
+  fullItems?: any[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
@@ -60,6 +61,7 @@ interface OptimizedVirtualRundownTableProps {
  */
 const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> = ({
   items,
+  fullItems,
   getRowNumber,
   onDragStart,
   onDrop,
@@ -70,6 +72,8 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
   endIndex = items.length,
   ...restProps
 }) => {
+  // Use fullItems for selection logic, items for rendering
+  const itemsForSelection = fullItems || items;
   
   // Check if we're in virtualization mode (parent passed indices)
   const isVirtualized = startIndex > 0 || endIndex < items.length;
@@ -101,11 +105,15 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
 
   const adjustedOnRowSelect = useMemo(() => {
     return (itemId: string, virtualIndex: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-      if (!isVirtualized) return onRowSelect(itemId, virtualIndex, isShiftClick, isCtrlClick, headerGroupItemIds);
-      const actualIndex = startIndex + virtualIndex;
+      // Find the actual index in the full items array by item ID
+      const actualIndex = itemsForSelection.findIndex(item => item.id === itemId);
+      if (actualIndex === -1) {
+        console.warn('Could not find item in full items array:', itemId);
+        return;
+      }
       onRowSelect(itemId, actualIndex, isShiftClick, isCtrlClick, headerGroupItemIds);
     };
-  }, [onRowSelect, startIndex, isVirtualized]);
+  }, [onRowSelect, itemsForSelection]);
 
   // Adjust draggedItemIndex to virtual index
   const adjustedDraggedItemIndex = useMemo(() => {
@@ -135,6 +143,7 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
   return (
     <RundownTable
       items={items}
+      fullItems={itemsForSelection}
       getRowNumber={adjustedGetRowNumber}
       onDragStart={adjustedOnDragStart}
       onDrop={adjustedOnDrop}
