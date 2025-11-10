@@ -142,28 +142,29 @@ const MainActionButtons = ({
             <Plus className="h-4 w-4" />
             <span>Header</span>
           </Button>
-          <Button 
-            onClick={onUndo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canUndo}
-            title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-            className="flex items-center justify-start gap-1.5"
-          >
-            <Undo className="h-4 w-4" />
-            <span>Undo</span>
-          </Button>
-          <Button 
-            onClick={onRedo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canRedo}
-            title={nextRedoAction ? `Redo: ${nextRedoAction}` : 'Nothing to redo'}
-            className="flex items-center justify-start gap-1.5"
-          >
-            <span>Redo</span>
-            <Redo className="h-4 w-4" />
-          </Button>
+          {/* Undo/Redo Button Group - spans 2 columns */}
+          <div className="col-span-2 inline-flex rounded-md shadow-sm w-full" role="group">
+            <Button 
+              onClick={onUndo} 
+              variant="outline" 
+              size={buttonSize}
+              disabled={!canUndo}
+              title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+              className="flex-1 rounded-r-none border-r-0 justify-center"
+            >
+              <Undo className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={onRedo} 
+              variant="outline" 
+              size={buttonSize}
+              disabled={!canRedo}
+              title={nextRedoAction ? `Redo: ${nextRedoAction}` : 'Nothing to redo'}
+              className="flex-1 rounded-l-none justify-center"
+            >
+              <Redo className="h-4 w-4" />
+            </Button>
+          </div>
           <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Eye className="h-4 w-4" />
             <span>Layouts</span>
@@ -241,28 +242,29 @@ const MainActionButtons = ({
         <Plus className="h-4 w-4" />
         <span>Header</span>
       </Button>
-      <Button 
-        onClick={onUndo} 
-        variant="outline" 
-        size={buttonSize}
-        disabled={!canUndo}
-        title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-        className={buttonClass}
-      >
-        <Undo className="h-4 w-4" />
-        <span>Undo</span>
-      </Button>
-      <Button 
-        onClick={onRedo} 
-        variant="outline" 
-        size={buttonSize}
-        disabled={!canRedo}
-        title={nextRedoAction ? `Redo: ${nextRedoAction}` : 'Nothing to redo'}
-        className={buttonClass}
-      >
-        <span>Redo</span>
-        <Redo className="h-4 w-4" />
-      </Button>
+      {/* Undo/Redo Button Group */}
+      <div className="inline-flex rounded-md shadow-sm" role="group">
+        <Button 
+          onClick={onUndo} 
+          variant="outline" 
+          size={buttonSize}
+          disabled={!canUndo}
+          title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
+          className="rounded-r-none border-r-0"
+        >
+          <Undo className="h-4 w-4" />
+        </Button>
+        <Button 
+          onClick={onRedo} 
+          variant="outline" 
+          size={buttonSize}
+          disabled={!canRedo}
+          title={nextRedoAction ? `Redo: ${nextRedoAction}` : 'Nothing to redo'}
+          className="rounded-l-none"
+        >
+          <Redo className="h-4 w-4" />
+        </Button>
+      </div>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Eye className="h-4 w-4" />
         <span>Layouts</span>
