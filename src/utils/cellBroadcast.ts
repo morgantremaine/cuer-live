@@ -64,18 +64,10 @@ export class CellBroadcastManager {
         const update = payload?.payload;
         if (!update || update.rundownId !== rundownId) return;
         
-        // EARLY FILTERING: Skip own tab's messages immediately to prevent echo
-        // Uses tabId instead of userId to support multiple tabs per user
-        const currentTabId = this.tabIds.get(rundownId);
-        if (currentTabId && update.tabId === currentTabId) {
-          // Skip all expensive operations for own tab's messages
-          return;
-        }
-        
-        // REMOVED: Deduplication window - accept all updates immediately
-        // React's rendering optimization handles duplicate renders efficiently
+        // Each subscriber handles its own echo prevention via isOwnUpdate()
+        // This allows multiple subscribers (main rundown + teleprompter) to work correctly
         const fieldKey = `${update.itemId || 'rundown'}-${update.field}`;
-        debugLogger.realtime('Cell broadcast received (from other user):', { fieldKey, value: update.value });
+        debugLogger.realtime('Cell broadcast received:', { fieldKey, value: update.value });
         
         
         const cbs = this.callbacks.get(rundownId);
@@ -291,11 +283,6 @@ export class CellBroadcastManager {
       this.callbacks.set(rundownId, new Set());
     }
     this.callbacks.get(rundownId)!.add(callback);
-
-    // Store tabId for early filtering (if provided)
-    if (currentTabId) {
-      this.tabIds.set(rundownId, currentTabId);
-    }
 
     // Ensure channel is created and subscribed
     this.ensureChannel(rundownId);
