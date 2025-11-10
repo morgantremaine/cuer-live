@@ -250,12 +250,22 @@ const areEqual = (prevProps: HeaderRowProps, nextProps: HeaderRowProps) => {
   if (prevProps.isCollapsed !== nextProps.isCollapsed) return false; // Critical for collapse functionality
   if (prevProps.rowNumber !== nextProps.rowNumber) return false;
   if (prevProps.headerDuration !== nextProps.headerDuration) return false;
+  if (prevProps.isDragging !== nextProps.isDragging) return false;
   
   // Check if current segment changed (affects styling)
   if (prevProps.currentSegmentId !== nextProps.currentSegmentId) return false;
   
-  // Check if columns changed
+  // Check if columns changed (length or order)
   if (prevProps.columns.length !== nextProps.columns.length) return false;
+  for (let i = 0; i < prevProps.columns.length; i++) {
+    if (prevProps.columns[i].id !== nextProps.columns[i].id) return false;
+  }
+  
+  // Check cell expand state
+  if (prevProps.expandedCells !== nextProps.expandedCells) return false;
+  
+  // Check UI state
+  if (prevProps.showColorPicker !== nextProps.showColorPicker) return false;
   
   // All checks passed - props are equal, skip re-render
   return true;
