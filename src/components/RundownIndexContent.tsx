@@ -20,6 +20,11 @@ import '@/utils/timingValidationTest';
 
 
 const RundownIndexContent = () => {
+  const componentMountTime = useRef(performance.now());
+  console.log('📦 [PERF] RundownIndexContent mounting', {
+    timestamp: componentMountTime.current
+  });
+  
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
@@ -303,9 +308,21 @@ const RundownIndexContent = () => {
   // After core rundown loads, prevent skeleton from reappearing
   useEffect(() => {
     if (!isFullyLoading && !hasRevealed) {
+      const timeSinceMount = performance.now() - componentMountTime.current;
+      console.log('🎉 [PERF] RundownIndexContent revealing UI', {
+        timeSinceMount,
+        timestamp: performance.now(),
+        loadingStates: {
+          isLoading,
+          isInitialized,
+          hasLoadedInitialState,
+          hasRundownId: !!rundownId,
+          hasItems: items?.length > 0
+        }
+      });
       setHasRevealed(true);
     }
-  }, [isFullyLoading, hasRevealed]);
+  }, [isFullyLoading, hasRevealed, isLoading, isInitialized, hasLoadedInitialState, rundownId, items]);
 
   // visibleColumns comes from coreState - no need to filter here
 
