@@ -268,7 +268,8 @@ const RundownHeader = ({
     lastSaved: null,
     saveError: null,
     hasContentChanges: hasUnsavedChanges, // Content changes are tracked by the save coordination system
-    saveCompletionCount // Forward completion count from props
+    saveCompletionCount, // Forward completion count from props
+    failedSavesCount: failedSavesCount || 0 // Forward failed saves count for retry UI
   };
 
   // Get current universal time for display
