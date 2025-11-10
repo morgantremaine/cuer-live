@@ -40,11 +40,9 @@ const ExpandableScriptCell = ({
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const measurementRef = useRef<HTMLDivElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(24);
-  const [currentWidth, setCurrentWidth] = useState<number>(0);
   const lastScrollTimeRef = useRef<number>(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const heightCalcTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -144,96 +142,31 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Calculate height using measurement div approach (avoids layout thrashing)
-  const calculateHeight = () => {
-    if (!textareaRef.current || !measurementRef.current) return;
+  // Simple height calculation with debouncing
+  const adjustHeight = () => {
+    if (!textareaRef.current) return;
     
-    const textarea = textareaRef.current;
-    const measurementDiv = measurementRef.current;
-    
-    // Get current width using zoom-safe clientWidth
-    const textareaWidth = textarea.clientWidth;
-    setCurrentWidth(textareaWidth);
-    
-    // Copy textarea styles to measurement div
-    const computedStyle = window.getComputedStyle(textarea);
-    measurementDiv.style.width = `${textareaWidth}px`;
-    measurementDiv.style.fontSize = computedStyle.fontSize;
-    measurementDiv.style.fontFamily = computedStyle.fontFamily;
-    measurementDiv.style.fontWeight = computedStyle.fontWeight;
-    measurementDiv.style.lineHeight = computedStyle.lineHeight;
-    measurementDiv.style.padding = computedStyle.padding;
-    measurementDiv.style.border = computedStyle.border;
-    measurementDiv.style.boxSizing = computedStyle.boxSizing;
-    measurementDiv.style.wordWrap = 'break-word';
-    measurementDiv.style.whiteSpace = 'pre-wrap';
-    
-    // Set content
-    measurementDiv.textContent = debouncedValue.value || ' ';
-    
-    // Get natural height
-    const naturalHeight = measurementDiv.offsetHeight;
-    
-    // Calculate minimum height
-    const lineHeightValue = computedStyle.lineHeight;
-    const lineHeight = lineHeightValue === 'normal' 
-      ? parseFloat(computedStyle.fontSize) * 1.3 
-      : parseFloat(lineHeightValue) || 20;
-    const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
-    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
-    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
-    const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
-    
-    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
-    
-    // Use larger of natural or minimum height
-    const newHeight = Math.max(naturalHeight, minHeight, 24);
-    
-    if (newHeight !== calculatedHeight) {
-      setCalculatedHeight(newHeight);
-    }
+    // Reset height to auto to get accurate scrollHeight
+    textareaRef.current.style.height = 'auto';
+    const scrollHeight = textareaRef.current.scrollHeight;
+    textareaRef.current.style.height = `${Math.max(scrollHeight, 24)}px`;
   };
 
   // Debounced height recalculation - only after typing stops
   useEffect(() => {
-    const timer = setTimeout(() => {
-      calculateHeight();
+    clearTimeout(heightCalcTimeoutRef.current);
+    heightCalcTimeoutRef.current = setTimeout(() => {
+      adjustHeight();
     }, 100); // 100ms debounce
-    return () => clearTimeout(timer);
+    return () => clearTimeout(heightCalcTimeoutRef.current);
   }, [debouncedValue.value]);
 
-  // Recalculate height when cell expands
+  // Adjust height on mount and expansion
   useEffect(() => {
     if (effectiveExpanded) {
-      calculateHeight();
+      adjustHeight();
     }
   }, [effectiveExpanded]);
-
-  // ResizeObserver for column width changes
-  useEffect(() => {
-    if (!textareaRef.current) return;
-    
-    let resizeTimer: NodeJS.Timeout;
-    
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const newWidth = entry.contentRect.width;
-        if (newWidth !== currentWidth && Math.abs(newWidth - currentWidth) > 1) {
-          clearTimeout(resizeTimer);
-          resizeTimer = setTimeout(() => {
-            calculateHeight();
-          }, 50); // 50ms debounce for resize
-        }
-      }
-    });
-    
-    resizeObserver.observe(textareaRef.current);
-    
-    return () => {
-      clearTimeout(resizeTimer);
-      resizeObserver.disconnect();
-    };
-  }, [currentWidth]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -386,18 +319,6 @@ const ExpandableScriptCell = ({
 
   return (
     <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
-      {/* Hidden measurement div for height calculation */}
-      <div
-        ref={measurementRef}
-        className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
-        style={{ 
-          fontSize: '13px',
-          fontFamily: 'inherit',
-          lineHeight: '1.3',
-          zIndex: -1
-        }}
-      />
-      
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -457,7 +378,7 @@ const ExpandableScriptCell = ({
               style={{ 
                 color: showOverlay ? 'transparent' : (textColor || undefined),
                 minHeight: '24px',
-                height: `${calculatedHeight}px`,
+                height: 'auto',
                 whiteSpace: 'pre-wrap',
                 wordWrap: 'break-word',
                 position: 'relative',
