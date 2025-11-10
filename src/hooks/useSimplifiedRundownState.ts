@@ -42,8 +42,6 @@ export const useSimplifiedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Pre-warm edge functions to eliminate cold starts
-  useEdgeFunctionPrewarming(rundownId, isInitialized);
   const [isLoading, setIsLoading] = useState(!shouldSkipLoading);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
@@ -53,6 +51,9 @@ export const useSimplifiedRundownState = () => {
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
+
+  // Pre-warm edge functions AFTER UI is ready (2s delay)
+  useEdgeFunctionPrewarming(rundownId, isInitialized, isConnected, 2000);
 
   // Enhanced conflict resolution system with validation
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
