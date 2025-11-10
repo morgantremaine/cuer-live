@@ -227,19 +227,6 @@ export const useSimplifiedRundownState = () => {
         setSaveCompletionCount(meta.completionCount);
       }
       
-  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave, retryFailedSaves, getFailedSavesCount } = autoSave;
-  
-  // Update failed saves count periodically
-  useEffect(() => {
-    if (getFailedSavesCount) {
-      const count = getFailedSavesCount();
-      saveCoordination.setFailedSaves(count);
-    }
-    if (retryFailedSaves) {
-      saveCoordination.setRetryCallback(retryFailedSaves);
-    }
-  }, [getFailedSavesCount, retryFailedSaves, saveCoordination]);
-      
       // Update our timestamp tracking
       if (meta?.updatedAt) {
         setLastKnownTimestamp(meta.updatedAt);
@@ -266,6 +253,17 @@ export const useSimplifiedRundownState = () => {
     blockUntilLocalEditRef,
     cooldownUntilRef
   );
+  
+  // Destructure autoSave functions and state
+  const { 
+    isSaving: autoSaveIsSaving, 
+    setUndoActive, 
+    markActiveTyping, 
+    isTypingActive, 
+    triggerImmediateSave, 
+    retryFailedSaves, 
+    getFailedSavesCount 
+  } = autoSave;
   
   // Update the ref so useRundownState can use it
   markActiveTypingRef.current = markActiveTyping;
@@ -486,7 +484,7 @@ export const useSimplifiedRundownState = () => {
     setItems: (items: RundownItem[]) => {
       actions.setItems(items);
     },
-    setUndoActive,
+    setUndoActive: setUndoActive,
     userId: currentUserId || 'anonymous',
     onOperationComplete: (operationType, operationData) => {
       // Only broadcast structural operations, not cell edits
@@ -914,7 +912,7 @@ export const useSimplifiedRundownState = () => {
 
   // Apply deferred updates when save completes
   useEffect(() => {
-    if (!isSaving && !pendingStructuralChangeRef.current && deferredUpdateRef.current) {
+    if (!autoSaveIsSaving && !pendingStructuralChangeRef.current && deferredUpdateRef.current) {
       const deferredUpdate = deferredUpdateRef.current;
       deferredUpdateRef.current = null;
       
@@ -1005,7 +1003,7 @@ export const useSimplifiedRundownState = () => {
         });
       }
     }
-  }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
+  }, [autoSaveIsSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
   // No longer need to connect autosave tracking to realtime - both now use centralized OwnUpdateTracker
 
@@ -1893,8 +1891,10 @@ export const useSimplifiedRundownState = () => {
       state.hasUnsavedChanges,
     isSaving: perCellEnabled ? 
       (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
-      isSaving,
+      autoSaveIsSaving,
     saveCompletionCount,
+    failedSavesCount: getFailedSavesCount ? getFailedSavesCount() : 0,
+    onRetryFailedSaves: retryFailedSaves,
     showcallerActivity,
     
     // Realtime connection status

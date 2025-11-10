@@ -37,7 +37,9 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     timeRemaining,
     autoScrollEnabled,
     onToggleAutoScroll,
-    onUpdateItem
+    onUpdateItem,
+    failedSavesCount,
+    onRetryFailedSaves
   } = props;
 
   // Debug logging for prop passing
@@ -79,6 +81,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       onToggleAutoScroll={onToggleAutoScroll}
       rundownId={rundownId}
       onUpdateItem={onUpdateItem}
+      failedSavesCount={failedSavesCount}
+      onRetry={onRetryFailedSaves}
     />
   );
 };
