@@ -96,9 +96,9 @@ const ResizableColumnHeader = ({
         // Update preview width visually
         setPreviewWidth(newWidth);
         
-        // Throttled live updates: call onWidthChange every 75ms
+        // Throttled live updates: call onWidthChange every 32ms (30fps)
         const now = Date.now();
-        if (now - lastUpdateTimeRef.current >= 75) {
+        if (now - lastUpdateTimeRef.current >= 32) {
           lastUpdateTimeRef.current = now;
           onWidthChange(column.id, newWidth);
         }
