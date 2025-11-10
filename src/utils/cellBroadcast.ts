@@ -47,8 +47,10 @@ export class CellBroadcastManager {
 
   private ensureChannel(rundownId: string): RealtimeChannel {
     const key = `rundown-cells-${rundownId}`;
+    const existingChannel = this.channels.has(rundownId);
+    console.log(`📡 [CellBroadcast] ensureChannel called for ${rundownId.slice(0, 8)} - ${existingChannel ? 'RETURNING EXISTING' : 'CREATING NEW'}`);
 
-    if (this.channels.has(rundownId)) {
+    if (existingChannel) {
       const ch = this.channels.get(rundownId)!;
       return ch;
     }
@@ -61,12 +63,18 @@ export class CellBroadcastManager {
 
     channel
       .on('broadcast', { event: 'cell_update' }, (payload: { payload: CellUpdate }) => {
+        console.log(`📡 [CellBroadcast] Broadcast handler triggered for ${rundownId.slice(0, 8)}`, payload);
+        
         const update = payload?.payload;
-        if (!update || update.rundownId !== rundownId) return;
+        if (!update || update.rundownId !== rundownId) {
+          console.log(`📡 [CellBroadcast] Ignoring broadcast - ${!update ? 'no update' : 'wrong rundown'}`);
+          return;
+        }
         
         // Each subscriber handles its own echo prevention via isOwnUpdate()
         // This allows multiple subscribers (main rundown + teleprompter) to work correctly
         const fieldKey = `${update.itemId || 'rundown'}-${update.field}`;
+        console.log(`📡 [CellBroadcast] Processing broadcast for ${fieldKey}, tabId: ${update.tabId}`);
         debugLogger.realtime('Cell broadcast received:', { fieldKey, value: update.value });
         
         
@@ -79,10 +87,12 @@ export class CellBroadcastManager {
       });
 
     channel.subscribe(async (status: string) => {
+      console.log(`📡 [CellBroadcast] Channel subscription status for ${rundownId.slice(0, 8)}: ${status}`);
       this.connectionStatus.set(rundownId, status);
       
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
+        console.log(`✅ [CellBroadcast] Channel SUBSCRIBED for ${rundownId.slice(0, 8)} - callbacks: ${this.callbacks.get(rundownId)?.size || 0}`);
         // Reset failure count on successful connection
         this.broadcastFailureCount.set(rundownId, 0);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -279,13 +289,25 @@ export class CellBroadcastManager {
   }
 
   subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void, currentTabId?: string) {
+    console.log(`📡 [CellBroadcast] subscribeToCellUpdates called for ${rundownId.slice(0, 8)}, tabId: ${currentTabId?.slice(0, 8)}`);
+    
     if (!this.callbacks.has(rundownId)) {
+      console.log(`📡 [CellBroadcast] Creating NEW callbacks set for ${rundownId.slice(0, 8)}`);
       this.callbacks.set(rundownId, new Set());
     }
+    
+    const callbacksBefore = this.callbacks.get(rundownId)!.size;
     this.callbacks.get(rundownId)!.add(callback);
+    const callbacksAfter = this.callbacks.get(rundownId)!.size;
+    console.log(`📡 [CellBroadcast] Callbacks registered: ${callbacksBefore} → ${callbacksAfter}`);
 
     // Ensure channel is created and subscribed
     this.ensureChannel(rundownId);
+    
+    // Check subscription status
+    const status = this.connectionStatus.get(rundownId);
+    const isSubscribed = this.subscribed.get(rundownId);
+    console.log(`📡 [CellBroadcast] Current channel status: ${status}, subscribed: ${isSubscribed}`);
     
     // Register with reconnection coordinator
     realtimeReconnectionCoordinator.register(

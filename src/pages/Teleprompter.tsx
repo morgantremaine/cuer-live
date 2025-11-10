@@ -126,8 +126,10 @@ const Teleprompter = () => {
   // Set up cell broadcast for instant collaboration (per-tab, not per-user)
   useEffect(() => {
     if (!rundownId) return;
-
+    
+    console.log(`🎬 [Teleprompter] Setting up cell broadcast subscription for rundown ${rundownId.slice(0, 8)}`);
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      console.log(`🎬 [Teleprompter] Cell broadcast CALLBACK invoked:`, update);
       // Skip own updates using tab ID for correct echo prevention
       const currentTabId = getTabId();
       if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
