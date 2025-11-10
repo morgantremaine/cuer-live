@@ -29,8 +29,6 @@ export const useEdgeFunctionPrewarming = (
 
     // Delay pre-warming to let UI fully render first
     const prewarmTimeout = setTimeout(async () => {
-      console.log('🔥 Pre-warming edge functions (delayed for UI smoothness)...');
-
       const prewarmPromises = [
         // Ping structural-operation-save
         supabase.functions.invoke('structural-operation-save', {
@@ -54,8 +52,6 @@ export const useEdgeFunctionPrewarming = (
         Promise.all(prewarmPromises),
         new Promise(resolve => setTimeout(resolve, 5000))
       ]);
-
-      console.log('✅ Edge functions pre-warmed');
     }, delayMs);
 
     return () => clearTimeout(prewarmTimeout);

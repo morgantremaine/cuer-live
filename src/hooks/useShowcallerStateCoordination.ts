@@ -184,13 +184,6 @@ export const useShowcallerStateCoordination = ({
   useEffect(() => {
     if (!initializationRef.current && simpleSync.isConnected) {
       initializationRef.current = true;
-      console.log('📺 Showcaller state coordination initialized with simple sync:', {
-        rundownId,
-        userId,
-        currentSegmentId: simpleSync.currentSegmentId,
-        isPlaying: simpleSync.isPlaying,
-        isConnected: simpleSync.isConnected
-      });
     }
   }, [simpleSync.isConnected, rundownId, userId, simpleSync.currentSegmentId, simpleSync.isPlaying]);
 

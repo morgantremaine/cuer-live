@@ -137,7 +137,6 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
         
         // Fast length check first
         if (prevLength !== newLength) {
-          console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
           return mappedLayouts;
         }
         
@@ -150,7 +149,6 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
         });
         
         if (hasChanges) {
-          console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
           return mappedLayouts;
         }
         

@@ -124,10 +124,6 @@ export const useSimpleAutoSave = (
         }
       }
       
-      if (cleanedCount > 0) {
-        console.log(`🧹 AutoSave: Cleaned ${cleanedCount} stale signature cache entries`);
-      }
-      
       // Force garbage collection hint for very large caches
       if (signatureCache.current.size > 100) {
         signatureCache.current.clear();
@@ -268,18 +264,7 @@ export const useSimpleAutoSave = (
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
       
-      // Log if there's a mismatch for debugging
-      if (state.hasUnsavedChanges) {
-        console.log('🔍 AutoSave: baseline primed with hasUnsavedChanges=true - signatures should now be consistent');
-      }
-      
-      console.log('✅ AutoSave: primed baseline for rundown', { 
-        rundownId, 
-        instanceId: currentInstance,
-        baselineLength: currentSignature.length,
-        needsBaseline,
-        hadUnsavedChanges: state.hasUnsavedChanges
-      });
+      // Baseline primed silently
     }
   }, [isInitiallyLoaded, rundownId, createCurrentContentSignature]);
 

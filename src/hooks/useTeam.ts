@@ -830,8 +830,6 @@ export const useTeam = () => {
       return;
     }
     
-    console.log('[useTeam] Setting up team updates subscription for team:', activeTeamId);
-    
     const channel = supabase
       .channel(channelKey)
       .on(

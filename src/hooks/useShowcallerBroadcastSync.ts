@@ -86,8 +86,6 @@ export const useShowcallerBroadcastSync = ({
       return;
     }
 
-    console.log('📺 Token ready, setting up showcaller broadcast sync:', rundownId);
-
     const unsubscribe = showcallerBroadcast.subscribeToShowcallerBroadcasts(
       rundownId,
       handleBroadcast,

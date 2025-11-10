@@ -293,10 +293,6 @@ export const useSimplifiedRundownState = () => {
         const knownTime = new Date(lastKnownTimestamp).getTime();
         
         if (incomingTime <= knownTime) {
-          console.log('⏭️ Stale timestamp ignored:', {
-            incoming: updatedRundown.updated_at,
-            known: lastKnownTimestamp
-          });
           return;
         }
       }
@@ -420,7 +416,7 @@ export const useSimplifiedRundownState = () => {
   // Update connection state from realtime hook
   useEffect(() => {
     setIsConnected(realtimeConnection.isConnected);
-    console.log('🔌 Realtime connection status changed:', realtimeConnection.isConnected);
+    debugLogger.realtime(`Connection status changed: ${realtimeConnection.isConnected}`);
   }, [realtimeConnection.isConnected]);
 
   // Connect realtime to auto-save typing/unsaved state
@@ -785,7 +781,6 @@ export const useSimplifiedRundownState = () => {
     
     // Skip change tracking on initial load (when previous state was empty)
     if (!hasTrackedInitialLoad.current && prev.items.length === 0 && curr.items.length > 0) {
-      console.log('🚫 Skipping change tracking for initial load', { itemsLoaded: curr.items.length });
       hasTrackedInitialLoad.current = true;
       previousStateRef.current = state;
       return;
@@ -1267,12 +1262,6 @@ export const useSimplifiedRundownState = () => {
             }
 
             // Load content only (columns handled by useUserColumnPreferences)
-            console.log('📥 Loading rundown state from database:', {
-              numberingLocked: data.numbering_locked,
-              lockedRowNumbersCount: Object.keys(data.locked_row_numbers || {}).length,
-              hasLockedData: !!data.locked_row_numbers
-            });
-            
             actions.loadState({
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
@@ -1286,12 +1275,6 @@ export const useSimplifiedRundownState = () => {
               perCellSaveEnabled: data.per_cell_save_enabled || false, // Include per-cell save setting
               numberingLocked: data.numbering_locked || false, // Load lock state
               lockedRowNumbers: data.locked_row_numbers || {} // Load locked numbers
-            });
-            
-            console.log('🧪 PER-CELL SAVE: Loaded from database', {
-              rundownId,
-              per_cell_save_enabled: data.per_cell_save_enabled,
-              willUsePerCellSave: data.per_cell_save_enabled || false
             });
           }
         }
@@ -1313,7 +1296,6 @@ export const useSimplifiedRundownState = () => {
         setIsLoading(false);
         setIsInitialized(true);
         setCacheLoading(false);
-        console.log('✅ Initialization complete (loaded):', rundownId);
       }
     };
 

@@ -93,7 +93,6 @@ export class CellBroadcastManager {
         this.subscribed.set(rundownId, true);
         // Reset failure count on successful connection
         this.broadcastFailureCount.set(rundownId, 0);
-        console.log('✅ Cell realtime channel subscribed:', key);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel error:', key, status);

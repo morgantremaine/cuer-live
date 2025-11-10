@@ -483,9 +483,6 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    const startTime = performance.now();
-    console.log('📡 [PERF] Token ready, creating consolidated realtime subscription', { timestamp: startTime });
-
     // Reset initial load flag for new rundown
     setIsInitialLoad(true);
     isInitialLoadRef.current = true;
@@ -494,19 +491,9 @@ export const useConsolidatedRealtimeRundown = ({
 
     if (!globalState) {
       // Create new global subscription with enhanced state tracking
-      const channelCreateStart = performance.now();
-      console.log('📡 [PERF] Creating enhanced consolidated realtime subscription for', rundownId, {
-        timeSinceStart: channelCreateStart - startTime
-      });
       
       // Define reconnect handler that will be set later
       let reconnectHandler: (() => Promise<void>) | null = null;
-      
-      const channelCreated = performance.now();
-      console.log('📡 [PERF] Supabase channel object created', {
-        timeSinceStart: channelCreated - startTime,
-        channelCreationTime: channelCreated - channelCreateStart
-      });
       
       const channel = supabase
         .channel(`consolidated-realtime-${rundownId}`)
@@ -543,54 +530,23 @@ export const useConsolidatedRealtimeRundown = ({
         );
       }
 
-      const subscribeStart = performance.now();
-      console.log('📡 [PERF] Starting channel.subscribe()', {
-        timeSinceStart: subscribeStart - startTime
-      });
-      
       channel.subscribe(async (status) => {
-        const subscribeCallbackTime = performance.now();
-        console.log('📡 [PERF] Subscribe callback fired', {
-          status,
-          timeSinceStart: subscribeCallbackTime - startTime,
-          subscribeTime: subscribeCallbackTime - subscribeStart
-        });
-        
         const state = globalSubscriptions.get(rundownId);
         if (!state) return;
 
         if (status === 'SUBSCRIBED') {
-          const subscribedTime = performance.now();
-          console.log('✅ [PERF] Consolidated realtime connected successfully', {
-            timeSinceStart: subscribedTime - startTime,
-            totalConnectionTime: subscribedTime - subscribeStart
-          });
-          
           state.isConnected = true;
           
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
-            const fetchStart = performance.now();
-            console.log('📡 [PERF] Starting initial data fetch', {
-              timeSinceStart: fetchStart - startTime
-            });
-            
             // Don't show processing indicator during initial load
             const { data, error } = await supabase
               .from('rundowns')
               .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
               .eq('id', rundownId as string)
               .single();
-             const fetchEnd = performance.now();
-             console.log('📡 [PERF] Initial data fetch completed', {
-               success: !error,
-               timeSinceStart: fetchEnd - startTime,
-               fetchTime: fetchEnd - fetchStart
-             });
              
              if (!error && data) {
-                const processStart = performance.now();
-                
                 // SIMPLIFIED: Apply initial catch-up immediately
                 const serverDoc = data.doc_version || 0;
               if (serverDoc > state.lastProcessedDocVersion) {
@@ -601,12 +557,6 @@ export const useConsolidatedRealtimeRundown = ({
                 });
               }
               
-              const processEnd = performance.now();
-              console.log('📡 [PERF] Data processed and callbacks completed', {
-                timeSinceStart: processEnd - startTime,
-                processingTime: processEnd - processStart
-              });
-              
               // FIXED: Clear initial load gate IMMEDIATELY after successful data fetch
               setIsInitialLoad(false);
               isInitialLoadRef.current = false;
@@ -615,8 +565,7 @@ export const useConsolidatedRealtimeRundown = ({
                 initialLoadTimeoutRef.current = null;
               }
               
-              const gateCleared = performance.now();
-              debugLogger.realtime('[PERF] Initial load gate cleared - realtime updates enabled, timeSinceStart: ' + (gateCleared - startTime));
+              debugLogger.realtime('Initial load gate cleared - realtime updates enabled');
             } else if (error) {
               console.warn('Initial catch-up fetch failed:', error);
               // Fallback: Clear gate after timeout if fetch fails

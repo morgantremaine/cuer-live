@@ -10,7 +10,6 @@ let globalTabId: string | null = null;
 export const getTabId = (): string => {
   if (!globalTabId) {
     globalTabId = crypto.randomUUID();
-    console.log('🏷️ Generated new tab ID:', globalTabId);
   }
   return globalTabId;
 };

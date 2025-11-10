@@ -42,15 +42,7 @@ const RundownWithTabs = () => {
   };
 
   useEffect(() => {
-    const timeSinceMount = performance.now() - mountTime.current;
-    console.log('🔄 [PERF] RundownWithTabs mounted for rundown:', id, 'active tab:', activeTab, {
-      timeSinceMount,
-      timestamp: performance.now()
-    });
-    
-    return () => {
-      console.log('🧹 [PERF] RundownWithTabs unmounting');
-    };
+    // Component lifecycle tracking removed - was temporary debugging
   }, [id, activeTab]);
 
   if (!id) {

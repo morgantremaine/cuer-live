@@ -27,8 +27,6 @@ class ShowcallerBroadcastManager {
       return this.channels.get(rundownId);
     }
 
-    console.log('📺 Creating showcaller broadcast channel:', rundownId);
-    
     const channel = supabase
       .channel(`showcaller-broadcast-${rundownId}`)
       .on('broadcast', { event: 'showcaller_state' }, ({ payload }) => {
@@ -38,12 +36,9 @@ class ShowcallerBroadcastManager {
         }
       })
       .subscribe(async (status) => {
-        console.log('📺 Showcaller broadcast status:', status, rundownId);
         this.connectionStatus.set(rundownId, status);
         
-        if (status === 'SUBSCRIBED') {
-          console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
-        } else if (status === 'CHANNEL_ERROR') {
+        if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
           console.log('⏭️ Showcaller channel error - coordinator will handle reconnection');
         } else if (status === 'CLOSED') {
@@ -124,8 +119,6 @@ class ShowcallerBroadcastManager {
 
     callbacks.add(wrappedCallback);
     this.callbacks.set(rundownId, callbacks);
-
-    console.log('📺 Subscribed to showcaller broadcasts:', rundownId);
 
     // Return unsubscribe function
     return () => {

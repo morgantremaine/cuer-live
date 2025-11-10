@@ -325,7 +325,6 @@ class RealtimeReconnectionCoordinatorService {
    * Register a realtime connection (for debugging/visibility only)
    */
   register(id: string, type: RegisteredConnection['type'], reconnect: ReconnectionHandler) {
-    console.log(`📋 Registered ${type} connection: ${id}`);
     this.connections.set(id, {
       id,
       type,
