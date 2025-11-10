@@ -13,23 +13,20 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const useEdgeFunctionPrewarming = (
   rundownId: string | null,
-  isInitialized: boolean,
-  isConnected: boolean = false,
-  delayMs: number = 2000
+  isInitialized: boolean
 ) => {
   const hasPrewarmedRef = useRef(false);
 
   useEffect(() => {
     // Only pre-warm once per rundown session
-    if (!rundownId || !isInitialized || !isConnected || hasPrewarmedRef.current) {
+    if (!rundownId || !isInitialized || hasPrewarmedRef.current) {
       return;
     }
 
     hasPrewarmedRef.current = true;
 
-    // Delay pre-warming to let UI fully render first
-    const prewarmTimeout = setTimeout(async () => {
-      console.log('🔥 Pre-warming edge functions (delayed for UI smoothness)...');
+    const prewarmFunctions = async () => {
+      console.log('🔥 Pre-warming edge functions...');
 
       const prewarmPromises = [
         // Ping structural-operation-save
@@ -56,8 +53,8 @@ export const useEdgeFunctionPrewarming = (
       ]);
 
       console.log('✅ Edge functions pre-warmed');
-    }, delayMs);
+    };
 
-    return () => clearTimeout(prewarmTimeout);
-  }, [rundownId, isInitialized, isConnected, delayMs]);
+    prewarmFunctions();
+  }, [rundownId, isInitialized]);
 };

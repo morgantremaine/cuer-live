@@ -40,7 +40,6 @@ const ResizableColumnHeader = ({
   const isResizingRef = useRef<boolean>(false);
   const initialWidthRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
-  const lastUpdateTimeRef = useRef<number>(0);
   
   // Local state for preview width during resize
   const [previewWidth, setPreviewWidth] = useState<number | null>(null);
@@ -86,22 +85,15 @@ const ResizableColumnHeader = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
 
-      // Use requestAnimationFrame for smooth visual updates
+      // Use requestAnimationFrame for smooth visual updates only
       animationFrameRef.current = requestAnimationFrame(() => {
         const deltaX = e.clientX - startX;
         // Strictly enforce minimum width constraint during drag
         const calculatedWidth = initialWidthRef.current + deltaX;
         const newWidth = Math.max(minimumWidth, calculatedWidth);
         
-        // Update preview width visually
+        // Only update preview width visually - don't trigger re-renders
         setPreviewWidth(newWidth);
-        
-        // Throttled live updates: call onWidthChange every 32ms (30fps)
-        const now = Date.now();
-        if (now - lastUpdateTimeRef.current >= 32) {
-          lastUpdateTimeRef.current = now;
-          onWidthChange(column.id, newWidth);
-        }
       });
     };
 
@@ -123,10 +115,7 @@ const ResizableColumnHeader = ({
       // Clear preview width
       setPreviewWidth(null);
       
-      // Reset last update time
-      lastUpdateTimeRef.current = 0;
-      
-      // Final update to ensure exact value is set
+      // ONLY update React state on mouse up - this triggers the one re-render
       onWidthChange(column.id, finalWidth);
       
       // Reset global styles

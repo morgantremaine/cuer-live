@@ -17,11 +17,6 @@ import { logger } from '@/utils/logger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 
 export const useRundownStateCoordination = () => {
-  const hookStartTime = useRef(performance.now());
-  console.log('🔧 [PERF] useRundownStateCoordination initializing', {
-    timestamp: hookStartTime.current
-  });
-  
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
@@ -32,20 +27,7 @@ export const useRundownStateCoordination = () => {
   const interactionsRef = useRef<any>(null);
 
   // Single source of truth for all rundown state (with persistence)
-  const persistedStateStart = performance.now();
   const persistedState = usePersistedRundownState();
-  const persistedStateEnd = performance.now();
-  
-  useEffect(() => {
-    if (persistedState.rundownId && persistedState.items?.length > 0) {
-      console.log('📦 [PERF] Persisted state loaded', {
-        timeSinceHookStart: performance.now() - hookStartTime.current,
-        persistedStateLoadTime: persistedStateEnd - persistedStateStart,
-        rundownId: persistedState.rundownId,
-        itemCount: persistedState.items.length
-      });
-    }
-  }, [persistedState.rundownId, persistedState.items?.length]);
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({

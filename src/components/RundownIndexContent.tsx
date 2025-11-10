@@ -20,11 +20,6 @@ import '@/utils/timingValidationTest';
 
 
 const RundownIndexContent = () => {
-  const componentMountTime = useRef(performance.now());
-  console.log('📦 [PERF] RundownIndexContent mounting', {
-    timestamp: componentMountTime.current
-  });
-  
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
@@ -295,34 +290,24 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Show skeleton until core rundown is ready (non-blocking for subscription/layout)
+  // Show skeleton until ALL systems are ready, including layout stabilization
   const isFullyLoading = (
     isLoading ||
     !isInitialized ||
     !hasLoadedInitialState ||
     !rundownId ||
-    !items || items.length === 0
+    !items || items.length === 0 ||
+    isLoadingSharedLayout ||
+    !isLayoutStabilized
   );
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
   // After core rundown loads, prevent skeleton from reappearing
   useEffect(() => {
     if (!isFullyLoading && !hasRevealed) {
-      const timeSinceMount = performance.now() - componentMountTime.current;
-      console.log('🎉 [PERF] RundownIndexContent revealing UI', {
-        timeSinceMount,
-        timestamp: performance.now(),
-        loadingStates: {
-          isLoading,
-          isInitialized,
-          hasLoadedInitialState,
-          hasRundownId: !!rundownId,
-          hasItems: items?.length > 0
-        }
-      });
       setHasRevealed(true);
     }
-  }, [isFullyLoading, hasRevealed, isLoading, isInitialized, hasLoadedInitialState, rundownId, items]);
+  }, [isFullyLoading, hasRevealed]);
 
   // visibleColumns comes from coreState - no need to filter here
 

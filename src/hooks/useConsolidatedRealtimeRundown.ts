@@ -53,51 +53,12 @@ export const useConsolidatedRealtimeRundown = ({
   const lastUpdateTimeRef = useRef<number>(Date.now());
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Quick version check - lightweight pre-check before full sync
-  const performQuickVersionCheck = useCallback(async (): Promise<{ needsSync: boolean; serverVersion?: number }> => {
-    const state = globalSubscriptions.get(rundownId || '');
-    if (!rundownId || !state) return { needsSync: false };
-    
-    try {
-      const { data, error } = await supabase
-        .from('rundowns')
-        .select('doc_version, updated_at')
-        .eq('id', rundownId)
-        .single();
-      
-      if (!error && data) {
-        const serverDoc = data.doc_version || 0;
-        const needsSync = serverDoc > state.lastProcessedDocVersion;
-        
-        console.log('⚡ Quick version check:', {
-          serverVersion: serverDoc,
-          lastKnownVersion: state.lastProcessedDocVersion,
-          needsSync
-        });
-        
-        return { needsSync, serverVersion: serverDoc };
-      }
-    } catch (error) {
-      console.warn('⚠️ Quick version check failed:', error);
-    }
-    
-    return { needsSync: false };
-  }, [rundownId]);
-
   // Define performCatchupSync before it's used in handleOnline
-  const performCatchupSync = useCallback(async (): Promise<boolean> => {
+  const performCatchupSync = useCallback(async () => {
     const state = globalSubscriptions.get(rundownId || '');
-    if (!rundownId || !state) return false;
-    
+    if (!rundownId || !state) return;
     try {
-      // Step 1: Quick version check first (50ms vs 500ms)
-      const versionCheck = await performQuickVersionCheck();
-      if (!versionCheck.needsSync) {
-        console.log('✅ Quick check: No updates needed');
-        return false; // No updates found
-      }
-      
-      // Step 2: Only do full sync if version check shows updates
+      // Manual catch-up sync should show processing indicator (not initial load)
       setIsProcessingUpdate(true);
       
       const knownDocVersion = state.lastProcessedDocVersion;
@@ -137,14 +98,11 @@ export const useConsolidatedRealtimeRundown = ({
           if (missedUpdates > 0) {
             toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} made while offline`);
           }
-          return true; // Updates were found and applied
         } else {
           console.log('✅ No missed updates - already up to date');
-          return false; // No updates
         }
       } else if (error) {
         console.warn('❌ Manual catch-up fetch failed:', error);
-        return false;
       }
     } finally {
       // Keep processing indicator active briefly for UI feedback  
@@ -152,8 +110,7 @@ export const useConsolidatedRealtimeRundown = ({
         setIsProcessingUpdate(false);
       }, 500);
     }
-    return false;
-  }, [rundownId, performQuickVersionCheck]);
+  }, [rundownId]);
 
   // Track actual channel connection status from globalSubscriptions + browser network
   useEffect(() => {
@@ -263,37 +220,34 @@ export const useConsolidatedRealtimeRundown = ({
       window.removeEventListener('offline', handleOffline);
     };
   }, [enabled, rundownId, performCatchupSync]);
-
-  // Simplified polling fallback - only catch up when genuinely needed
+  
+  // Database polling fallback when realtime is stale
   useEffect(() => {
-    if (!enabled || !rundownId) {
+    if (!enabled || !rundownId || !isConnected) {
       return;
     }
     
-    const checkInterval = setInterval(async () => {
-      const state = globalSubscriptions.get(rundownId);
-      if (!state) return;
-      
+    // Check every 15 seconds if we need to poll
+    const checkStaleAndPoll = async () => {
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes
+      const STALE_THRESHOLD = 30000; // 30 seconds
       
-      // Only catch up if:
-      // 1. WebSocket is disconnected OR
-      // 2. WebSocket connected but no updates for 3+ minutes (rare edge case)
-      if (!state.isConnected) {
-        console.log('🔄 WebSocket disconnected - performing catch-up sync');
+      if (timeSinceLastUpdate > STALE_THRESHOLD) {
+        console.log('⏰ No realtime updates for 30s - polling database for changes');
         await performCatchupSync();
-      } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        console.log('⚠️ WebSocket connected but no updates for 3m - checking for stale data');
-        const hadUpdates = await performCatchupSync();
-        if (!hadUpdates) {
-          lastUpdateTimeRef.current = Date.now(); // Reset timer
-        }
+        lastUpdateTimeRef.current = Date.now(); // Reset timer after poll
       }
-    }, 30000); // Check every 30 seconds
+    };
     
-    return () => clearInterval(checkInterval);
-  }, [enabled, rundownId, isConnected, performCatchupSync]);
+    pollingIntervalRef.current = setInterval(checkStaleAndPoll, 15000);
+    
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, [enabled, rundownId, isConnected]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
@@ -483,8 +437,7 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    const startTime = performance.now();
-    console.log('📡 [PERF] Token ready, creating consolidated realtime subscription', { timestamp: startTime });
+    console.log('📡 Token ready, creating consolidated realtime subscription');
 
     // Reset initial load flag for new rundown
     setIsInitialLoad(true);
@@ -494,19 +447,10 @@ export const useConsolidatedRealtimeRundown = ({
 
     if (!globalState) {
       // Create new global subscription with enhanced state tracking
-      const channelCreateStart = performance.now();
-      console.log('📡 [PERF] Creating enhanced consolidated realtime subscription for', rundownId, {
-        timeSinceStart: channelCreateStart - startTime
-      });
+      console.log('📡 Creating enhanced consolidated realtime subscription for', rundownId);
       
       // Define reconnect handler that will be set later
       let reconnectHandler: (() => Promise<void>) | null = null;
-      
-      const channelCreated = performance.now();
-      console.log('📡 [PERF] Supabase channel object created', {
-        timeSinceStart: channelCreated - startTime,
-        channelCreationTime: channelCreated - channelCreateStart
-      });
       
       const channel = supabase
         .channel(`consolidated-realtime-${rundownId}`)
@@ -543,56 +487,24 @@ export const useConsolidatedRealtimeRundown = ({
         );
       }
 
-      const subscribeStart = performance.now();
-      console.log('📡 [PERF] Starting channel.subscribe()', {
-        timeSinceStart: subscribeStart - startTime
-      });
-      
       channel.subscribe(async (status) => {
-        const subscribeCallbackTime = performance.now();
-        console.log('📡 [PERF] Subscribe callback fired', {
-          status,
-          timeSinceStart: subscribeCallbackTime - startTime,
-          subscribeTime: subscribeCallbackTime - subscribeStart
-        });
-        
         const state = globalSubscriptions.get(rundownId);
         if (!state) return;
 
         if (status === 'SUBSCRIBED') {
-          const subscribedTime = performance.now();
-          console.log('✅ [PERF] Consolidated realtime connected successfully', {
-            timeSinceStart: subscribedTime - startTime,
-            totalConnectionTime: subscribedTime - subscribeStart
-          });
-          
           state.isConnected = true;
-          
+          console.log('✅ Consolidated realtime connected successfully');
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
-            const fetchStart = performance.now();
-            console.log('📡 [PERF] Starting initial data fetch', {
-              timeSinceStart: fetchStart - startTime
-            });
-            
             // Don't show processing indicator during initial load
             const { data, error } = await supabase
               .from('rundowns')
               .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
               .eq('id', rundownId as string)
               .single();
-             const fetchEnd = performance.now();
-             console.log('📡 [PERF] Initial data fetch completed', {
-               success: !error,
-               timeSinceStart: fetchEnd - startTime,
-               fetchTime: fetchEnd - fetchStart
-             });
-             
              if (!error && data) {
-                const processStart = performance.now();
-                
-                // SIMPLIFIED: Apply initial catch-up immediately
-                const serverDoc = data.doc_version || 0;
+               // SIMPLIFIED: Apply initial catch-up immediately
+               const serverDoc = data.doc_version || 0;
               if (serverDoc > state.lastProcessedDocVersion) {
                 state.lastProcessedDocVersion = serverDoc;
                 state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
@@ -601,12 +513,6 @@ export const useConsolidatedRealtimeRundown = ({
                 });
               }
               
-              const processEnd = performance.now();
-              console.log('📡 [PERF] Data processed and callbacks completed', {
-                timeSinceStart: processEnd - startTime,
-                processingTime: processEnd - processStart
-              });
-              
               // FIXED: Clear initial load gate IMMEDIATELY after successful data fetch
               setIsInitialLoad(false);
               isInitialLoadRef.current = false;
@@ -614,12 +520,7 @@ export const useConsolidatedRealtimeRundown = ({
                 clearTimeout(initialLoadTimeoutRef.current);
                 initialLoadTimeoutRef.current = null;
               }
-              
-              const gateCleared = performance.now();
-              console.log('🚪 [PERF] Initial load gate cleared - realtime updates enabled', {
-                timeSinceStart: gateCleared - startTime,
-                totalConnectionSetupTime: gateCleared - startTime
-              });
+              console.log('🚪 Initial load gate cleared - realtime updates enabled');
             } else if (error) {
               console.warn('Initial catch-up fetch failed:', error);
               // Fallback: Clear gate after timeout if fetch fails

@@ -32,10 +32,7 @@ class RealtimeReconnectionCoordinatorService {
   private readonly LONG_ABSENCE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
   private readonly SHORT_BACKGROUND_MAX_MS = 5 * 60 * 1000; // 5 minutes
   
-  // Visibility-based throttling to prevent timer buildup
-  private isTabVisible: boolean = true;
-  private readonly CONNECTION_MONITOR_INTERVAL_ACTIVE = 30000; // 30s when active
-  private readonly CONNECTION_MONITOR_INTERVAL_HIDDEN = 60000; // 60s when hidden
+  private readonly CONNECTION_MONITOR_INTERVAL_MS = 30000; // Check every 30 seconds
   
   // Connection health tracking
   private consecutiveFailures: number = 0;
@@ -79,9 +76,6 @@ class RealtimeReconnectionCoordinatorService {
    */
   private handleVisibilityChange = () => {
     if (!document.hidden) {
-      // Tab became visible
-      this.isTabVisible = true;
-      
       const { shouldReload, duration } = this.detectSleep();
       
       if (shouldReload) {
@@ -93,14 +87,6 @@ class RealtimeReconnectionCoordinatorService {
       // Update last visible time
       this.lastVisibleTime = Date.now();
       console.log('👁️ Tab became visible, no reload needed - connection should be fine');
-      
-      // Restart monitoring with active interval
-      this.restartConnectionMonitoring();
-    } else {
-      // Tab became hidden - throttle monitoring
-      this.isTabVisible = false;
-      console.log('🌙 Tab hidden - throttling health checks');
-      this.restartConnectionMonitoring();
     }
   };
   
@@ -246,27 +232,12 @@ class RealtimeReconnectionCoordinatorService {
   }
 
   /**
-   * Restart connection monitoring with appropriate interval based on visibility
-   */
-  private restartConnectionMonitoring() {
-    if (this.connectionMonitorInterval) {
-      clearInterval(this.connectionMonitorInterval);
-    }
-    this.startConnectionMonitoring();
-  }
-
-  /**
-   * Start proactive connection monitoring with visibility-based throttling
+   * Start proactive connection monitoring
    */
   private startConnectionMonitoring() {
     if (this.connectionMonitorInterval) {
       clearInterval(this.connectionMonitorInterval);
     }
-
-    // Use different intervals based on tab visibility
-    const interval = this.isTabVisible 
-      ? this.CONNECTION_MONITOR_INTERVAL_ACTIVE 
-      : this.CONNECTION_MONITOR_INTERVAL_HIDDEN;
 
     this.connectionMonitorInterval = setInterval(async () => {
       if (this.isReconnecting) return;
@@ -324,7 +295,7 @@ class RealtimeReconnectionCoordinatorService {
         const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
         handleChunkLoadError(error, 'periodic-websocket-check');
       }
-    }, interval);
+    }, this.CONNECTION_MONITOR_INTERVAL_MS);
   }
 
   /**

@@ -31,7 +31,7 @@ export const usePerCellSaveCoordination = ({
   saveInProgressRef,
   typingIdleMs
 }: PerCellSaveOptions) => {
-  
+  const lastSavedStateRef = useRef<RundownState | null>(null);
 
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
@@ -72,6 +72,10 @@ export const usePerCellSaveCoordination = ({
     }
   }, [hasPendingCellUpdates, flushCellUpdates]);
 
+  // Initialize saved state baseline (no-op for per-cell save)
+  const initializeBaseline = useCallback((state: RundownState) => {
+    lastSavedStateRef.current = JSON.parse(JSON.stringify(state));
+  }, []);
 
   // Handle structural operations with enhanced coordination and content snapshot
   const handleStructuralOperation = useCallback((
@@ -132,6 +136,7 @@ export const usePerCellSaveCoordination = ({
   return {
     trackFieldChange,
     saveState: enhancedSaveState,
+    initializeBaseline,
     hasUnsavedChanges,
     handleStructuralOperation
   };

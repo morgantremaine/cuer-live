@@ -1,7 +1,6 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import { useIsMobile, useIsTablet } from './use-mobile';
-import { rafThrottle } from '@/utils/performanceOptimizations';
 
 interface UseRundownAutoscrollProps {
   currentSegmentId: string | null;
@@ -134,7 +133,7 @@ export const useRundownAutoscroll = ({
     }
   }, [currentSegmentId, autoScrollEnabled, scrollToCurrentSegment]);
 
-  // Track manual scrolling to prevent autoscroll interference with RAF throttling
+  // Track manual scrolling to prevent autoscroll interference
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
@@ -151,14 +150,11 @@ export const useRundownAutoscroll = ({
       }, 500); // 500ms after scrolling stops
     };
 
-    // Throttle scroll handler with RAF for better performance
-    const throttledScrollHandler = rafThrottle(handleUserScroll);
-
     // Listen for scroll events to detect manual scrolling
-    scrollContainer.addEventListener('scroll', throttledScrollHandler, { passive: true });
+    scrollContainer.addEventListener('scroll', handleUserScroll, { passive: true });
     
     return () => {
-      scrollContainer.removeEventListener('scroll', throttledScrollHandler);
+      scrollContainer.removeEventListener('scroll', handleUserScroll);
       clearTimeout(scrollTimeout);
     };
   }, []);
