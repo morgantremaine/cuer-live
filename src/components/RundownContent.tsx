@@ -459,7 +459,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                   <SortableContext items={sortableItems || []} strategy={undefined}>
                     <OptimizedVirtualRundownTable
               scrollContainerRef={scrollContainerRef}
-              enableVirtualization={false}
+              enableVirtualization={true}
               items={visibleItems}
               visibleColumns={visibleColumns}
               currentTime={currentTime}

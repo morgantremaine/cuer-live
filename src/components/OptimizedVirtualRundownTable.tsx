@@ -67,6 +67,8 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
   onDragStart,
   onDrop,
   onRowSelect,
+  draggedItemIndex,
+  dropTargetIndex,
   ...restProps
 }) => {
   
@@ -76,6 +78,7 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
   const {
     virtualItems,
     startIndex,
+    endIndex,
     totalHeight,
     offsetY
   } = useVirtualizedRows({
@@ -118,6 +121,30 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
     };
   }, [onRowSelect, startIndex, shouldVirtualize]);
 
+  // Adjust draggedItemIndex to virtual index
+  const adjustedDraggedItemIndex = useMemo(() => {
+    if (!shouldVirtualize || draggedItemIndex === null || draggedItemIndex === undefined) {
+      return draggedItemIndex;
+    }
+    // Check if draggedItemIndex is within visible range
+    if (draggedItemIndex >= startIndex && draggedItemIndex < endIndex) {
+      return draggedItemIndex - startIndex;
+    }
+    return null;
+  }, [draggedItemIndex, startIndex, endIndex, shouldVirtualize]);
+
+  // Adjust dropTargetIndex to virtual index
+  const adjustedDropTargetIndex = useMemo(() => {
+    if (!shouldVirtualize || dropTargetIndex === null || dropTargetIndex === undefined) {
+      return dropTargetIndex;
+    }
+    // Check if dropTargetIndex is within visible range
+    if (dropTargetIndex >= startIndex && dropTargetIndex < endIndex) {
+      return dropTargetIndex - startIndex;
+    }
+    return null;
+  }, [dropTargetIndex, startIndex, endIndex, shouldVirtualize]);
+
   // Use virtual items if virtualization is enabled, otherwise use all items
   const displayItems = shouldVirtualize ? virtualItems : items;
 
@@ -130,6 +157,8 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
         onDragStart={adjustedOnDragStart}
         onDrop={adjustedOnDrop}
         onRowSelect={adjustedOnRowSelect}
+        draggedItemIndex={adjustedDraggedItemIndex}
+        dropTargetIndex={adjustedDropTargetIndex}
         {...restProps}
       />
     );
@@ -145,6 +174,8 @@ const OptimizedVirtualRundownTable: React.FC<OptimizedVirtualRundownTableProps> 
           onDragStart={adjustedOnDragStart}
           onDrop={adjustedOnDrop}
           onRowSelect={adjustedOnRowSelect}
+          draggedItemIndex={adjustedDraggedItemIndex}
+          dropTargetIndex={adjustedDropTargetIndex}
           {...restProps}
         />
       </div>
