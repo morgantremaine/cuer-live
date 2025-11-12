@@ -138,17 +138,17 @@ const HeaderRowContent = ({
                   zIndex: cellBackgroundColor ? 1 : 'auto'
                 }}
             >
-              <div 
-                className="px-2 py-8 flex items-center"
-                style={{
-                  overflow: 'visible',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {/* Check if another user is editing this cell */}
-                {(() => {
-                  const activeEditor = getEditorForCell?.(item.id, 'name');
-                  const headerContent = (
+              {/* Check if another user is editing this cell */}
+              {(() => {
+                const activeEditor = getEditorForCell?.(item.id, 'name');
+                const cellContent = (
+                  <div 
+                    className="px-2 py-8 flex items-center"
+                    style={{
+                      overflow: 'visible',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
                     <span className="inline-flex items-center" style={{ overflow: 'visible' }}>
                       <input
                         ref={(el) => {
@@ -229,20 +229,20 @@ const HeaderRowContent = ({
                         ({headerDuration})
                       </span>
                     </span>
-                  );
-                  
-                  return activeEditor ? (
-                    <CellEditorIndicator
-                      userName={activeEditor.userName}
-                      userId={activeEditor.userId}
-                      itemId={item.id}
-                      onScrollToCell={onScrollToEditor}
-                    >
-                      {headerContent}
-                    </CellEditorIndicator>
-                  ) : headerContent;
-                })()}
-              </div>
+                  </div>
+                );
+                
+                return activeEditor ? (
+                  <CellEditorIndicator
+                    userName={activeEditor.userName}
+                    userId={activeEditor.userId}
+                    itemId={item.id}
+                    onScrollToCell={onScrollToEditor}
+                  >
+                    {cellContent}
+                  </CellEditorIndicator>
+                ) : cellContent;
+              })()}
             </td>
           );
         } else if (column.key === 'duration') {
