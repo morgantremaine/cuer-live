@@ -60,7 +60,7 @@ export const CellEditorIndicator: React.FC<CellEditorIndicatorProps> = ({
   return (
     <div className={`relative border-2 ${borderColor} ring-2 rounded-sm`}>
       {/* Floating user badge */}
-      <div className="absolute -top-2 -right-2 z-50">
+      <div className="absolute -top-2.5 -right-2 z-50">
         <div className={`${badgeColor} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
           {userName}
         </div>
