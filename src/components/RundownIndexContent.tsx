@@ -102,6 +102,9 @@ const RundownIndexContent = () => {
   const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
 
+  // Debug: Log user info for cell editor setup
+  console.log('🎯 Cell Editor Setup:', { userId, userName, rundownId });
+
   // Set up per-cell active editor tracking
   const { getEditorForCell } = useActiveCellEditors(rundownId);
 

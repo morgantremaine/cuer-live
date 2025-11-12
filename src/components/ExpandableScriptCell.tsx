@@ -354,6 +354,7 @@ const ExpandableScriptCell = ({
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
+                console.log('📍 ExpandableScriptCell FOCUS:', { itemId, cellRefKey, hasFocusCallback: !!onCellFocus });
                 setIsFocused(true);
                 setShowOverlay(false); // Hide overlay when focused for native selection
                 if (onCellFocus) {
@@ -361,6 +362,7 @@ const ExpandableScriptCell = ({
                 }
               }}
               onBlur={() => {
+                console.log('📍 ExpandableScriptCell BLUR:', { itemId, cellRefKey, hasBlurCallback: !!onCellBlur });
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
                 debouncedValue.forceUpdate(); // Force immediate save on blur

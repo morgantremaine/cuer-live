@@ -188,6 +188,7 @@ const CellRenderer = ({
 
     // Wrap with editor indicator if someone else is editing
     if (activeEditor) {
+      console.log('🎨 Rendering with activeEditor:', { itemId: item.id, field: column.key, userName: activeEditor.userName });
       return (
         <CellEditorIndicator userName={activeEditor.userName} userId={activeEditor.userId}>
           {cellContent}
@@ -233,6 +234,7 @@ const CellRenderer = ({
 
   // Wrap with editor indicator if someone else is editing
   if (activeEditor) {
+    console.log('🎨 Rendering with activeEditor:', { itemId: item.id, field: column.key, userName: activeEditor.userName });
     return (
       <CellEditorIndicator userName={activeEditor.userName} userId={activeEditor.userId}>
         {cellContent}

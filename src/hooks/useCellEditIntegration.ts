@@ -68,7 +68,23 @@ export const useCellEditIntegration = ({
     fieldName: string,
     currentValue: any
   ) => {
-    if (!rundownId || !userId || !userName) return;
+    console.log('🔵 handleCellEditStart called:', { 
+      itemId, 
+      fieldName, 
+      hasRequiredData: { 
+        rundownId: !!rundownId, 
+        userId: !!userId, 
+        userName: !!userName 
+      } 
+    });
+    
+    if (!rundownId || !userId || !userName) {
+      console.warn('⚠️ handleCellEditStart EARLY RETURN - missing:', { rundownId, userId, userName });
+      return;
+    }
+
+    const tabId = getTabId();
+    console.log('📡 Broadcasting cell FOCUS:', { rundownId, itemId, field: fieldName, userId, userName, tabId });
 
     // Broadcast focus state to other users
     cellBroadcast.broadcastCellFocus(
@@ -77,7 +93,7 @@ export const useCellEditIntegration = ({
       fieldName,
       userId,
       userName,
-      getTabId(),
+      tabId,
       true // isFocused = true
     );
   }, [rundownId, userId, userName]);
@@ -88,7 +104,23 @@ export const useCellEditIntegration = ({
     fieldName: string,
     finalValue: any
   ) => {
-    if (!rundownId || !userId || !userName) return;
+    console.log('🔵 handleCellEditComplete called:', { 
+      itemId, 
+      fieldName, 
+      hasRequiredData: { 
+        rundownId: !!rundownId, 
+        userId: !!userId, 
+        userName: !!userName 
+      } 
+    });
+    
+    if (!rundownId || !userId || !userName) {
+      console.warn('⚠️ handleCellEditComplete EARLY RETURN - missing:', { rundownId, userId, userName });
+      return;
+    }
+
+    const tabId = getTabId();
+    console.log('📡 Broadcasting cell BLUR:', { rundownId, itemId, field: fieldName, userId, userName, tabId });
 
     // Broadcast blur state to other users
     cellBroadcast.broadcastCellFocus(
@@ -97,7 +129,7 @@ export const useCellEditIntegration = ({
       fieldName,
       userId,
       userName,
-      getTabId(),
+      tabId,
       false // isFocused = false
     );
   }, [rundownId, userId, userName]);

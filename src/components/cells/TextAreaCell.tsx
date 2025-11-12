@@ -198,6 +198,7 @@ const TextAreaCell = ({
     
     // Notify parent about focus (for broadcast to other users)
     if (onCellFocus) {
+      console.log('📍 TextAreaCell FOCUS:', { itemId, cellRefKey, hasFocusCallback: true });
       onCellFocus(itemId, cellRefKey);
     }
   };
@@ -219,6 +220,7 @@ const TextAreaCell = ({
     
     // Notify parent about blur (for broadcast to other users)
     if (onCellBlur) {
+      console.log('📍 TextAreaCell BLUR:', { itemId, cellRefKey, hasBlurCallback: true });
       onCellBlur(itemId, cellRefKey);
     }
   };
