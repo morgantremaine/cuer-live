@@ -29,7 +29,6 @@ interface RegularRowContentProps {
   getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
-  onScrollToEditor?: (itemId: string) => void;
 }
 
 const RegularRowContent = ({
@@ -53,8 +52,7 @@ const RegularRowContent = ({
   getColumnWidth,
   getEditorForCell,
   onCellFocus,
-  onCellBlur,
-  onScrollToEditor
+  onCellBlur
 }: RegularRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -120,7 +118,6 @@ const RegularRowContent = ({
               activeEditor={getEditorForCell ? getEditorForCell(item.id, column.key) : null}
               onCellFocus={onCellFocus}
               onCellBlur={onCellBlur}
-              onScrollToEditor={onScrollToEditor}
             />
           </td>
         );

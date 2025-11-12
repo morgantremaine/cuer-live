@@ -27,7 +27,6 @@ interface HeaderRowContentProps {
   getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
-  onScrollToEditor?: (itemId: string) => void;
 }
 
 const HeaderRowContent = ({
@@ -48,8 +47,7 @@ const HeaderRowContent = ({
   getColumnWidth,
   getEditorForCell,
   onCellFocus,
-  onCellBlur,
-  onScrollToEditor
+  onCellBlur
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -179,7 +177,6 @@ const HeaderRowContent = ({
                         }}
                         onFocus={() => {
                           if (onCellFocus) {
-                            console.log('📍 HeaderRowContent FOCUS:', { itemId: item.id, field: 'name' });
                             onCellFocus(item.id, 'name');
                             lastHeartbeatRef.current = Date.now();
                           }
@@ -201,7 +198,6 @@ const HeaderRowContent = ({
                           }
                           
                           if (onCellBlur) {
-                            console.log('📍 HeaderRowContent BLUR:', { itemId: item.id, field: 'name' });
                             onCellBlur(item.id, 'name');
                           }
                         }}
@@ -237,7 +233,6 @@ const HeaderRowContent = ({
                     userName={activeEditor.userName}
                     userId={activeEditor.userId}
                     itemId={item.id}
-                    onScrollToCell={onScrollToEditor}
                   >
                     {cellContent}
                   </CellEditorIndicator>

@@ -31,13 +31,6 @@ export const useActiveCellEditors = (rundownId: string | null) => {
 
         const isOwnUpdate = cellBroadcast.isOwnUpdate(update, currentTabId);
         const cellKey = `${update.itemId || 'rundown'}-${update.field}`;
-        
-        console.log('📥 Received cell_focus:', { 
-          fieldKey: cellKey, 
-          isFocused: update.isFocused, 
-          userName: update.userName,
-          isOwnUpdate 
-        });
 
         // Filter out own updates
         if (isOwnUpdate) return;
@@ -52,15 +45,9 @@ export const useActiveCellEditors = (rundownId: string | null) => {
               userName: update.userName,
               timestamp: update.timestamp
             });
-            console.log('✏️ Active editors map updated:', { 
-              fieldKey: cellKey, 
-              editor: { userName: update.userName }, 
-              totalEditors: next.size 
-            });
           } else {
             // Remove editor on blur
             next.delete(cellKey);
-            console.log('✏️ Active editor removed:', { fieldKey: cellKey, totalEditors: next.size });
           }
 
           return next;
@@ -97,11 +84,7 @@ export const useActiveCellEditors = (rundownId: string | null) => {
   const getEditorForCell = useCallback(
     (itemId: string | undefined, field: string): ActiveEditor | null => {
       const cellKey = `${itemId || 'rundown'}-${field}`;
-      const editor = activeEditors.get(cellKey) || null;
-      if (editor) {
-        console.log('🔍 getEditorForCell:', { itemId, field, foundEditor: true, userName: editor.userName });
-      }
-      return editor;
+      return activeEditors.get(cellKey) || null;
     },
     [activeEditors]
   );
