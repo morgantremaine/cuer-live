@@ -122,7 +122,17 @@ const DashboardRundownGrid = ({
   // Determine the last editor's display name
   const getLastEditorName = (rundown: SavedRundown) => {
     const editorId = rundown.last_updated_by || rundown.user_id
-    if (editorId === currentUserId) return 'You'
+    
+    // Debug log to track editor matching
+    if (editorId === currentUserId) {
+      console.log('📊 Editor Match (showing "You"):', {
+        rundownId: rundown.id,
+        editorId,
+        currentUserId,
+        rundownTitle: rundown.title
+      });
+      return 'You'
+    }
 
     const member = teamMembers.find(m => m.user_id === editorId)
     if (member?.profiles?.full_name) return member.profiles.full_name

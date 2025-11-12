@@ -36,9 +36,17 @@ export const useDashboardRundownOptimized = ({
   const handleRundownUpdate = useCallback((payload: { new: PartialRundownUpdate }) => {
     const updatedData = payload.new;
     
+    // Log real-time payload for debugging editor info
+    console.log('📊 Dashboard RT Update:', {
+      id: updatedData.id,
+      last_updated_by: updatedData.last_updated_by,
+      updated_at: updatedData.updated_at
+    });
+    
     // Find the current rundown to merge with
     const currentRundown = rundownsRef.current.find(r => r.id === updatedData.id);
     if (!currentRundown) {
+      console.log('📊 Dashboard RT: Rundown not found in current list');
       return;
     }
 
@@ -49,18 +57,27 @@ export const useDashboardRundownOptimized = ({
     
     // Only update dashboard if timestamp changed by more than 2 seconds (real change)
     if (timeDifference < 2000) {
+      console.log('📊 Dashboard RT: Skipping update - timestamp diff too small:', timeDifference);
       return;
     }
 
     // Create updated rundown by merging relevant fields
+    // CRITICAL: Always update last_updated_by when present, even if undefined (clears stale data)
     const updatedRundown: SavedRundown = {
       ...currentRundown,
       updated_at: updatedData.updated_at,
       ...(updatedData.title !== undefined && { title: updatedData.title }),
       ...(updatedData.show_date !== undefined && { show_date: updatedData.show_date }),
       ...(updatedData.items !== undefined && { items: updatedData.items }),
-      ...(updatedData.last_updated_by !== undefined && { last_updated_by: updatedData.last_updated_by })
+      // Always include last_updated_by from payload to ensure editor info is current
+      last_updated_by: updatedData.last_updated_by || currentRundown.last_updated_by
     };
+
+    console.log('📊 Dashboard RT: Merged rundown:', {
+      id: updatedRundown.id,
+      last_updated_by: updatedRundown.last_updated_by,
+      current_user_match: updatedRundown.last_updated_by === currentRundown.user_id
+    });
 
     onRundownUpdate(updatedRundown);
   }, [onRundownUpdate]);
