@@ -53,6 +53,10 @@ interface OptimizedVirtualRundownTableProps {
   // Virtualization props passed from parent
   startIndex?: number;
   endIndex?: number;
+  // Per-cell editor indicators
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 /**

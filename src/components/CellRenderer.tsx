@@ -166,25 +166,36 @@ const CellRenderer = ({
     const cellKey = `${item.id}-${column.key}`;
     const isCellExpanded = expandedCells?.has(cellKey);
     
-  const cellContent = (
-    <ExpandableScriptCell
-      value={value}
-      itemId={item.id}
-      cellRefKey={column.key}
-      cellRefs={cellRefs}
-      textColor={showcallerTextColor}
-      columnExpanded={columnExpandState[column.key]}
-      fieldType={column.key as 'script' | 'notes'}
-      isExpanded={isCellExpanded}
-      onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
-      onUpdateValue={(newValue) => {
-        onUpdateItem(item.id, column.key, newValue);
-      }}
-      onKeyDown={onKeyDown}
-    />
-  );
+    const cellContent = (
+      <ExpandableScriptCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={showcallerTextColor}
+        columnExpanded={columnExpandState[column.key]}
+        fieldType={column.key as 'script' | 'notes'}
+        isExpanded={isCellExpanded}
+        onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
+        onKeyDown={onKeyDown}
+        onCellFocus={onCellFocus ? () => onCellFocus(item.id, column.key) : undefined}
+        onCellBlur={onCellBlur ? () => onCellBlur(item.id, column.key) : undefined}
+      />
+    );
 
-  return cellContent;
+    // Wrap with editor indicator if someone else is editing
+    if (activeEditor) {
+      return (
+        <CellEditorIndicator userName={activeEditor.userName} userId={activeEditor.userId}>
+          {cellContent}
+        </CellEditorIndicator>
+      );
+    }
+
+    return cellContent;
   }
 
   // Check if this is a time-related field that should be centered
@@ -215,8 +226,19 @@ const CellRenderer = ({
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}
+      onCellFocus={onCellFocus ? () => onCellFocus(item.id, column.key) : undefined}
+      onCellBlur={onCellBlur ? () => onCellBlur(item.id, column.key) : undefined}
     />
   );
+
+  // Wrap with editor indicator if someone else is editing
+  if (activeEditor) {
+    return (
+      <CellEditorIndicator userName={activeEditor.userName} userId={activeEditor.userId}>
+        {cellContent}
+      </CellEditorIndicator>
+    );
+  }
 
   return cellContent;
 };

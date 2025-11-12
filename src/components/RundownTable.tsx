@@ -52,6 +52,10 @@ interface RundownTableProps {
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
+  // Per-cell editor indicators
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const RundownTable = ({
@@ -101,7 +105,10 @@ const RundownTable = ({
   onJumpToHere,
   onMoveItemUp,
   onMoveItemDown,
-  markActiveTyping
+  markActiveTyping,
+  getEditorForCell,
+  onCellFocus,
+  onCellBlur
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index

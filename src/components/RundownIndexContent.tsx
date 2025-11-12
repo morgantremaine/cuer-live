@@ -15,6 +15,7 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
+import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 // Import timing test to run calculations check
@@ -103,6 +104,14 @@ const RundownIndexContent = () => {
 
   // Set up per-cell active editor tracking
   const { getEditorForCell } = useActiveCellEditors(rundownId);
+
+  // Set up cell edit integration for broadcasting focus states
+  const { handleCellEditStart, handleCellEditComplete } = useCellEditIntegration({
+    rundownId,
+    isPerCellEnabled: true,
+    userId,
+    userName
+  });
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
@@ -640,14 +649,14 @@ const RundownIndexContent = () => {
         resetToDefaults={resetToDefaults}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving || isSavingPreferences}
-    rundownTitle={rundownTitle}
-    onTitleChange={setTitle}
-    rundownStartTime={rundownStartTime}
-    onRundownStartTimeChange={handleRundownStartTimeChange}
-    rundownEndTime={rundownEndTime}
-    onRundownEndTimeChange={handleRundownEndTimeChange}
-    showDate={showDate}
-    onShowDateChange={handleShowDateChange}
+        rundownTitle={rundownTitle}
+        onTitleChange={setTitle}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={handleRundownStartTimeChange}
+        rundownEndTime={rundownEndTime}
+        onRundownEndTimeChange={handleRundownEndTimeChange}
+        showDate={showDate}
+        onShowDateChange={handleShowDateChange}
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={coreState.undo}
@@ -682,6 +691,10 @@ const RundownIndexContent = () => {
         dragAndDrop={dragAndDrop}
         numberingLocked={numberingLocked}
         onToggleLock={toggleLock}
+        // Per-cell editor indicators
+        getEditorForCell={getEditorForCell}
+        onCellFocus={(itemId, field) => handleCellEditStart(itemId, field, '')}
+        onCellBlur={(itemId, field) => handleCellEditComplete(itemId, field, '')}
       />
       
       {/* Floating Notes Window */}

@@ -54,6 +54,10 @@ interface RegularRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
+  // Per-cell editor indicators
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const RegularRow = (props: RegularRowProps) => {
@@ -291,6 +295,9 @@ const RegularRow = (props: RegularRowProps) => {
           onKeyDown={props.onKeyDown}
           markActiveTyping={props.markActiveTyping}
           getColumnWidth={props.getColumnWidth}
+          getEditorForCell={props.getEditorForCell}
+          onCellFocus={props.onCellFocus}
+          onCellBlur={props.onCellBlur}
         />
       </tr>
     </RundownContextMenu>

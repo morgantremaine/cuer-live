@@ -82,6 +82,10 @@ interface RundownContentProps {
   collisionDetection?: any;
   activeId?: any;
   resetDragState?: () => void;
+  // Per-cell editor indicators
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -153,7 +157,10 @@ const RundownContent = React.memo<RundownContentProps>(({
   modifiers,
   collisionDetection,
   activeId,
-  resetDragState
+  resetDragState,
+  getEditorForCell,
+  onCellFocus,
+  onCellBlur
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -503,6 +510,9 @@ const RundownContent = React.memo<RundownContentProps>(({
               onToggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
+              getEditorForCell={getEditorForCell}
+              onCellFocus={onCellFocus}
+              onCellBlur={onCellBlur}
             />
                       </SortableContext>
                     </DndContext>
@@ -555,6 +565,9 @@ const RundownContent = React.memo<RundownContentProps>(({
               onToggleHeaderCollapse={toggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
+              getEditorForCell={getEditorForCell}
+              onCellFocus={onCellFocus}
+              onCellBlur={onCellBlur}
             />
                   )}
                 </table>

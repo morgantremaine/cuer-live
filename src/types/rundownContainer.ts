@@ -133,4 +133,9 @@ export interface RundownContainerProps {
     activeId: any;
     resetDragState: () => void;
   };
+  
+  // Per-cell editor indicators
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
