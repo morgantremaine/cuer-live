@@ -233,11 +233,15 @@ export const useStructuralSave = (
         clearTimeout(saveTimeoutRef.current);
       }
 
+      // Intelligent debounce based on lock state
+      // Longer delay for locked rows to batch multiple operations and reduce lock contention
+      const debounceDelay = operationData.numberingLocked ? 1500 : 500;
+
       saveTimeoutRef.current = setTimeout(() => {
         saveStructuralOperations().catch(error => {
           console.error('Structural save error:', error);
         });
-      }, 500); // Increased from 100ms - better batching for rapid operations
+      }, debounceDelay);
     },
     [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
