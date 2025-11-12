@@ -63,7 +63,7 @@ export const CellEditorIndicator: React.FC<CellEditorIndicatorProps> = ({
     <div className={`relative border-2 ${borderColor} ring-2 rounded-sm`}>
       {/* Floating user badge */}
       <div 
-        className="absolute -top-2 -right-2 z-10 cursor-pointer hover:scale-105 transition-transform"
+        className="absolute top-1 right-1 z-50 cursor-pointer hover:scale-105 transition-transform"
         onClick={(e) => {
           e.stopPropagation();
           onScrollToCell?.(itemId);
