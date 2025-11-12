@@ -19,9 +19,10 @@ interface RundownSaveIndicatorProps {
   activeTeammateNames?: string[];
   isMobile?: boolean; // Add mobile prop to suppress teammate editing
   onRetry?: () => void; // Callback to trigger manual retry
+  onScrollToTeammate?: () => void; // Callback to scroll to active teammate's cell
 }
 
-const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false, onRetry }: RundownSaveIndicatorProps) => {
+const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false, onRetry, onScrollToTeammate }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true, saveCompletionCount, failedSavesCount = 0 } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
@@ -132,7 +133,11 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
       : 'Teammate editing...';
       
     return (
-      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2">
+      <div 
+        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2 cursor-pointer hover:text-blue-700 dark:hover:text-blue-300"
+        onClick={onScrollToTeammate}
+        title="Click to scroll to where they're editing"
+      >
         <Users className="h-4 w-4" />
         <span>{displayText}</span>
       </div>

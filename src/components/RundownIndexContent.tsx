@@ -136,6 +136,23 @@ const RundownIndexContent = () => {
     }
   }, []);
 
+  // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
+  const handleScrollToActiveTeammate = useCallback(() => {
+    // Iterate through all items and fields to find first cell with an active editor
+    for (const item of items) {
+      // Check common fields that can be edited
+      const fields = ['name', 'script', 'duration', 'notes', ...visibleColumns.map(col => col.key)];
+      for (const field of fields) {
+        const editor = getEditorForCell(item.id, field);
+        if (editor) {
+          // Found an active editor - scroll to this item
+          handleScrollToEditor(item.id);
+          return;
+        }
+      }
+    }
+  }, [items, visibleColumns, getEditorForCell, handleScrollToEditor]);
+
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
     rundownId,
@@ -719,6 +736,7 @@ const RundownIndexContent = () => {
         onCellFocus={(itemId, field) => handleCellEditStart(itemId, field, '')}
         onCellBlur={(itemId, field) => handleCellEditComplete(itemId, field, '')}
         onScrollToEditor={handleScrollToEditor}
+        onScrollToActiveTeammate={handleScrollToActiveTeammate}
       />
       
       {/* Floating Notes Window */}

@@ -139,4 +139,5 @@ export interface RundownContainerProps {
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
   onScrollToEditor?: (itemId: string) => void;
+  onScrollToActiveTeammate?: () => void;
 }
