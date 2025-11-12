@@ -5,6 +5,7 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
 import { getTabId } from '@/utils/tabUtils';
+import { toast } from 'sonner';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -40,6 +41,56 @@ export const useStructuralSave = (
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
   const maxRetries = 5;
+  
+  // localStorage keys for persistence
+  const getStorageKey = useCallback(() => {
+    return rundownId ? `rundown_failed_operations_${rundownId}` : null;
+  }, [rundownId]);
+  
+  // Persist failed operations to localStorage
+  const persistFailedOperations = useCallback(() => {
+    const key = getStorageKey();
+    if (!key) return;
+    
+    try {
+      if (failedOperationsRef.current.length > 0) {
+        localStorage.setItem(key, JSON.stringify(failedOperationsRef.current));
+      } else {
+        localStorage.removeItem(key);
+      }
+    } catch (error) {
+      console.error('Failed to persist failed operations to localStorage:', error);
+    }
+  }, [getStorageKey]);
+  
+  // Load failed operations from localStorage on mount
+  useEffect(() => {
+    const key = getStorageKey();
+    if (!key) return;
+    
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsedOps = JSON.parse(stored) as StructuralOperation[];
+        if (parsedOps.length > 0) {
+          failedOperationsRef.current = parsedOps;
+          console.log(`📂 Loaded ${parsedOps.length} failed structural operations from previous session`);
+          
+          // Show toast and trigger immediate retry
+          toast.info(`Found ${parsedOps.length} unsaved operation${parsedOps.length === 1 ? '' : 's'} from previous session`, {
+            description: 'Retrying now...'
+          });
+          
+          // Trigger retry after a short delay to let the UI settle
+          setTimeout(() => {
+            retryFailedStructuralOperations();
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load failed operations from localStorage:', error);
+    }
+  }, [rundownId]); // Only run on mount or rundownId change
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -137,6 +188,7 @@ export const useStructuralSave = (
       
       // Store failed operations separately for retry UI
       failedOperationsRef.current.push(...operations);
+      persistFailedOperations(); // Persist to localStorage immediately
       
       // Notify parent about the error
       if (onSaveError) {
@@ -236,16 +288,18 @@ export const useStructuralSave = (
       await saveStructuralOperations();
       // Success - reset retry count
       retryCountRef.current = 0;
+      persistFailedOperations(); // Clear from localStorage on success
       console.log('✅ Structural operation retry successful');
     } catch (error) {
       console.error('❌ Structural operation retry failed:', error);
+      persistFailedOperations(); // Update localStorage with current failed operations
       if (retryCountRef.current < maxRetries) {
         scheduleRetry();
       } else {
         console.error('❌ Max retries reached for structural operations');
       }
     }
-  }, [saveStructuralOperations, scheduleRetry]);
+  }, [saveStructuralOperations, scheduleRetry, persistFailedOperations]);
 
   // Get count of failed structural operations
   const getFailedStructuralOperationsCount = useCallback(() => {

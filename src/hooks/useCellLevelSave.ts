@@ -5,6 +5,7 @@ import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
+import { toast } from 'sonner';
 
 interface FieldUpdate {
   itemId?: string;
@@ -36,6 +37,56 @@ export const useCellLevelSave = (
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryAttemptRef = useRef(0);
   const firstTypingTimeRef = useRef<number>(0);
+  
+  // localStorage keys for persistence
+  const getStorageKey = useCallback(() => {
+    return rundownId ? `rundown_failed_saves_${rundownId}` : null;
+  }, [rundownId]);
+  
+  // Persist failed saves to localStorage
+  const persistFailedSaves = useCallback(() => {
+    const key = getStorageKey();
+    if (!key) return;
+    
+    try {
+      if (failedSavesRef.current.length > 0) {
+        localStorage.setItem(key, JSON.stringify(failedSavesRef.current));
+      } else {
+        localStorage.removeItem(key);
+      }
+    } catch (error) {
+      console.error('Failed to persist failed saves to localStorage:', error);
+    }
+  }, [getStorageKey]);
+  
+  // Load failed saves from localStorage on mount
+  useEffect(() => {
+    const key = getStorageKey();
+    if (!key) return;
+    
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsedSaves = JSON.parse(stored) as FieldUpdate[];
+        if (parsedSaves.length > 0) {
+          failedSavesRef.current = parsedSaves;
+          console.log(`📂 Loaded ${parsedSaves.length} failed saves from previous session`);
+          
+          // Show toast and trigger immediate retry
+          toast.info(`Found ${parsedSaves.length} unsaved change${parsedSaves.length === 1 ? '' : 's'} from previous session`, {
+            description: 'Retrying now...'
+          });
+          
+          // Trigger retry after a short delay to let the UI settle
+          setTimeout(() => {
+            retryFailedSaves();
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load failed saves from localStorage:', error);
+    }
+  }, [rundownId]); // Only run on mount or rundownId change
 
   // Track individual field changes
   const trackCellChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -163,6 +214,7 @@ export const useCellLevelSave = (
         
         // Store failed saves separately for retry on reconnection
         failedSavesRef.current.push(...updatesToSave);
+        persistFailedSaves(); // Persist to localStorage immediately
         
         // Notify UI of unsaved changes so user knows there's an issue
         if (onUnsavedChanges) {
@@ -211,6 +263,7 @@ export const useCellLevelSave = (
       } else {
         // Store failed saves for retry
         failedSavesRef.current.push(...updatesToSave);
+        persistFailedSaves(); // Persist to localStorage immediately
         if (onUnsavedChanges) {
           onUnsavedChanges();
         }
@@ -274,12 +327,14 @@ export const useCellLevelSave = (
       await savePendingUpdates();
       // Clear retry schedule on success
       clearRetrySchedule();
+      persistFailedSaves(); // Clear from localStorage on success
       console.log('✅ Retry successful');
     } catch (error) {
       console.error('❌ Retry failed:', error);
       // Failed saves will be re-added to failedSavesRef by savePendingUpdates
+      persistFailedSaves(); // Update localStorage with current failed saves
     }
-  }, [savePendingUpdates, clearRetrySchedule]);
+  }, [savePendingUpdates, clearRetrySchedule, persistFailedSaves]);
 
   // Monitor browser network status for reconnection
   useEffect(() => {
