@@ -118,7 +118,7 @@ const RundownIndexContent = () => {
   // Handle scroll to editor - scroll to the row where another user is editing
   const handleScrollToEditor = useCallback((itemId: string) => {
     // Find the scroll container from the DOM
-    const scrollContainer = document.querySelector('[data-rundown-table="true"] .scroll-area-viewport');
+    const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
     
     if (!scrollContainer) return;
     
