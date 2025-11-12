@@ -68,23 +68,11 @@ export const useCellEditIntegration = ({
     fieldName: string,
     currentValue: any
   ) => {
-    console.log('🔵 handleCellEditStart called:', { 
-      itemId, 
-      fieldName, 
-      hasRequiredData: { 
-        rundownId: !!rundownId, 
-        userId: !!userId, 
-        userName: !!userName 
-      } 
-    });
-    
     if (!rundownId || !userId || !userName) {
-      console.warn('⚠️ handleCellEditStart EARLY RETURN - missing:', { rundownId, userId, userName });
       return;
     }
 
     const tabId = getTabId();
-    console.log('📡 Broadcasting cell FOCUS:', { rundownId, itemId, field: fieldName, userId, userName, tabId });
 
     // Broadcast focus state to other users
     cellBroadcast.broadcastCellFocus(
@@ -104,23 +92,11 @@ export const useCellEditIntegration = ({
     fieldName: string,
     finalValue: any
   ) => {
-    console.log('🔵 handleCellEditComplete called:', { 
-      itemId, 
-      fieldName, 
-      hasRequiredData: { 
-        rundownId: !!rundownId, 
-        userId: !!userId, 
-        userName: !!userName 
-      } 
-    });
-    
     if (!rundownId || !userId || !userName) {
-      console.warn('⚠️ handleCellEditComplete EARLY RETURN - missing:', { rundownId, userId, userName });
       return;
     }
 
     const tabId = getTabId();
-    console.log('📡 Broadcasting cell BLUR:', { rundownId, itemId, field: fieldName, userId, userName, tabId });
 
     // Broadcast blur state to other users
     cellBroadcast.broadcastCellFocus(

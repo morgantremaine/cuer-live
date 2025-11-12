@@ -155,7 +155,6 @@ const ExpandableScriptCell = ({
     
     // Trigger focus broadcast on click
     if (onCellFocus) {
-      console.log('📍 ExpandableScriptCell CLICK (triggering focus):', { itemId, cellRefKey });
       onCellFocus(itemId, cellRefKey);
     }
     
@@ -379,7 +378,6 @@ const ExpandableScriptCell = ({
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
-                console.log('📍 ExpandableScriptCell FOCUS:', { itemId, cellRefKey, hasFocusCallback: !!onCellFocus });
                 setIsFocused(true);
                 setShowOverlay(false); // Hide overlay when focused for native selection
                 if (onCellFocus) {
@@ -395,7 +393,6 @@ const ExpandableScriptCell = ({
                 }, 5000);
               }}
               onBlur={() => {
-                console.log('📍 ExpandableScriptCell BLUR:', { itemId, cellRefKey, hasBlurCallback: !!onCellBlur });
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
                 debouncedValue.forceUpdate(); // Force immediate save on blur
@@ -420,7 +417,6 @@ const ExpandableScriptCell = ({
               onClick={(e) => {
                 // Also trigger focus broadcast on click (expanded state)
                 if (onCellFocus) {
-                  console.log('📍 ExpandableScriptCell CLICK expanded (triggering focus):', { itemId, cellRefKey });
                   onCellFocus(itemId, cellRefKey);
                 }
               }}

@@ -183,8 +183,6 @@ export class CellBroadcastManager {
     tabId: string,
     isFocused: boolean
   ) {
-    console.log('🔊 cellBroadcast.broadcastCellFocus:', { rundownId, itemId, field, isFocused, userId, userName, tabId });
-    
     const channel = this.ensureChannel(rundownId);
     const focusPayload: CellFocus = {
       rundownId,
@@ -205,7 +203,6 @@ export class CellBroadcastManager {
         event: 'cell_focus',
         payload: focusPayload
       });
-      console.log('📤 Sent cell_focus to channel:', { rundownId, fieldKey: `${itemId || 'rundown'}-${field}`, isFocused });
     } catch (error) {
       console.error('❌ Focus broadcast failed:', error);
     }

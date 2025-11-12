@@ -141,12 +141,6 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      if (cleanedKeys.length > 0) {
-        console.log(`🧹 Phase 1: Cleaned ${cleanedKeys.length} stale entries from recentlyEditedFieldsRef (${recentlyEditedFieldsRef.current.size} remaining)`, {
-          cleanedKeys: cleanedKeys.slice(0, 5), // Show first 5 keys
-          totalCleaned: cleanedKeys.length
-        });
-      }
     }, 10000); // Run every 10 seconds
     
     return () => clearInterval(cleanupInterval);
@@ -505,8 +499,6 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, async (update) => {
-      console.log('📱 Cell broadcast received:', update);
-      
       // Only process cell value updates, not focus events
       if ('isFocused' in update) return;
       if (!('value' in update)) return;
@@ -514,11 +506,8 @@ export const useSimplifiedRundownState = () => {
       // Skip our own tab's updates (supports multiple tabs per user)
       const currentTabId = getTabId();
       if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
-        console.log('📱 Skipping own tab\'s cell broadcast update');
         return;
       }
-      
-      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
       // Track that this change came from another user
       lastChangeUserIdRef.current = update.userId;
@@ -677,11 +666,8 @@ export const useSimplifiedRundownState = () => {
           const isTypingThisField = activeFocusFieldRef.current === fieldKey;
           
           if (isTypingThisField) {
-            console.log('🛡️ BLOCKING - user is typing this exact field:', update.itemId, update.field);
             return;
           }
-          
-          console.log('✅ ALLOWING - user is NOT typing this field:', update.itemId, update.field);
 
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
