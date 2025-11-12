@@ -276,7 +276,14 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         value={debouncedValue.value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onClick={onCellClick}
+        onClick={(e) => {
+          onCellClick(e);
+          // Also trigger focus broadcast on click
+          if (onCellFocus) {
+            console.log('📍 TextAreaCell CLICK (triggering focus):', { itemId, cellRefKey });
+            onCellFocus(itemId, cellRefKey);
+          }
+        }}
         onMouseDown={handleMouseDown}
         onFocus={handleFocus}
         onBlur={handleBlur}

@@ -141,6 +141,13 @@ const ExpandableScriptCell = ({
   // Handle clicking to focus the textarea (no separate edit mode)
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row selection when clicking to edit
+    
+    // Trigger focus broadcast on click
+    if (onCellFocus) {
+      console.log('📍 ExpandableScriptCell CLICK (triggering focus):', { itemId, cellRefKey });
+      onCellFocus(itemId, cellRefKey);
+    }
+    
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -376,6 +383,13 @@ const ExpandableScriptCell = ({
               onMouseDown={(e) => {
                 e.stopPropagation();
                 setShowOverlay(false); // Hide overlay when clicking to position cursor
+              }}
+              onClick={(e) => {
+                // Also trigger focus broadcast on click (expanded state)
+                if (onCellFocus) {
+                  console.log('📍 ExpandableScriptCell CLICK expanded (triggering focus):', { itemId, cellRefKey });
+                  onCellFocus(itemId, cellRefKey);
+                }
               }}
               onDragStart={(e) => e.preventDefault()}
               onDrag={(e) => e.preventDefault()}
