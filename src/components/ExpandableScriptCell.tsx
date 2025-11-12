@@ -47,6 +47,8 @@ const ExpandableScriptCell = ({
   const lastScrollTimeRef = useRef<number>(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
   const heightCalcTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastHeartbeatRef = useRef<number>(0);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
   
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -68,6 +70,15 @@ const ExpandableScriptCell = ({
       setInternalIsExpanded(columnExpanded);
     }
   }, [columnExpanded, externalIsExpanded]);
+  
+  // Cleanup heartbeat interval on unmount
+  useEffect(() => {
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Track scroll events to prevent focus-during-scroll expansion
   useEffect(() => {
@@ -358,6 +369,13 @@ const ExpandableScriptCell = ({
               value={debouncedValue.value}
               onChange={(e) => {
                 debouncedValue.onChange(e.target.value, e.target as HTMLTextAreaElement);
+                
+                // Send typing heartbeat (throttled to every 3 seconds)
+                const now = Date.now();
+                if (onCellFocus && now - lastHeartbeatRef.current > 3000) {
+                  onCellFocus(itemId, cellRefKey);
+                  lastHeartbeatRef.current = now;
+                }
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
@@ -366,13 +384,28 @@ const ExpandableScriptCell = ({
                 setShowOverlay(false); // Hide overlay when focused for native selection
                 if (onCellFocus) {
                   onCellFocus(itemId, cellRefKey);
+                  lastHeartbeatRef.current = Date.now();
                 }
+                
+                // Start heartbeat interval
+                heartbeatIntervalRef.current = setInterval(() => {
+                  if (onCellFocus) {
+                    onCellFocus(itemId, cellRefKey);
+                  }
+                }, 5000);
               }}
               onBlur={() => {
                 console.log('📍 ExpandableScriptCell BLUR:', { itemId, cellRefKey, hasBlurCallback: !!onCellBlur });
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
                 debouncedValue.forceUpdate(); // Force immediate save on blur
+                
+                // Clear heartbeat interval
+                if (heartbeatIntervalRef.current) {
+                  clearInterval(heartbeatIntervalRef.current);
+                  heartbeatIntervalRef.current = undefined;
+                }
+                
                 if (onCellBlur) {
                   onCellBlur(itemId, cellRefKey);
                 }

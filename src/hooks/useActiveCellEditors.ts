@@ -8,7 +8,7 @@ interface ActiveEditor {
   timestamp: number;
 }
 
-const STALE_TIMEOUT = 3000; // 3 seconds - matches useEditingState timeout
+const STALE_TIMEOUT = 10000; // 10 seconds - safety net for disconnects/crashes
 
 /**
  * Hook to track which users are actively editing which cells

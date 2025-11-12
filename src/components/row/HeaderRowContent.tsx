@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
+import { CellEditorIndicator } from '../cells/CellEditorIndicator';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -56,12 +57,25 @@ const HeaderRowContent = ({
   // During drag, ensure all cells have header background to maintain solid block appearance
   const cellBackgroundColor = isDragging ? 'hsl(var(--header-background))' : backgroundColor;
 
+  // Heartbeat refs for typing indicator
+  const lastHeartbeatRef = React.useRef<number>(0);
+  const heartbeatIntervalRef = React.useRef<NodeJS.Timeout>();
+
   // Debounced input for header name - immediate UI updates, batched parent updates
   const debouncedHeaderName = useDebouncedInput(
     item.name || '',
     (newValue) => onUpdateItem(item.id, 'name', newValue),
     150
   );
+
+  // Cleanup heartbeat interval on unmount
+  React.useEffect(() => {
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Handle collapse toggle
   const handleToggleCollapse = (e: React.MouseEvent) => {
@@ -131,52 +145,103 @@ const HeaderRowContent = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                <span className="inline-flex items-center" style={{ overflow: 'visible' }}>
-                  <input
-                    ref={(el) => {
-                      if (el) {
-                        cellRefs.current[`${item.id}-name`] = el;
-                        // Auto-resize with buffer for cross-browser compatibility
-                        const contentLength = headerName.length || 1;
-                        const bufferWidth = contentLength + 3; // Add buffer for PC browsers
-                        el.style.width = `${bufferWidth}ch`;
-                      }
-                    }}
-                    type="text"
-                    value={headerName}
-                    onChange={(e) => {
-                      markActiveTyping?.();
-                      debouncedHeaderName.onChange(e.target.value);
-                      // Auto-resize on change with buffer
-                      const contentLength = e.target.value.length || 1;
-                      const bufferWidth = contentLength + 3; // Add buffer for PC browsers
-                      e.target.style.width = `${bufferWidth}ch`;
-                    }}
-                    onBlur={() => debouncedHeaderName.forceUpdate()}
-                    onClick={() => onCellClick(item.id, 'name')}
-                    onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                    data-field-key={`${item.id}-name`}
-                    className="bg-transparent border-none outline-none text-lg font-bold"
-                    style={{ 
-                      color: textColor,
-                      fontFamily: 'inherit',
-                      fontSize: 'inherit',
-                      fontWeight: 'inherit',
-                      lineHeight: 'inherit',
-                      padding: 0,
-                      margin: 0,
-                      width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
-                      minWidth: '4ch'
-                    }}
-                    placeholder="Header Name"
-                  />
-                  <span 
-                    className="text-base font-medium whitespace-nowrap ml-6" 
-                    style={{ color: textColor }}
-                  >
-                    ({headerDuration})
-                  </span>
-                </span>
+                {/* Check if another user is editing this cell */}
+                {(() => {
+                  const activeEditor = getEditorForCell?.(item.id, 'name');
+                  const headerContent = (
+                    <span className="inline-flex items-center" style={{ overflow: 'visible' }}>
+                      <input
+                        ref={(el) => {
+                          if (el) {
+                            cellRefs.current[`${item.id}-name`] = el;
+                            // Auto-resize with buffer for cross-browser compatibility
+                            const contentLength = headerName.length || 1;
+                            const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                            el.style.width = `${bufferWidth}ch`;
+                          }
+                        }}
+                        type="text"
+                        value={headerName}
+                        onChange={(e) => {
+                          markActiveTyping?.();
+                          debouncedHeaderName.onChange(e.target.value);
+                          // Auto-resize on change with buffer
+                          const contentLength = e.target.value.length || 1;
+                          const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                          e.target.style.width = `${bufferWidth}ch`;
+                          
+                          // Send typing heartbeat (throttled to every 3 seconds)
+                          const now = Date.now();
+                          if (onCellFocus && now - lastHeartbeatRef.current > 3000) {
+                            onCellFocus(item.id, 'name');
+                            lastHeartbeatRef.current = now;
+                          }
+                        }}
+                        onFocus={() => {
+                          if (onCellFocus) {
+                            console.log('📍 HeaderRowContent FOCUS:', { itemId: item.id, field: 'name' });
+                            onCellFocus(item.id, 'name');
+                            lastHeartbeatRef.current = Date.now();
+                          }
+                          
+                          // Start heartbeat interval
+                          heartbeatIntervalRef.current = setInterval(() => {
+                            if (onCellFocus) {
+                              onCellFocus(item.id, 'name');
+                            }
+                          }, 5000);
+                        }}
+                        onBlur={() => {
+                          debouncedHeaderName.forceUpdate();
+                          
+                          // Clear heartbeat interval
+                          if (heartbeatIntervalRef.current) {
+                            clearInterval(heartbeatIntervalRef.current);
+                            heartbeatIntervalRef.current = undefined;
+                          }
+                          
+                          if (onCellBlur) {
+                            console.log('📍 HeaderRowContent BLUR:', { itemId: item.id, field: 'name' });
+                            onCellBlur(item.id, 'name');
+                          }
+                        }}
+                        onClick={() => onCellClick(item.id, 'name')}
+                        onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+                        data-field-key={`${item.id}-name`}
+                        className="bg-transparent border-none outline-none text-lg font-bold"
+                        style={{ 
+                          color: textColor,
+                          fontFamily: 'inherit',
+                          fontSize: 'inherit',
+                          fontWeight: 'inherit',
+                          lineHeight: 'inherit',
+                          padding: 0,
+                          margin: 0,
+                          width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
+                          minWidth: '4ch'
+                        }}
+                        placeholder="Header Name"
+                      />
+                      <span 
+                        className="text-base font-medium whitespace-nowrap ml-6" 
+                        style={{ color: textColor }}
+                      >
+                        ({headerDuration})
+                      </span>
+                    </span>
+                  );
+                  
+                  return activeEditor ? (
+                    <CellEditorIndicator
+                      userName={activeEditor.userName}
+                      userId={activeEditor.userId}
+                      itemId={item.id}
+                      onScrollToCell={onScrollToEditor}
+                    >
+                      {headerContent}
+                    </CellEditorIndicator>
+                  ) : headerContent;
+                })()}
               </div>
             </td>
           );

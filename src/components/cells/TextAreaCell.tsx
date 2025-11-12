@@ -38,6 +38,8 @@ const TextAreaCell = ({
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const lastHeartbeatRef = useRef<number>(0);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
 
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -45,6 +47,15 @@ const TextAreaCell = ({
     (newValue) => onUpdateValue(newValue),
     150
   );
+  
+  // Cleanup heartbeat interval on unmount
+  useEffect(() => {
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -172,7 +183,13 @@ const TextAreaCell = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     debouncedValue.onChange(e.target.value, e.target as HTMLTextAreaElement);
-    // Height will be recalculated by useEffect
+    
+    // Send typing heartbeat (throttled to every 3 seconds)
+    const now = Date.now();
+    if (onCellFocus && now - lastHeartbeatRef.current > 3000) {
+      onCellFocus(itemId, cellRefKey);
+      lastHeartbeatRef.current = now;
+    }
   };
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
@@ -200,7 +217,15 @@ const TextAreaCell = ({
     if (onCellFocus) {
       console.log('📍 TextAreaCell FOCUS:', { itemId, cellRefKey, hasFocusCallback: true });
       onCellFocus(itemId, cellRefKey);
+      lastHeartbeatRef.current = Date.now();
     }
+    
+    // Start heartbeat interval to keep indicator alive while focused
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (onCellFocus) {
+        onCellFocus(itemId, cellRefKey);
+      }
+    }, 5000); // Send heartbeat every 5 seconds while focused
   };
 
   // Enhanced blur handler to re-enable row dragging
@@ -209,6 +234,13 @@ const TextAreaCell = ({
     debouncedValue.forceUpdate();
     
     setIsFocused(false);
+    
+    // Clear heartbeat interval
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = undefined;
+    }
+    
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
