@@ -215,6 +215,20 @@ export const calculateItemsWithTiming = (
   
   // Track last base number for decimal generation
   let lastBaseNumber = 0;
+  
+  // OPTIMIZATION: Build locked number map once (O(n) instead of O(n²))
+  const lockedNumberMap = new Map<string, number>();
+  if (numberingLocked && lockedRowNumbers) {
+    Object.entries(lockedRowNumbers).forEach(([itemId, numberStr]) => {
+      const baseNum = parseInt(numberStr);
+      if (!isNaN(baseNum)) {
+        lockedNumberMap.set(itemId, baseNum);
+      }
+    });
+  }
+  
+  // Track position after last base number for sequential decimals
+  let countSinceLastBase = 0;
 
   // Calculate back times if endTime is provided
   const calculateBackTime = (index: number): string => {
@@ -275,53 +289,22 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      // LOCKED NUMBERING MODE - iNews/ENPS style
+      // LOCKED NUMBERING MODE - iNews/ENPS style (OPTIMIZED O(n))
       if (numberingLocked && lockedRowNumbers && item.type !== 'header') {
-        if (lockedRowNumbers[item.id]) {
+        const lockedBaseNumber = lockedNumberMap.get(item.id);
+        
+        if (lockedBaseNumber !== undefined) {
           // This item has a BASE LOCKED number, use it
-          calculatedRowNumber = lockedRowNumbers[item.id];
-          lastBaseNumber = parseInt(calculatedRowNumber);
+          calculatedRowNumber = lockedBaseNumber.toString();
+          lastBaseNumber = lockedBaseNumber;
+          countSinceLastBase = 0; // Reset counter when we hit a base number
         } else {
-          // NEW ITEM - Calculate sequential decimal based on position between base locks
-          let prevBaseItemId: string | null = null;
-          let nextBaseItemId: string | null = null;
-          let baseNumber = lastBaseNumber || 1;
-          
-          // Search backward for previous base locked item
-          for (let i = index - 1; i >= 0; i--) {
-            const prevItem = itemsWithClearedHeaders[i];
-            if (prevItem.type === 'regular' && lockedRowNumbers[prevItem.id]) {
-              prevBaseItemId = prevItem.id;
-              baseNumber = parseInt(lockedRowNumbers[prevItem.id]);
-              break;
-            }
-          }
-          
-          // Search forward for next base locked item
-          for (let i = index + 1; i < itemsWithClearedHeaders.length; i++) {
-            const nextItem = itemsWithClearedHeaders[i];
-            if (nextItem.type === 'regular' && lockedRowNumbers[nextItem.id]) {
-              nextBaseItemId = nextItem.id;
-              break;
-            }
-          }
-          
-          // Count position between base locks to assign sequential decimal
-          let positionAfterBase = 0;
-          if (prevBaseItemId) {
-            const prevBaseIndex = itemsWithClearedHeaders.findIndex(it => it.id === prevBaseItemId);
-            // Count regular items between the base and current item
-            for (let i = prevBaseIndex + 1; i < index; i++) {
-              if (itemsWithClearedHeaders[i].type === 'regular') {
-                positionAfterBase++;
-              }
-            }
-            positionAfterBase++; // Current item's position
-          }
+          // NEW ITEM - Calculate sequential decimal incrementally (no backward search!)
+          countSinceLastBase++;
+          const baseNumber = lastBaseNumber || 1;
           
           // Assign sequential decimal: 3.1, 3.2, 3.3, etc.
-          calculatedRowNumber = `${baseNumber}.${positionAfterBase}`;
-          lastBaseNumber = baseNumber;
+          calculatedRowNumber = `${baseNumber}.${countSinceLastBase}`;
         }
       } else {
         // NORMAL SEQUENTIAL NUMBERING MODE
