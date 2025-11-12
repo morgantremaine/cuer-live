@@ -193,6 +193,7 @@ function createPluginIconPNG(r = 128, g = 128, b = 128, size = 256): Uint8Array 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
 }
 
 serve(async (req) => {
