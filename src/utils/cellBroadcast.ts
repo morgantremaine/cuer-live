@@ -123,8 +123,8 @@ export class CellBroadcastManager {
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
         
-        // Let coordinator handle all reconnections - no individual retries
-        console.log('⏭️ Cell channel error - coordinator will handle reconnection');
+        // Direct reconnection with exponential backoff
+        this.handleChannelReconnect(rundownId);
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }

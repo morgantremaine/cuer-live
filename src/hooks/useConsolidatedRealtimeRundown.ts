@@ -32,7 +32,35 @@ const globalSubscriptions = new Map<string, {
   isConnected: boolean;
   refCount: number;
   offlineSince?: number;
+  reconnectAttempts?: number;
+  reconnectTimeout?: NodeJS.Timeout;
+  reconnectHandler?: () => Promise<void>;
 }>();
+
+// Reconnection helper with exponential backoff
+const handleConsolidatedChannelReconnect = (rundownId: string) => {
+  const state = globalSubscriptions.get(rundownId);
+  if (!state) return;
+
+  if (state.reconnectTimeout) {
+    clearTimeout(state.reconnectTimeout);
+  }
+
+  const attempts = state.reconnectAttempts || 0;
+  state.reconnectAttempts = attempts + 1;
+
+  // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+  const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
+
+  console.log(`📡 Reconnecting in ${delay}ms (attempt ${attempts + 1})`);
+
+  state.reconnectTimeout = setTimeout(() => {
+    state.reconnectTimeout = undefined;
+    if (state.reconnectHandler) {
+      state.reconnectHandler();
+    }
+  }, delay);
+};
 
 export const useConsolidatedRealtimeRundown = ({
   rundownId,
@@ -590,8 +618,8 @@ export const useConsolidatedRealtimeRundown = ({
           state.isConnected = false;
           console.error('❌ Consolidated realtime connection failed:', status);
           
-          // Let coordinator handle all reconnections - no individual retries
-          console.log('⏭️ Consolidated channel error - coordinator will handle reconnection');
+          // Direct reconnection with exponential backoff
+          handleConsolidatedChannelReconnect(rundownId);
         } else if (status === 'CLOSED') {
           state.isConnected = false;
           console.log('🔌 Consolidated realtime connection closed');
@@ -608,7 +636,8 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
-        refCount: 0
+        refCount: 0,
+        reconnectAttempts: 0
       };
 
       globalSubscriptions.set(rundownId, globalState);
@@ -657,11 +686,19 @@ export const useConsolidatedRealtimeRundown = ({
         }
       };
       
+      // Store handler in state for reconnection
+      globalState.reconnectHandler = reconnectHandler;
+      
       realtimeReconnectionCoordinator.register(
         `consolidated-${rundownId}`,
         'consolidated',
         reconnectHandler
       );
+    } else {
+      // Existing subscription - reset reconnect attempts on successful status change
+      if (globalState.isConnected) {
+        globalState.reconnectAttempts = 0;
+      }
     }
 
     // Register callbacks
@@ -721,6 +758,11 @@ export const useConsolidatedRealtimeRundown = ({
           refCount: state.refCount,
           totalCallbacks
         });
+        
+        // Clear any pending reconnect timeouts
+        if (state.reconnectTimeout) {
+          clearTimeout(state.reconnectTimeout);
+        }
         
         // Unregister from reconnection coordinator
         realtimeReconnectionCoordinator.unregister(`consolidated-${rundownId}`);
