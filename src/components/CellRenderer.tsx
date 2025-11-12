@@ -4,6 +4,7 @@ import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
 import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
+import { CellEditorIndicator } from './cells/CellEditorIndicator';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 
@@ -28,6 +29,9 @@ interface CellRendererProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   markActiveTyping?: () => void;
   width?: string;
+  activeEditor?: { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const CellRenderer = ({
@@ -44,7 +48,10 @@ const CellRenderer = ({
   onCellClick,
   onKeyDown,
   markActiveTyping,
-  width
+  width,
+  activeEditor,
+  onCellFocus,
+  onCellBlur
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -159,30 +166,32 @@ const CellRenderer = ({
     const cellKey = `${item.id}-${column.key}`;
     const isCellExpanded = expandedCells?.has(cellKey);
     
-    return (
-      <ExpandableScriptCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={showcallerTextColor}
-        columnExpanded={columnExpandState[column.key]}
-        fieldType={column.key as 'script' | 'notes'}
-        isExpanded={isCellExpanded}
-        onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
-        onUpdateValue={(newValue) => {
-          onUpdateItem(item.id, column.key, newValue);
-        }}
-        onKeyDown={onKeyDown}
-      />
-    );
+  const cellContent = (
+    <ExpandableScriptCell
+      value={value}
+      itemId={item.id}
+      cellRefKey={column.key}
+      cellRefs={cellRefs}
+      textColor={showcallerTextColor}
+      columnExpanded={columnExpandState[column.key]}
+      fieldType={column.key as 'script' | 'notes'}
+      isExpanded={isCellExpanded}
+      onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
+      onUpdateValue={(newValue) => {
+        onUpdateItem(item.id, column.key, newValue);
+      }}
+      onKeyDown={onKeyDown}
+    />
+  );
+
+  return cellContent;
   }
 
   // Check if this is a time-related field that should be centered
   const isTimeField = column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime' || column.key === 'backTime';
 
   // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
-  return (
+  const cellContent = (
     <TextAreaCell
       value={value}
       itemId={item.id}
@@ -208,6 +217,8 @@ const CellRenderer = ({
       onKeyDown={onKeyDown}
     />
   );
+
+  return cellContent;
 };
 
 export default CellRenderer;

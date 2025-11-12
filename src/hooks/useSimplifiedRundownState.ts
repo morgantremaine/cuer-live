@@ -507,6 +507,10 @@ export const useSimplifiedRundownState = () => {
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, async (update) => {
       console.log('📱 Cell broadcast received:', update);
       
+      // Only process cell value updates, not focus events
+      if ('isFocused' in update) return;
+      if (!('value' in update)) return;
+      
       // Skip our own tab's updates (supports multiple tabs per user)
       const currentTabId = getTabId();
       if (cellBroadcast.isOwnUpdate(update, currentTabId)) {

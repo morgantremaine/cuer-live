@@ -26,6 +26,9 @@ interface RegularRowContentProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   markActiveTyping?: () => void;
   getColumnWidth: (column: Column) => string;
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const RegularRowContent = ({
@@ -46,7 +49,10 @@ const RegularRowContent = ({
   onCellClick,
   onKeyDown,
   markActiveTyping,
-  getColumnWidth
+  getColumnWidth,
+  getEditorForCell,
+  onCellFocus,
+  onCellBlur
 }: RegularRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -109,6 +115,9 @@ const RegularRowContent = ({
               onKeyDown={onKeyDown}
               markActiveTyping={markActiveTyping}
               width={normalizedWidth}
+              activeEditor={getEditorForCell ? getEditorForCell(item.id, column.key) : null}
+              onCellFocus={onCellFocus}
+              onCellBlur={onCellBlur}
             />
           </td>
         );

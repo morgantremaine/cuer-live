@@ -1,9 +1,13 @@
 import { useCallback, useState } from 'react';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
+import { cellBroadcast } from '@/utils/cellBroadcast';
+import { getTabId } from '@/utils/tabUtils';
 
 interface CellEditIntegrationProps {
   rundownId: string | null;
   isPerCellEnabled: boolean;
+  userId?: string;
+  userName?: string;
   onSaveComplete?: (completionCount?: number) => void;
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
@@ -16,6 +20,8 @@ interface CellEditIntegrationProps {
 export const useCellEditIntegration = ({
   rundownId,
   isPerCellEnabled,
+  userId,
+  userName,
   onSaveComplete,
   onSaveStart,
   onUnsavedChanges
@@ -56,24 +62,45 @@ export const useCellEditIntegration = ({
     trackFieldChange(itemId, fieldName, newValue);
   }, [isPerCellEnabled, trackFieldChange]);
 
-  // Handle when user starts editing a cell (for LocalShadow integration)
+  // Handle when user starts editing a cell - broadcasts focus state
   const handleCellEditStart = useCallback((
     itemId: string | undefined,
     fieldName: string,
     currentValue: any
   ) => {
-    // Placeholder for future LocalShadow integration
-  }, []);
+    if (!rundownId || !userId || !userName) return;
 
-  // Handle when user finishes editing a cell
+    // Broadcast focus state to other users
+    cellBroadcast.broadcastCellFocus(
+      rundownId,
+      itemId || null,
+      fieldName,
+      userId,
+      userName,
+      getTabId(),
+      true // isFocused = true
+    );
+  }, [rundownId, userId, userName]);
+
+  // Handle when user finishes editing a cell - broadcasts blur state
   const handleCellEditComplete = useCallback((
     itemId: string | undefined,
     fieldName: string,
     finalValue: any
   ) => {
-    // No-op: handleCellChange already tracked the change
-    // This prevents duplicate tracking
-  }, []);
+    if (!rundownId || !userId || !userName) return;
+
+    // Broadcast blur state to other users
+    cellBroadcast.broadcastCellFocus(
+      rundownId,
+      itemId || null,
+      fieldName,
+      userId,
+      userName,
+      getTabId(),
+      false // isFocused = false
+    );
+  }, [rundownId, userId, userName]);
 
   return {
     handleCellChange,

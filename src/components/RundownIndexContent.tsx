@@ -13,6 +13,8 @@ import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
+import { useAuth } from '@/hooks/useAuth';
+import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 // Import timing test to run calculations check
@@ -93,6 +95,14 @@ const RundownIndexContent = () => {
 
   // Get team data for column deletion
   const { team } = useTeam();
+
+  // Get current user for cell editing indicators
+  const { user } = useAuth();
+  const userId = user?.id || '';
+  const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
+
+  // Set up per-cell active editor tracking
+  const { getEditorForCell } = useActiveCellEditors(rundownId);
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({

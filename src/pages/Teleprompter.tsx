@@ -128,6 +128,10 @@ const Teleprompter = () => {
     if (!rundownId) return;
     
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      // Only process cell value updates, not focus events
+      if ('isFocused' in update) return;
+      if (!('value' in update)) return;
+      
       // Skip own updates using tab ID for correct echo prevention
       const currentTabId = getTabId();
       if (cellBroadcast.isOwnUpdate(update, currentTabId)) {

@@ -14,6 +14,8 @@ interface TextAreaCellProps {
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   fieldKeyForProtection?: string; // ensures focus-based protection matches merge keys
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const TextAreaCell = ({
@@ -27,7 +29,9 @@ const TextAreaCell = ({
   onUpdateValue,
   onCellClick,
   onKeyDown,
-  fieldKeyForProtection
+  fieldKeyForProtection,
+  onCellFocus,
+  onCellBlur
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -191,6 +195,11 @@ const TextAreaCell = ({
     if (row) {
       row.setAttribute('draggable', 'false');
     }
+    
+    // Notify parent about focus (for broadcast to other users)
+    if (onCellFocus) {
+      onCellFocus(itemId, cellRefKey);
+    }
   };
 
   // Enhanced blur handler to re-enable row dragging
@@ -206,6 +215,11 @@ const TextAreaCell = ({
       setTimeout(() => {
         row.setAttribute('draggable', 'true');
       }, 50);
+    }
+    
+    // Notify parent about blur (for broadcast to other users)
+    if (onCellBlur) {
+      onCellBlur(itemId, cellRefKey);
     }
   };
 

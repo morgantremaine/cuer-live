@@ -15,13 +15,25 @@ interface CellUpdate {
   timestamp: number;
 }
 
+// Focus event payload for active editor indicators
+interface CellFocus {
+  rundownId: string;
+  itemId?: string;
+  field: string;
+  userId: string;
+  userName: string;
+  tabId: string;
+  isFocused: boolean;
+  timestamp: number;
+}
+
 // Lightweight type for RealtimeChannel to avoid importing types directly
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RealtimeChannel = any;
 
 export class CellBroadcastManager {
   private channels: Map<string, any> = new Map();
-  private callbacks = new Map<string, Set<(update: CellUpdate) => void>>();
+  private callbacks = new Map<string, Set<(update: CellUpdate | CellFocus) => void>>();
   private subscribed = new Map<string, boolean>();
   private reconnectAttempts = new Map<string, number>();
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
@@ -76,6 +88,22 @@ export class CellBroadcastManager {
         if (cbs && cbs.size > 0) {
           cbs.forEach(cb => {
             try { cb(update); } catch (e) { console.warn('Cell callback error', e); }
+          });
+        }
+      })
+      .on('broadcast', { event: 'cell_focus' }, (payload: { payload: CellFocus }) => {
+        const focus = payload?.payload;
+        if (!focus || focus.rundownId !== rundownId) {
+          return;
+        }
+        
+        const fieldKey = `${focus.itemId || 'rundown'}-${focus.field}`;
+        debugLogger.realtime('Cell focus broadcast received:', { fieldKey, isFocused: focus.isFocused, userName: focus.userName });
+        
+        const cbs = this.callbacks.get(rundownId);
+        if (cbs && cbs.size > 0) {
+          cbs.forEach(cb => {
+            try { cb(focus); } catch (e) { console.warn('Cell focus callback error', e); }
           });
         }
       });
@@ -144,6 +172,40 @@ export class CellBroadcastManager {
     }, delay);
 
     this.reconnectTimeouts.set(rundownId, timeout);
+  }
+
+  async broadcastCellFocus(
+    rundownId: string,
+    itemId: string | null,
+    field: string,
+    userId: string,
+    userName: string,
+    tabId: string,
+    isFocused: boolean
+  ) {
+    const channel = this.ensureChannel(rundownId);
+    const focusPayload: CellFocus = {
+      rundownId,
+      itemId: itemId || undefined,
+      field,
+      userId,
+      userName,
+      tabId,
+      isFocused,
+      timestamp: Date.now()
+    };
+
+    debugLogger.realtime('Broadcasting cell focus:', focusPayload);
+
+    try {
+      await channel.send({
+        type: 'broadcast',
+        event: 'cell_focus',
+        payload: focusPayload
+      });
+    } catch (error) {
+      console.error('❌ Focus broadcast failed:', error);
+    }
   }
 
   async broadcastCellUpdate(
@@ -276,7 +338,7 @@ export class CellBroadcastManager {
     return update.tabId === currentTabId;
   }
 
-  subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void, currentTabId?: string) {
+  subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate | CellFocus) => void, currentTabId?: string) {
     if (!this.callbacks.has(rundownId)) {
       this.callbacks.set(rundownId, new Set());
     }

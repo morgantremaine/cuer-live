@@ -16,6 +16,8 @@ interface ExpandableScriptCellProps {
   onToggleExpanded?: () => void; // NEW: toggle callback
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
 }
 
 const ExpandableScriptCell = ({
@@ -29,7 +31,9 @@ const ExpandableScriptCell = ({
   isExpanded: externalIsExpanded,
   onToggleExpanded,
   onUpdateValue,
-  onKeyDown
+  onKeyDown,
+  onCellFocus,
+  onCellBlur
 }: ExpandableScriptCellProps) => {
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -352,11 +356,17 @@ const ExpandableScriptCell = ({
               onFocus={() => {
                 setIsFocused(true);
                 setShowOverlay(false); // Hide overlay when focused for native selection
+                if (onCellFocus) {
+                  onCellFocus(itemId, cellRefKey);
+                }
               }}
               onBlur={() => {
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
                 debouncedValue.forceUpdate(); // Force immediate save on blur
+                if (onCellBlur) {
+                  onCellBlur(itemId, cellRefKey);
+                }
               }}
               onSelect={() => {
                 setShowOverlay(false); // Hide overlay when text is selected
