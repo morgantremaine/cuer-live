@@ -22,6 +22,7 @@ class ShowcallerBroadcastManager {
   private connectionStatus: Map<string, string> = new Map();
   private reconnectAttempts: Map<string, number> = new Map();
   private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private reconnecting: Map<string, boolean> = new Map(); // Guard against reconnection storms
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -40,6 +41,12 @@ class ShowcallerBroadcastManager {
       .subscribe(async (status) => {
         this.connectionStatus.set(rundownId, status);
         
+        // Guard: Skip if already reconnecting to prevent feedback loop
+        if (this.reconnecting.get(rundownId) && status !== 'SUBSCRIBED') {
+          console.log('⏭️ Skipping reconnect - already reconnecting:', rundownId);
+          return;
+        }
+        
         if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
           this.handleChannelReconnect(rundownId);
@@ -47,8 +54,9 @@ class ShowcallerBroadcastManager {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
           this.handleChannelReconnect(rundownId);
         } else if (status === 'SUBSCRIBED') {
-          // Reset reconnect attempts on successful connection
+          // Reset reconnect attempts and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);
+          this.reconnecting.delete(rundownId);
         }
       });
 
@@ -58,6 +66,9 @@ class ShowcallerBroadcastManager {
 
   // Handle channel reconnection with exponential backoff
   private handleChannelReconnect(rundownId: string): void {
+    // Set guard flag immediately to prevent feedback loop
+    this.reconnecting.set(rundownId, true);
+    
     const existingTimeout = this.reconnectTimeouts.get(rundownId);
     if (existingTimeout) {
       clearTimeout(existingTimeout);
@@ -82,6 +93,9 @@ class ShowcallerBroadcastManager {
   // Force reconnection (called by RealtimeReconnectionCoordinator)
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
+    
+    // Set guard flag to prevent feedback loop
+    this.reconnecting.set(rundownId, true);
     
     // Clean up and reconnect immediately (coordinator validates auth)
     const existingChannel = this.channels.get(rundownId);

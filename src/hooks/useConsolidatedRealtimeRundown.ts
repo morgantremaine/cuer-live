@@ -35,12 +35,16 @@ const globalSubscriptions = new Map<string, {
   reconnectAttempts?: number;
   reconnectTimeout?: NodeJS.Timeout;
   reconnectHandler?: () => Promise<void>;
+  reconnecting?: boolean; // Guard against reconnection storms
 }>();
 
 // Reconnection helper with exponential backoff
 const handleConsolidatedChannelReconnect = (rundownId: string) => {
   const state = globalSubscriptions.get(rundownId);
   if (!state) return;
+
+  // Set guard flag immediately to prevent feedback loop
+  state.reconnecting = true;
 
   if (state.reconnectTimeout) {
     clearTimeout(state.reconnectTimeout);
@@ -562,8 +566,17 @@ export const useConsolidatedRealtimeRundown = ({
         const state = globalSubscriptions.get(rundownId);
         if (!state) return;
 
+        // Guard: Skip if already reconnecting to prevent feedback loop
+        if (state.reconnecting && status !== 'SUBSCRIBED') {
+          console.log('⏭️ Skipping consolidated reconnect - already reconnecting:', rundownId);
+          return;
+        }
+
         if (status === 'SUBSCRIBED') {
           state.isConnected = true;
+          // Clear guard flag and reset attempts on successful connection
+          state.reconnecting = false;
+          state.reconnectAttempts = 0;
           
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
@@ -646,10 +659,18 @@ export const useConsolidatedRealtimeRundown = ({
       reconnectHandler = async () => {
         console.log('📡 🔄 Force reconnect requested for consolidated channel:', rundownId);
         
+        // Set guard flag to prevent feedback loop
+        if (globalState) {
+          globalState.reconnecting = true;
+        }
+        
         // Check auth first
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error || !session) {
           console.warn('📡 ⚠️ Cannot reconnect - invalid auth session');
+          if (globalState) {
+            globalState.reconnecting = false; // Clear flag on auth failure
+          }
           return;
         }
         

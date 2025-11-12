@@ -39,6 +39,7 @@ export class CellBroadcastManager {
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
   private lastProcessedUpdate = new Map<string, string>();
   private tabIds = new Map<string, string>(); // Store tabId for echo prevention (supports multiple tabs per user)
+  private reconnecting = new Map<string, boolean>(); // Guard against reconnection storms
   
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
@@ -111,10 +112,18 @@ export class CellBroadcastManager {
     channel.subscribe(async (status: string) => {
       this.connectionStatus.set(rundownId, status);
       
+      // Guard: Skip if already reconnecting to prevent feedback loop
+      if (this.reconnecting.get(rundownId) && status !== 'SUBSCRIBED') {
+        console.log('⏭️ Skipping cell reconnect - already reconnecting:', rundownId);
+        return;
+      }
+      
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
-        // Reset failure count on successful connection
+        // Reset failure count and clear guard flag on successful connection
         this.broadcastFailureCount.set(rundownId, 0);
+        this.reconnectAttempts.delete(rundownId);
+        this.reconnecting.delete(rundownId);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel error:', key, status);
@@ -135,6 +144,9 @@ export class CellBroadcastManager {
   }
 
   private handleChannelReconnect(rundownId: string): void {
+    // Set guard flag immediately to prevent feedback loop
+    this.reconnecting.set(rundownId, true);
+    
     // Clear any existing reconnect timeout
     const existingTimeout = this.reconnectTimeouts.get(rundownId);
     if (existingTimeout) {
@@ -373,10 +385,14 @@ export class CellBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
     
+    // Set guard flag to prevent feedback loop
+    this.reconnecting.set(rundownId, true);
+    
     // Check auth first
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session) {
       console.warn('📱 ⚠️ Cannot reconnect cell channel - invalid auth session');
+      this.reconnecting.delete(rundownId); // Clear flag on auth failure
       return;
     }
     
