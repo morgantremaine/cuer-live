@@ -208,6 +208,9 @@ const RundownTable = ({
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}
                    allItems={fullItems || items}
+                   getEditorForCell={getEditorForCell}
+                   onCellFocus={onCellFocus}
+                   onCellBlur={onCellBlur}
                 />
                 
                 {/* Drop indicator AFTER the last row */}
