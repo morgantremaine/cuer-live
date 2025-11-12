@@ -116,6 +116,26 @@ const RundownIndexContent = () => {
     userName
   });
 
+  // Handle scroll to editor - scroll to the row where another user is editing
+  const handleScrollToEditor = useCallback((itemId: string) => {
+    // Find the scroll container from the DOM
+    const scrollContainer = document.querySelector('[data-rundown-table="true"] .scroll-area-viewport');
+    
+    if (!scrollContainer) return;
+    
+    const targetElement = scrollContainer.querySelector(
+      `[data-item-id="${itemId}"]`
+    );
+    
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  }, []);
+
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
     rundownId,
@@ -698,6 +718,7 @@ const RundownIndexContent = () => {
         getEditorForCell={getEditorForCell}
         onCellFocus={(itemId, field) => handleCellEditStart(itemId, field, '')}
         onCellBlur={(itemId, field) => handleCellEditComplete(itemId, field, '')}
+        onScrollToEditor={handleScrollToEditor}
       />
       
       {/* Floating Notes Window */}

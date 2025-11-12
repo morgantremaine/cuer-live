@@ -50,6 +50,11 @@ interface HeaderRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
+  // Per-cell editor indicators
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
+  onScrollToEditor?: (itemId: string) => void;
 }
 
 const HeaderRow = (props: HeaderRowProps) => {

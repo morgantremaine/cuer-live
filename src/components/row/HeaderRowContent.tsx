@@ -23,6 +23,10 @@ interface HeaderRowContentProps {
   onToggleCollapse?: (headerId: string) => void;
   markActiveTyping?: () => void;
   getColumnWidth: (column: Column) => string;
+  getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
+  onCellFocus?: (itemId: string, field: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
+  onScrollToEditor?: (itemId: string) => void;
 }
 
 const HeaderRowContent = ({
@@ -40,7 +44,11 @@ const HeaderRowContent = ({
   onKeyDown,
   onToggleCollapse,
   markActiveTyping,
-  getColumnWidth
+  getColumnWidth,
+  getEditorForCell,
+  onCellFocus,
+  onCellBlur,
+  onScrollToEditor
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;

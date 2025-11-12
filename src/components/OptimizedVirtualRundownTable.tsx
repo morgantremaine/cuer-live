@@ -57,6 +57,7 @@ interface OptimizedVirtualRundownTableProps {
   getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
+  onScrollToEditor?: (itemId: string) => void;
 }
 
 /**

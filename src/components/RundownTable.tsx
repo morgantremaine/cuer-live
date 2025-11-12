@@ -56,6 +56,7 @@ interface RundownTableProps {
   getEditorForCell?: (itemId: string, field: string) => { userId: string; userName: string } | null;
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
+  onScrollToEditor?: (itemId: string) => void;
 }
 
 const RundownTable = ({
@@ -108,7 +109,8 @@ const RundownTable = ({
   markActiveTyping,
   getEditorForCell,
   onCellFocus,
-  onCellBlur
+  onCellBlur,
+  onScrollToEditor
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -211,6 +213,7 @@ const RundownTable = ({
                    getEditorForCell={getEditorForCell}
                    onCellFocus={onCellFocus}
                    onCellBlur={onCellBlur}
+                   onScrollToEditor={onScrollToEditor}
                 />
                 
                 {/* Drop indicator AFTER the last row */}

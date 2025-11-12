@@ -32,6 +32,7 @@ interface CellRendererProps {
   activeEditor?: { userId: string; userName: string } | null;
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
+  onScrollToEditor?: (itemId: string) => void;
 }
 
 const CellRenderer = ({
@@ -51,7 +52,8 @@ const CellRenderer = ({
   width,
   activeEditor,
   onCellFocus,
-  onCellBlur
+  onCellBlur,
+  onScrollToEditor
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -190,7 +192,12 @@ const CellRenderer = ({
     if (activeEditor) {
       console.log('🎨 Rendering with activeEditor:', { itemId: item.id, field: column.key, userName: activeEditor.userName });
       return (
-        <CellEditorIndicator userName={activeEditor.userName} userId={activeEditor.userId}>
+        <CellEditorIndicator 
+          userName={activeEditor.userName} 
+          userId={activeEditor.userId}
+          itemId={item.id}
+          onScrollToCell={onScrollToEditor}
+        >
           {cellContent}
         </CellEditorIndicator>
       );
@@ -236,7 +243,12 @@ const CellRenderer = ({
   if (activeEditor) {
     console.log('🎨 Rendering with activeEditor:', { itemId: item.id, field: column.key, userName: activeEditor.userName });
     return (
-      <CellEditorIndicator userName={activeEditor.userName} userId={activeEditor.userId}>
+      <CellEditorIndicator 
+        userName={activeEditor.userName} 
+        userId={activeEditor.userId}
+        itemId={item.id}
+        onScrollToCell={onScrollToEditor}
+      >
         {cellContent}
       </CellEditorIndicator>
     );

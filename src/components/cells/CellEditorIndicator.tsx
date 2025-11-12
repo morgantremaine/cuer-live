@@ -3,6 +3,8 @@ import React from 'react';
 interface CellEditorIndicatorProps {
   userName: string;
   userId: string;
+  itemId: string;
+  onScrollToCell?: (itemId: string) => void;
   children: React.ReactNode;
 }
 
@@ -50,6 +52,8 @@ const getBadgeColor = (userId: string): string => {
 export const CellEditorIndicator: React.FC<CellEditorIndicatorProps> = ({
   userName,
   userId,
+  itemId,
+  onScrollToCell,
   children
 }) => {
   const borderColor = getUserColor(userId);
@@ -58,7 +62,14 @@ export const CellEditorIndicator: React.FC<CellEditorIndicatorProps> = ({
   return (
     <div className={`relative border-2 ${borderColor} ring-2 rounded-sm`}>
       {/* Floating user badge */}
-      <div className="absolute -top-2 -right-2 z-10 pointer-events-none">
+      <div 
+        className="absolute -top-2 -right-2 z-10 cursor-pointer hover:scale-105 transition-transform"
+        onClick={(e) => {
+          e.stopPropagation();
+          onScrollToCell?.(itemId);
+        }}
+        title={`Click to scroll to where ${userName} is editing`}
+      >
         <div className={`${badgeColor} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
           {userName}
         </div>
