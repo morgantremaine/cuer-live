@@ -40,11 +40,14 @@ export class CellBroadcastManager {
   private lastProcessedUpdate = new Map<string, string>();
   private tabIds = new Map<string, string>(); // Store tabId for echo prevention (supports multiple tabs per user)
   private reconnecting = new Map<string, boolean>(); // Guard against reconnection storms
+  private reconnectGuardTimeouts = new Map<string, NodeJS.Timeout>();
+  private reconnectStartTimes = new Map<string, number>();
   
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
   private pendingBroadcasts = new Map<string, CellUpdate>();
   private readonly TYPING_DEBOUNCE_MS = 300; // 300ms debounce for typing
+  private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
   
   // Health monitoring
   private connectionStatus = new Map<string, string>();
@@ -385,8 +388,34 @@ export class CellBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
     
+    // Check if stuck in reconnecting state (timeout)
+    const isReconnecting = this.reconnecting.get(rundownId);
+    const startTime = this.reconnectStartTimes.get(rundownId);
+    
+    if (isReconnecting && startTime) {
+      const timeSinceStart = Date.now() - startTime;
+      if (timeSinceStart < this.RECONNECT_TIMEOUT_MS) {
+        console.log(`⏭️ Skipping cell reconnect - already reconnecting: ${rundownId}`);
+        return;
+      } else {
+        console.warn(`⚠️ Cell reconnection timeout exceeded for ${rundownId}, clearing stuck state`);
+        this.clearReconnectingState(rundownId);
+      }
+    }
+    
     // Set guard flag to prevent feedback loop
     this.reconnecting.set(rundownId, true);
+    this.reconnectStartTimes.set(rundownId, Date.now());
+    
+    // Set timeout to clear stuck reconnecting state
+    const guardTimeout = setTimeout(() => {
+      if (this.reconnecting.get(rundownId)) {
+        console.warn(`⏱️ Cell reconnection guard timeout for ${rundownId}, forcing clear`);
+        this.clearReconnectingState(rundownId);
+      }
+    }, this.RECONNECT_TIMEOUT_MS);
+    
+    this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
     
     // Check auth first
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -483,6 +512,20 @@ export class CellBroadcastManager {
     return this.connectionStatus.get(rundownId) === 'SUBSCRIBED';
   }
   
+  /**
+   * Clear reconnecting state and timeouts for a rundown
+   */
+  clearReconnectingState(rundownId: string): void {
+    this.reconnecting.delete(rundownId);
+    this.reconnectStartTimes.delete(rundownId);
+    
+    const guardTimeout = this.reconnectGuardTimeouts.get(rundownId);
+    if (guardTimeout) {
+      clearTimeout(guardTimeout);
+      this.reconnectGuardTimeouts.delete(rundownId);
+    }
+  }
+
   // Check broadcast health
   isBroadcastHealthy(rundownId: string): boolean {
     const successes = this.broadcastSuccessCount.get(rundownId) || 0;

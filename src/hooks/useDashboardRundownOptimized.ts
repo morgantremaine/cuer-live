@@ -170,6 +170,6 @@ export const useDashboardRundownOptimized = ({
   return {
     isConnected: connectedCount > 0,
     connectedCount,
-    totalRundowns: rundowns.length
+    totalRundowns: 1 // Single optimized channel
   };
 };
