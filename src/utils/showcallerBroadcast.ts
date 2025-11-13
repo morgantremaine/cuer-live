@@ -23,6 +23,9 @@ class ShowcallerBroadcastManager {
   private reconnectAttempts: Map<string, number> = new Map();
   private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private reconnecting: Map<string, boolean> = new Map(); // Guard against reconnection storms
+  private reconnectGuardTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private reconnectStartTimes: Map<string, number> = new Map();
+  private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -94,8 +97,34 @@ class ShowcallerBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
     
+    // Check if stuck in reconnecting state (timeout)
+    const isReconnecting = this.reconnecting.get(rundownId);
+    const startTime = this.reconnectStartTimes.get(rundownId);
+    
+    if (isReconnecting && startTime) {
+      const timeSinceStart = Date.now() - startTime;
+      if (timeSinceStart < this.RECONNECT_TIMEOUT_MS) {
+        console.log(`⏭️ Skipping reconnect - already reconnecting: ${rundownId}`);
+        return;
+      } else {
+        console.warn(`⚠️ Reconnection timeout exceeded for ${rundownId}, clearing stuck state`);
+        this.clearReconnectingState(rundownId);
+      }
+    }
+    
     // Set guard flag to prevent feedback loop
     this.reconnecting.set(rundownId, true);
+    this.reconnectStartTimes.set(rundownId, Date.now());
+    
+    // Set timeout to clear stuck reconnecting state
+    const guardTimeout = setTimeout(() => {
+      if (this.reconnecting.get(rundownId)) {
+        console.warn(`⏱️ Reconnection guard timeout for ${rundownId}, forcing clear`);
+        this.clearReconnectingState(rundownId);
+      }
+    }, this.RECONNECT_TIMEOUT_MS);
+    
+    this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
     
     // Clean up and reconnect immediately (coordinator validates auth)
     const existingChannel = this.channels.get(rundownId);
@@ -213,6 +242,20 @@ class ShowcallerBroadcastManager {
   // Simple own-update detection using userId (single session per user)
   private isOwnUpdate(rundownId: string, userId: string, currentUserId: string): boolean {
     return userId === currentUserId;
+  }
+
+  /**
+   * Clear reconnecting state and timeouts for a rundown
+   */
+  clearReconnectingState(rundownId: string): void {
+    this.reconnecting.delete(rundownId);
+    this.reconnectStartTimes.delete(rundownId);
+    
+    const guardTimeout = this.reconnectGuardTimeouts.get(rundownId);
+    if (guardTimeout) {
+      clearTimeout(guardTimeout);
+      this.reconnectGuardTimeouts.delete(rundownId);
+    }
   }
 
   // Get connection status for a rundown

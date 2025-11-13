@@ -42,6 +42,9 @@ class RealtimeReconnectionCoordinatorService {
   private readonly MAX_FAILURES_BEFORE_RELOAD = 3;
   private readonly GRACE_PERIOD_MS = 15000; // 15 second grace period
   private lastFailureTime: number = 0;
+  private isInGracePeriod: boolean = false;
+  private gracePeriodTimeout: NodeJS.Timeout | null = null;
+  private healthCheckInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     // Add network online listener for wake-up detection
@@ -396,6 +399,21 @@ class RealtimeReconnectionCoordinatorService {
   }
 
   /**
+   * Get connection status for UI components
+   */
+  getConnectionStatus(): {
+    isHealthy: boolean;
+    isReconnecting: boolean;
+    consecutiveFailures: number;
+  } {
+    return {
+      isHealthy: this.consecutiveFailures === 0,
+      isReconnecting: this.isReconnecting,
+      consecutiveFailures: this.consecutiveFailures
+    };
+  }
+
+  /**
    * Force immediate reconnection (useful for testing)
    */
   async forceReconnection() {
@@ -404,11 +422,59 @@ class RealtimeReconnectionCoordinatorService {
   }
 
   /**
+   * Coordinate reconnection across all registered channels
+   * Clears stuck reconnection states and staggers reconnection attempts
+   */
+  async coordinateChannelReconnections(): Promise<void> {
+    console.log('🔄 Coordinating channel reconnections across all managers');
+
+    // Import broadcast managers
+    const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
+    const { cellBroadcast } = await import('@/utils/cellBroadcast');
+
+    // Clear all stuck reconnection states
+    const connectionKeys = Array.from(this.connections.keys());
+    
+    connectionKeys.forEach(key => {
+      // Extract rundown ID from connection key (format: "type-rundownId")
+      const rundownId = key.split('-').slice(1).join('-');
+      
+      if (key.startsWith('showcaller-')) {
+        showcallerBroadcast.clearReconnectingState(rundownId);
+      } else if (key.startsWith('cell-')) {
+        cellBroadcast.clearReconnectingState(rundownId);
+      }
+    });
+
+    // Stagger reconnection attempts to prevent connection storm
+    for (let i = 0; i < connectionKeys.length; i++) {
+      const key = connectionKeys[i];
+      const rundownId = key.split('-').slice(1).join('-');
+
+      setTimeout(() => {
+        if (key.startsWith('showcaller-')) {
+          console.log(`🔄 Reconnecting showcaller for: ${rundownId}`);
+          showcallerBroadcast.forceReconnect(rundownId);
+        } else if (key.startsWith('cell-')) {
+          console.log(`🔄 Reconnecting cell broadcast for: ${rundownId}`);
+          cellBroadcast.forceReconnect(rundownId);
+        }
+      }, i * 500); // 500ms delay between each reconnection
+    }
+  }
+
+  /**
    * Cleanup and destroy coordinator
    */
   destroy() {
     if (this.connectionMonitorInterval) {
       clearInterval(this.connectionMonitorInterval);
+    }
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+    }
+    if (this.gracePeriodTimeout) {
+      clearTimeout(this.gracePeriodTimeout);
     }
     
     // Remove event listeners
