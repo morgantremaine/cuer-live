@@ -817,8 +817,7 @@ const RundownHeader = ({
           )}
         </div>
       </div>
-      </header>
-    </>
+    </div>
   );
 };
 
