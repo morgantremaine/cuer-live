@@ -159,7 +159,19 @@ const RundownIndexContent = () => {
     hasUnsavedChanges,
   });
 
-  // Connection reliability is now handled by ReliabilityManager - no need to track locally
+  // Track reconnection status
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  
+  useEffect(() => {
+    const checkReconnecting = () => {
+      setIsReconnecting(realtimeReconnectionCoordinator.isCurrentlyReconnecting());
+    };
+    
+    // Poll for reconnection status every 100ms
+    const interval = setInterval(checkReconnecting, 100);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Show teammate editing when any teammate is active and has unsaved changes
   const activeTeammates = otherUsers.filter(user => {
@@ -608,7 +620,7 @@ const RundownIndexContent = () => {
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
-      isReconnecting={false}
+      isReconnecting={isReconnecting}
     >
       <RundownContainer
         currentTime={currentTime}

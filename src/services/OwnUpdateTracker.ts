@@ -86,22 +86,6 @@ class OwnUpdateTracker {
   }
 
   /**
-   * Alias for isTracked - checks if an update originated from this client
-   * Used for backward compatibility
-   */
-  isOwnUpdate(rundownId: string, docVersion?: number): boolean {
-    // Check by rundownId first
-    if (this.isTracked(rundownId)) return true;
-    
-    // If docVersion provided, also check that
-    if (docVersion !== undefined) {
-      return this.isTracked(`${rundownId}-${docVersion}`);
-    }
-    
-    return false;
-  }
-
-  /**
    * Manually remove a tracked update
    * @param updateId - The update identifier to remove
    * @param context - Optional context to remove from

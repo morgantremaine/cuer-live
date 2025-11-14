@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
 interface BroadcastHealthStatus {
   isHealthy: boolean;
@@ -7,6 +8,7 @@ interface BroadcastHealthStatus {
   successRate: number;
   totalAttempts: number;
   lastChecked: number;
+  isReconnecting: boolean;
 }
 
 export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => {
@@ -15,7 +17,8 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
     isConnected: false,
     successRate: 1,
     totalAttempts: 0,
-    lastChecked: Date.now()
+    lastChecked: Date.now(),
+    isReconnecting: false
   });
 
   useEffect(() => {
@@ -23,19 +26,25 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
 
     const checkHealth = () => {
       const metrics = cellBroadcast.getHealthMetrics(rundownId);
+      const coordinatorStatus = realtimeReconnectionCoordinator.getStatus();
+      
+      // Check if coordinator is currently reconnecting
+      const isReconnecting = coordinatorStatus.isReconnecting;
       
       setHealthStatus({
         isHealthy: metrics.isHealthy,
         isConnected: metrics.isConnected,
         successRate: metrics.successRate,
         totalAttempts: metrics.total,
-        lastChecked: Date.now()
+        lastChecked: Date.now(),
+        isReconnecting
       });
     };
 
-    // Initial check only
+    // Initial check only - removed periodic interval to reduce timer overhead
     checkHealth();
 
+    // Cleanup (no interval to clear)
     return () => {};
   }, [rundownId, enabled]);
 

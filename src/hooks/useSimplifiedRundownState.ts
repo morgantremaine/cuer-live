@@ -13,7 +13,6 @@ import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { useEdgeFunctionPrewarming } from './useEdgeFunctionPrewarming';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
-import { reliabilityManager } from '@/services/ReliabilityManager';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,11 +111,6 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
       activeFocusFieldRef.current = fieldKey;
-      
-      // When focus changes away (fieldKey becomes null), clear focused cell
-      if (fieldKey === null) {
-        reliabilityManager.setFocusedCell(null);
-      }
     });
     
     return unsubscribe;
@@ -129,14 +123,8 @@ export const useSimplifiedRundownState = () => {
       dropdownFieldProtectionRef.current.clear();
       typingSessionRef.current = null;
       activeFocusFieldRef.current = null;
-      
-      // Stop ReliabilityManager monitoring on cleanup
-      if (rundownId) {
-        reliabilityManager.stopMonitoring(rundownId);
-        console.log(`🛑 ReliabilityManager stopped monitoring rundown ${rundownId}`);
-      }
     };
-  }, [rundownId]);
+  }, []);
 
   // PHASE 1.2: Aggressive cleanup for recentlyEditedFieldsRef to prevent unbounded growth
   // Removes entries older than 30 seconds every 10 seconds
@@ -225,7 +213,7 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    async (meta?: { updatedAt?: string; completionCount?: number }) => {
+    (meta?: { updatedAt?: string; completionCount?: number }) => {
       actions.markSaved();
       
       // Handle completion count for save indicator
@@ -236,23 +224,6 @@ export const useSimplifiedRundownState = () => {
       // Update our timestamp tracking
       if (meta?.updatedAt) {
         setLastKnownTimestamp(meta.updatedAt);
-      }
-
-      // Update ReliabilityManager with new doc_version after save
-      if (rundownId && rundownId !== DEMO_RUNDOWN_ID) {
-        try {
-          const { data } = await supabase
-            .from('rundowns')
-            .select('doc_version')
-            .eq('id', rundownId)
-            .single();
-          
-          if (data?.doc_version) {
-            reliabilityManager.updateKnownVersion(rundownId, data.doc_version);
-          }
-        } catch (error) {
-          console.warn('Failed to update ReliabilityManager version:', error);
-        }
       }
       
       // Prime lastSavedRef after initial load to prevent false autosave triggers
@@ -321,6 +292,7 @@ export const useSimplifiedRundownState = () => {
   
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
+    blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
       // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
@@ -453,98 +425,6 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeConnection.isConnected);
     debugLogger.realtime(`Connection status changed: ${realtimeConnection.isConnected}`);
   }, [realtimeConnection.isConnected]);
-
-  // Track pending structural operations globally for ReliabilityManager
-  useEffect(() => {
-    if (!rundownId) return;
-    
-    // Initialize global pending saves tracker
-    if (typeof window !== 'undefined') {
-      if (!window.__pendingSaves) {
-        window.__pendingSaves = new Set<string>();
-      }
-    }
-  }, [rundownId]);
-
-  // Listen for ReliabilityManager full-sync events
-  useEffect(() => {
-    if (!rundownId) return;
-
-    const handleFullSync = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { rundownId: syncedRundownId, rundown, preserveCellKey } = customEvent.detail;
-
-      if (syncedRundownId !== rundownId) return;
-
-      // CRITICAL: Check if there are pending structural operations
-      const hasPendingOps = window.__pendingSaves?.has(rundownId) ?? false;
-      
-      if (hasPendingOps) {
-        console.log('⏸️ Deferring full sync - pending operations in progress');
-        // Schedule retry after operations complete
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('rundown-full-sync', { detail: customEvent.detail }));
-        }, 2000);
-        return;
-      }
-
-      console.log('🔄 ReliabilityManager full sync received, preserving cell:', preserveCellKey);
-
-      // Get current value of focused cell if it matches
-      const currentFocusedCell = activeFocusFieldRef.current;
-      let preservedValue: any = null;
-
-      if (preserveCellKey && currentFocusedCell === preserveCellKey) {
-        // Extract itemId and field from cellKey (format: "itemId-field")
-        const [itemId, ...fieldParts] = preserveCellKey.split('-');
-        const field = fieldParts.join('-');
-        
-        const item = state.items.find(i => i.id === itemId);
-        if (item) {
-          preservedValue = (item as any)[field];
-          console.log('💾 Preserving focused cell value:', { preserveCellKey, preservedValue });
-        }
-      }
-
-      // Load new state from server
-      actions.loadState({
-        items: rundown.items || [],
-        columns: [], // Keep columns separate
-        title: rundown.title || 'Untitled Rundown',
-        startTime: rundown.start_time || '09:00:00',
-        endTime: rundown.end_time,
-        timezone: rundown.timezone || 'America/New_York',
-        showDate: rundown.show_date ? new Date(rundown.show_date + 'T00:00:00') : null,
-        externalNotes: rundown.external_notes,
-        docVersion: rundown.doc_version || 0,
-        perCellSaveEnabled: rundown.per_cell_save_enabled || false,
-        numberingLocked: rundown.numbering_locked || false,
-        lockedRowNumbers: rundown.locked_row_numbers || {}
-      });
-
-      // Restore preserved cell value if still focused
-      if (preservedValue !== null && preserveCellKey && currentFocusedCell === preserveCellKey) {
-        const [itemId, ...fieldParts] = preserveCellKey.split('-');
-        const field = fieldParts.join('-');
-        
-        // Re-apply the preserved value
-        actions.updateItem(itemId, { [field]: preservedValue });
-        console.log('✅ Restored focused cell value after sync:', { preserveCellKey, preservedValue });
-      }
-
-      // Update timestamp
-      if (rundown.updated_at) {
-        setLastKnownTimestamp(rundown.updated_at);
-      }
-
-      console.log('✅ Full sync complete - state updated from server');
-    };
-
-    window.addEventListener('rundown-full-sync', handleFullSync);
-    return () => {
-      window.removeEventListener('rundown-full-sync', handleFullSync);
-    };
-  }, [rundownId, actions, state.items]);
 
   // Connect realtime to auto-save typing/unsaved state
   realtimeConnection.setTypingChecker(() => isTypingActive());
@@ -1152,9 +1032,6 @@ export const useSimplifiedRundownState = () => {
     
     const sessionKey = `${id}-${field}`;
     
-    // Inform ReliabilityManager of focused cell
-    reliabilityManager.setFocusedCell(sessionKey);
-    
     // 🎯 Record cell edit operation for undo/redo (batched for typing fields)
     if (import.meta.env.DEV && localStorage.getItem('debugCellEdit') === '1') {
       console.log('📝 Recording cell edit:', { id, field, oldValue, newValue: value, isTypingField });
@@ -1220,8 +1097,6 @@ export const useSimplifiedRundownState = () => {
       typingTimeoutRef.current = setTimeout(() => {
         if (typingSessionRef.current?.fieldKey === sessionKey) {
           typingSessionRef.current = null;
-          // Clear focused cell in ReliabilityManager when typing ends
-          reliabilityManager.setFocusedCell(null);
         }
       }, 3000); // Reduced to 3 seconds for faster sync
     } else if (field === 'duration') {
@@ -1294,11 +1169,6 @@ export const useSimplifiedRundownState = () => {
       operationData
     });
     
-    // Track pending operation globally for ReliabilityManager
-    if (rundownId && typeof window !== 'undefined') {
-      window.__pendingSaves?.add(rundownId);
-    }
-    
     // For per-cell save mode, structural operations need immediate save coordination
     if (state.perCellSaveEnabled && cellEditIntegration) {
       console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
@@ -1317,11 +1187,6 @@ export const useSimplifiedRundownState = () => {
         setTimeout(() => {
           console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
           actions.markSaved();
-          
-          // Clear pending operation flag
-          if (rundownId && typeof window !== 'undefined') {
-            window.__pendingSaves?.delete(rundownId);
-          }
         }, 100);
       }
     }
@@ -1414,11 +1279,6 @@ export const useSimplifiedRundownState = () => {
               numberingLocked: data.numbering_locked || false, // Load lock state
               lockedRowNumbers: data.locked_row_numbers || {} // Load locked numbers
             });
-
-            // Start ReliabilityManager monitoring with current doc_version
-            const docVersion = data.doc_version || 0;
-            reliabilityManager.startMonitoring(rundownId, docVersion);
-            console.log(`✅ ReliabilityManager started monitoring rundown ${rundownId} at v${docVersion}`);
           }
         }
       } catch (error) {
@@ -1773,8 +1633,6 @@ export const useSimplifiedRundownState = () => {
         setTimeout(() => {
           if (typingSessionRef.current?.fieldKey === 'title') {
             typingSessionRef.current = null;
-            // Clear focused cell in ReliabilityManager when title editing ends
-            reliabilityManager.setFocusedCell(null);
           }
         }, 5000); // Extended timeout for title editing
       }

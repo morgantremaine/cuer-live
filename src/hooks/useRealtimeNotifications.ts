@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useConnectionState } from '@/hooks/useConnectionState';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
 /**
  * Hook that monitors realtime connection health and displays toast notifications
@@ -8,13 +8,15 @@ import { useConnectionState } from '@/hooks/useConnectionState';
  */
 export const useRealtimeNotifications = () => {
   const { toast } = useToast();
-  const lastStatusRef = useRef<string>('connected');
+  const lastStatusRef = useRef<string>('healthy');
   const toastIdRef = useRef<string | null>(null);
-  const connectionState = useConnectionState();
 
   useEffect(() => {
     const checkInterval = setInterval(() => {
-      const currentStatus = connectionState.status;
+      const status = realtimeReconnectionCoordinator.getConnectionStatus();
+      const currentStatus = status.isHealthy ? 'healthy' : 
+                           status.isReconnecting ? 'reconnecting' : 
+                           status.consecutiveFailures >= 2 ? 'degraded' : 'healthy';
 
       // Only show notifications when status changes
       if (currentStatus !== lastStatusRef.current) {
@@ -24,22 +26,22 @@ export const useRealtimeNotifications = () => {
           toastIdRef.current = null;
         }
 
-        if (currentStatus === 'syncing') {
-          // Syncing state
+        if (currentStatus === 'degraded') {
+          // Connection quality poor
+          toast({
+            title: "Connection Quality Poor",
+            description: "Using slower sync method to keep data updated",
+            variant: "default",
+            duration: 5000,
+          });
+        } else if (currentStatus === 'reconnecting') {
+          // Reconnecting
           toastIdRef.current = toast({
-            title: "Syncing Rundown...",
-            description: "Refreshing to latest version",
+            title: "Reconnecting to Server...",
+            description: "Please wait while we restore the connection",
             duration: Infinity, // Keep showing until resolved
           }).id;
-        } else if (currentStatus === 'disconnected') {
-          // Disconnected
-          toast({
-            title: "Connection Lost",
-            description: "Please reload the page",
-            variant: "destructive",
-            duration: Infinity,
-          });
-        } else if (currentStatus === 'connected' && lastStatusRef.current !== 'connected') {
+        } else if (currentStatus === 'healthy' && lastStatusRef.current !== 'healthy') {
           // Connection restored
           toast({
             title: "Connection Restored",
@@ -59,5 +61,5 @@ export const useRealtimeNotifications = () => {
         toast({ id: toastIdRef.current, open: false } as any);
       }
     };
-  }, [toast, connectionState.status]);
+  }, [toast]);
 };

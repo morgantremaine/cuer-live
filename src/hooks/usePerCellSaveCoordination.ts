@@ -99,30 +99,18 @@ export const usePerCellSaveCoordination = ({
     },
     currentItems?: RundownItem[]
   ) => {
-    if (currentUserId && rundownId) {
-      // Track operation start globally
-      if (typeof window !== 'undefined') {
-        window.__pendingSaves?.add(rundownId);
-      }
-      
+    if (currentUserId) {
       coordination.executeWithStructuralOperation(async () => {
-        try {
-          const sequenceNumber = coordination.getNextSequenceNumber();
-          // Include content snapshot to prevent race conditions with concurrent edits
-          const dataWithSnapshot = {
-            ...operationData,
-            contentSnapshot: currentItems || operationData.items
-          };
-          await queueStructuralOperation(operationType, dataWithSnapshot, currentUserId, sequenceNumber);
-        } finally {
-          // Clear pending operation flag after save completes
-          if (typeof window !== 'undefined') {
-            window.__pendingSaves?.delete(rundownId);
-          }
-        }
+        const sequenceNumber = coordination.getNextSequenceNumber();
+        // Include content snapshot to prevent race conditions with concurrent edits
+        const dataWithSnapshot = {
+          ...operationData,
+          contentSnapshot: currentItems || operationData.items
+        };
+        queueStructuralOperation(operationType, dataWithSnapshot, currentUserId, sequenceNumber);
       });
     }
-  }, [currentUserId, rundownId, queueStructuralOperation, coordination]);
+  }, [currentUserId, queueStructuralOperation, coordination]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useCallback(() => {
