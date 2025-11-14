@@ -37,10 +37,10 @@ export const useRundownMemoization = (
           if (parts.length === 3) totalRuntimeSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
         }
         
-        // Calculate header durations (limit scope for memory efficiency)
+        // Calculate header durations
         if (item.type === 'header') {
           let segmentSeconds = 0;
-          for (let i = index + 1; i < Math.min(items.length, index + 20); i++) { // Limit to next 20 items for memory
+          for (let i = index + 1; i < items.length; i++) {
             const nextItem = items[i];
             if (nextItem.type === 'header') break;
             if (!nextItem.isFloating && !nextItem.isFloated && nextItem.duration) {
@@ -88,12 +88,12 @@ export const useRundownMemoization = (
     // MEMORY FIX: Return items directly without duplication for small rundowns too
     const itemsWithStatus = items;
 
-    // Calculate header durations - lightweight for small rundowns
+    // Calculate header durations
     const headerDurations = new Map<string, string>();
     items.forEach((item, index) => {
       if (item.type === 'header') {
         let totalSeconds = 0;
-        for (let i = index + 1; i < Math.min(items.length, index + 10); i++) { // Limit to next 10 items
+        for (let i = index + 1; i < items.length; i++) {
           const nextItem = items[i];
           if (nextItem.type === 'header') break;
           if (!nextItem.isFloating && !nextItem.isFloated) {
