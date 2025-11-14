@@ -315,8 +315,8 @@ export const calculateItemsWithTiming = (
             calculatedRowNumber = regularRowCount.toString();
             lastBaseNumber = regularRowCount;
           } else {
-            // Floating items get 'F'
-            calculatedRowNumber = 'F';
+            // Floating items get no row number
+            calculatedRowNumber = '';
           }
         }
       }

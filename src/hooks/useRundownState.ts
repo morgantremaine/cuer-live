@@ -456,7 +456,7 @@ export const useRundownState = (
         return { ...item, rowNumber: regularRowCount.toString() };
       }
 
-      return { ...item, rowNumber: 'F' };
+      return { ...item, rowNumber: '' };
     });
   }, [itemsWithCalculatedTimes, state.numberingLocked, state.lockedRowNumbers]);
 

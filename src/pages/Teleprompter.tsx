@@ -17,6 +17,7 @@ import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 import { printRundownScript } from '@/utils/scriptPrint';
+import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -257,7 +258,8 @@ const Teleprompter = () => {
       } else if (data) {
         const loadedData = {
           title: data.title || 'Untitled Rundown',
-          items: data.items || []
+          items: data.items || [],
+          startTime: data.startTime || '00:00:00'
         };
         
         // Check for and restore any backed up changes (only for authenticated users)
@@ -286,6 +288,16 @@ const Teleprompter = () => {
             });
           }
         }
+        
+        // Calculate timing and row numbers client-side for accuracy
+        const itemsWithCalculations = calculateItemsWithTiming(
+          loadedData.items,
+          loadedData.startTime,
+          data.numbering_locked,
+          data.locked_row_numbers
+        );
+        
+        loadedData.items = itemsWithCalculations;
         
         setRundownData(loadedData);
         setError(null);
@@ -408,14 +420,13 @@ const Teleprompter = () => {
     
     const currentItem = rundownData.items[index];
     
-    // Headers don't have row numbers
-    if (currentItem?.type === 'header') {
+    // Headers and floating items don't have row numbers
+    if (currentItem?.type === 'header' || currentItem?.isFloating || currentItem?.isFloated) {
       return '';
     }
     
-    // Use the calculated rowNumber if available (from calculateItemsWithTiming)
-    // Otherwise fall back to stored rowNumber for consistency
-    return (currentItem as any).calculatedRowNumber || currentItem.rowNumber || '';
+    // Use the calculated rowNumber from calculateItemsWithTiming
+    return (currentItem as any).calculatedRowNumber || '';
   };
 
   // Handle beforeunload to warn about unsaved changes
