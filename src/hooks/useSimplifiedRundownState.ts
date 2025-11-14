@@ -544,17 +544,6 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
-              const tabId = getTabId();
-              const isOwnUpdate = cellBroadcast.isOwnUpdate(update, tabId);
-              
-              console.log('📡 RECEIVED: items:reorder broadcast:', {
-                tabId,
-                broadcastTabId: update.tabId,
-                isOwnUpdate,
-                timestamp: new Date().toISOString(),
-                orderLength: Array.isArray(update.value?.order) ? update.value.order.length : 0
-              });
-              
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
@@ -563,15 +552,8 @@ export const useSimplifiedRundownState = () => {
                   const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                   return ai - bi;
                 });
-                
-                console.log('🔄 APPLYING: reorder broadcast:', {
-                  itemCount: reordered.length,
-                  isOwnUpdate,
-                  tabId,
-                  timestamp: new Date().toISOString()
-                });
-                
                 actionsRef.current.loadState({ items: reordered });
+                console.log('🔄 Applied reorder broadcast:', { itemCount: reordered.length });
               }
               break;
             }
@@ -1575,6 +1557,23 @@ export const useSimplifiedRundownState = () => {
         console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
         markStructuralChange('add_row', { items: state.items });
       }
+      
+      // Best-effort immediate hint: broadcast new order so other clients can reflect movement
+      if (rundownId && currentUserId) {
+        const order = state.items.map(i => i.id);
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId,
+            getTabId()
+          );
+        }, 0);
+      }
     }, [helpers.addRow, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
@@ -1585,6 +1584,22 @@ export const useSimplifiedRundownState = () => {
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
         markStructuralChange('add_header', { items: state.items });
+      }
+      
+      if (rundownId && currentUserId) {
+        const order = state.items.map(i => i.id);
+        // Track that this change was made by the current user
+        lastChangeUserIdRef.current = currentUserId;
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId,
+            getTabId()
+          );
+        }, 0);
       }
     }, [helpers.addHeader, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 

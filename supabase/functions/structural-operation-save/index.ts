@@ -25,8 +25,7 @@ interface StructuralOperation {
 }
 
 serve(async (req) => {
-  const requestId = crypto.randomUUID();
-  console.log('🏗️ Structural operation save function called', { requestId });
+  console.log('🏗️ Structural operation save function called');
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -59,7 +58,6 @@ serve(async (req) => {
 
     const operation: StructuralOperation = body;
     console.log('🏗️ Processing structural operation:', {
-      requestId,
       rundownId: operation.rundownId,
       operationType: operation.operationType,
       userId: operation.userId,
@@ -69,7 +67,49 @@ serve(async (req) => {
       numberingLocked: operation.operationData.numberingLocked
     });
 
-    // Get the current rundown (no lock - using last write wins)
+    // Start coordination - acquire advisory lock for rundown
+    const lockId = parseInt(operation.rundownId.replace(/-/g, '').substring(0, 15), 16);
+    
+    console.log('🔒 Attempting to acquire advisory lock for rundown:', operation.rundownId, 'lockId:', lockId);
+    
+    // Try to acquire lock with retries (max 20 seconds)
+    let lockAcquired = false;
+    const maxRetries = 40; // 40 attempts * 500ms = 20 seconds max wait
+    let retryCount = 0;
+
+    while (!lockAcquired && retryCount < maxRetries) {
+      const { data: acquired, error: lockError } = await supabase.rpc('pg_try_advisory_lock', { key: lockId });
+      
+      if (lockError) {
+        console.error('❌ Error checking advisory lock:', lockError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to check lock', details: lockError }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (acquired) {
+        lockAcquired = true;
+        console.log(`✅ Advisory lock acquired (attempt ${retryCount + 1})`);
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Lock held by another operation, waiting... (attempt ${retryCount}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
+        }
+      }
+    }
+
+    if (!lockAcquired) {
+      console.error('❌ Failed to acquire advisory lock after 20 seconds');
+      return new Response(
+        JSON.stringify({ error: 'Lock acquisition timeout', details: 'Another operation is taking too long' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    try {
+      // Get the current rundown with coordination timing
       const { data: currentRundown, error: fetchError } = await supabase
       .from('rundowns')
       .select('*')
@@ -178,28 +218,12 @@ serve(async (req) => {
         console.log('🔒 Saving numbering locked state:', operation.operationData.numberingLocked);
       }
       
-      console.log('💾 DATABASE UPDATE STARTING:', {
-        requestId,
-        rundownId: operation.rundownId,
-        operationType: operation.operationType,
-        itemCount: updatedItems.length,
-        timestamp: new Date().toISOString()
-      });
-      
       const { data: updatedRundown, error: updateError } = await supabase
         .from('rundowns')
         .update(updateData)
         .eq('id', operation.rundownId)
         .select()
         .single();
-      
-      console.log('💾 DATABASE UPDATE COMPLETED:', {
-        requestId,
-        rundownId: operation.rundownId,
-        operationType: operation.operationType,
-        success: !updateError,
-        timestamp: new Date().toISOString()
-      });
 
       if (updateError) {
         console.error('❌ Error updating rundown:', updateError);
@@ -209,8 +233,25 @@ serve(async (req) => {
         );
       }
 
+      // Log the operation with enhanced coordination data
+      await supabase
+        .from('rundown_operations')
+        .insert({
+          rundown_id: operation.rundownId,
+          user_id: operation.userId,
+          operation_type: `structural_${operation.operationType}`,
+          operation_data: {
+            action: actionDescription,
+            itemCount: updatedItems.length,
+            operationType: operation.operationType,
+            timestamp: operation.timestamp,
+            sequenceNumber: operation.operationData.sequenceNumber,
+            coordinatedAt: new Date().toISOString(),
+            lockId: lockId
+          }
+        });
+
       console.log('✅ Structural operation completed successfully:', {
-        requestId,
         rundownId: operation.rundownId,
         operationType: operation.operationType,
         itemCount: updatedItems.length
@@ -228,6 +269,11 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
+    } finally {
+      // Always release the lock, even if operation fails
+      console.log('🔓 Releasing advisory lock');
+      await supabase.rpc('pg_advisory_unlock', { key: lockId });
+    }
 
   } catch (error) {
     console.error('❌ Structural operation save error:', error);

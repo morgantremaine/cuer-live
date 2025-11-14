@@ -79,9 +79,10 @@ const moveItemUp = (index: number) => {
     userId
   )
   
-  // 3. Parallel structural save
+  // 3. Parallel structural save with content snapshot
   persistedState.markStructuralChange('reorder', { 
-    order
+    order,
+    contentSnapshot: newItems // Preserves concurrent edits
   })
 }
 ```
@@ -106,7 +107,8 @@ const addRow = (newItem: Item) => {
   
   // 3. Parallel structural save
   persistedState.markStructuralChange('add', {
-    item: newItem
+    item: newItem,
+    contentSnapshot: newItems
   })
 }
 ```
@@ -151,6 +153,36 @@ if (incomingSignature !== expectedSignature) {
 2. **State Refresh**: Client detects conflict and refreshes from database
 3. **Content Snapshots**: Structural operations preserve concurrent content edits
 4. **ID Stability**: Item IDs remain stable during reordering, preventing invalid references
+
+## Content Snapshot Approach
+
+### Why Content Snapshots?
+Structural operations (add/delete/reorder) can conflict with concurrent content edits. Content snapshots preserve both operations:
+
+```typescript
+// User A: Reordering rows
+markStructuralChange('reorder', {
+  order: ['item-2', 'item-1', 'item-3'],
+  contentSnapshot: items // Includes any concurrent edits from User B
+})
+
+// User B: Editing cell content (concurrent)
+saveCellField('item-1', 'title', 'Updated Title')
+
+// Result: Both operations preserved
+// - New order: item-2, item-1, item-3
+// - item-1 has updated title
+```
+
+### Implementation
+```typescript
+interface StructuralChange {
+  operation: 'add' | 'delete' | 'reorder' | 'copy'
+  order?: string[] // New item order
+  contentSnapshot: Item[] // Current content state
+  timestamp: string
+}
+```
 
 ## Why ID-Based Operations Prevent Race Conditions
 
@@ -279,6 +311,30 @@ case 'cell:update': {
 }
 ```
 
+### Content Snapshots: Database Only, Not Broadcasts
+
+**Important clarification**: Content snapshots are used for **database persistence**, not real-time broadcasts:
+
+```typescript
+// Database save includes content snapshot
+await saveStructuralOperation({
+  operation: 'reorder',
+  order: itemIds,
+  contentSnapshot: items  // ← Full content for database merge
+});
+
+// But the broadcast only includes IDs
+cellBroadcast.broadcast(rundownId, 'items:reorder', {
+  order: itemIds  // ← Only IDs, not content
+});
+```
+
+**Why this matters:**
+- **Broadcasts are immediate** and need to be small (low latency)
+- **Database saves are parallel** and can include full content (for conflict resolution)
+- The database merges the content snapshot with any concurrent cell edits
+- Users receive instant structural updates (from broadcast) with their local content intact
+
 ### Summary
 
 **ID-based operations prevent race conditions because:**
@@ -362,6 +418,15 @@ updateCell(itemId, field, value)
 
 // BAD: Position-based updates
 updateCell(rowIndex, field, value) // Position can change!
+```
+
+### ✅ Include Content Snapshots
+```typescript
+// GOOD: Structural change with snapshot
+markStructuralChange('reorder', { order, contentSnapshot: items })
+
+// BAD: Structural change without snapshot
+markStructuralChange('reorder', { order }) // Loses concurrent edits!
 ```
 
 ### ✅ Broadcast Immediately
