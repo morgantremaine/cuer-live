@@ -18,6 +18,7 @@ import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { useStructuralOperationPrewarm } from '@/hooks/useStructuralOperationPrewarm';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
@@ -158,6 +159,9 @@ const RundownIndexContent = () => {
     enabled: true,
     hasUnsavedChanges,
   });
+
+  // Pre-warm structural operation edge function to eliminate cold starts
+  useStructuralOperationPrewarm(rundownId, isInitialized, isConnected);
 
   // Track reconnection status
   const [isReconnecting, setIsReconnecting] = useState(false);

@@ -57,6 +57,8 @@ serve(async (req) => {
     }
 
     const operation: StructuralOperation = body;
+    const startTime = Date.now();
+    
     console.log('🏗️ Processing structural operation:', {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
@@ -67,7 +69,33 @@ serve(async (req) => {
       numberingLocked: operation.operationData.numberingLocked
     });
 
-    // Start coordination - acquire advisory lock for rundown
+    // PHASE 1: Fetch current state (BEFORE acquiring lock - no exclusive access needed)
+    const { data: currentRundown, error: fetchError } = await supabase
+      .from('rundowns')
+      .select('*')
+      .eq('id', operation.rundownId)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Error fetching rundown:', fetchError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch rundown', details: fetchError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!currentRundown) {
+      console.error('❌ Rundown not found:', operation.rundownId);
+      return new Response(
+        JSON.stringify({ error: 'Rundown not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const fetchTime = Date.now();
+    console.log(`⏱️ Fetch completed in ${fetchTime - startTime}ms`);
+
+    // PHASE 2: Acquire advisory lock for rundown (ONLY for the critical update section)
     const lockId = parseInt(operation.rundownId.replace(/-/g, '').substring(0, 15), 16);
     
     console.log('🔒 Attempting to acquire advisory lock for rundown:', operation.rundownId, 'lockId:', lockId);
@@ -108,30 +136,11 @@ serve(async (req) => {
       );
     }
     
+    const lockTime = Date.now();
+    console.log(`⏱️ Lock acquired in ${lockTime - fetchTime}ms (total: ${lockTime - startTime}ms)`);
+    
     try {
-      // Get the current rundown with coordination timing
-      const { data: currentRundown, error: fetchError } = await supabase
-      .from('rundowns')
-      .select('*')
-      .eq('id', operation.rundownId)
-      .single();
-
-    if (fetchError) {
-      console.error('❌ Error fetching rundown:', fetchError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch rundown', details: fetchError }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-      if (!currentRundown) {
-        console.error('❌ Rundown not found:', operation.rundownId);
-        return new Response(
-          JSON.stringify({ error: 'Rundown not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
+      // PHASE 3: Process the operation (with lock held)
       let updatedItems = [...(currentRundown.items || [])];
       let actionDescription = '';
 
@@ -197,9 +206,7 @@ serve(async (req) => {
           );
       }
 
-      // SIMPLIFIED: No doc_version logic - just save directly (last write wins)
-      
-      // Update the rundown with the new items
+      // PHASE 4: Update database (critical section - lock is held here)
       const updateData: any = {
         items: updatedItems,
         updated_at: new Date().toISOString(),
@@ -233,29 +240,8 @@ serve(async (req) => {
         );
       }
 
-      // Log the operation with enhanced coordination data
-      await supabase
-        .from('rundown_operations')
-        .insert({
-          rundown_id: operation.rundownId,
-          user_id: operation.userId,
-          operation_type: `structural_${operation.operationType}`,
-          operation_data: {
-            action: actionDescription,
-            itemCount: updatedItems.length,
-            operationType: operation.operationType,
-            timestamp: operation.timestamp,
-            sequenceNumber: operation.operationData.sequenceNumber,
-            coordinatedAt: new Date().toISOString(),
-            lockId: lockId
-          }
-        });
-
-      console.log('✅ Structural operation completed successfully:', {
-        rundownId: operation.rundownId,
-        operationType: operation.operationType,
-        itemCount: updatedItems.length
-      });
+      const updateTime = Date.now();
+      console.log(`⏱️ Database update completed in ${updateTime - lockTime}ms`);
 
       return new Response(
         JSON.stringify({
@@ -270,9 +256,46 @@ serve(async (req) => {
         }
       );
     } finally {
-      // Always release the lock, even if operation fails
+      // PHASE 5: Release lock and log operation (AFTER lock release - doesn't need exclusive access)
       console.log('🔓 Releasing advisory lock');
       await supabase.rpc('pg_advisory_unlock', { key: lockId });
+      
+      const releaseTime = Date.now();
+      
+      // Log the operation (fire and forget - don't wait for this)
+      supabase
+        .from('rundown_operations')
+        .insert({
+          rundown_id: operation.rundownId,
+          user_id: operation.userId,
+          operation_type: `structural_${operation.operationType}`,
+          operation_data: {
+            action: actionDescription,
+            itemCount: updatedItems.length,
+            operationType: operation.operationType,
+            timestamp: operation.timestamp,
+            sequenceNumber: operation.operationData.sequenceNumber,
+            coordinatedAt: new Date().toISOString(),
+            lockId: lockId
+          }
+        })
+        .then(() => console.log('📝 Operation logged'))
+        .catch(err => console.error('⚠️ Failed to log operation (non-critical):', err));
+      
+      console.log('⏱️ Operation timing breakdown:', {
+        operationType: operation.operationType,
+        fetchMs: fetchTime - startTime,
+        lockWaitMs: lockTime - fetchTime,
+        updateMs: updateTime - lockTime,
+        releaseMs: releaseTime - updateTime,
+        totalMs: releaseTime - startTime
+      });
+      
+      console.log('✅ Structural operation completed successfully:', {
+        rundownId: operation.rundownId,
+        operationType: operation.operationType,
+        itemCount: updatedItems.length
+      });
     }
 
   } catch (error) {
