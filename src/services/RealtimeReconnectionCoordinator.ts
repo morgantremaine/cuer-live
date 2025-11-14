@@ -8,8 +8,8 @@ interface RegisteredConnection {
   reconnect: ReconnectionHandler;
 }
 
-// Constants for sleep detection
-const LAPTOP_SLEEP_THRESHOLD_MS = 60000; // 60 seconds
+// Constants for sleep detection (increased thresholds to reduce false positives)
+const LAPTOP_SLEEP_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes (was 60s)
 
 /**
  * Realtime Reconnection Coordinator
@@ -29,18 +29,18 @@ class RealtimeReconnectionCoordinatorService {
   
   // Track last visible time to differentiate sleep from long background time
   private lastVisibleTime: number = Date.now();
-  private readonly LONG_ABSENCE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
-  private readonly SHORT_BACKGROUND_MAX_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly LONG_ABSENCE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours (was 30 min)
+  private readonly SHORT_BACKGROUND_MAX_MS = 15 * 60 * 1000; // 15 minutes (was 5 min)
   
   // Visibility-based throttling to prevent timer buildup
   private isTabVisible: boolean = true;
-  private readonly CONNECTION_MONITOR_INTERVAL_ACTIVE = 30000; // 30s when active
-  private readonly CONNECTION_MONITOR_INTERVAL_HIDDEN = 60000; // 60s when hidden
+  private readonly CONNECTION_MONITOR_INTERVAL_ACTIVE = 60000; // 60s when active (was 30s)
+  private readonly CONNECTION_MONITOR_INTERVAL_HIDDEN = 120000; // 120s when hidden (was 60s)
   
-  // Connection health tracking
+  // Connection health tracking (increased tolerance)
   private consecutiveFailures: number = 0;
-  private readonly MAX_FAILURES_BEFORE_RELOAD = 3;
-  private readonly GRACE_PERIOD_MS = 15000; // 15 second grace period
+  private readonly MAX_FAILURES_BEFORE_RELOAD = 10; // 10 failures (was 3)
+  private readonly GRACE_PERIOD_MS = 60000; // 60 second grace period (was 15s)
   private lastFailureTime: number = 0;
   private isInGracePeriod: boolean = false;
   private gracePeriodTimeout: NodeJS.Timeout | null = null;
@@ -82,19 +82,15 @@ class RealtimeReconnectionCoordinatorService {
    */
   private handleVisibilityChange = () => {
     if (!document.hidden) {
-      // Tab became visible
+      // Tab became visible - update timestamps and let periodic check handle any issues
       this.isTabVisible = true;
-      
-      const { shouldReload, duration } = this.detectSleep();
-      
-      if (shouldReload) {
-        console.log(`🔄 Reload required after ${Math.round(duration/1000)}s, forcing immediate reload...`);
-        this.forceReload('laptop-sleep-or-long-absence-visibility');
-        return;
-      }
-      
-      // Update last visible time
       this.lastVisibleTime = Date.now();
+      
+      // Update performance timestamps for next sleep detection
+      this.lastPerformanceTime = performance.now();
+      this.lastSystemTime = Date.now();
+      
+      console.log('👁️ Tab visible - monitoring will check connection health');
       
       // Restart monitoring with active interval
       this.restartConnectionMonitoring();
@@ -110,16 +106,12 @@ class RealtimeReconnectionCoordinatorService {
    */
   private handlePageShow = (event: PageTransitionEvent) => {
     if (event.persisted) {
-      const { shouldReload, duration } = this.detectSleep();
-      
-      if (shouldReload) {
-        console.log(`🔄 Reload required after ${Math.round(duration/1000)}s, forcing immediate reload...`);
-        this.forceReload('laptop-sleep-or-long-absence-pageshow');
-        return;
-      }
-      
+      // Page restored from bfcache - update timestamps and let periodic check handle any issues
       this.lastVisibleTime = Date.now();
-      console.log('📄 Page shown from bfcache, no reload needed');
+      this.lastPerformanceTime = performance.now();
+      this.lastSystemTime = Date.now();
+      
+      console.log('📄 Page shown from bfcache - monitoring will check connection health');
     }
   };
   
@@ -127,15 +119,12 @@ class RealtimeReconnectionCoordinatorService {
    * Handle window focus events
    */
   private handleFocus = () => {
-    const { shouldReload, duration } = this.detectSleep();
-    
-    if (shouldReload) {
-      console.log(`🔄 Reload required after ${Math.round(duration/1000)}s, forcing immediate reload...`);
-      this.forceReload('laptop-sleep-or-long-absence-focus');
-      return;
-    }
-    
+    // Window gained focus - update timestamps and let periodic check handle any issues
     this.lastVisibleTime = Date.now();
+    this.lastPerformanceTime = performance.now();
+    this.lastSystemTime = Date.now();
+    
+    console.log('🎯 Window focused - monitoring will check connection health');
   };
   
   
@@ -198,7 +187,7 @@ class RealtimeReconnectionCoordinatorService {
    * Handle network online event
    */
   private async handleNetworkOnline() {
-    console.log('🌐 Network came online, checking connection...');
+    console.log('🌐 Network came online, updating timestamps');
     
     // Skip if not authenticated
     if (!(await this.isAuthenticated())) {
@@ -206,16 +195,10 @@ class RealtimeReconnectionCoordinatorService {
       return;
     }
     
-    // Check for sleep first
-    const { shouldReload } = this.detectSleep();
-    
-    if (shouldReload) {
-      console.warn('🔄 Reload required - forcing reload');
-      this.forceReload('laptop-sleep-or-long-absence-network');
-      return;
-    }
-    
+    // Update timestamps and let periodic monitoring handle connection health
     this.lastVisibleTime = Date.now();
+    this.lastPerformanceTime = performance.now();
+    this.lastSystemTime = Date.now();
     
     // Check if WebSocket is dead - but give it a grace period to reconnect
     try {
