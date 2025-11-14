@@ -309,15 +309,12 @@ export const calculateItemsWithTiming = (
       } else {
         // NORMAL SEQUENTIAL NUMBERING MODE
         if (item.type !== 'header') {
-          // Skip floating/floated items (they should not get sequential numbers)
-          if (!item.isFloating && !item.isFloated) {
-            regularRowCount++;
-            calculatedRowNumber = regularRowCount.toString();
-            lastBaseNumber = regularRowCount;
-          } else {
-            // Floating items get no row number
-            calculatedRowNumber = '';
-          }
+          // ALL items get sequential numbers, including floated ones
+          regularRowCount++;
+          calculatedRowNumber = regularRowCount.toString();
+          lastBaseNumber = regularRowCount;
+          // Note: Floated items still don't advance timeline or count in runtime
+          // (that's already handled correctly above where we skip timeline advancement)
         }
       }
       
