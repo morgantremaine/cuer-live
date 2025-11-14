@@ -36,6 +36,7 @@ const globalSubscriptions = new Map<string, {
   reconnectTimeout?: NodeJS.Timeout;
   reconnectHandler?: () => Promise<void>;
   reconnecting?: boolean; // Guard against reconnection storms
+  reconnectingStartedAt?: number; // Track when reconnection started
 }>();
 
 // Reconnection helper with exponential backoff
@@ -568,14 +569,29 @@ export const useConsolidatedRealtimeRundown = ({
 
         // Guard: Skip if already reconnecting to prevent feedback loop
         if (state.reconnecting && status !== 'SUBSCRIBED') {
-          console.log('⏭️ Skipping consolidated reconnect - already reconnecting:', rundownId);
-          return;
+          console.log('⏭️ Reconnection in progress:', {
+            rundownId,
+            status,
+            reconnectAttempts: state.reconnectAttempts
+          });
+          
+          // Safety: If stuck in reconnecting for >60s, force clear
+          if (!state.reconnectingStartedAt) {
+            state.reconnectingStartedAt = Date.now();
+          } else if (Date.now() - state.reconnectingStartedAt > 60000) {
+            console.error('🚨 Reconnection stuck for >60s - force clearing flag');
+            state.reconnecting = false;
+            state.reconnectingStartedAt = undefined;
+          } else {
+            return; // Skip this attempt
+          }
         }
 
         if (status === 'SUBSCRIBED') {
           state.isConnected = true;
           // Clear guard flag and reset attempts on successful connection
           state.reconnecting = false;
+          state.reconnectingStartedAt = undefined;
           state.reconnectAttempts = 0;
           
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
@@ -629,12 +645,14 @@ export const useConsolidatedRealtimeRundown = ({
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           state.isConnected = false;
+          state.reconnecting = false; // CRITICAL: Clear flag on error
           console.error('❌ Consolidated realtime connection failed:', status);
           
           // Direct reconnection with exponential backoff
           handleConsolidatedChannelReconnect(rundownId);
         } else if (status === 'CLOSED') {
           state.isConnected = false;
+          state.reconnecting = false; // CRITICAL: Clear flag on close
           console.log('🔌 Consolidated realtime connection closed');
         }
       });
@@ -662,6 +680,15 @@ export const useConsolidatedRealtimeRundown = ({
         // Set guard flag to prevent feedback loop
         if (globalState) {
           globalState.reconnecting = true;
+          
+          // CRITICAL: Auto-clear flag after 30 seconds if reconnection doesn't complete
+          setTimeout(() => {
+            if (globalState && globalState.reconnecting) {
+              console.warn('⏰ Reconnection guard timeout - force clearing flag');
+              globalState.reconnecting = false;
+              globalState.reconnectingStartedAt = undefined;
+            }
+          }, 30000); // 30 second timeout
         }
         
         // Check auth first
