@@ -25,7 +25,8 @@ interface StructuralOperation {
 }
 
 serve(async (req) => {
-  console.log('🏗️ Structural operation save function called');
+  const requestId = crypto.randomUUID();
+  console.log('🏗️ Structural operation save function called', { requestId });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -58,6 +59,7 @@ serve(async (req) => {
 
     const operation: StructuralOperation = body;
     console.log('🏗️ Processing structural operation:', {
+      requestId,
       rundownId: operation.rundownId,
       operationType: operation.operationType,
       userId: operation.userId,
@@ -176,12 +178,28 @@ serve(async (req) => {
         console.log('🔒 Saving numbering locked state:', operation.operationData.numberingLocked);
       }
       
+      console.log('💾 DATABASE UPDATE STARTING:', {
+        requestId,
+        rundownId: operation.rundownId,
+        operationType: operation.operationType,
+        itemCount: updatedItems.length,
+        timestamp: new Date().toISOString()
+      });
+      
       const { data: updatedRundown, error: updateError } = await supabase
         .from('rundowns')
         .update(updateData)
         .eq('id', operation.rundownId)
         .select()
         .single();
+      
+      console.log('💾 DATABASE UPDATE COMPLETED:', {
+        requestId,
+        rundownId: operation.rundownId,
+        operationType: operation.operationType,
+        success: !updateError,
+        timestamp: new Date().toISOString()
+      });
 
       if (updateError) {
         console.error('❌ Error updating rundown:', updateError);
@@ -192,6 +210,7 @@ serve(async (req) => {
       }
 
       console.log('✅ Structural operation completed successfully:', {
+        requestId,
         rundownId: operation.rundownId,
         operationType: operation.operationType,
         itemCount: updatedItems.length

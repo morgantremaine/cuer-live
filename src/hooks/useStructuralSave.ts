@@ -100,8 +100,12 @@ export const useStructuralSave = (
     const operations = [...pendingOperationsRef.current];
     pendingOperationsRef.current = [];
     
-    console.log(`📦 Batching ${operations.length} structural operations:`, 
-      operations.map(op => op.operationType).join(', '));
+    const tabId = getTabId();
+    console.log(`📦 EXECUTE: Batching ${operations.length} structural operations:`, {
+      operations: operations.map(op => op.operationType).join(', '),
+      tabId,
+      timestamp: new Date().toISOString()
+    });
     
     onSaveStart?.();
 
@@ -139,10 +143,13 @@ export const useStructuralSave = (
           const broadcastField = mapOperationToBroadcastField(operation.operationType);
           const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
           
-          console.log('📡 Broadcasting structural operation (BEFORE save):', {
+          const tabId = getTabId();
+          console.log('📡 BROADCAST: Broadcasting structural operation (BEFORE save):', {
             operationType: operation.operationType,
             broadcastField,
-            payload
+            payload,
+            tabId,
+            timestamp: new Date().toISOString()
           });
           
           cellBroadcast.broadcastCellUpdate(
@@ -151,7 +158,7 @@ export const useStructuralSave = (
             broadcastField,
             payload,
             currentUserId,
-            getTabId()
+            tabId
           );
         }
         
@@ -176,7 +183,12 @@ export const useStructuralSave = (
             ownUpdateTracker.track(data.updatedAt, context);
           }
           
-          console.log('✅ Structural operation saved to database:', operation.operationType);
+          const tabId = getTabId();
+          console.log('✅ SAVED: Structural operation saved to database:', {
+            operationType: operation.operationType,
+            tabId,
+            timestamp: new Date().toISOString()
+          });
         }
       }
       
@@ -212,6 +224,15 @@ export const useStructuralSave = (
       sequenceNumber?: number
     ) => {
       if (!rundownId) return;
+      
+      const tabId = getTabId();
+      console.log('🏗️ QUEUE: Adding structural operation to queue:', {
+        operationType,
+        tabId,
+        rundownId,
+        userId,
+        timestamp: new Date().toISOString()
+      });
 
       const operation: StructuralOperation = {
         rundownId,
