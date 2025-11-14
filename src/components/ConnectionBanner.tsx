@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WifiOff, RefreshCw, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { useConnectionState } from '@/hooks/useConnectionState';
 import { cn } from '@/lib/utils';
 
 interface ConnectionBannerProps {
@@ -10,33 +10,24 @@ interface ConnectionBannerProps {
 
 const ConnectionBanner = ({ className }: ConnectionBannerProps) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [status, setStatus] = useState<'reconnecting' | 'degraded' | 'critical'>('reconnecting');
   const [isDismissed, setIsDismissed] = useState(false);
+  const connectionState = useConnectionState();
 
   useEffect(() => {
     const checkInterval = setInterval(() => {
-      const connectionStatus = realtimeReconnectionCoordinator.getConnectionStatus();
+      const status = connectionState.status;
       
-      // Determine severity
-      const consecutiveFailures = connectionStatus.consecutiveFailures;
-      const isReconnecting = connectionStatus.isReconnecting;
-      
-      let newStatus: 'reconnecting' | 'degraded' | 'critical' = 'reconnecting';
       let shouldShow = false;
 
-      if (consecutiveFailures >= 3) {
-        newStatus = 'critical';
+      if (status === 'disconnected') {
         shouldShow = true;
-      } else if (consecutiveFailures >= 2 || isReconnecting) {
-        newStatus = 'degraded';
+      } else if (status === 'syncing') {
         shouldShow = true;
-      } else if (consecutiveFailures === 0) {
+      } else {
         // Connection healthy - hide banner
         shouldShow = false;
         setIsDismissed(false); // Reset dismiss state when healthy
       }
-
-      setStatus(newStatus);
       
       // Only show if not manually dismissed
       if (shouldShow && !isDismissed) {
@@ -47,7 +38,7 @@ const ConnectionBanner = ({ className }: ConnectionBannerProps) => {
     }, 2000); // Check every 2 seconds
 
     return () => clearInterval(checkInterval);
-  }, [isDismissed]);
+  }, [isDismissed, connectionState.status]);
 
   const handleReloadNow = () => {
     window.location.reload();
@@ -61,36 +52,27 @@ const ConnectionBanner = ({ className }: ConnectionBannerProps) => {
   if (!isVisible) return null;
 
   const bannerConfig = {
-    reconnecting: {
+    syncing: {
       bgColor: 'bg-yellow-500/20 border-yellow-500/30',
       textColor: 'text-yellow-200',
       icon: RefreshCw,
       iconClass: 'animate-spin',
-      title: 'Reconnecting...',
-      message: 'Attempting to restore real-time connection',
+      title: 'Syncing...',
+      message: 'Refreshing rundown state',
       showReload: false,
     },
-    degraded: {
-      bgColor: 'bg-orange-500/20 border-orange-500/30',
-      textColor: 'text-orange-200',
-      icon: AlertTriangle,
-      iconClass: '',
-      title: 'Connection Issues Detected',
-      message: 'Using slower sync method - your changes are still being saved',
-      showReload: false,
-    },
-    critical: {
+    disconnected: {
       bgColor: 'bg-red-500/20 border-red-500/30',
       textColor: 'text-red-200',
       icon: WifiOff,
       iconClass: '',
-      title: 'Persistent Connection Problems',
+      title: 'Connection Problems',
       message: 'Please reload the page to restore connection',
       showReload: true,
     },
   };
 
-  const config = bannerConfig[status];
+  const config = bannerConfig[connectionState.status === 'syncing' ? 'syncing' : 'disconnected'];
   const Icon = config.icon;
 
   return (
