@@ -57,6 +57,8 @@ serve(async (req) => {
     }
 
     const operation: StructuralOperation = body;
+    const startTime = Date.now();
+    
     console.log('🏗️ Processing structural operation:', {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
@@ -67,64 +69,23 @@ serve(async (req) => {
       numberingLocked: operation.operationData.numberingLocked
     });
 
-    // Start coordination - acquire advisory lock for rundown
-    const lockId = parseInt(operation.rundownId.replace(/-/g, '').substring(0, 15), 16);
-    
-    console.log('🔒 Attempting to acquire advisory lock for rundown:', operation.rundownId, 'lockId:', lockId);
-    
-    // Try to acquire lock with retries (max 20 seconds)
-    let lockAcquired = false;
-    const maxRetries = 40; // 40 attempts * 500ms = 20 seconds max wait
-    let retryCount = 0;
+    try {
+      // Fetch current rundown from database
+      const { data: rundown, error: fetchError } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('id', operation.rundownId)
+        .single();
 
-    while (!lockAcquired && retryCount < maxRetries) {
-      const { data: acquired, error: lockError } = await supabase.rpc('pg_try_advisory_lock', { key: lockId });
-      
-      if (lockError) {
-        console.error('❌ Error checking advisory lock:', lockError);
+      if (fetchError) {
+        console.error('❌ Failed to fetch rundown:', fetchError);
         return new Response(
-          JSON.stringify({ error: 'Failed to check lock', details: lockError }),
+          JSON.stringify({ error: 'Failed to fetch rundown', details: fetchError }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
-      if (acquired) {
-        lockAcquired = true;
-        console.log(`✅ Advisory lock acquired (attempt ${retryCount + 1})`);
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Lock held by another operation, waiting... (attempt ${retryCount}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
-        }
-      }
-    }
 
-    if (!lockAcquired) {
-      console.error('❌ Failed to acquire advisory lock after 20 seconds');
-      return new Response(
-        JSON.stringify({ error: 'Lock acquisition timeout', details: 'Another operation is taking too long' }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    try {
-      // Get the current rundown with coordination timing
-      const { data: currentRundown, error: fetchError } = await supabase
-      .from('rundowns')
-      .select('*')
-      .eq('id', operation.rundownId)
-      .single();
-
-    if (fetchError) {
-      console.error('❌ Error fetching rundown:', fetchError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch rundown', details: fetchError }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-      if (!currentRundown) {
+      if (!rundown) {
         console.error('❌ Rundown not found:', operation.rundownId);
         return new Response(
           JSON.stringify({ error: 'Rundown not found' }),
@@ -132,130 +93,144 @@ serve(async (req) => {
         );
       }
 
-      let updatedItems = [...(currentRundown.items || [])];
+      // Apply the operation to the items
+      let updatedItems = [...(rundown.items as any[])];
       let actionDescription = '';
+      let updatedLockedRowNumbers = rundown.locked_row_numbers ? { ...(rundown.locked_row_numbers as Record<string, string>) } : {};
+      let updatedNumberingLocked = rundown.numbering_locked ?? false;
 
-      // Apply the structural operation
       switch (operation.operationType) {
         case 'add_row':
-        case 'add_header':
-          if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
-            const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
-            updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
-            actionDescription = `Added ${operation.operationData.newItems.length} item(s)`;
-            console.log(`🏗️ Added ${operation.operationData.newItems.length} items at index ${insertIndex}`);
-          }
+        case 'add_header': {
+          const newItems = operation.operationData.newItems || [];
+          const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
+          
+          updatedItems.splice(insertIndex, 0, ...newItems);
+          actionDescription = `Added ${newItems.length} ${operation.operationType === 'add_header' ? 'header' : 'row'}(s) at index ${insertIndex}`;
+          console.log(`✅ ${actionDescription}`);
           break;
+        }
 
-        case 'delete_row':
-          if (operation.operationData.deletedIds) {
-            const beforeCount = updatedItems.length;
-            updatedItems = updatedItems.filter(item => !operation.operationData.deletedIds!.includes(item.id));
-            const deletedCount = beforeCount - updatedItems.length;
-            actionDescription = `Deleted ${deletedCount} item(s)`;
-            console.log(`🏗️ Deleted ${deletedCount} items`);
-          }
+        case 'delete_row': {
+          const deletedIds = operation.operationData.deletedIds || [];
+          const beforeCount = updatedItems.length;
+          updatedItems = updatedItems.filter(item => !deletedIds.includes(item.id));
+          
+          // Remove deleted items from locked row numbers
+          deletedIds.forEach(id => {
+            delete updatedLockedRowNumbers[id];
+          });
+          
+          actionDescription = `Deleted ${beforeCount - updatedItems.length} row(s)`;
+          console.log(`✅ ${actionDescription}`);
           break;
+        }
 
-        case 'reorder':
-        case 'move_rows':
-          if (operation.operationData.order) {
-            // Reorder items based on the provided order
-            const orderMap = new Map(operation.operationData.order.map((id, index) => [id, index]));
-            updatedItems.sort((a, b) => {
-              const aIndex = orderMap.get(a.id) ?? 999999;
-              const bIndex = orderMap.get(b.id) ?? 999999;
-              return aIndex - bIndex;
-            });
-            actionDescription = 'Reordered items';
-            console.log('🏗️ Reordered items based on provided order');
-          }
+        case 'move_rows': {
+          const items = operation.operationData.items || [];
+          const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
+          
+          // Remove the items from their current positions
+          const itemIds = items.map(item => item.id);
+          updatedItems = updatedItems.filter(item => !itemIds.includes(item.id));
+          
+          // Insert items at the new position
+          updatedItems.splice(insertIndex, 0, ...items);
+          
+          actionDescription = `Moved ${items.length} row(s) to index ${insertIndex}`;
+          console.log(`✅ ${actionDescription}`);
           break;
+        }
 
-        case 'copy_rows':
-          if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
-            const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
-            updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
-            actionDescription = `Copied ${operation.operationData.newItems.length} item(s)`;
-            console.log(`🏗️ Copied ${operation.operationData.newItems.length} items at index ${insertIndex}`);
-          }
+        case 'copy_rows': {
+          const items = operation.operationData.items || [];
+          const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
+          
+          // Insert copied items at the new position
+          updatedItems.splice(insertIndex, 0, ...items);
+          
+          actionDescription = `Copied ${items.length} row(s) to index ${insertIndex}`;
+          console.log(`✅ ${actionDescription}`);
           break;
+        }
 
-        case 'toggle_lock':
-          // Lock state changes don't modify items, only update lock fields
-          actionDescription = operation.operationData.numberingLocked 
-            ? `Locked row numbering (${Object.keys(operation.operationData.lockedRowNumbers || {}).length} rows)` 
-            : 'Unlocked row numbering';
-          console.log(`🔒 ${actionDescription}`);
+        case 'reorder': {
+          const newOrder = operation.operationData.order || [];
+          
+          // Reorder items based on the provided order
+          const itemsMap = new Map(updatedItems.map(item => [item.id, item]));
+          updatedItems = newOrder.map(id => itemsMap.get(id)).filter(Boolean) as any[];
+          
+          actionDescription = `Reordered ${updatedItems.length} items`;
+          console.log(`✅ ${actionDescription}`);
           break;
+        }
+
+        case 'toggle_lock': {
+          // Update the locked row numbers from the operation data
+          if (operation.operationData.lockedRowNumbers !== undefined) {
+            updatedLockedRowNumbers = operation.operationData.lockedRowNumbers;
+          }
+          if (operation.operationData.numberingLocked !== undefined) {
+            updatedNumberingLocked = operation.operationData.numberingLocked;
+          }
+          
+          const lockedCount = Object.keys(updatedLockedRowNumbers).length;
+          actionDescription = `Updated row locks: ${lockedCount} locked rows, numbering ${updatedNumberingLocked ? 'locked' : 'unlocked'}`;
+          console.log(`✅ ${actionDescription}`);
+          break;
+        }
 
         default:
-          console.warn('🚨 Unknown operation type:', operation.operationType);
+          console.error('❌ Unknown operation type:', operation.operationType);
           return new Response(
             JSON.stringify({ error: 'Unknown operation type' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
       }
 
-      // SIMPLIFIED: No doc_version logic - just save directly (last write wins)
-      
-      // Update the rundown with the new items
-      const updateData: any = {
-        items: updatedItems,
-        updated_at: new Date().toISOString(),
-        last_updated_by: operation.userId
-      };
-      
-      // Include locked row numbers if provided
-      if (operation.operationData.lockedRowNumbers !== undefined) {
-        updateData.locked_row_numbers = operation.operationData.lockedRowNumbers;
-        console.log('🔒 Saving locked row numbers:', Object.keys(operation.operationData.lockedRowNumbers).length);
-      }
-      
-      // Include numbering locked state if provided
-      if (operation.operationData.numberingLocked !== undefined) {
-        updateData.numbering_locked = operation.operationData.numberingLocked;
-        console.log('🔒 Saving numbering locked state:', operation.operationData.numberingLocked);
-      }
-      
+      // Update the rundown with the new items and lock state
       const { data: updatedRundown, error: updateError } = await supabase
         .from('rundowns')
-        .update(updateData)
+        .update({
+          items: updatedItems,
+          locked_row_numbers: updatedLockedRowNumbers,
+          numbering_locked: updatedNumberingLocked,
+          updated_at: new Date().toISOString(),
+          last_updated_by: operation.userId
+        })
         .eq('id', operation.rundownId)
         .select()
         .single();
 
       if (updateError) {
-        console.error('❌ Error updating rundown:', updateError);
+        console.error('❌ Failed to update rundown:', updateError);
         return new Response(
           JSON.stringify({ error: 'Failed to update rundown', details: updateError }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Log the operation with enhanced coordination data
-      await supabase
+      // Log the operation to rundown_operations table
+      const { error: logError } = await supabase
         .from('rundown_operations')
         .insert({
           rundown_id: operation.rundownId,
+          operation_type: operation.operationType,
+          operation_data: operation.operationData,
           user_id: operation.userId,
-          operation_type: `structural_${operation.operationType}`,
-          operation_data: {
-            action: actionDescription,
-            itemCount: updatedItems.length,
-            operationType: operation.operationType,
-            timestamp: operation.timestamp,
-            sequenceNumber: operation.operationData.sequenceNumber,
-            coordinatedAt: new Date().toISOString(),
-            lockId: lockId
-          }
+          sequence_number: operation.operationData.sequenceNumber || 0,
+          applied_at: new Date().toISOString()
         });
 
-      console.log('✅ Structural operation completed successfully:', {
-        rundownId: operation.rundownId,
-        operationType: operation.operationType,
-        itemCount: updatedItems.length
-      });
+      if (logError) {
+        console.error('⚠️ Failed to log operation (non-fatal):', logError);
+      }
+
+      console.log('📝 Operation logged successfully');
+
+      const duration = Date.now() - startTime;
+      console.log(`⏱️ Operation completed in ${duration}ms`);
 
       return new Response(
         JSON.stringify({
@@ -269,10 +244,9 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-    } finally {
-      // Always release the lock, even if operation fails
-      console.log('🔓 Releasing advisory lock');
-      await supabase.rpc('pg_advisory_unlock', { key: lockId });
+    } catch (innerError) {
+      console.error('❌ Error during structural operation:', innerError);
+      throw innerError;
     }
 
   } catch (error) {
