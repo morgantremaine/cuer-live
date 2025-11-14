@@ -309,9 +309,15 @@ export const calculateItemsWithTiming = (
       } else {
         // NORMAL SEQUENTIAL NUMBERING MODE
         if (item.type !== 'header') {
-          regularRowCount++;
-          calculatedRowNumber = regularRowCount.toString();
-          lastBaseNumber = regularRowCount;
+          // Skip floating/floated items (they should not get sequential numbers)
+          if (!item.isFloating && !item.isFloated) {
+            regularRowCount++;
+            calculatedRowNumber = regularRowCount.toString();
+            lastBaseNumber = regularRowCount;
+          } else {
+            // Floating items get 'F'
+            calculatedRowNumber = 'F';
+          }
         }
       }
       
