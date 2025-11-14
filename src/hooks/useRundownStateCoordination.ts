@@ -425,7 +425,11 @@ export const useRundownStateCoordination = () => {
       
       // Move functions for mobile
       moveItemUp,
-      moveItemDown
+      moveItemDown,
+      
+      // Cell edit handlers (from consolidated cellEditIntegration)
+      handleCellEditStart: persistedState.handleCellEditStart,
+      handleCellEditComplete: persistedState.handleCellEditComplete
     },
     interactions,
     uiState,

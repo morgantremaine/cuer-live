@@ -2124,6 +2124,10 @@ export const useSimplifiedRundownState = () => {
       if (rundownId) {
         cellBroadcast.flushPendingBroadcasts(rundownId);
       }
-    }, [rundownId])
+    }, [rundownId]),
+    
+    // Cell edit handlers (consolidated from cellEditIntegration)
+    handleCellEditStart: cellEditIntegration.handleCellEditStart,
+    handleCellEditComplete: cellEditIntegration.handleCellEditComplete
   };
 };
