@@ -94,55 +94,11 @@ serve(async (req) => {
 
     const fetchTime = Date.now();
     console.log(`⏱️ Fetch completed in ${fetchTime - startTime}ms`);
-
-    // PHASE 2: Acquire advisory lock for rundown (ONLY for the critical update section)
-    const lockId = parseInt(operation.rundownId.replace(/-/g, '').substring(0, 15), 16);
     
-    console.log('🔒 Attempting to acquire advisory lock for rundown:', operation.rundownId, 'lockId:', lockId);
-    
-    // Try to acquire lock with retries (max 20 seconds)
-    let lockAcquired = false;
-    const maxRetries = 40; // 40 attempts * 500ms = 20 seconds max wait
-    let retryCount = 0;
-
-    while (!lockAcquired && retryCount < maxRetries) {
-      const { data: acquired, error: lockError } = await supabase.rpc('pg_try_advisory_lock', { key: lockId });
-      
-      if (lockError) {
-        console.error('❌ Error checking advisory lock:', lockError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to check lock', details: lockError }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (acquired) {
-        lockAcquired = true;
-        console.log(`✅ Advisory lock acquired (attempt ${retryCount + 1})`);
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Lock held by another operation, waiting... (attempt ${retryCount}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
-        }
-      }
-    }
-
-    if (!lockAcquired) {
-      console.error('❌ Failed to acquire advisory lock after 20 seconds');
-      return new Response(
-        JSON.stringify({ error: 'Lock acquisition timeout', details: 'Another operation is taking too long' }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    const lockTime = Date.now();
-    console.log(`⏱️ Lock acquired in ${lockTime - fetchTime}ms (total: ${lockTime - startTime}ms)`);
-    
-    // PHASE 3: Process the operation (with lock held)
+    // PHASE 2: Process the operation
     let updatedItems = [...(currentRundown.items || [])];
     let actionDescription = '';
-    let updateTime = lockTime;
+    let updateTime = fetchTime;
     
     try {
 
@@ -243,7 +199,7 @@ serve(async (req) => {
       }
 
       updateTime = Date.now();
-      console.log(`⏱️ Database update completed in ${updateTime - lockTime}ms`);
+      console.log(`⏱️ Database update completed in ${updateTime - fetchTime}ms`);
 
       return new Response(
         JSON.stringify({
@@ -258,13 +214,9 @@ serve(async (req) => {
         }
       );
     } finally {
-      // PHASE 5: Release lock and log operation (AFTER lock release - doesn't need exclusive access)
-      console.log('🔓 Releasing advisory lock');
-      await supabase.rpc('pg_advisory_unlock', { key: lockId });
+      // PHASE 3: Log operation (fire and forget)
+      const completeTime = Date.now();
       
-      const releaseTime = Date.now();
-      
-      // Log the operation (fire and forget - don't wait for this)
       supabase
         .from('rundown_operations')
         .insert({
@@ -277,8 +229,7 @@ serve(async (req) => {
             operationType: operation.operationType,
             timestamp: operation.timestamp,
             sequenceNumber: operation.operationData.sequenceNumber,
-            coordinatedAt: new Date().toISOString(),
-            lockId: lockId
+            coordinatedAt: new Date().toISOString()
           }
         })
         .then(() => console.log('📝 Operation logged'))
@@ -287,10 +238,8 @@ serve(async (req) => {
       console.log('⏱️ Operation timing breakdown:', {
         operationType: operation.operationType,
         fetchMs: fetchTime - startTime,
-        lockWaitMs: lockTime - fetchTime,
-        updateMs: updateTime - lockTime,
-        releaseMs: releaseTime - updateTime,
-        totalMs: releaseTime - startTime
+        updateMs: updateTime - fetchTime,
+        totalMs: completeTime - startTime
       });
       
       console.log('✅ Structural operation completed successfully:', {
