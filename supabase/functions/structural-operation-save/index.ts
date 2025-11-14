@@ -139,10 +139,11 @@ serve(async (req) => {
     const lockTime = Date.now();
     console.log(`⏱️ Lock acquired in ${lockTime - fetchTime}ms (total: ${lockTime - startTime}ms)`);
     
+    // PHASE 3: Process the operation (with lock held)
+    let updatedItems = [...(currentRundown.items || [])];
+    let actionDescription = '';
+    
     try {
-      // PHASE 3: Process the operation (with lock held)
-      let updatedItems = [...(currentRundown.items || [])];
-      let actionDescription = '';
 
       // Apply the structural operation
       switch (operation.operationType) {
