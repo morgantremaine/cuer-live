@@ -39,12 +39,37 @@ export const useStructuralSave = (
   const failedOperationsRef = useRef<StructuralOperation[]>([]);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
+  const retryTriggeredRef = useRef(false);
   const maxRetries = 5;
   
-  // localStorage keys for persistence
+  // Get unique tab ID for this browser tab
+  const tabId = getTabId();
+  
+  // localStorage keys for persistence (tab-specific to prevent cross-tab retry collisions)
   const getStorageKey = useCallback(() => {
-    return rundownId ? `rundown_failed_operations_${rundownId}` : null;
-  }, [rundownId]);
+    return rundownId ? `rundown_failed_operations_${rundownId}_tab_${tabId}` : null;
+  }, [rundownId, tabId]);
+  
+  // Clean up stale operations from other tabs/instances
+  const cleanupStaleOperations = useCallback(() => {
+    if (!rundownId) return;
+    
+    // Find all storage keys for this rundown from other tabs
+    const allKeys = Object.keys(localStorage).filter(k => 
+      k.startsWith(`rundown_failed_operations_${rundownId}_tab_`) && 
+      k !== getStorageKey()
+    );
+    
+    // Remove stale keys from other tabs/instances
+    allKeys.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+        console.log(`🧹 Cleaned up stale operation key: ${key}`);
+      } catch (e) {
+        console.warn('Failed to clean up stale key:', key);
+      }
+    });
+  }, [rundownId, getStorageKey]);
   
   // Persist failed operations to localStorage
   const persistFailedOperations = useCallback(() => {
@@ -80,10 +105,13 @@ export const useStructuralSave = (
             description: 'Retrying now...'
           });
           
-          // Trigger retry after a short delay to let the UI settle
-          setTimeout(() => {
-            retryFailedStructuralOperations();
-          }, 1000);
+          // Trigger retry after a short delay to let the UI settle (only once per session)
+          if (!retryTriggeredRef.current) {
+            retryTriggeredRef.current = true;
+            setTimeout(() => {
+              retryFailedStructuralOperations();
+            }, 1000);
+          }
         }
       }
     } catch (error) {
@@ -179,6 +207,12 @@ export const useStructuralSave = (
           console.log('✅ Structural operation saved to database:', operation.operationType);
         }
       }
+      
+      // Clear successfully saved operations from localStorage
+      persistFailedOperations();
+      
+      // Clean up stale operations from other tabs/instances
+      cleanupStaleOperations();
       
       onSaveComplete?.();
       console.log(`✅ Structural batch saved successfully: ${operations.length} operations`);
