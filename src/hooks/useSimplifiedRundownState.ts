@@ -1557,23 +1557,6 @@ export const useSimplifiedRundownState = () => {
         console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
         markStructuralChange('add_row', { items: state.items });
       }
-      
-      // Best-effort immediate hint: broadcast new order so other clients can reflect movement
-      if (rundownId && currentUserId) {
-        const order = state.items.map(i => i.id);
-        // Track that this change was made by the current user
-        lastChangeUserIdRef.current = currentUserId;
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId,
-            getTabId()
-          );
-        }, 0);
-      }
     }, [helpers.addRow, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
@@ -1584,22 +1567,6 @@ export const useSimplifiedRundownState = () => {
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
         markStructuralChange('add_header', { items: state.items });
-      }
-      
-      if (rundownId && currentUserId) {
-        const order = state.items.map(i => i.id);
-        // Track that this change was made by the current user
-        lastChangeUserIdRef.current = currentUserId;
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId,
-            getTabId()
-          );
-        }, 0);
       }
     }, [helpers.addHeader, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 

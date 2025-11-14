@@ -115,20 +115,6 @@ export const useRundownStateCoordination = () => {
       console.log('🔄 Moving item from', index, 'to', index - 1);
       persistedState.setItems(newItems);
       
-      // Broadcast reorder for immediate realtime sync (dual broadcasting)
-      if (persistedState.rundownId && userId) {
-        const order = newItems.map(item => item.id);
-        cellBroadcast.broadcastCellUpdate(
-          persistedState.rundownId,
-          undefined,
-          'items:reorder',
-          { order },
-          userId,
-          getTabId()
-        );
-        console.log('📡 Broadcasting moveUp reorder:', { orderLength: order.length });
-      }
-      
       // Trigger structural operation for database persistence
       if (persistedState.markStructuralChange) {
         const order = newItems.map(item => item.id);
@@ -145,20 +131,6 @@ export const useRundownStateCoordination = () => {
       const newItems = arrayMove(currentItems, index, index + 1);
       console.log('🔄 Moving item from', index, 'to', index + 1);
       persistedState.setItems(newItems);
-      
-      // Broadcast reorder for immediate realtime sync (dual broadcasting)
-      if (persistedState.rundownId && userId) {
-        const order = newItems.map(item => item.id);
-        cellBroadcast.broadcastCellUpdate(
-          persistedState.rundownId,
-          undefined,
-          'items:reorder',
-          { order },
-          userId,
-          getTabId()
-        );
-        console.log('📡 Broadcasting moveDown reorder:', { orderLength: order.length });
-      }
       
       // Trigger structural operation for database persistence
       if (persistedState.markStructuralChange) {
