@@ -142,6 +142,7 @@ serve(async (req) => {
     // PHASE 3: Process the operation (with lock held)
     let updatedItems = [...(currentRundown.items || [])];
     let actionDescription = '';
+    let updateTime = lockTime;
     
     try {
 
@@ -241,7 +242,7 @@ serve(async (req) => {
         );
       }
 
-      const updateTime = Date.now();
+      updateTime = Date.now();
       console.log(`⏱️ Database update completed in ${updateTime - lockTime}ms`);
 
       return new Response(
