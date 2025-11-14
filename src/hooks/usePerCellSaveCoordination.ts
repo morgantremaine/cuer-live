@@ -102,12 +102,8 @@ export const usePerCellSaveCoordination = ({
     if (currentUserId) {
       coordination.executeWithStructuralOperation(async () => {
         const sequenceNumber = coordination.getNextSequenceNumber();
-        // Include content snapshot to prevent race conditions with concurrent edits
-        const dataWithSnapshot = {
-          ...operationData,
-          contentSnapshot: currentItems || operationData.items
-        };
-        queueStructuralOperation(operationType, dataWithSnapshot, currentUserId, sequenceNumber);
+        // No need to send contentSnapshot - not used by edge function
+        queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
       });
     }
   }, [currentUserId, queueStructuralOperation, coordination]);

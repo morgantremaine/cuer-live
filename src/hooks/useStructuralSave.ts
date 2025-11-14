@@ -14,7 +14,6 @@ interface StructuralOperationData {
   newItems?: RundownItem[];
   insertIndex?: number;
   sequenceNumber?: number;
-  contentSnapshot?: RundownItem[]; // Snapshot of current content to prevent race conditions
   lockedRowNumbers?: { [itemId: string]: string }; // For lock operations
   numberingLocked?: boolean; // For lock operations
 }
