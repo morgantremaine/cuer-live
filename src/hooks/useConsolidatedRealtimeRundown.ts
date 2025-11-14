@@ -179,7 +179,7 @@ export const useConsolidatedRealtimeRundown = ({
             setIsConnected(true);
             console.log(`✅ Consolidated channel subscribed for ${rundownId}`);
           } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            debugLogger.realtime('🔴 Consolidated channel error:', status, 'for', rundownId);
+            debugLogger.realtime(`🔴 Consolidated channel error: ${status} for ${rundownId}`);
             state.isConnected = false;
             setIsConnected(false);
           }
@@ -196,8 +196,8 @@ export const useConsolidatedRealtimeRundown = ({
   return { 
     isConnected,
     // Stub methods for backward compatibility
-    setTypingChecker: () => {},
-    setUnsavedChecker: () => {},
+    setTypingChecker: (checker: () => boolean) => {},
+    setUnsavedChecker: (checker: () => boolean) => {},
     performCatchupSync: async () => false,
     trackOwnUpdate: () => {},
     isProcessingUpdate: false
