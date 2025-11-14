@@ -233,7 +233,6 @@ serve(async (req) => {
         );
       }
 
-      // Log the operation with enhanced coordination data
       await supabase
         .from('rundown_operations')
         .insert({
@@ -246,8 +245,7 @@ serve(async (req) => {
             operationType: operation.operationType,
             timestamp: operation.timestamp,
             sequenceNumber: operation.operationData.sequenceNumber,
-            coordinatedAt: new Date().toISOString(),
-            lockId: lockId
+            coordinatedAt: new Date().toISOString()
           }
         });
 
@@ -269,10 +267,9 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-    } finally {
-      // Always release the lock, even if operation fails
-      console.log('🔓 Releasing advisory lock');
-      await supabase.rpc('pg_advisory_unlock', { key: lockId });
+    } catch (innerError) {
+      console.error('❌ Error in structural operation:', innerError);
+      throw innerError;
     }
 
   } catch (error) {
