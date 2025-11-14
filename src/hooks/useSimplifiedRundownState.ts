@@ -544,6 +544,17 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
+              const tabId = getTabId();
+              const isOwnUpdate = cellBroadcast.isOwnUpdate(update, tabId);
+              
+              console.log('📡 RECEIVED: items:reorder broadcast:', {
+                tabId,
+                broadcastTabId: update.tabId,
+                isOwnUpdate,
+                timestamp: new Date().toISOString(),
+                orderLength: Array.isArray(update.value?.order) ? update.value.order.length : 0
+              });
+              
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
@@ -552,8 +563,15 @@ export const useSimplifiedRundownState = () => {
                   const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                   return ai - bi;
                 });
+                
+                console.log('🔄 APPLYING: reorder broadcast:', {
+                  itemCount: reordered.length,
+                  isOwnUpdate,
+                  tabId,
+                  timestamp: new Date().toISOString()
+                });
+                
                 actionsRef.current.loadState({ items: reordered });
-                console.log('🔄 Applied reorder broadcast:', { itemCount: reordered.length });
               }
               break;
             }
