@@ -6,10 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
  * Detects dead WebSocket connections and forces full Supabase reconnection.
  * Critical for recovering from long periods of inactivity (8+ hours).
  */
-// Module-level guards for health check throttling
+// Module-level guards for health check throttling (increased to reduce check storms)
 let isHealthCheckRunning = false;
 let lastHealthCheckTime = 0;
-const HEALTH_CHECK_COOLDOWN_MS = 3000; // 3 seconds between health checks
+const HEALTH_CHECK_COOLDOWN_MS = 15000; // 15 seconds between health checks (was 3s)
 
 export const websocketHealthCheck = {
   /**
@@ -49,7 +49,7 @@ export const websocketHealthCheck = {
             }
             resolve(false);
           }
-        }, 3000); // 3 seconds for faster failure detection
+        }, 10000); // 10 seconds timeout (was 3s) - gives more time for slow connections
         
         testChannel.subscribe((status) => {
           if (!resolved) {

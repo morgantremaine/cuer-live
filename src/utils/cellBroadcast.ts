@@ -135,8 +135,8 @@ export class CellBroadcastManager {
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
         
-        // Direct reconnection with exponential backoff
-        this.handleChannelReconnect(rundownId);
+        // Report to coordinator instead of handling reconnection directly
+        console.log('🔌 Cell channel issue reported - coordinator will handle reconnection');
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
@@ -146,48 +146,7 @@ export class CellBroadcastManager {
     return channel;
   }
 
-  private handleChannelReconnect(rundownId: string): void {
-    // Set guard flag immediately to prevent feedback loop
-    this.reconnecting.set(rundownId, true);
-    
-    // Clear any existing reconnect timeout
-    const existingTimeout = this.reconnectTimeouts.get(rundownId);
-    if (existingTimeout) {
-      clearTimeout(existingTimeout);
-    }
-
-    const attempts = this.reconnectAttempts.get(rundownId) || 0;
-    this.reconnectAttempts.set(rundownId, attempts + 1);
-
-    // Use exponential backoff from realtimeUtils
-    const delay = getReconnectDelay(attempts);
-
-    console.log(`🔌 Cell channel disconnected, reconnecting in ${delay}ms (attempt ${attempts + 1})`);
-
-    const timeout = setTimeout(() => {
-      this.reconnectTimeouts.delete(rundownId);
-      
-      // Remove and recreate the channel
-      const oldChannel = this.channels.get(rundownId);
-      if (oldChannel) {
-        try {
-          supabase.removeChannel(oldChannel);
-        } catch (error) {
-          console.warn('Error removing old channel during reconnect:', error);
-        }
-      }
-      
-      this.channels.delete(rundownId);
-      this.subscribed.delete(rundownId);
-      
-      // Recreate channel if callbacks still exist
-      if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
-        this.ensureChannel(rundownId);
-      }
-    }, delay);
-
-    this.reconnectTimeouts.set(rundownId, timeout);
-  }
+  // Removed handleChannelReconnect - coordinator now handles all reconnection logic
 
   async broadcastCellFocus(
     rundownId: string,

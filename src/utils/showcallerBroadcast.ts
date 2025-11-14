@@ -52,10 +52,10 @@ class ShowcallerBroadcastManager {
         
         if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
-          this.handleChannelReconnect(rundownId);
+          console.log('📺 Channel issue reported - coordinator will handle reconnection');
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
-          this.handleChannelReconnect(rundownId);
+          console.log('📺 Channel issue reported - coordinator will handle reconnection');
         } else if (status === 'SUBSCRIBED') {
           // Reset reconnect attempts and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);
@@ -67,31 +67,7 @@ class ShowcallerBroadcastManager {
     return channel;
   }
 
-  // Handle channel reconnection with exponential backoff
-  private handleChannelReconnect(rundownId: string): void {
-    // Set guard flag immediately to prevent feedback loop
-    this.reconnecting.set(rundownId, true);
-    
-    const existingTimeout = this.reconnectTimeouts.get(rundownId);
-    if (existingTimeout) {
-      clearTimeout(existingTimeout);
-    }
-
-    const attempts = this.reconnectAttempts.get(rundownId) || 0;
-    this.reconnectAttempts.set(rundownId, attempts + 1);
-
-    // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
-    const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
-
-    console.log(`📺 Reconnecting in ${delay}ms (attempt ${attempts + 1})`);
-
-    const timeout = setTimeout(() => {
-      this.reconnectTimeouts.delete(rundownId);
-      this.forceReconnect(rundownId);
-    }, delay);
-
-    this.reconnectTimeouts.set(rundownId, timeout);
-  }
+  // Removed handleChannelReconnect - coordinator now handles all reconnection logic
 
   // Force reconnection (called by RealtimeReconnectionCoordinator)
   async forceReconnect(rundownId: string): Promise<void> {
