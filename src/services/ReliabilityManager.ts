@@ -108,6 +108,15 @@ class ReliabilityManager {
 
       if (serverVersion > knownVersion) {
         console.warn(`🔄 Version mismatch detected! Known: v${knownVersion}, Server: v${serverVersion}`);
+        
+        // CRITICAL: Check if there are pending operations before syncing
+        if (this.hasPendingOperations(rundownId)) {
+          console.log('⏸️ Skipping full sync - pending operations in progress');
+          // Schedule recheck after operations complete
+          setTimeout(() => this.checkVersion(rundownId), 3000);
+          return;
+        }
+        
         await this.fullSync(rundownId, data);
       } else {
         // Versions match - we're good
@@ -117,6 +126,17 @@ class ReliabilityManager {
       console.error('❌ Version check error:', error);
       connectionState.setState({ status: 'disconnected' });
     }
+  }
+
+  /**
+   * Check if there are pending save operations for this rundown
+   */
+  private hasPendingOperations(rundownId: string): boolean {
+    // Check global pending saves tracker
+    if (typeof window !== 'undefined' && window.__pendingSaves) {
+      return window.__pendingSaves.has(rundownId);
+    }
+    return false;
   }
 
   /**
