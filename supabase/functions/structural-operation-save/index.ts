@@ -191,22 +191,6 @@ serve(async (req) => {
         );
       }
 
-      await supabase
-        .from('rundown_operations')
-        .insert({
-          rundown_id: operation.rundownId,
-          user_id: operation.userId,
-          operation_type: `structural_${operation.operationType}`,
-          operation_data: {
-            action: actionDescription,
-            itemCount: updatedItems.length,
-            operationType: operation.operationType,
-            timestamp: operation.timestamp,
-            sequenceNumber: operation.operationData.sequenceNumber,
-            coordinatedAt: new Date().toISOString()
-          }
-        });
-
       console.log('✅ Structural operation completed successfully:', {
         rundownId: operation.rundownId,
         operationType: operation.operationType,
