@@ -292,7 +292,6 @@ export const useSimplifiedRundownState = () => {
   
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
-    blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
       // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
