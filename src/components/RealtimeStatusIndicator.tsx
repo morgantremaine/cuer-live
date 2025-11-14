@@ -27,7 +27,7 @@ const RealtimeStatusIndicator = ({
       isConnected={isConnected}
       isProcessing={isProcessingUpdate}
       isDegraded={isDegraded}
-      isReconnecting={broadcastHealth.isReconnecting}
+      isReconnecting={false}
       className={className}
       showLabel={true}
     />
