@@ -14,7 +14,6 @@ interface StructuralOperationData {
   newItems?: RundownItem[];
   insertIndex?: number;
   sequenceNumber?: number;
-  contentSnapshot?: RundownItem[]; // Snapshot of current content to prevent race conditions
   lockedRowNumbers?: { [itemId: string]: string }; // For lock operations
   numberingLocked?: boolean; // For lock operations
 }
@@ -234,8 +233,8 @@ export const useStructuralSave = (
       }
 
       // Intelligent debounce based on lock state
-      // Longer delay for locked rows to batch multiple operations and reduce lock contention
-      const debounceDelay = operationData.numberingLocked ? 1500 : 500;
+      // Increased delays to better batch rapid operations and reduce lock contention
+      const debounceDelay = operationData.numberingLocked ? 2000 : 1000;
 
       saveTimeoutRef.current = setTimeout(() => {
         saveStructuralOperations().catch(error => {
