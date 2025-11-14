@@ -454,13 +454,39 @@ export const useSimplifiedRundownState = () => {
     debugLogger.realtime(`Connection status changed: ${realtimeConnection.isConnected}`);
   }, [realtimeConnection.isConnected]);
 
+  // Track pending structural operations globally for ReliabilityManager
+  useEffect(() => {
+    if (!rundownId) return;
+    
+    // Initialize global pending saves tracker
+    if (typeof window !== 'undefined') {
+      if (!window.__pendingSaves) {
+        window.__pendingSaves = new Set<string>();
+      }
+    }
+  }, [rundownId]);
+
   // Listen for ReliabilityManager full-sync events
   useEffect(() => {
     if (!rundownId) return;
 
     const handleFullSync = (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { rundown, preserveCellKey } = customEvent.detail;
+      const { rundownId: syncedRundownId, rundown, preserveCellKey } = customEvent.detail;
+
+      if (syncedRundownId !== rundownId) return;
+
+      // CRITICAL: Check if there are pending structural operations
+      const hasPendingOps = window.__pendingSaves?.has(rundownId) ?? false;
+      
+      if (hasPendingOps) {
+        console.log('⏸️ Deferring full sync - pending operations in progress');
+        // Schedule retry after operations complete
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('rundown-full-sync', { detail: customEvent.detail }));
+        }, 2000);
+        return;
+      }
 
       console.log('🔄 ReliabilityManager full sync received, preserving cell:', preserveCellKey);
 
@@ -1268,6 +1294,11 @@ export const useSimplifiedRundownState = () => {
       operationData
     });
     
+    // Track pending operation globally for ReliabilityManager
+    if (rundownId && typeof window !== 'undefined') {
+      window.__pendingSaves?.add(rundownId);
+    }
+    
     // For per-cell save mode, structural operations need immediate save coordination
     if (state.perCellSaveEnabled && cellEditIntegration) {
       console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
@@ -1286,6 +1317,11 @@ export const useSimplifiedRundownState = () => {
         setTimeout(() => {
           console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
           actions.markSaved();
+          
+          // Clear pending operation flag
+          if (rundownId && typeof window !== 'undefined') {
+            window.__pendingSaves?.delete(rundownId);
+          }
         }, 100);
       }
     }
