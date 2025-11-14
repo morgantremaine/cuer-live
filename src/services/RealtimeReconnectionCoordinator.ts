@@ -6,6 +6,7 @@ interface RegisteredConnection {
   id: string;
   type: 'showcaller' | 'cell' | 'consolidated' | 'rundown' | 'presence';
   reconnect: ReconnectionHandler;
+  lastErrorTime?: number; // Track when errors occur
 }
 
 // Constants for sleep detection (increased thresholds to reduce false positives)
@@ -225,6 +226,33 @@ class RealtimeReconnectionCoordinatorService {
       console.error('❌ Error checking WebSocket health on network online:', error);
       const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
       handleChunkLoadError(error, 'network-online-websocket-check');
+    }
+  }
+  
+  /**
+   * Check if multiple channels are failing simultaneously (cascade)
+   */
+  private detectChannelCascade(): boolean {
+    const now = Date.now();
+    const recentFailures = Array.from(this.connections.values()).filter(conn => {
+      // Check if connection reported error in last 5 seconds
+      return conn.lastErrorTime && (now - conn.lastErrorTime) < 5000;
+    });
+    
+    return recentFailures.length >= 3; // 3+ channels failing = cascade
+  }
+
+  /**
+   * Handle cascade by staggering reconnections
+   */
+  private async handleCascadeReconnection() {
+    console.warn('🌊 Cascade failure detected - staggering reconnections');
+    
+    const connections = Array.from(this.connections.values());
+    for (let i = 0; i < connections.length; i++) {
+      // Wait 2 seconds between each reconnection attempt
+      await new Promise(resolve => setTimeout(resolve, 2000 * i));
+      await connections[i].reconnect();
     }
   }
 

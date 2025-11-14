@@ -7,6 +7,7 @@ import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useLocalCollapsedHeaders } from './useLocalCollapsedHeaders';
 import { useAuth } from './useAuth';
+import { useTeamId } from './useTeamId';
 import { useDragAndDrop } from './useDragAndDrop';
 import { arrayMove } from '@dnd-kit/sortable';
 import { getTabId } from '@/utils/tabUtils';
@@ -22,6 +23,9 @@ export const useRundownStateCoordination = () => {
   // Get user ID from auth
   const { user } = useAuth();
   const userId = user?.id;
+  
+  // Get team ID
+  const { teamId } = useTeamId();
 
   // Ref to store interactions once they're created
   const interactionsRef = useRef<any>(null);
@@ -71,7 +75,7 @@ export const useRundownStateCoordination = () => {
     items: performanceOptimization.calculatedItems,
     rundownId: persistedState.rundownId,
     userId,
-    teamId: null,
+    teamId: teamId || null,
     rundownTitle: persistedState.rundownTitle,
     rundownStartTime: persistedState.rundownStartTime,
     setShowcallerUpdate: undefined // Add this when change tracking is available
