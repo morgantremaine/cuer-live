@@ -15,9 +15,9 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
+import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
-import { useStructuralOperationPrewarm } from '@/hooks/useStructuralOperationPrewarm';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
@@ -91,10 +91,7 @@ const RundownIndexContent = () => {
     moveItemDown,
     // Numbering lock
     numberingLocked,
-    toggleLock,
-    // Cell edit handlers (from consolidated instance)
-    handleCellEditStart,
-    handleCellEditComplete
+    toggleLock
   } = coreState;
 
   // Get team data for column deletion
@@ -110,7 +107,13 @@ const RundownIndexContent = () => {
   // Set up per-cell active editor tracking
   const { getEditorForCell } = useActiveCellEditors(rundownId);
 
-  // Cell edit handlers are provided by rundownState (consolidated to single instance)
+  // Set up cell edit integration for broadcasting focus states
+  const { handleCellEditStart, handleCellEditComplete } = useCellEditIntegration({
+    rundownId,
+    isPerCellEnabled: true,
+    userId,
+    userName
+  });
 
   // Handle scroll to editor - scroll to the row where another user is editing
   const handleScrollToEditor = useCallback((itemId: string) => {
@@ -155,9 +158,6 @@ const RundownIndexContent = () => {
     enabled: true,
     hasUnsavedChanges,
   });
-
-  // Pre-warm structural operation edge function to eliminate cold starts
-  useStructuralOperationPrewarm(rundownId, isInitialized, isConnected);
 
   // Track reconnection status
   const [isReconnecting, setIsReconnecting] = useState(false);

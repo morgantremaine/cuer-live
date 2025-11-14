@@ -9,7 +9,7 @@ import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
-
+import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { useEdgeFunctionPrewarming } from './useEdgeFunctionPrewarming';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
@@ -63,6 +63,10 @@ export const useSimplifiedRundownState = () => {
   
   // Track per-cell save enabled state to coordinate saving systems
   const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
+  
+  // Track structural operation save state
+  const [isStructuralSaving, setIsStructuralSaving] = useState(false);
+  const [hasStructuralUnsavedChanges, setHasStructuralUnsavedChanges] = useState(false);
   
   // Remove broadcast timeouts - no throttling of core functionality
   const lastRemoteUpdateRef = useRef<number>(0);
@@ -739,7 +743,6 @@ export const useSimplifiedRundownState = () => {
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
-    userId: currentUserId || undefined,
     onSaveComplete: (completionCount?: number) => {
       if (import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
         console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
@@ -835,6 +838,29 @@ export const useSimplifiedRundownState = () => {
     previousStateRef.current = state;
   }, [state, perCellEnabled, isInitialized, cellEditIntegration]);
   
+  // Get save coordination system for structural operations - use same callbacks as cell edit integration
+  const saveCoordination = usePerCellSaveCoordination({
+    rundownId,
+    isPerCellEnabled: perCellEnabled,
+    currentUserId,
+    onSaveComplete: (completionCount?: number) => {
+      console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
+      setIsStructuralSaving(false);
+      setHasStructuralUnsavedChanges(false);
+      actions.markSaved();
+      if (completionCount !== undefined) {
+        setSaveCompletionCount(completionCount);
+      }
+    },
+    onSaveStart: () => {
+      console.log('🧪 STRUCTURAL SAVE: Save started - updating UI state');
+      setIsStructuralSaving(true);
+    },
+    onUnsavedChanges: () => {
+      console.log('🧪 STRUCTURAL SAVE: Unsaved changes - updating UI state');
+      setHasStructuralUnsavedChanges(true);
+    }
+  });
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
@@ -1148,13 +1174,13 @@ export const useSimplifiedRundownState = () => {
       console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
       
       // If we have operation details, use the per-cell coordination system
-      if (operationType && operationData && cellEditIntegration && currentUserId) {
+      if (operationType && operationData && saveCoordination && currentUserId) {
         console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
           operationType,
           operationData,
           currentUserId
         });
-        cellEditIntegration.handleStructuralOperation(operationType as any, operationData);
+        saveCoordination.handleStructuralOperation(operationType as any, operationData);
       } else {
         console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
         // Fallback - just mark as saved for now
@@ -1165,7 +1191,7 @@ export const useSimplifiedRundownState = () => {
       }
     }
     // For regular autosave mode, no action needed - autosave handles it
-  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, currentUserId]);
+  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, saveCoordination, currentUserId]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
@@ -1851,10 +1877,10 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     isLoading: isLoading || isLoadingColumns,
     hasUnsavedChanges: perCellEnabled ? 
-      (cellEditIntegration.hasUnsavedChanges || cellEditIntegration.hasUnsavedStructuralChanges()) : 
+      (cellEditIntegration.hasUnsavedChanges || hasStructuralUnsavedChanges) : 
       state.hasUnsavedChanges,
     isSaving: perCellEnabled ? 
-      cellEditIntegration.isPerCellSaving : 
+      (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
       autoSaveIsSaving,
     saveCompletionCount,
     failedSavesCount: getFailedSavesCount ? getFailedSavesCount() : 0,
@@ -2124,10 +2150,6 @@ export const useSimplifiedRundownState = () => {
       if (rundownId) {
         cellBroadcast.flushPendingBroadcasts(rundownId);
       }
-    }, [rundownId]),
-    
-    // Cell edit handlers (consolidated from cellEditIntegration)
-    handleCellEditStart: cellEditIntegration.handleCellEditStart,
-    handleCellEditComplete: cellEditIntegration.handleCellEditComplete
+    }, [rundownId])
   };
 };

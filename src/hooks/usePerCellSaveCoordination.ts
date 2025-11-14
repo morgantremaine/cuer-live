@@ -102,9 +102,12 @@ export const usePerCellSaveCoordination = ({
     if (currentUserId) {
       coordination.executeWithStructuralOperation(async () => {
         const sequenceNumber = coordination.getNextSequenceNumber();
-        // contentSnapshot removed - edge function fetches current state from DB instead
-        // This eliminates large payloads (e.g., 500KB for reorder with 241 items)
-        queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
+        // Include content snapshot to prevent race conditions with concurrent edits
+        const dataWithSnapshot = {
+          ...operationData,
+          contentSnapshot: currentItems || operationData.items
+        };
+        queueStructuralOperation(operationType, dataWithSnapshot, currentUserId, sequenceNumber);
       });
     }
   }, [currentUserId, queueStructuralOperation, coordination]);

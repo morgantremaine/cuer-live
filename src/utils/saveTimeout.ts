@@ -24,7 +24,7 @@ export class SaveTimeoutError extends Error {
 export async function saveWithTimeout<T>(
   operation: () => Promise<T>,
   operationName: string,
-  timeoutMs: number = 25000
+  timeoutMs: number = 20000
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout;
   

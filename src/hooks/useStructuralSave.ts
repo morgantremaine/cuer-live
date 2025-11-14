@@ -14,6 +14,7 @@ interface StructuralOperationData {
   newItems?: RundownItem[];
   insertIndex?: number;
   sequenceNumber?: number;
+  contentSnapshot?: RundownItem[]; // Snapshot of current content to prevent race conditions
   lockedRowNumbers?: { [itemId: string]: string }; // For lock operations
   numberingLocked?: boolean; // For lock operations
 }
@@ -39,37 +40,12 @@ export const useStructuralSave = (
   const failedOperationsRef = useRef<StructuralOperation[]>([]);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
-  const retryTriggeredRef = useRef(false);
   const maxRetries = 5;
   
-  // Get unique tab ID for this browser tab
-  const tabId = getTabId();
-  
-  // localStorage keys for persistence (tab-specific to prevent cross-tab retry collisions)
+  // localStorage keys for persistence
   const getStorageKey = useCallback(() => {
-    return rundownId ? `rundown_failed_operations_${rundownId}_tab_${tabId}` : null;
-  }, [rundownId, tabId]);
-  
-  // Clean up stale operations from other tabs/instances
-  const cleanupStaleOperations = useCallback(() => {
-    if (!rundownId) return;
-    
-    // Find all storage keys for this rundown from other tabs
-    const allKeys = Object.keys(localStorage).filter(k => 
-      k.startsWith(`rundown_failed_operations_${rundownId}_tab_`) && 
-      k !== getStorageKey()
-    );
-    
-    // Remove stale keys from other tabs/instances
-    allKeys.forEach(key => {
-      try {
-        localStorage.removeItem(key);
-        console.log(`🧹 Cleaned up stale operation key: ${key}`);
-      } catch (e) {
-        console.warn('Failed to clean up stale key:', key);
-      }
-    });
-  }, [rundownId, getStorageKey]);
+    return rundownId ? `rundown_failed_operations_${rundownId}` : null;
+  }, [rundownId]);
   
   // Persist failed operations to localStorage
   const persistFailedOperations = useCallback(() => {
@@ -105,13 +81,10 @@ export const useStructuralSave = (
             description: 'Retrying now...'
           });
           
-          // Trigger retry after a short delay to let the UI settle (only once per session)
-          if (!retryTriggeredRef.current) {
-            retryTriggeredRef.current = true;
-            setTimeout(() => {
-              retryFailedStructuralOperations();
-            }, 1000);
-          }
+          // Trigger retry after a short delay to let the UI settle
+          setTimeout(() => {
+            retryFailedStructuralOperations();
+          }, 1000);
         }
       }
     } catch (error) {
@@ -208,12 +181,6 @@ export const useStructuralSave = (
         }
       }
       
-      // Clear successfully saved operations from localStorage
-      persistFailedOperations();
-      
-      // Clean up stale operations from other tabs/instances
-      cleanupStaleOperations();
-      
       onSaveComplete?.();
       console.log(`✅ Structural batch saved successfully: ${operations.length} operations`);
     } catch (error) {
@@ -267,8 +234,8 @@ export const useStructuralSave = (
       }
 
       // Intelligent debounce based on lock state
-      // Increased delays to better batch rapid operations and reduce lock contention
-      const debounceDelay = operationData.numberingLocked ? 2000 : 1000;
+      // Longer delay for locked rows to batch multiple operations and reduce lock contention
+      const debounceDelay = operationData.numberingLocked ? 1500 : 500;
 
       saveTimeoutRef.current = setTimeout(() => {
         saveStructuralOperations().catch(error => {

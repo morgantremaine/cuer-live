@@ -30,10 +30,9 @@ export const useCellEditIntegration = ({
   const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
 
   // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
-  const saveCoordination = usePerCellSaveCoordination({
+  const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
-    currentUserId: userId,
     onSaveComplete: (completionCount?: number) => {
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);
@@ -60,8 +59,8 @@ export const useCellEditIntegration = ({
     }
 
     // Track the field change in the per-cell system
-    saveCoordination.trackFieldChange(itemId, fieldName, newValue);
-  }, [isPerCellEnabled, saveCoordination.trackFieldChange]);
+    trackFieldChange(itemId, fieldName, newValue);
+  }, [isPerCellEnabled, trackFieldChange]);
 
   // Handle when user starts editing a cell - broadcasts focus state
   const handleCellEditStart = useCallback((
@@ -117,12 +116,6 @@ export const useCellEditIntegration = ({
     handleCellEditComplete,
     hasUnsavedChanges: hasPerCellUnsavedChanges,
     isPerCellEnabled,
-    isPerCellSaving,
-    
-    // Expose structural save methods from coordination
-    handleStructuralOperation: saveCoordination.handleStructuralOperation,
-    retryFailedSaves: saveCoordination.retryFailedSaves,
-    getFailedSavesCount: saveCoordination.getFailedSavesCount,
-    hasUnsavedStructuralChanges: saveCoordination.hasUnsavedChanges
+    isPerCellSaving
   };
 };

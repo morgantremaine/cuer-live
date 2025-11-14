@@ -11,6 +11,7 @@ import { detectDataConflict } from '@/utils/conflictDetection';
 import { createContentSignature, createLightweightContentSignature } from '@/utils/contentSignature';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
+import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
@@ -333,17 +334,51 @@ export const useSimpleAutoSave = (
   }, []);
 
   const handlePerCellSaveError = useCallback((error: string) => {
+    // Store reference for retry button
+    const retryFn = saveCoordinatedStateRef.current?.retryFailedSaves;
+    
     toast({
       title: "Save failed",
       description: error,
       variant: "destructive",
       duration: 0 // Persistent until dismissed
     });
+    
+    // Log retry availability for user
+    if (retryFn) {
+      console.log('💡 To retry failed saves, check the save indicator');
+    }
   }, [toast]);
 
-  // Per-cell save coordination is now handled by useCellEditIntegration in useSimplifiedRundownState
-  // This hook no longer manages per-cell saves - only typing activity tracking
+  // Store saveCoordinatedState ref for error handler
   const saveCoordinatedStateRef = useRef<any>(null);
+
+  // Unified save coordination - per-cell save is always enabled
+  const saveCoordination = usePerCellSaveCoordination({
+    rundownId,
+    isPerCellEnabled,
+    currentUserId,
+    onSaveStart: handlePerCellSaveStart,
+    onSaveComplete: handlePerCellSaveComplete,
+    onUnsavedChanges: handlePerCellUnsavedChanges,
+    onChangesSaved: handlePerCellChangesSaved,
+    onSaveError: handlePerCellSaveError,
+    isTypingActive,
+    saveInProgressRef,
+    typingIdleMs
+  });
+
+  const {
+    trackFieldChange,
+    saveState: saveCoordinatedState,
+    hasUnsavedChanges: hasCoordinatedUnsavedChanges,
+    handleStructuralOperation,
+    retryFailedSaves,
+    getFailedSavesCount
+  } = saveCoordination;
+
+  // Store ref for error handler
+  saveCoordinatedStateRef.current = saveCoordination;
 
   // Per-cell save is always enabled - delta save system removed
 
@@ -956,11 +991,23 @@ export const useSimpleAutoSave = (
       if (hasChanges && !isTyping && !isSavingNow) {
         console.log('⏰ PARANOID SAVE: Forcing save for unsaved changes (30s timer)');
         
-        // Per-cell mode: Paranoid save not needed - cell coordination handles saves
-        // Traditional mode: Trigger immediate save
-        if (!isPerCellEnabled) {
+        // Trigger immediate save, bypassing normal debouncing
+        if (isPerCellEnabled) {
+          // For per-cell mode, use coordinated save
+          saveCoordinatedState(state).catch(error => {
+            // "No changes to save" is actually success - flags were out of sync
+            if (error.message === 'No changes to save') {
+              console.log('⏰ PARANOID SAVE: Already saved - clearing stale flags');
+              hasUnsavedChangesRef.current = false;
+              setPerCellHasUnsavedChanges(false);
+            } else {
+              console.error('⏰ PARANOID SAVE: Per-cell save failed:', error);
+            }
+          });
+        } else {
+          // For delta mode, use performSave
           performSave(true, isSharedView).catch(error => {
-            console.error('⏰ PARANOID SAVE: Save failed:', error);
+            console.error('⏰ PARANOID SAVE: Delta save failed:', error);
           });
         }
       }
@@ -975,8 +1022,10 @@ export const useSimpleAutoSave = (
     isTypingActive, 
     isSaving,
     isPerCellEnabled,
+    saveCoordinatedState,
     performSave,
-    isSharedView
+    isSharedView,
+    state
   ]);
 
   // REMOVED: Save-on-unmount logic
@@ -998,17 +1047,18 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Note: Cell update coordination now handled via React context instead of global variables
-  // This hook now primarily tracks typing activity - per-cell saves handled by cellEditIntegration
 
   return {
+    trackFieldChange,
+    handleStructuralOperation,
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
-    hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : hasUnsavedChangesRef.current,
+    hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : (hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges()), // Use reactive state for per-cell
     setUndoActive,
     markActiveTyping,
     isTypingActive,
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
-    retryFailedSaves: () => {}, // No-op - handled by cellEditIntegration
-    getFailedSavesCount: () => 0, // No-op - handled by cellEditIntegration
+    retryFailedSaves,
+    getFailedSavesCount,
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,
     setVerboseLogging: keystrokeJournal.setVerboseLogging,
