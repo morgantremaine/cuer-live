@@ -7,11 +7,11 @@ interface UseRowEventHandlersProps {
   isSelected?: boolean;
   selectedRowsCount?: number;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
-  onDeleteRow: (id: string) => void;
+  onDeleteRow: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
   onDeleteSelectedRows: () => void;
-  onCopySelectedRows: () => void;
+  onCopySelectedRows: (targetRowId?: string) => void;
   onToggleColorPicker: (itemId: string) => void;
-  onToggleFloat?: (id: string) => void;
+  onToggleFloat?: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
   selectedRows?: Set<string>;
   onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
@@ -65,41 +65,21 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Let the RundownContextMenu component handle context menu logic
-    // It already has proper editable text detection built-in
-    
-    // Just ensure the row is selected if not already
-    if (onRowSelect && !isSelected) {
-      onRowSelect(item.id, index, false, false);
-    }
+    // No longer auto-select on right-click
+    // Context menu actions will be location-specific based on the clicked row
   };
 
   const handleContextMenuCopy = () => {
-    onCopySelectedRows();
+    onCopySelectedRows(item.id);
   };
 
   const handleContextMenuDelete = () => {
-    if (isSelected && selectedRowsCount > 1) {
-      onDeleteSelectedRows();
-    } else {
-      onDeleteRow(item.id);
-    }
+    onDeleteRow(item.id, isSelected, selectedRowsCount);
   };
 
   const handleContextMenuFloat = () => {
     if (onToggleFloat) {
-      if (isSelected && selectedRowsCount > 1 && selectedRows) {
-        selectedRows.forEach(selectedId => {
-          onToggleFloat(selectedId);
-        });
-      } else {
-        onToggleFloat(item.id);
-      }
-      
-      // Clear selection after floating
-      if (onClearSelection) {
-        onClearSelection();
-      }
+      onToggleFloat(item.id, isSelected, selectedRowsCount);
     }
   };
 

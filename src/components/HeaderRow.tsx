@@ -27,7 +27,7 @@ interface HeaderRowProps {
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onDeleteRow: (id: string) => void;
+  onDeleteRow: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
@@ -40,8 +40,8 @@ interface HeaderRowProps {
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
-  onAddRow?: () => void;
-  onAddHeader?: () => void;
+  onAddRow?: (targetRowId?: string) => void;
+  onAddHeader?: (targetRowId?: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   markActiveTyping?: () => void;
