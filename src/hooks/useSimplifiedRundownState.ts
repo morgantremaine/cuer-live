@@ -1549,13 +1549,16 @@ export const useSimplifiedRundownState = () => {
     }, [actions.deleteItem, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation, finalizeAllTypingSessions]),
 
     addRow: useCallback((insertIndex?: number, selectedRows?: Set<string>) => {
-      // Add operation already recorded by add_row operation
-      helpers.addRow(insertIndex, selectedRows);
+      // Capture the operation data returned by helpers.addRow
+      const operationData = helpers.addRow(insertIndex, selectedRows);
       
-      // For per-cell saves, use structural save coordination
-      if (cellEditIntegration.isPerCellEnabled) {
+      // For per-cell saves, use structural save coordination with CORRECT data
+      if (cellEditIntegration.isPerCellEnabled && operationData) {
         console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
-        markStructuralChange('add_row', { items: state.items });
+        markStructuralChange('add_row', {
+          newItems: operationData.newItems,
+          insertIndex: operationData.insertIndex
+        });
       }
       
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
