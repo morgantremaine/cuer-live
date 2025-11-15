@@ -742,6 +742,7 @@ export const useSimplifiedRundownState = () => {
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
+    userId: currentUserId || undefined,
     onSaveComplete: (completionCount?: number) => {
       if (import.meta.env.DEV && localStorage.getItem('debugPerCellSave') === '1') {
         console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
