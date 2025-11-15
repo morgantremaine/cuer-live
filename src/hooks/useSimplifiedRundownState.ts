@@ -9,7 +9,6 @@ import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
-import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { useEdgeFunctionPrewarming } from './useEdgeFunctionPrewarming';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
@@ -845,30 +844,8 @@ export const useSimplifiedRundownState = () => {
     previousStateRef.current = state;
   }, [state, perCellEnabled, isInitialized, cellEditIntegration]);
   
-  // Get save coordination system for structural operations - use same callbacks as cell edit integration
-  const saveCoordination = usePerCellSaveCoordination({
-    rundownId,
-    isPerCellEnabled: perCellEnabled,
-    currentUserId,
-    onSaveComplete: (completionCount?: number) => {
-      console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
-      setIsStructuralSaving(false);
-      setHasStructuralUnsavedChanges(false);
-      structuralOperationInProgressRef.current = false; // Clear flag
-      if (completionCount !== undefined) {
-        setSaveCompletionCount(completionCount);
-      }
-    },
-    onSaveStart: () => {
-      console.log('🧪 STRUCTURAL SAVE: Save started - updating UI state');
-      structuralOperationInProgressRef.current = true; // Set flag
-      setIsStructuralSaving(true);
-    },
-    onUnsavedChanges: () => {
-      console.log('🧪 STRUCTURAL SAVE: Unsaved changes - updating UI state');
-      setHasStructuralUnsavedChanges(true);
-    }
-  });
+  // Structural save coordination is now handled by cellEditIntegration
+  // (removed redundant saveCoordination instance)
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
@@ -1182,13 +1159,13 @@ export const useSimplifiedRundownState = () => {
       console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
       
       // If we have operation details, use the per-cell coordination system
-      if (operationType && operationData && saveCoordination && currentUserId) {
+      if (operationType && operationData && cellEditIntegration.saveCoordination && currentUserId) {
         console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
           operationType,
           operationData,
           currentUserId
         });
-        saveCoordination.handleStructuralOperation(operationType as any, operationData);
+        cellEditIntegration.saveCoordination.handleStructuralOperation(operationType as any, operationData);
       } else {
         console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
         // Fallback - just mark as saved for now
@@ -1199,7 +1176,7 @@ export const useSimplifiedRundownState = () => {
       }
     }
     // For regular autosave mode, no action needed - autosave handles it
-  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, saveCoordination, currentUserId]);
+  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, currentUserId]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
@@ -1894,8 +1871,12 @@ export const useSimplifiedRundownState = () => {
       (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
       autoSaveIsSaving,
     saveCompletionCount,
-    failedSavesCount: getFailedSavesCount ? getFailedSavesCount() : 0,
-    onRetryFailedSaves: retryFailedSaves,
+    failedSavesCount: perCellEnabled ? 
+      (cellEditIntegration.saveCoordination?.getFailedSavesCount() || 0) :
+      (getFailedSavesCount ? getFailedSavesCount() : 0),
+    onRetryFailedSaves: perCellEnabled ?
+      cellEditIntegration.saveCoordination?.retryFailedSaves :
+      retryFailedSaves,
     showcallerActivity,
     
     // Realtime connection status
