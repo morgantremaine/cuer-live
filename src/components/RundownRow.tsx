@@ -30,8 +30,8 @@ interface RundownRowProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
-  onDeleteRow: (id: string) => void;
-  onToggleFloat?: (id: string) => void;
+  onDeleteRow: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
+  onToggleFloat?: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -42,8 +42,8 @@ interface RundownRowProps {
   onToggleCollapse?: (headerId: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onAddRow?: () => void;
-  onAddHeader?: () => void;
+  onAddRow?: (targetRowId?: string) => void;
+  onAddHeader?: (targetRowId?: string) => void;
   onJumpToHere?: (segmentId: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;

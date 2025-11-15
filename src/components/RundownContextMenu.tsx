@@ -31,8 +31,8 @@ interface RundownContextMenuProps {
   onCloseColorPicker?: () => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
-  onAddRow?: () => void;
-  onAddHeader?: () => void;
+  onAddRow?: (targetRowId?: string) => void;
+  onAddHeader?: (targetRowId?: string) => void;
   onJumpToHere?: (segmentId: string) => void;
   onAutoTimeToScript?: () => void;
   onAutoTimeToScriptMultiple?: (selectedRows: Set<string>) => void;
@@ -86,15 +86,15 @@ const RundownContextMenu = memo(({
     { name: 'Gray', value: '#d1d5db' }
   ];
 
-  // Handle color selection for multiple rows
+  // Handle color selection - apply to target or all selected if target is in selection
   const handleColorSelect = (id: string, color: string) => {
-    if (isMultipleSelection && selectedRows) {
-      // Apply color to all selected rows
+    if (selectedRows && selectedRows.has(id) && selectedRows.size > 1) {
+      // Target is in selection and multiple selected - apply to all selected
       selectedRows.forEach(selectedId => {
         onColorSelect(selectedId, color);
       });
     } else {
-      // Apply color to single row
+      // Apply color to target row only
       onColorSelect(id, color);
     }
     
@@ -107,20 +107,11 @@ const RundownContextMenu = memo(({
     if (onClearSelection) {
       onClearSelection();
     }
-
   };
 
-  // Handle float toggle for multiple rows
+  // Handle float toggle - uses onToggleFloat which already receives proper context
   const handleContextMenuFloat = () => {
-    if (isMultipleSelection && selectedRows) {
-      // Toggle float for all selected rows
-      selectedRows.forEach(selectedId => {
-        onToggleFloat();
-      });
-    } else {
-      // Toggle float for single row
-      onToggleFloat();
-    }
+    onToggleFloat();
   };
 
   const handleJumpToHere = () => {
@@ -132,7 +123,7 @@ const RundownContextMenu = memo(({
   // Handle add row and clear selection
   const handleAddRow = () => {
     if (onAddRow) {
-      onAddRow();
+      onAddRow(itemId);
     }
     // Clear selection after adding row
     if (onClearSelection) {
@@ -143,7 +134,7 @@ const RundownContextMenu = memo(({
   // Handle add header and clear selection
   const handleAddHeader = () => {
     if (onAddHeader) {
-      onAddHeader();
+      onAddHeader(itemId);
     }
     // Clear selection after adding header
     if (onClearSelection) {

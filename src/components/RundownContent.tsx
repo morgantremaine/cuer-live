@@ -45,8 +45,8 @@ interface RundownContentProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (id: string, color: string) => void;
-  onDeleteRow: (id: string) => void;
-  onToggleFloat: (id: string) => void;
+  onDeleteRow: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
+  onToggleFloat: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index?: number) => void;
