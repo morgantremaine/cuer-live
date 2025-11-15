@@ -655,12 +655,11 @@ export const useRundownState = (
       const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
       dispatch({ type: 'ADD_MULTIPLE_ROWS', payload: { items: newItems, insertIndex: finalInsertIndex } });
       
-      // Broadcast to other tabs
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
+      // Return operation data for structural save coordination
+      return {
+        newItems,
+        insertIndex: finalInsertIndex
+      };
     },
 
     addHeader: (insertIndex?: number) => {
