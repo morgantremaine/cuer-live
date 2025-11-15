@@ -6,7 +6,7 @@ import { getTabId } from '@/utils/tabUtils';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: () => void;
+  addRow: (insertIndex?: number, selectedRows?: Set<string>) => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
@@ -90,15 +90,15 @@ export const useRundownGridHandlers = ({
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
         const insertIndex = insertAfterIndex + 1;
-        debugLogger.grid('Inserting row at index:', insertIndex);
-        addRowAtIndex(insertIndex);
+        debugLogger.grid(`Inserting row(s) at index: ${insertIndex}, count: ${selectedRows.size}`);
+        addRow(insertIndex, selectedRows); // ✅ Pass selectedRows!
         return;
       }
     }
     
     debugLogger.grid('No selection, using default addRow');
-    addRow();
-  }, [addRowAtIndex, addRow, selectedRows, items]);
+    addRow(undefined, undefined); // No index, no selection
+  }, [addRow, selectedRows, items]);
 
   // Enhanced addHeader that considers selection state and inserts after selected rows  
   const handleAddHeader = useCallback(() => {
