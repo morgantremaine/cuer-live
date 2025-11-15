@@ -33,6 +33,7 @@ export const useCellEditIntegration = ({
   const coordination = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
+    currentUserId: userId,
     onSaveComplete: (completionCount?: number) => {
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);
