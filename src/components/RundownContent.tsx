@@ -53,12 +53,12 @@ interface RundownContentProps {
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd?: (e: React.DragEvent) => void;
-  onCopySelectedRows: () => void;
-  onDeleteSelectedRows: () => void;
-  onPasteRows?: () => void;
+  onCopySelectedRows?: (targetRowId?: string) => void;
+  onDeleteSelectedRows?: () => void;
+  onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
-  onAddRow?: () => void;
-  onAddHeader?: () => void;
+  onAddRow?: (targetRowId?: string, count?: number) => void;
+  onAddHeader?: (targetRowId?: string) => void;
   onJumpToHere?: (itemId: string) => void;
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
