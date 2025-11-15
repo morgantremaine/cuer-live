@@ -65,8 +65,10 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // No longer auto-select on right-click
-    // Context menu actions will be location-specific based on the clicked row
+    // Smart right-click selection: select if not already selected, preserve multi-selection if already selected
+    if (!isSelected && onRowSelect) {
+      onRowSelect(item.id, index, false, false);
+    }
   };
 
   const handleContextMenuCopy = () => {
