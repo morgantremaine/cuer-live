@@ -31,6 +31,7 @@ type RundownAction =
   | { type: 'SET_ITEMS'; payload: RundownItem[] }
   | { type: 'UPDATE_ITEM'; payload: { id: string; updates: Partial<RundownItem> } }
   | { type: 'ADD_ITEM'; payload: { item: RundownItem; insertIndex?: number } }
+  | { type: 'ADD_MULTIPLE_ROWS'; payload: { items: RundownItem[]; insertIndex: number } }
   | { type: 'DELETE_ITEM'; payload: string }
   | { type: 'DELETE_MULTIPLE_ITEMS'; payload: string[] }
   | { type: 'REORDER_ITEMS'; payload: { fromIndex: number; toIndex: number; count?: number } }
@@ -183,6 +184,13 @@ function rundownReducer(
         items: clearHeaderNumbers(items),
         lockedRowNumbers: updatedLockedNumbers
       }, 'ADD_ITEM');
+    }
+
+    case 'ADD_MULTIPLE_ROWS': {
+      const { items: newItems, insertIndex } = action.payload;
+      const items = [...state.items];
+      items.splice(insertIndex, 0, ...newItems);
+      return markChanged({ items: clearHeaderNumbers(items) }, 'ADD_MULTIPLE_ROWS');
     }
 
     case 'DELETE_ITEM': {
@@ -616,26 +624,43 @@ export const useRundownState = (
 
   // Helper functions for common operations
   const helpers = useMemo(() => ({
-    addRow: (insertIndex?: number) => {
-      const newItem: RundownItem = {
-        id: uuidv4(),
-        type: 'regular',
-        rowNumber: '',
-        name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-        startTime: '',
-        duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION, // Using constant
-        endTime: '',
-        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-        isFloating: false
-      };
-      actions.addItem(newItem, insertIndex);
+    addRow: (insertIndex?: number, selectedRows?: Set<string>) => {
+      // Determine how many rows to add based on selection
+      const rowCount = selectedRows && selectedRows.size > 1 ? selectedRows.size : 1;
+      
+      // Create array of new items
+      const newItems: RundownItem[] = [];
+      for (let i = 0; i < rowCount; i++) {
+        newItems.push({
+          id: uuidv4(),
+          type: 'regular',
+          rowNumber: '',
+          name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
+          startTime: '',
+          duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
+          endTime: '',
+          elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
+          talent: '',
+          script: '',
+          gfx: '',
+          video: '',
+          images: '',
+          notes: '',
+          color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
+          isFloating: false
+        });
+      }
+      
+      // Add all items at once
+      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
+      dispatch({ type: 'ADD_MULTIPLE_ROWS', payload: { items: newItems, insertIndex: finalInsertIndex } });
+      
+      // Broadcast to other tabs
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
     },
 
     addHeader: (insertIndex?: number) => {

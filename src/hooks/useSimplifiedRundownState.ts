@@ -1548,9 +1548,9 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.deleteItem, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation, finalizeAllTypingSessions]),
 
-    addRow: useCallback(() => {
+    addRow: useCallback((insertIndex?: number, selectedRows?: Set<string>) => {
       // Add operation already recorded by add_row operation
-      helpers.addRow();
+      helpers.addRow(insertIndex, selectedRows);
       
       // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
