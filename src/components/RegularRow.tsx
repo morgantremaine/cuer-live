@@ -29,8 +29,8 @@ interface RegularRowProps {
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onDeleteRow: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
-  onToggleFloat: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
+  onDeleteRow: (id: string) => void;
+  onToggleFloat: (id: string) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
@@ -42,8 +42,8 @@ interface RegularRowProps {
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
-  onAddRow?: (targetRowId?: string, count?: number) => void;
-  onAddHeader?: (targetRowId?: string) => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;

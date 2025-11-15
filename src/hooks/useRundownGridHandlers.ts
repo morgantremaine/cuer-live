@@ -74,28 +74,15 @@ export const useRundownGridHandlers = ({
     updateItem(id, field, value);
   }, [updateItem]);
 
-  // Enhanced addRow that accepts targetRowId for location-specific insertion
-  const handleAddRow = useCallback((targetRowId?: string, count: number = 1) => {
-    debugLogger.grid('Grid handlers addRow called', targetRowId ? `with target: ${targetRowId}, count: ${count}` : `count: ${count}`);
+  // Enhanced addRow that considers selection state and inserts after selected rows
+  const handleAddRow = useCallback(() => {
+    debugLogger.grid('Grid handlers addRow called');
+    debugLogger.grid('Current selection state - selectedRows size:', selectedRows.size);
     
-    // If targetRowId is provided, use it
-    if (targetRowId && items) {
-      const targetIndex = items.findIndex(item => item.id === targetRowId);
-      if (targetIndex !== -1) {
-        const insertIndex = targetIndex + 1;
-        debugLogger.grid('Inserting rows after target at index:', insertIndex);
-        
-        // Insert multiple rows if count > 1
-        for (let i = 0; i < count; i++) {
-          addRowAtIndex(insertIndex + i);
-        }
-        return;
-      }
-    }
-    
-    // Otherwise check if we have any selection
+    // Check if we have any selection
     if (selectedRows.size > 0) {
       debugLogger.grid('Using selection for insertion');
+      // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(selectedRows)
         .map(id => items.findIndex(item => item.id === id))
         .filter(index => index !== -1);
@@ -103,41 +90,25 @@ export const useRundownGridHandlers = ({
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
         const insertIndex = insertAfterIndex + 1;
-        debugLogger.grid('Inserting rows at index:', insertIndex);
-        
-        // Insert multiple rows if count > 1
-        for (let i = 0; i < count; i++) {
-          addRowAtIndex(insertIndex + i);
-        }
+        debugLogger.grid('Inserting row at index:', insertIndex);
+        addRowAtIndex(insertIndex);
         return;
       }
     }
     
-    debugLogger.grid('No target or selection, using default addRow');
-    
-    // Insert multiple rows at end if count > 1
-    for (let i = 0; i < count; i++) {
-      addRow();
-    }
+    debugLogger.grid('No selection, using default addRow');
+    addRow();
   }, [addRowAtIndex, addRow, selectedRows, items]);
 
-  // Enhanced addHeader that accepts targetRowId for location-specific insertion
-  const handleAddHeader = useCallback((targetRowId?: string) => {
-    debugLogger.grid('Grid handlers addHeader called', targetRowId ? `with target: ${targetRowId}` : '');
+  // Enhanced addHeader that considers selection state and inserts after selected rows  
+  const handleAddHeader = useCallback(() => {
+    debugLogger.grid('Grid handlers addHeader called');
+    debugLogger.grid('Current selection state - selectedRows size:', selectedRows.size);
     
-    // If targetRowId is provided, use it
-    if (targetRowId && items) {
-      const targetIndex = items.findIndex(item => item.id === targetRowId);
-      if (targetIndex !== -1) {
-        debugLogger.grid('Inserting header after target at index:', targetIndex + 1);
-        addHeaderAtIndex(targetIndex + 1);
-        return;
-      }
-    }
-    
-    // Otherwise check if we have any selection
+    // Check if we have any selection
     if (selectedRows.size > 0) {
       debugLogger.grid('Using selection for header insertion');
+      // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(selectedRows)
         .map(id => items.findIndex(item => item.id === id))
         .filter(index => index !== -1);
@@ -151,37 +122,17 @@ export const useRundownGridHandlers = ({
       }
     }
     
-    debugLogger.grid('No target or selection, using default addHeader');
+    debugLogger.grid('No selection, using default addHeader');
     addHeader();
   }, [addHeaderAtIndex, addHeader, selectedRows, items]);
 
-  const handleDeleteRow = useCallback((id: string, isInSelection?: boolean, selectionCount?: number) => {
-    // If target is in selection AND multiple selected, delete all selected
-    if (isInSelection && selectionCount && selectionCount > 1) {
-      const selectedIds = Array.from(selectedRows);
-      if (selectedIds.length > 0) {
-        deleteMultipleRows(selectedIds);
-        clearSelection();
-      }
-    } else {
-      // Delete only the target row
-      deleteRow(id);
-    }
-  }, [deleteRow, deleteMultipleRows, clearSelection, selectedRows]);
+  const handleDeleteRow = useCallback((id: string) => {
+    deleteRow(id);
+  }, [deleteRow]);
 
-  const handleToggleFloat = useCallback((id: string, isInSelection?: boolean, selectionCount?: number) => {
-    // If target is in selection AND multiple selected, toggle float for all selected
-    if (isInSelection && selectionCount && selectionCount > 1 && selectedRows.size > 1) {
-      selectedRows.forEach(selectedId => {
-        toggleFloatRow(selectedId);
-      });
-      // Clear selection after floating
-      clearSelection();
-    } else {
-      // Toggle float for target row only
-      toggleFloatRow(id);
-    }
-  }, [toggleFloatRow, selectedRows, clearSelection]);
+  const handleToggleFloat = useCallback((id: string) => {
+    toggleFloatRow(id);
+  }, [toggleFloatRow]);
 
   const handleColorSelect = useCallback((id: string, color: string) => {
     selectColor(id, color);
@@ -273,31 +224,10 @@ export const useRundownGridHandlers = ({
     handleDeleteColumn(columnId);
   }, [handleDeleteColumn]);
 
-  const handleCopySelectedRows = useCallback((targetRowId?: string) => {
-    if (!items) return;
-    
-    // If target is in selection and there are multiple selected, copy all selected
-    if (targetRowId && selectedRows.has(targetRowId) && selectedRows.size > 0) {
-      const selectedItems = items.filter(item => selectedRows.has(item.id));
-      copyItems(selectedItems);
-      return;
-    }
-    
-    // If target is NOT in selection, copy only the target
-    if (targetRowId) {
-      const targetItem = items.find(item => item.id === targetRowId);
-      if (targetItem) {
-        copyItems([targetItem]);
-        return;
-      }
-    }
-    
-    // Fallback: copy selection if exists
-    if (selectedRows.size > 0) {
-      const selectedItems = items.filter(item => selectedRows.has(item.id));
-      copyItems(selectedItems);
-    }
-  }, [selectedRows, items, copyItems]);
+  const handleCopySelectedRows = useCallback(() => {
+    const selectedItems = items.filter(item => selectedRows.has(item.id));
+    copyItems(selectedItems);
+  }, [items, selectedRows, copyItems]);
 
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
     debugLogger.grid('handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });

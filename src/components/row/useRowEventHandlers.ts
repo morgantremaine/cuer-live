@@ -7,11 +7,11 @@ interface UseRowEventHandlersProps {
   isSelected?: boolean;
   selectedRowsCount?: number;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
-  onDeleteRow: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
+  onDeleteRow: (id: string) => void;
   onDeleteSelectedRows: () => void;
-  onCopySelectedRows: (targetRowId?: string) => void;
+  onCopySelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
-  onToggleFloat?: (id: string, isInSelection?: boolean, selectionCount?: number) => void;
+  onToggleFloat?: (id: string) => void;
   selectedRows?: Set<string>;
   onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
@@ -65,23 +65,41 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Smart right-click selection: select if not already selected, preserve multi-selection if already selected
-    if (!isSelected && onRowSelect) {
+    // Let the RundownContextMenu component handle context menu logic
+    // It already has proper editable text detection built-in
+    
+    // Just ensure the row is selected if not already
+    if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
   };
 
   const handleContextMenuCopy = () => {
-    onCopySelectedRows(item.id);
+    onCopySelectedRows();
   };
 
   const handleContextMenuDelete = () => {
-    onDeleteRow(item.id, isSelected, selectedRowsCount);
+    if (isSelected && selectedRowsCount > 1) {
+      onDeleteSelectedRows();
+    } else {
+      onDeleteRow(item.id);
+    }
   };
 
   const handleContextMenuFloat = () => {
     if (onToggleFloat) {
-      onToggleFloat(item.id, isSelected, selectedRowsCount);
+      if (isSelected && selectedRowsCount > 1 && selectedRows) {
+        selectedRows.forEach(selectedId => {
+          onToggleFloat(selectedId);
+        });
+      } else {
+        onToggleFloat(item.id);
+      }
+      
+      // Clear selection after floating
+      if (onClearSelection) {
+        onClearSelection();
+      }
     }
   };
 

@@ -31,8 +31,8 @@ interface RundownContextMenuProps {
   onCloseColorPicker?: () => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
-  onAddRow?: (targetRowId?: string, count?: number) => void;
-  onAddHeader?: (targetRowId?: string) => void;
+  onAddRow?: () => void;
+  onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
   onAutoTimeToScript?: () => void;
   onAutoTimeToScriptMultiple?: (selectedRows: Set<string>) => void;
@@ -86,15 +86,15 @@ const RundownContextMenu = memo(({
     { name: 'Gray', value: '#d1d5db' }
   ];
 
-  // Handle color selection - apply to target or all selected if target is in selection
+  // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
-    if (selectedRows && selectedRows.has(id) && selectedRows.size > 1) {
-      // Target is in selection and multiple selected - apply to all selected
+    if (isMultipleSelection && selectedRows) {
+      // Apply color to all selected rows
       selectedRows.forEach(selectedId => {
         onColorSelect(selectedId, color);
       });
     } else {
-      // Apply color to target row only
+      // Apply color to single row
       onColorSelect(id, color);
     }
     
@@ -107,11 +107,20 @@ const RundownContextMenu = memo(({
     if (onClearSelection) {
       onClearSelection();
     }
+
   };
 
-  // Handle float toggle - uses onToggleFloat which already receives proper context
+  // Handle float toggle for multiple rows
   const handleContextMenuFloat = () => {
-    onToggleFloat();
+    if (isMultipleSelection && selectedRows) {
+      // Toggle float for all selected rows
+      selectedRows.forEach(selectedId => {
+        onToggleFloat();
+      });
+    } else {
+      // Toggle float for single row
+      onToggleFloat();
+    }
   };
 
   const handleJumpToHere = () => {
@@ -123,9 +132,7 @@ const RundownContextMenu = memo(({
   // Handle add row and clear selection
   const handleAddRow = () => {
     if (onAddRow) {
-      // Pass target and count (when multiple selected, insert that many)
-      const count = isMultipleSelection ? selectedCount : 1;
-      onAddRow(itemId, count);
+      onAddRow();
     }
     // Clear selection after adding row
     if (onClearSelection) {
@@ -136,7 +143,7 @@ const RundownContextMenu = memo(({
   // Handle add header and clear selection
   const handleAddHeader = () => {
     if (onAddHeader) {
-      onAddHeader(itemId);
+      onAddHeader();
     }
     // Clear selection after adding header
     if (onClearSelection) {
@@ -196,7 +203,7 @@ const RundownContextMenu = memo(({
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              {isMultipleSelection ? `Insert ${selectedCount} segments` : 'Segment'}
+              Segment
             </ContextMenuItem>
           )}
           
