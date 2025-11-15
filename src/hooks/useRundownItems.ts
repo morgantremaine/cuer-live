@@ -27,25 +27,32 @@ export const useRundownItems = (
   }, [markAsChanged]);
 
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>) => {
-    const newItem: RundownItem = {
-      id: uuidv4(),
-      type: 'regular',
-      rowNumber: '',
-      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-      startTime: '',
-      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-      endTime: '',
-      elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-      isFloating: false,
-      customFields: {}
-    };
+    // Determine how many rows to add based on selection
+    const rowCount = selectedRows && selectedRows.size > 1 ? selectedRows.size : 1;
+    
+    // Create array of new items
+    const newItems: RundownItem[] = [];
+    for (let i = 0; i < rowCount; i++) {
+      newItems.push({
+        id: uuidv4(),
+        type: 'regular',
+        rowNumber: '',
+        name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
+        startTime: '',
+        duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
+        endTime: '',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
+        isFloating: false,
+        customFields: {}
+      });
+    }
 
     setItems(prevItems => {
       let insertIndex = prevItems.length; // Default to end
@@ -68,33 +75,34 @@ export const useRundownItems = (
         }
       }
 
-      const newItems = [...prevItems];
-      newItems.splice(insertIndex, 0, newItem);
+      const updatedItems = [...prevItems];
+      updatedItems.splice(insertIndex, 0, ...newItems); // Insert all new items at once
       
-      // 🎯 NEW: Record add_row operation for undo/redo
-      console.log('📝 Recording add_row:', { addedItemId: newItem.id, insertIndex });
+      // 🎯 Record add_row operation for undo/redo
+      console.log(`📝 Recording add_row: ${newItems.length} rows`, { insertIndex });
       if (recordOperation) {
         recordOperation({
           type: 'add_row',
           data: { 
-            addedItem: newItem,
-            addedItemId: newItem.id, 
+            addedItem: newItems[0], // For backward compatibility
+            addedItems: newItems,    // Support multiple items
+            addedItemId: newItems[0].id, 
             addedIndex: insertIndex 
           },
-          description: 'Add row'
+          description: newItems.length > 1 ? `Add ${newItems.length} rows` : 'Add row'
         });
       }
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('add_row', {
-          newItems: [newItem],
+          newItems: newItems,
           insertIndex
         });
       }
       
       markAsChanged();
-      return newItems;
+      return updatedItems;
     });
   }, [markAsChanged]);
 
