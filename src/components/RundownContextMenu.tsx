@@ -31,7 +31,7 @@ interface RundownContextMenuProps {
   onCloseColorPicker?: () => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
-  onAddRow?: (targetRowId?: string) => void;
+  onAddRow?: (targetRowId?: string, count?: number) => void;
   onAddHeader?: (targetRowId?: string) => void;
   onJumpToHere?: (segmentId: string) => void;
   onAutoTimeToScript?: () => void;
@@ -123,7 +123,9 @@ const RundownContextMenu = memo(({
   // Handle add row and clear selection
   const handleAddRow = () => {
     if (onAddRow) {
-      onAddRow(itemId);
+      // Pass target and count (when multiple selected, insert that many)
+      const count = isMultipleSelection ? selectedCount : 1;
+      onAddRow(itemId, count);
     }
     // Clear selection after adding row
     if (onClearSelection) {
@@ -194,7 +196,7 @@ const RundownContextMenu = memo(({
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Segment
+              {isMultipleSelection ? `Insert ${selectedCount} segments` : 'Segment'}
             </ContextMenuItem>
           )}
           
