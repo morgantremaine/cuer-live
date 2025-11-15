@@ -42,7 +42,7 @@ interface RundownRowProps {
   onToggleCollapse?: (headerId: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onAddRow?: (targetRowId?: string) => void;
+  onAddRow?: (targetRowId?: string, count?: number) => void;
   onAddHeader?: (targetRowId?: string) => void;
   onJumpToHere?: (segmentId: string) => void;
   onMoveUp?: () => void;

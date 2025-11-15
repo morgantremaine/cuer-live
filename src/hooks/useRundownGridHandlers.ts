@@ -75,15 +75,20 @@ export const useRundownGridHandlers = ({
   }, [updateItem]);
 
   // Enhanced addRow that accepts targetRowId for location-specific insertion
-  const handleAddRow = useCallback((targetRowId?: string) => {
-    debugLogger.grid('Grid handlers addRow called', targetRowId ? `with target: ${targetRowId}` : '');
+  const handleAddRow = useCallback((targetRowId?: string, count: number = 1) => {
+    debugLogger.grid('Grid handlers addRow called', targetRowId ? `with target: ${targetRowId}, count: ${count}` : `count: ${count}`);
     
     // If targetRowId is provided, use it
     if (targetRowId && items) {
       const targetIndex = items.findIndex(item => item.id === targetRowId);
       if (targetIndex !== -1) {
-        debugLogger.grid('Inserting row after target at index:', targetIndex + 1);
-        addRowAtIndex(targetIndex + 1);
+        const insertIndex = targetIndex + 1;
+        debugLogger.grid('Inserting rows after target at index:', insertIndex);
+        
+        // Insert multiple rows if count > 1
+        for (let i = 0; i < count; i++) {
+          addRowAtIndex(insertIndex + i);
+        }
         return;
       }
     }
@@ -98,14 +103,22 @@ export const useRundownGridHandlers = ({
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
         const insertIndex = insertAfterIndex + 1;
-        debugLogger.grid('Inserting row at index:', insertIndex);
-        addRowAtIndex(insertIndex);
+        debugLogger.grid('Inserting rows at index:', insertIndex);
+        
+        // Insert multiple rows if count > 1
+        for (let i = 0; i < count; i++) {
+          addRowAtIndex(insertIndex + i);
+        }
         return;
       }
     }
     
     debugLogger.grid('No target or selection, using default addRow');
-    addRow();
+    
+    // Insert multiple rows at end if count > 1
+    for (let i = 0; i < count; i++) {
+      addRow();
+    }
   }, [addRowAtIndex, addRow, selectedRows, items]);
 
   // Enhanced addHeader that accepts targetRowId for location-specific insertion

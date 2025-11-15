@@ -40,7 +40,7 @@ interface HeaderRowProps {
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
-  onAddRow?: (targetRowId?: string) => void;
+  onAddRow?: (targetRowId?: string, count?: number) => void;
   onAddHeader?: (targetRowId?: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
