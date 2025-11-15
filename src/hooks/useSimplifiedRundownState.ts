@@ -855,7 +855,6 @@ export const useSimplifiedRundownState = () => {
       setIsStructuralSaving(false);
       setHasStructuralUnsavedChanges(false);
       structuralOperationInProgressRef.current = false; // Clear flag
-      actions.markSaved();
       if (completionCount !== undefined) {
         setSaveCompletionCount(completionCount);
       }
