@@ -25,7 +25,7 @@ class ShowcallerBroadcastManager {
   private reconnecting: Map<string, boolean> = new Map(); // Guard against reconnection storms
   private reconnectGuardTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private reconnectStartTimes: Map<string, number> = new Map();
-  private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
+  private readonly RECONNECT_TIMEOUT_MS = 30000; // 30 second timeout for stuck reconnections
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -46,20 +46,31 @@ class ShowcallerBroadcastManager {
         
         // Guard: Skip if already reconnecting to prevent feedback loop
         if (this.reconnecting.get(rundownId) && status !== 'SUBSCRIBED') {
-          console.log('⏭️ Skipping reconnect - already reconnecting:', rundownId);
-          return;
+          const startTime = this.reconnectStartTimes.get(rundownId);
+          if (startTime && (Date.now() - startTime > 60000)) {
+            console.error('🚨 Showcaller reconnection stuck for >60s - force clearing');
+            this.clearReconnectingState(rundownId);
+          } else {
+            console.log('⏭️ Skipping reconnect - already reconnecting:', rundownId);
+            return;
+          }
         }
         
         if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
+          this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
+          this.reconnectStartTimes.delete(rundownId);
           console.log('📺 Channel issue reported - coordinator will handle reconnection');
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
+          this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
+          this.reconnectStartTimes.delete(rundownId);
           console.log('📺 Channel issue reported - coordinator will handle reconnection');
         } else if (status === 'SUBSCRIBED') {
           // Reset reconnect attempts and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);
           this.reconnecting.delete(rundownId);
+          this.reconnectStartTimes.delete(rundownId);
         }
       });
 
