@@ -22,6 +22,7 @@ interface StructuralOperation {
   };
   userId: string;
   timestamp: string;
+  tabId?: string;
 }
 
 serve(async (req) => {
@@ -197,7 +198,8 @@ serve(async (req) => {
           locked_row_numbers: updatedLockedRowNumbers,
           numbering_locked: updatedNumberingLocked,
           updated_at: new Date().toISOString(),
-          last_updated_by: operation.userId
+          last_updated_by: operation.userId,
+          tab_id: operation.tabId || null
         })
         .eq('id', operation.rundownId)
         .select()

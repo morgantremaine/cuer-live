@@ -24,6 +24,7 @@ interface StructuralOperation {
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;
+  tabId?: string;
 }
 
 export const useStructuralSave = (
@@ -221,7 +222,8 @@ export const useStructuralSave = (
           sequenceNumber
         },
         userId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        tabId: getTabId()
       };
 
       pendingOperationsRef.current.push(operation);
