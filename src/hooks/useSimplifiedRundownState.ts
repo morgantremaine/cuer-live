@@ -66,7 +66,6 @@ export const useSimplifiedRundownState = () => {
   // Track structural operation save state
   const [isStructuralSaving, setIsStructuralSaving] = useState(false);
   const [hasStructuralUnsavedChanges, setHasStructuralUnsavedChanges] = useState(false);
-  const structuralOperationInProgressRef = useRef(false);
   
   // Remove broadcast timeouts - no throttling of core functionality
   const lastRemoteUpdateRef = useRef<number>(0);
@@ -818,12 +817,6 @@ export const useSimplifiedRundownState = () => {
     
     // Track item changes - compare by ID
     if (prev.items !== curr.items) {
-      // Skip cell change detection during structural operations
-      if (structuralOperationInProgressRef.current) {
-        console.log('⏭️ Skipping cell change detection - structural operation in progress');
-        return;
-      }
-      
       const prevItemsMap = new Map(prev.items.map(item => [item.id, item]));
       const currItemsMap = new Map(curr.items.map(item => [item.id, item]));
       
