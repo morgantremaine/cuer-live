@@ -449,24 +449,6 @@ export const useDragAndDrop = (
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
-      // Broadcast reorder for immediate realtime sync (dual broadcasting like add_row/copy)
-      if (rundownId && currentUserId) {
-        const order = newItems.map(item => item.id);
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:reorder',
-          { order },
-          currentUserId,
-          getTabId()
-        );
-        console.log('📡 Broadcasting reorder for immediate sync:', {
-          rundownId,
-          orderLength: order.length,
-          userId: currentUserId
-        });
-      }
-      
       // Handle reorder via structural coordination if available (database persistence)
       if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
