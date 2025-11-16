@@ -42,7 +42,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     onRetryFailedSaves,
     hasActiveTeammates,
     activeTeammateNames,
-    onScrollToActiveTeammate
+    onScrollToActiveTeammate,
+    saveError
   } = props;
 
   // Debug logging for prop passing
@@ -89,6 +90,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       hasActiveTeammates={hasActiveTeammates}
       activeTeammateNames={activeTeammateNames}
       onScrollToActiveTeammate={onScrollToActiveTeammate}
+      saveError={saveError}
     />
   );
 };

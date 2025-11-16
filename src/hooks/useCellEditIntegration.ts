@@ -28,6 +28,7 @@ export const useCellEditIntegration = ({
 }: CellEditIntegrationProps) => {
   const [isPerCellSaving, setIsPerCellSaving] = useState(false);
   const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
   const coordination = usePerCellSaveCoordination({
@@ -37,6 +38,7 @@ export const useCellEditIntegration = ({
     onSaveComplete: (completionCount?: number) => {
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);
+      setSaveError(null); // Clear error on successful save
       onSaveComplete?.(completionCount);
     },
     onSaveStart: () => {
@@ -46,6 +48,9 @@ export const useCellEditIntegration = ({
     onUnsavedChanges: () => {
       setHasPerCellUnsavedChanges(true);
       onUnsavedChanges?.();
+    },
+    onSaveError: (error: string) => {
+      setSaveError(error);
     }
   });
 
@@ -118,6 +123,7 @@ export const useCellEditIntegration = ({
     hasUnsavedChanges: hasPerCellUnsavedChanges,
     isPerCellEnabled,
     isPerCellSaving,
+    saveError,
     // Expose coordination methods for structural operations
     saveCoordination: {
       handleStructuralOperation: coordination.handleStructuralOperation,

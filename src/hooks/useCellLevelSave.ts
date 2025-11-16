@@ -174,12 +174,26 @@ export const useCellLevelSave = (
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
-        console.error('❌ Cell-level save: Auth session invalid - re-queuing updates');
-        // Re-queue updates instead of losing them
-        pendingUpdatesRef.current.push(...updatesToSave);
-        if (onUnsavedChanges) onUnsavedChanges();
-        if (onSaveError) onSaveError('Session expired - please refresh page');
-        throw new Error('Authentication required');
+        console.error('❌ Session check failed - user may need to log in again:', sessionError);
+        
+        // If no session, store updates as failed and retry later
+        failedSavesRef.current.push(...updatesToSave);
+        persistFailedSaves();
+        
+        const errorMsg = 'Session expired. Please refresh the page.';
+        onSaveError?.(errorMsg);
+        toast.error('Save Failed', {
+          description: errorMsg
+        });
+        
+        // Clear the shared saveInProgress flag
+        if (saveInProgressRef) {
+          saveInProgressRef.current = false;
+        }
+        
+        // Don't clear pending updates - keep them for retry
+        scheduleRetry();
+        return;
       }
       
       // Refresh token if expiring soon (< 5 minutes)
@@ -267,11 +281,19 @@ export const useCellLevelSave = (
         if (onUnsavedChanges) {
           onUnsavedChanges();
         }
+        const errorMsg = 'Save failed. Will retry automatically.';
         if (onSaveError) {
-          onSaveError('Save failed - will retry automatically');
+          onSaveError(errorMsg);
+        }
+        
+        // Only show toast if max retries exceeded
+        if (retryAttemptRef.current >= 3) {
+          toast.error('Save Failed', {
+            description: 'Unable to save changes after multiple attempts.'
+          });
         }
         scheduleRetry();
-        throw new Error(data?.error || 'Unknown save error');
+        return;
       }
 
     } catch (error) {

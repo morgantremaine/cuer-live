@@ -111,10 +111,20 @@ export const useStructuralSave = (
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
-        console.error('❌ Structural save: Auth session invalid - re-queuing operations');
-        // Re-queue operations instead of losing them
-        pendingOperationsRef.current.unshift(...operations);
-        throw new Error('Authentication required');
+        console.error('❌ Session expired during structural save:', sessionError);
+        
+        failedOperationsRef.current.push(...operations);
+        persistFailedOperations();
+        
+        const errorMsg = 'Session expired. Please refresh the page.';
+        onSaveError?.(errorMsg);
+        toast.error('Save Failed', {
+          description: errorMsg
+        });
+        
+        // Schedule retry
+        scheduleRetry();
+        return;
       }
       
       // Refresh token if expiring soon (< 5 minutes)
@@ -191,9 +201,18 @@ export const useStructuralSave = (
       persistFailedOperations(); // Persist to localStorage immediately
       
       // Notify parent about the error
+      const errorMessage = error instanceof Error ? error.message : 'Structural save failed';
+      const errorMsg = `${operations.length} operations failed: ${errorMessage}`;
+      
       if (onSaveError) {
-        const errorMessage = error instanceof Error ? error.message : 'Structural save failed';
-        onSaveError(`${operations.length} operations failed: ${errorMessage}`);
+        onSaveError(errorMsg);
+      }
+      
+      // Only show toast if max retries exceeded
+      if (retryCountRef.current >= maxRetries) {
+        toast.error('Save Failed', {
+          description: 'Unable to save structural changes after multiple attempts.'
+        });
       }
       
       // Schedule auto-retry with exponential backoff
