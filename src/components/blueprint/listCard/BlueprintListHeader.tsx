@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 
 interface BlueprintListHeaderProps {
@@ -116,54 +117,6 @@ const BlueprintListHeader = ({
             <p className="text-gray-400 text-xs">
               {countLabel}
             </p>
-            
-            {/* Display Options Toggles */}
-            <div className="space-y-2 mt-2">
-              {/* Unique Toggle */}
-              {onToggleUnique && uniqueItemCount !== undefined && uniqueItemCount !== itemCount && (
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={showUniqueOnly}
-                    onCheckedChange={onToggleUnique}
-                    className="data-[state=checked]:bg-blue-600"
-                  />
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    {showUniqueOnly ? <Filter className="h-3 w-3" /> : <List className="h-3 w-3" />}
-                    <span>{showUniqueOnly ? 'Unique only' : 'Show all'}</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Item Number Toggle */}
-              {onToggleItemNumber && (
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={showItemNumber}
-                    onCheckedChange={onToggleItemNumber}
-                    className="data-[state=checked]:bg-blue-600"
-                  />
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <Hash className="h-3 w-3" />
-                    <span>Show Row #</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Start Time Toggle */}
-              {onToggleStartTime && (
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={showStartTime}
-                    onCheckedChange={onToggleStartTime}
-                    className="data-[state=checked]:bg-blue-600"
-                  />
-                  <div className="flex items-center gap-1 text-xs text-gray-400">
-                    <Clock className="h-3 w-3" />
-                    <span>Show Time</span>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>
@@ -193,6 +146,43 @@ const BlueprintListHeader = ({
             <Copy className="h-4 w-4 mr-2" />
             Copy to Clipboard
           </DropdownMenuItem>
+          
+          <DropdownMenuSeparator className="bg-gray-700" />
+          
+          {/* Display Options */}
+          {onToggleUnique && uniqueItemCount !== undefined && uniqueItemCount !== itemCount && (
+            <DropdownMenuCheckboxItem
+              checked={showUniqueOnly}
+              onCheckedChange={onToggleUnique}
+              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+            >
+              {showUniqueOnly ? <Filter className="h-4 w-4 mr-2" /> : <List className="h-4 w-4 mr-2" />}
+              {showUniqueOnly ? 'Unique only' : 'Show all'}
+            </DropdownMenuCheckboxItem>
+          )}
+          
+          {onToggleItemNumber && (
+            <DropdownMenuCheckboxItem
+              checked={showItemNumber}
+              onCheckedChange={onToggleItemNumber}
+              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+            >
+              <Hash className="h-4 w-4 mr-2" />
+              Show Row #
+            </DropdownMenuCheckboxItem>
+          )}
+          
+          {onToggleStartTime && (
+            <DropdownMenuCheckboxItem
+              checked={showStartTime}
+              onCheckedChange={onToggleStartTime}
+              className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Show Time
+            </DropdownMenuCheckboxItem>
+          )}
+          
           <DropdownMenuSeparator className="bg-gray-700" />
           <DropdownMenuItem 
             onClick={onDelete}
