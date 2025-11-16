@@ -151,6 +151,12 @@ export const getItemMetadata = (
   sourceColumn: string, 
   rundownItems: RundownItem[]
 ): ItemMetadata => {
+  console.log('BLUEPRINT DEBUG - getItemMetadata called:', {
+    itemText,
+    sourceColumn,
+    totalRundownItems: rundownItems.length
+  });
+
   let matchedItem: RundownItem | undefined;
 
   if (sourceColumn === 'headers') {
@@ -179,6 +185,19 @@ export const getItemMetadata = (
       return fieldValue && String(fieldValue).trim() === itemText;
     });
   }
+
+  console.log('BLUEPRINT DEBUG - getItemMetadata result:', {
+    itemText,
+    matched: !!matchedItem,
+    rowNumber: matchedItem?.rowNumber,
+    startTime: matchedItem?.startTime,
+    matchedItemSample: matchedItem ? {
+      type: matchedItem.type,
+      name: matchedItem.name,
+      rowNumber: matchedItem.rowNumber,
+      startTime: matchedItem.startTime
+    } : null
+  });
 
   return {
     rowNumber: matchedItem?.rowNumber || null,

@@ -87,10 +87,23 @@ const BlueprintListCard = ({
   };
 
   const getItemInfo = (itemText: string) => {
+    if (!list.showItemNumber && !list.showStartTime) {
+      return { itemNumber: null, startTime: null };
+    }
+    
     const metadata = getItemMetadata(itemText, list.sourceColumn, rundownItems);
+    
+    console.log('BLUEPRINT DEBUG - getItemInfo:', {
+      itemText,
+      sourceColumn: list.sourceColumn,
+      showItemNumber: list.showItemNumber,
+      showStartTime: list.showStartTime,
+      metadata
+    });
+    
     return {
       itemNumber: list.showItemNumber ? metadata.rowNumber : null,
-      startTime: list.showStartTime ? metadata.startTime : null
+      startTime: list.showStartTime ? metadata.startTime : null,
     };
   };
 
