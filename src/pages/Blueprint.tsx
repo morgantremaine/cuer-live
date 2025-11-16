@@ -79,7 +79,7 @@ const BlueprintContent = () => {
 
   // Get available columns from rundown items and custom columns
   const availableColumns = React.useMemo(() => {
-    if (!rundown?.items) return [];
+    if (state.rundownItems.length === 0) return [];
     
     // Convert team columns to the format expected by getAvailableColumns
     const customColumnsForBlueprint = teamColumns.map(tc => ({
@@ -87,37 +87,37 @@ const BlueprintContent = () => {
       name: tc.column_name
     }));
     
-    return getAvailableColumns(rundown.items, customColumnsForBlueprint);
-  }, [rundown?.items, teamColumns]);
+    return getAvailableColumns(state.rundownItems, customColumnsForBlueprint);
+  }, [state.rundownItems, teamColumns]);
 
   // Add new list
   const addNewList = React.useCallback((name: string, sourceColumn: string) => {
     logger.blueprint('Adding new list:', { name, sourceColumn });
     
-    if (!rundown?.items) return;
+    if (state.rundownItems.length === 0) return;
     
     const newList = {
       id: `${sourceColumn}_${Date.now()}`,
       name,
       sourceColumn,
-      items: generateListFromColumn(rundown.items, sourceColumn),
+      items: generateListFromColumn(state.rundownItems, sourceColumn),
       checkedItems: {}
     };
     
     logger.blueprint('Generated new list:', newList);
     addList(newList);
-  }, [rundown?.items, addList]);
+  }, [state.rundownItems, addList]);
 
   // Refresh all lists - now using the context's autoRefreshLists
   const refreshAllLists = React.useCallback(() => {
     logger.blueprint('Manual refresh all lists triggered');
-    if (!rundown?.items) {
+    if (state.rundownItems.length === 0) {
       logger.blueprint('No rundown items available for refresh');
       return;
     }
     
-    autoRefreshLists(rundown.items);
-  }, [rundown?.items, autoRefreshLists]);
+    autoRefreshLists(state.rundownItems);
+  }, [state.rundownItems, autoRefreshLists]);
 
   // Toggle unique items display
   const toggleUniqueItems = React.useCallback((listId: string, showUnique: boolean) => {
@@ -315,7 +315,7 @@ const BlueprintContent = () => {
         />
 
         <RundownSummary 
-          rundownItems={rundown?.items || []}
+          rundownItems={state.rundownItems}
           rundownTitle={rundown?.title || 'Unknown Rundown'}
         />
 
@@ -347,10 +347,10 @@ const BlueprintContent = () => {
               onAddList={addNewList}
             />
           ) : (
-            <BlueprintListsGrid
-              lists={state.lists}
-              rundownItems={rundown?.items || []}
-              draggedListId={draggedListId}
+          <BlueprintListsGrid
+            lists={state.lists}
+            rundownItems={state.rundownItems}
+            draggedListId={draggedListId}
               insertionIndex={insertionIndex}
               onDeleteList={deleteList}
               onRenameList={renameList}

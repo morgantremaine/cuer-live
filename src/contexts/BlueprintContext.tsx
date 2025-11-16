@@ -10,6 +10,7 @@ import { logger } from '@/utils/logger';
 
 export interface BlueprintState {
   lists: BlueprintList[];
+  rundownItems: RundownItem[];
   showDate: string;
   notes: string;
   cameraPlots: CameraPlotScene[];
@@ -28,6 +29,7 @@ export type BlueprintAction =
   | { type: 'SET_SAVING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_LAST_SAVED'; payload: string }
+  | { type: 'SET_RUNDOWN_ITEMS'; payload: RundownItem[] }
   | { type: 'UPDATE_LISTS'; payload: BlueprintList[] }
   | { type: 'UPDATE_SHOW_DATE'; payload: string }
   | { type: 'UPDATE_NOTES'; payload: string }
@@ -39,6 +41,7 @@ export type BlueprintAction =
 
 const initialState: BlueprintState = {
   lists: [],
+  rundownItems: [],
   showDate: '',
   notes: '',
   cameraPlots: [],
@@ -66,6 +69,9 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
       return { ...state, error: action.payload };
     case 'SET_LAST_SAVED':
       return { ...state, lastSaved: action.payload };
+    case 'SET_RUNDOWN_ITEMS':
+      logger.blueprint('Setting rundown items in reducer:', { count: action.payload.length });
+      return { ...state, rundownItems: action.payload };
     case 'UPDATE_LISTS':
       logger.blueprint('Updating lists in reducer:', action.payload);
       return { ...state, lists: action.payload };
@@ -203,6 +209,13 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     },
     enabled: state.isInitialized
   });
+
+  // Store rundown items in context when they change
+  useEffect(() => {
+    if (rundownItems && rundownItems.length > 0) {
+      dispatch({ type: 'SET_RUNDOWN_ITEMS', payload: rundownItems });
+    }
+  }, [rundownItems]);
 
   // Initialize blueprint data
   useEffect(() => {
