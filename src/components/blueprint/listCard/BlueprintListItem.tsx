@@ -2,6 +2,7 @@
 import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Clock } from 'lucide-react';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface BlueprintListItemProps {
   item: string;
@@ -20,6 +21,8 @@ const BlueprintListItem = ({
   startTime, 
   onCheckboxChange 
 }: BlueprintListItemProps) => {
+  const { formatTime } = useClockFormat();
+  
   return (
     <div className="p-2 bg-gray-700 rounded text-sm border border-gray-600 text-gray-200 flex items-center gap-2">
       <Checkbox
@@ -36,7 +39,7 @@ const BlueprintListItem = ({
       {startTime && (
         <div className="flex items-center gap-1 text-gray-400 text-xs flex-shrink-0">
           <Clock className="h-3 w-3" />
-          <span>{startTime}</span>
+          <span>{formatTime(startTime)}</span>
         </div>
       )}
     </div>
