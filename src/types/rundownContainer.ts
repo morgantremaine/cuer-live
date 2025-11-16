@@ -65,6 +65,7 @@ export interface RundownContainerProps {
   saveCompletionCount?: number;
   failedSavesCount?: number;
   onRetryFailedSaves?: () => Promise<void>;
+  saveError?: string | null;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;

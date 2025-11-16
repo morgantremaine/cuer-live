@@ -711,6 +711,10 @@ const RundownIndexContent = () => {
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
+        saveCompletionCount={coreState.saveCompletionCount}
+        failedSavesCount={coreState.failedSavesCount}
+        onRetryFailedSaves={coreState.retryFailedSaves}
+        saveError={coreState.saveError}
         onShowNotes={() => setShowNotesWindow(true)}
         // Zoom controls
         zoomLevel={zoomLevel}

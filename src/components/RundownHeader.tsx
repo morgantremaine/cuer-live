@@ -63,6 +63,7 @@ interface RundownHeaderProps {
   hasActiveTeammates?: boolean;
   activeTeammateNames?: string[];
   onScrollToActiveTeammate?: () => void;
+  saveError?: string | null;
 }
 
 const RundownHeader = ({
@@ -101,7 +102,8 @@ const RundownHeader = ({
   saveCompletionCount,
   failedSavesCount,
   onRetry,
-  onScrollToActiveTeammate
+  onScrollToActiveTeammate,
+  saveError
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -269,7 +271,7 @@ const RundownHeader = ({
     isSaving: isSaving, // Use the coordinated save state from the hook
     hasUnsavedChanges: hasUnsavedChanges, // Use the coordinated unsaved changes from the hook
     lastSaved: null,
-    saveError: null,
+    saveError: saveError || null, // Use actual error from props
     hasContentChanges: hasUnsavedChanges, // Content changes are tracked by the save coordination system
     saveCompletionCount, // Forward completion count from props
     failedSavesCount: failedSavesCount || 0 // Forward failed saves count for retry UI
