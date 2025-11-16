@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
+import { useOptimizedRundownCalculations } from '@/hooks/useOptimizedRundownCalculations';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import AddListDialog from '@/components/blueprint/AddListDialog';
@@ -447,12 +448,18 @@ const Blueprint = () => {
     return <BlueprintLoadingSkeleton />;
   }
 
-  // Only wrap in provider when we have a valid rundown - now passing rundown items
+  // Calculate timing for items before passing to blueprint
+  const { itemsWithTiming } = useOptimizedRundownCalculations(
+    rundown.items || [],
+    rundown.start_time || '09:00:00'
+  );
+
+  // Only wrap in provider when we have a valid rundown - now passing calculated items with timing
   return (
     <BlueprintProvider 
       rundownId={id || ''} 
       rundownTitle={rundown.title || 'Unknown Rundown'}
-      rundownItems={rundown.items || []}
+      rundownItems={itemsWithTiming}
       rundownStartTime={rundown.start_time}
     >
       <BlueprintContent />

@@ -6,8 +6,6 @@ import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
 import { getUniqueItems, getItemMetadata } from '@/utils/blueprintUtils';
-import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
-import { useBlueprintContext } from '@/contexts/BlueprintContext';
 import { logger } from '@/utils/logger';
 import BlueprintListHeader from './listCard/BlueprintListHeader';
 import BlueprintListItem from './listCard/BlueprintListItem';
@@ -44,7 +42,6 @@ const BlueprintListCard = ({
   index
 }: BlueprintListCardProps) => {
   const { toast } = useToast();
-  const { state } = useBlueprintContext();
 
   // Calculate unique items and their count
   const uniqueItems = getUniqueItems(list.items);
@@ -96,28 +93,18 @@ const BlueprintListCard = ({
     
     const metadata = getItemMetadata(itemText, list.sourceColumn, rundownItems);
     
-    // Calculate absolute time if we have both rundown start time and item start time
-    let displayTime = metadata.startTime;
-    if (list.showStartTime && metadata.startTime && state.rundownStartTime) {
-      const relativeSeconds = timeToSeconds(metadata.startTime);
-      const rundownStartSeconds = timeToSeconds(state.rundownStartTime);
-      const absoluteSeconds = rundownStartSeconds + relativeSeconds;
-      displayTime = secondsToTime(absoluteSeconds);
-    }
-    
     console.log('BLUEPRINT DEBUG - getItemInfo:', {
       itemText,
       sourceColumn: list.sourceColumn,
       showItemNumber: list.showItemNumber,
       showStartTime: list.showStartTime,
-      metadata,
-      rundownStartTime: state.rundownStartTime,
-      displayTime
+      metadata
     });
     
+    // Items already have absolute start times from useOptimizedRundownCalculations
     return {
       itemNumber: list.showItemNumber ? metadata.rowNumber : null,
-      startTime: list.showStartTime ? displayTime : null,
+      startTime: list.showStartTime ? metadata.startTime : null,
     };
   };
 
