@@ -151,36 +151,60 @@ const BlueprintListHeader = ({
           
           {/* Display Options */}
           {onToggleUnique && uniqueItemCount !== undefined && uniqueItemCount !== itemCount && (
-            <DropdownMenuCheckboxItem
-              checked={showUniqueOnly}
-              onCheckedChange={onToggleUnique}
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
               className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
             >
-              {showUniqueOnly ? <Filter className="h-4 w-4 mr-2" /> : <List className="h-4 w-4 mr-2" />}
-              {showUniqueOnly ? 'Unique only' : 'Show all'}
-            </DropdownMenuCheckboxItem>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  {showUniqueOnly ? <Filter className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                  <span>{showUniqueOnly ? 'Unique only' : 'Show all'}</span>
+                </div>
+                <Switch 
+                  checked={showUniqueOnly} 
+                  onCheckedChange={onToggleUnique}
+                  className="ml-2"
+                />
+              </div>
+            </DropdownMenuItem>
           )}
           
           {onToggleItemNumber && (
-            <DropdownMenuCheckboxItem
-              checked={showItemNumber}
-              onCheckedChange={onToggleItemNumber}
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
               className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
             >
-              <Hash className="h-4 w-4 mr-2" />
-              Show Row #
-            </DropdownMenuCheckboxItem>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <Hash className="h-4 w-4" />
+                  <span>Show Row #</span>
+                </div>
+                <Switch 
+                  checked={showItemNumber} 
+                  onCheckedChange={onToggleItemNumber}
+                  className="ml-2"
+                />
+              </div>
+            </DropdownMenuItem>
           )}
           
           {onToggleStartTime && (
-            <DropdownMenuCheckboxItem
-              checked={showStartTime}
-              onCheckedChange={onToggleStartTime}
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
               className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
             >
-              <Clock className="h-4 w-4 mr-2" />
-              Show Time
-            </DropdownMenuCheckboxItem>
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>Show Time</span>
+                </div>
+                <Switch 
+                  checked={showStartTime} 
+                  onCheckedChange={onToggleStartTime}
+                  className="ml-2"
+                />
+              </div>
+            </DropdownMenuItem>
           )}
           
           <DropdownMenuSeparator className="bg-gray-700" />
