@@ -251,9 +251,15 @@ export const useExternalNotes = (rundownId: string) => {
 
   // Save notes to rundown's external_notes field
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
-    if (!isInitialized || !rundownId) return;
+    if (!rundownId) return;
     
-    // CRITICAL FIX: Don't save if notes haven't actually changed from original server state
+    // CRITICAL: Don't save during initialization or if notes haven't changed
+    if (!isInitialized) {
+      console.log('📝 Skipping external notes save - still initializing');
+      return;
+    }
+    
+    // Compare the actual notes being saved to the original server state
     const notesJson = JSON.stringify(notesToSave);
     const originalJson = JSON.stringify(originalNotesRef.current);
     
