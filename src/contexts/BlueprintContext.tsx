@@ -32,6 +32,7 @@ export type BlueprintAction =
   | { type: 'UPDATE_NOTES'; payload: string }
   | { type: 'UPDATE_CAMERA_PLOTS'; payload: CameraPlotScene[] }
   | { type: 'UPDATE_COMPONENT_ORDER'; payload: string[] }
+  | { type: 'UPDATE_LIST_DISPLAY_OPTIONS'; payload: { listId: string; options: { showItemNumber?: boolean; showStartTime?: boolean } } }
   | { type: 'MERGE_REMOTE_STATE'; payload: Partial<BlueprintState> }
   | { type: 'RESET_STATE' };
 
@@ -79,6 +80,16 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
     case 'UPDATE_COMPONENT_ORDER':
       logger.blueprint('Updating component order in reducer:', action.payload);
       return { ...state, componentOrder: action.payload };
+    case 'UPDATE_LIST_DISPLAY_OPTIONS':
+      logger.blueprint('Updating list display options:', action.payload);
+      return {
+        ...state,
+        lists: state.lists.map(list =>
+          list.id === action.payload.listId
+            ? { ...list, ...action.payload.options }
+            : list
+        )
+      };
     case 'MERGE_REMOTE_STATE':
       logger.blueprint('Merging remote state in reducer:', Object.keys(action.payload));
       logger.blueprint('DETAILED MERGE - Current lists count:', state.lists.length);
@@ -119,6 +130,7 @@ interface BlueprintContextValue {
   deleteList: (listId: string) => void;
   renameList: (listId: string, newName: string) => void;
   updateCheckedItems: (listId: string, checkedItems: Record<string, boolean>) => void;
+  updateListDisplayOptions: (listId: string, options: { showItemNumber?: boolean; showStartTime?: boolean }) => void;
   
   // Other data operations
   updateShowDate: (date: string) => void;
@@ -394,6 +406,18 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     debouncedSave();
   }, [state.lists, createDebouncedSave, saveListsOnly]);
 
+  const updateListDisplayOptions = React.useCallback((listId: string, options: { showItemNumber?: boolean; showStartTime?: boolean }) => {
+    logger.blueprint('Context updateListDisplayOptions called:', { listId, options });
+    dispatch({ type: 'UPDATE_LIST_DISPLAY_OPTIONS', payload: { listId, options } });
+    
+    // Save the updated lists immediately
+    const updatedLists = state.lists.map(list => 
+      list.id === listId ? { ...list, ...options } : list
+    );
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(updatedLists));
+    debouncedSave();
+  }, [state.lists, createDebouncedSave, saveListsOnly]);
+
   const updateShowDate = React.useCallback((date: string) => {
     logger.blueprint('Context updateShowDate called with:', date);
     dispatch({ type: 'UPDATE_SHOW_DATE', payload: date });
@@ -471,6 +495,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     deleteList,
     renameList,
     updateCheckedItems,
+    updateListDisplayOptions,
     updateShowDate,
     updateNotes,
     updateCameraPlots,

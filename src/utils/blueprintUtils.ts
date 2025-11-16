@@ -141,6 +141,51 @@ export const getUniqueItems = (items: string[]): string[] => {
   return unique;
 };
 
+export interface ItemMetadata {
+  rowNumber: string | null;
+  startTime: string | null;
+}
+
+export const getItemMetadata = (
+  itemText: string, 
+  sourceColumn: string, 
+  rundownItems: RundownItem[]
+): ItemMetadata => {
+  let matchedItem: RundownItem | undefined;
+
+  if (sourceColumn === 'headers') {
+    // Match header items
+    matchedItem = rundownItems.find(item => 
+      isHeaderItem(item) && (
+        item.notes === itemText ||
+        item.name === itemText ||
+        item.segmentName === itemText ||
+        item.rowNumber === itemText
+      )
+    );
+  } else if (sourceColumn.startsWith('custom_')) {
+    // Match custom field in regular items
+    const customFieldKey = sourceColumn.replace('custom_', '');
+    matchedItem = rundownItems.find(item => {
+      if (isHeaderItem(item)) return false;
+      const customValue = item.customFields?.[customFieldKey] || (item as any)[customFieldKey];
+      return customValue && String(customValue).trim() === itemText;
+    });
+  } else {
+    // Match standard field in regular items
+    matchedItem = rundownItems.find(item => {
+      if (isHeaderItem(item)) return false;
+      const fieldValue = item[sourceColumn as keyof RundownItem];
+      return fieldValue && String(fieldValue).trim() === itemText;
+    });
+  }
+
+  return {
+    rowNumber: matchedItem?.rowNumber || null,
+    startTime: matchedItem?.startTime || null
+  };
+};
+
 export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[], customColumns?: { key: string; name: string }[]): BlueprintList[] => {
   logger.blueprint('generateDefaultBlueprint called', { rundownId, rundownTitle, itemCount: items.length });
   

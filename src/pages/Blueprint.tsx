@@ -70,6 +70,7 @@ const BlueprintContent = () => {
     deleteList,
     renameList,
     updateCheckedItems,
+    updateListDisplayOptions,
     updateShowDate,
     updateComponentOrder,
     autoRefreshLists
@@ -128,6 +129,18 @@ const BlueprintContent = () => {
     logger.blueprint('BlueprintContent: updating lists with showUniqueOnly toggle');
     updateLists(updatedLists);
   }, [state.lists, updateLists]);
+
+  // Toggle item number display
+  const handleToggleItemNumber = React.useCallback((listId: string, show: boolean) => {
+    logger.blueprint('BlueprintContent: toggleItemNumber called for list', { listId, show });
+    updateListDisplayOptions(listId, { showItemNumber: show });
+  }, [updateListDisplayOptions]);
+
+  // Toggle start time display
+  const handleToggleStartTime = React.useCallback((listId: string, show: boolean) => {
+    logger.blueprint('BlueprintContent: toggleStartTime called for list', { listId, show });
+    updateListDisplayOptions(listId, { showStartTime: show });
+  }, [updateListDisplayOptions]);
 
   // Drag and drop state for lists and components
   const [draggedListId, setDraggedListId] = React.useState<string | null>(null);
@@ -342,6 +355,8 @@ const BlueprintContent = () => {
               onRenameList={renameList}
               onUpdateCheckedItems={updateCheckedItems}
               onToggleUnique={toggleUniqueItems}
+              onToggleItemNumber={handleToggleItemNumber}
+              onToggleStartTime={handleToggleStartTime}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnterContainer={handleDragEnterContainer}

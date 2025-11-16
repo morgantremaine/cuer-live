@@ -5,7 +5,7 @@ import { GripVertical } from 'lucide-react';
 import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
-import { getUniqueItems } from '@/utils/blueprintUtils';
+import { getUniqueItems, getItemMetadata } from '@/utils/blueprintUtils';
 import { logger } from '@/utils/logger';
 import BlueprintListHeader from './listCard/BlueprintListHeader';
 import BlueprintListItem from './listCard/BlueprintListItem';
@@ -17,6 +17,8 @@ interface BlueprintListCardProps {
   onRename: (listId: string, newName: string) => void;
   onUpdateCheckedItems: (listId: string, checkedItems: Record<string, boolean>) => void;
   onToggleUnique?: (listId: string, showUnique: boolean) => void;
+  onToggleItemNumber?: (listId: string, show: boolean) => void;
+  onToggleStartTime?: (listId: string, show: boolean) => void;
   isDragging?: boolean;
   onDragStart?: (e: React.DragEvent, listId: string) => void;
   onDragEnterContainer?: (e: React.DragEvent, index: number) => void;
@@ -31,6 +33,8 @@ const BlueprintListCard = ({
   onRename,
   onUpdateCheckedItems,
   onToggleUnique,
+  onToggleItemNumber,
+  onToggleStartTime,
   isDragging = false,
   onDragStart,
   onDragEnterContainer,
@@ -82,24 +86,29 @@ const BlueprintListCard = ({
     }
   };
 
-  const getHeaderStartTime = (itemText: string) => {
-    if (list.sourceColumn !== 'headers') return null;
-    
-    const headerItem = rundownItems.find(item => 
-      isHeaderItem(item) && (
-        item.notes === itemText || 
-        item.name === itemText || 
-        item.segmentName === itemText || 
-        item.rowNumber === itemText
-      )
-    );
-    
-    return headerItem?.startTime || null;
+  const getItemInfo = (itemText: string) => {
+    const metadata = getItemMetadata(itemText, list.sourceColumn, rundownItems);
+    return {
+      itemNumber: list.showItemNumber ? metadata.rowNumber : null,
+      startTime: list.showStartTime ? metadata.startTime : null
+    };
   };
 
   const handleToggleUnique = (showUnique: boolean) => {
     if (onToggleUnique) {
       onToggleUnique(list.id, showUnique);
+    }
+  };
+
+  const handleToggleItemNumber = (show: boolean) => {
+    if (onToggleItemNumber) {
+      onToggleItemNumber(list.id, show);
+    }
+  };
+
+  const handleToggleStartTime = (show: boolean) => {
+    if (onToggleStartTime) {
+      onToggleStartTime(list.id, show);
     }
   };
 
@@ -140,10 +149,14 @@ const BlueprintListCard = ({
               itemCount={list.items.length}
               uniqueItemCount={uniqueItems.length}
               showUniqueOnly={list.showUniqueOnly}
+              showItemNumber={list.showItemNumber}
+              showStartTime={list.showStartTime}
               onRename={(newName) => onRename(list.id, newName)}
               onCopy={copyToClipboard}
               onDelete={() => onDelete(list.id)}
               onToggleUnique={uniqueItems.length !== list.items.length ? handleToggleUnique : undefined}
+              onToggleItemNumber={handleToggleItemNumber}
+              onToggleStartTime={handleToggleStartTime}
             />
           </div>
         </div>
@@ -154,13 +167,10 @@ const BlueprintListCard = ({
             <p className="text-gray-500 italic">No items found</p>
           ) : (
             itemsToDisplay.map((item, itemIndex) => {
-              const startTime = getHeaderStartTime(item);
+              const { itemNumber, startTime } = getItemInfo(item);
               // For unique mode, use the original index for checkbox state
               const originalIndex = list.showUniqueOnly ? list.items.indexOf(item) : itemIndex;
               const isChecked = list.checkedItems?.[originalIndex] || false;
-              
-              // Hide time for the first item in headers list
-              const shouldHideTime = list.sourceColumn === 'headers' && itemIndex === 0;
               
               logger.blueprint(`BlueprintListCard: item ${itemIndex} "${item}" isChecked:`, isChecked);
               
@@ -170,7 +180,8 @@ const BlueprintListCard = ({
                   item={item}
                   index={originalIndex}
                   isChecked={isChecked}
-                  startTime={shouldHideTime ? null : startTime}
+                  itemNumber={itemNumber}
+                  startTime={startTime}
                   onCheckboxChange={handleCheckboxChange}
                 />
               );
