@@ -340,6 +340,10 @@ export const useRundownStateCoordination = () => {
       isLoading: persistedState.isLoading,
       hasUnsavedChanges: persistedState.hasUnsavedChanges,
       isSaving: persistedState.isSaving,
+      saveCompletionCount: persistedState.saveCompletionCount,
+      failedSavesCount: persistedState.failedSavesCount,
+      onRetryFailedSaves: persistedState.onRetryFailedSaves,
+      saveError: persistedState.saveError,
       // Use stable connection state to prevent flickering
       isConnected: stableIsConnected,
       isProcessingRealtimeUpdate, // Clean, simple content processing indicator

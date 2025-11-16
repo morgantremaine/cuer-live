@@ -1871,6 +1871,7 @@ export const useSimplifiedRundownState = () => {
     onRetryFailedSaves: perCellEnabled ?
       cellEditIntegration.saveCoordination?.retryFailedSaves :
       retryFailedSaves,
+    saveError: perCellEnabled ? cellEditIntegration.saveError : null,
     showcallerActivity,
     
     // Realtime connection status
@@ -2106,12 +2107,6 @@ export const useSimplifiedRundownState = () => {
       columnCount: columns.length,
       realtimeSubscriptions: realtimeConnection.isConnected ? 1 : 0
     },
-    
-    // Save error state and retry functions from per-cell integration
-    saveError: cellEditIntegration.saveError,
-    saveCompletionCount,
-    failedSavesCount: cellEditIntegration.saveCoordination.getFailedSavesCount(),
-    retryFailedSaves: cellEditIntegration.saveCoordination.retryFailedSaves,
     
     // Teleprompter sync callbacks (exposed globally) + track own update integration
     teleprompterSaveHandlers: {
