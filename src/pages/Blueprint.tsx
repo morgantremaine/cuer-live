@@ -403,6 +403,13 @@ const Blueprint = () => {
     return savedRundowns.find(r => r.id === id) || undefined;
   }, [savedRundowns, id, loading]);
 
+  // Calculate timing for items before passing to blueprint
+  // MUST be called before any conditional returns (React hooks rule)
+  const { itemsWithTiming } = useOptimizedRundownCalculations(
+    rundown?.items || [],
+    rundown?.start_time || '09:00:00'
+  );
+
   const handleSignOut = async () => {
     try {
       await signOut()
@@ -447,12 +454,6 @@ const Blueprint = () => {
   if (!rundown) {
     return <BlueprintLoadingSkeleton />;
   }
-
-  // Calculate timing for items before passing to blueprint
-  const { itemsWithTiming } = useOptimizedRundownCalculations(
-    rundown.items || [],
-    rundown.start_time || '09:00:00'
-  );
 
   // Only wrap in provider when we have a valid rundown - now passing calculated items with timing
   return (
