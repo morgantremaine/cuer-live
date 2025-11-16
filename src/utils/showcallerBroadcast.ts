@@ -25,7 +25,20 @@ class ShowcallerBroadcastManager {
   private reconnecting: Map<string, boolean> = new Map(); // Guard against reconnection storms
   private reconnectGuardTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private reconnectStartTimes: Map<string, number> = new Map();
-  private readonly RECONNECT_TIMEOUT_MS = 30000; // 30 second timeout for stuck reconnections
+  private readonly RECONNECT_TIMEOUT_MS = 10000; // 10 second timeout for faster recovery after sleep
+
+  constructor() {
+    // Listen for network online events to clear stale reconnecting flags
+    window.addEventListener('online', () => {
+      console.log('🌐 Network online - clearing stale showcaller reconnection guards');
+      // Clear all reconnecting flags to allow immediate reconnection
+      this.reconnecting.clear();
+      this.reconnectStartTimes.clear();
+      // Clear guard timeouts
+      this.reconnectGuardTimeouts.forEach(timeout => clearTimeout(timeout));
+      this.reconnectGuardTimeouts.clear();
+    });
+  }
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -66,6 +79,11 @@ class ShowcallerBroadcastManager {
           this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
           this.reconnectStartTimes.delete(rundownId);
           console.log('📺 Channel issue reported - coordinator will handle reconnection');
+        } else if (status === 'TIMED_OUT') {
+          console.warn('📺 ⚠️ Showcaller broadcast channel timed out:', rundownId);
+          this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
+          this.reconnectStartTimes.delete(rundownId);
+          console.log('📺 Channel issue reported - coordinator will handle reconnection');
         } else if (status === 'SUBSCRIBED') {
           // Reset reconnect attempts and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);
@@ -84,11 +102,17 @@ class ShowcallerBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
     
-    // Check if stuck in reconnecting state (timeout)
+    const currentStatus = this.connectionStatus.get(rundownId);
     const isReconnecting = this.reconnecting.get(rundownId);
     const startTime = this.reconnectStartTimes.get(rundownId);
     
-    if (isReconnecting && startTime) {
+    // CRITICAL FIX: If channel is definitely dead (TIMED_OUT/CLOSED/CHANNEL_ERROR), 
+    // bypass the guard and reconnect immediately
+    const isChannelDead = currentStatus === 'TIMED_OUT' || 
+                          currentStatus === 'CLOSED' || 
+                          currentStatus === 'CHANNEL_ERROR';
+    
+    if (isReconnecting && startTime && !isChannelDead) {
       const timeSinceStart = Date.now() - startTime;
       if (timeSinceStart < this.RECONNECT_TIMEOUT_MS) {
         console.log(`⏭️ Skipping reconnect - already reconnecting: ${rundownId}`);
@@ -97,6 +121,12 @@ class ShowcallerBroadcastManager {
         console.warn(`⚠️ Reconnection timeout exceeded for ${rundownId}, clearing stuck state`);
         this.clearReconnectingState(rundownId);
       }
+    }
+    
+    // If channel is dead, force clear the guard immediately
+    if (isChannelDead && isReconnecting) {
+      console.log('📺 💀 Channel is dead, clearing reconnecting guard for immediate reconnect');
+      this.clearReconnectingState(rundownId);
     }
     
     // Set guard flag to prevent feedback loop
