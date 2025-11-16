@@ -13,6 +13,8 @@ interface BlueprintListsGridProps {
   onRenameList: (listId: string, newName: string) => void;
   onUpdateCheckedItems: (listId: string, checkedItems: Record<string, boolean>) => void;
   onToggleUnique?: (listId: string, showUnique: boolean) => void;
+  onToggleItemNumber?: (listId: string, show: boolean) => void;
+  onToggleStartTime?: (listId: string, show: boolean) => void;
   onDragStart: (e: React.DragEvent, listId: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragEnterContainer: (e: React.DragEvent, index: number) => void;
@@ -30,6 +32,8 @@ const BlueprintListsGrid = ({
   onRenameList,
   onUpdateCheckedItems,
   onToggleUnique,
+  onToggleItemNumber,
+  onToggleStartTime,
   onDragStart,
   onDragOver,
   onDragEnterContainer,
@@ -61,6 +65,8 @@ const BlueprintListsGrid = ({
               onRename={onRenameList}
               onUpdateCheckedItems={onUpdateCheckedItems}
               onToggleUnique={onToggleUnique}
+              onToggleItemNumber={onToggleItemNumber}
+              onToggleStartTime={onToggleStartTime}
               isDragging={draggedListId === list.id}
               onDragStart={onDragStart}
               onDragEnterContainer={onDragEnterContainer}

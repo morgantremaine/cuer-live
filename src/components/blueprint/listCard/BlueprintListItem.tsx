@@ -7,6 +7,7 @@ interface BlueprintListItemProps {
   item: string;
   index: number;
   isChecked: boolean;
+  itemNumber?: string | null;
   startTime?: string | null;
   onCheckboxChange: (index: number, checked: boolean) => void;
 }
@@ -14,7 +15,8 @@ interface BlueprintListItemProps {
 const BlueprintListItem = ({ 
   item, 
   index, 
-  isChecked, 
+  isChecked,
+  itemNumber,
   startTime, 
   onCheckboxChange 
 }: BlueprintListItemProps) => {
@@ -25,9 +27,14 @@ const BlueprintListItem = ({
         onCheckedChange={(checked) => onCheckboxChange(index, checked as boolean)}
         className="flex-shrink-0"
       />
-      <span className="flex-1">{item}</span>
+      <span className="flex-1 flex items-center gap-2">
+        {itemNumber && (
+          <span className="text-gray-400 text-xs font-mono">#{itemNumber}</span>
+        )}
+        <span>{item}</span>
+      </span>
       {startTime && (
-        <div className="flex items-center gap-1 text-gray-400 text-xs">
+        <div className="flex items-center gap-1 text-gray-400 text-xs flex-shrink-0">
           <Clock className="h-3 w-3" />
           <span>{startTime}</span>
         </div>

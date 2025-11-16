@@ -6,6 +6,8 @@ export interface BlueprintList {
   items: string[];
   checkedItems?: Record<string, boolean>;
   showUniqueOnly?: boolean;
+  showItemNumber?: boolean;
+  showStartTime?: boolean;
 }
 
 export interface Blueprint {
