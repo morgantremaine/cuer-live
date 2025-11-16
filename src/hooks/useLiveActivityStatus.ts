@@ -39,12 +39,25 @@ export const useLiveActivityStatus = (
   );
 
   useEffect(() => {
-    // Update immediately when rundown changes
+    // Update immediately when rundown data actually changes
     setActivityStatus(calculateActivityStatus(rundown, currentUserId, teamMembers));
 
-    // Set up interval to update "time ago" every minute for active items
+    // Set up interval to ONLY update the "time ago" display text
+    // Don't recalculate the entire status which causes flicker
     const interval = setInterval(() => {
-      setActivityStatus(calculateActivityStatus(rundown, currentUserId, teamMembers));
+      setActivityStatus(prev => {
+        // Calculate new status
+        const newStatus = calculateActivityStatus(rundown, currentUserId, teamMembers);
+        
+        // If the editor name is the same, just update timeAgo to prevent flicker
+        // This prevents "Edited 0 minutes ago by You" flashing when nothing changed
+        if (prev.label.split(' by ')[1] === newStatus.label.split(' by ')[1]) {
+          return { ...prev, timeAgo: newStatus.timeAgo };
+        }
+        
+        // If the editor changed (actual DB update), update everything
+        return newStatus;
+      });
     }, 60000); // Update every minute
 
     return () => clearInterval(interval);
