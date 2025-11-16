@@ -14,6 +14,7 @@ export interface BlueprintState {
   notes: string;
   cameraPlots: CameraPlotScene[];
   componentOrder: string[];
+  rundownStartTime?: string;
   isLoading: boolean;
   isInitialized: boolean;
   isSaving: boolean;
@@ -151,15 +152,20 @@ interface BlueprintProviderProps {
   rundownId: string;
   rundownTitle: string;
   rundownItems?: RundownItem[];
+  rundownStartTime?: string;
 }
 
 export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   children,
   rundownId,
   rundownTitle,
-  rundownItems = []
+  rundownItems = [],
+  rundownStartTime
 }) => {
-  const [state, dispatch] = useReducer(blueprintReducer, initialState);
+  const [state, dispatch] = useReducer(blueprintReducer, {
+    ...initialState,
+    rundownStartTime
+  });
   const [savedBlueprint, setSavedBlueprint] = React.useState<any>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const initializationRef = useRef(false);

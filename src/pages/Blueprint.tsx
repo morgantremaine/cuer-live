@@ -453,6 +453,7 @@ const Blueprint = () => {
       rundownId={id || ''} 
       rundownTitle={rundown.title || 'Unknown Rundown'}
       rundownItems={rundown.items || []}
+      rundownStartTime={rundown.start_time}
     >
       <BlueprintContent />
     </BlueprintProvider>
