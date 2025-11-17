@@ -1332,49 +1332,27 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: undefined
       }
-      get_batched_rundown_history:
-        | {
-            Args: {
-              batch_window_seconds?: number
-              limit_batches?: number
-              offset_batches?: number
-              target_rundown_id: string
-            }
-            Returns: {
-              batch_id: string
-              details: Json
-              first_operation: string
-              last_operation: string
-              operation_count: number
-              operation_types: string[]
-              profile_picture_url: string
-              summary: string
-              user_email: string
-              user_id: string
-              user_name: string
-            }[]
-          }
-        | {
-            Args: {
-              batch_window_seconds?: number
-              limit_batches?: number
-              offset_batches?: number
-              target_rundown_id: string
-            }
-            Returns: {
-              batch_id: string
-              details: Json
-              first_operation: string
-              last_operation: string
-              operation_count: number
-              operation_types: string[]
-              profile_picture_url: string
-              summary: string
-              user_email: string
-              user_id: string
-              user_name: string
-            }[]
-          }
+      get_batched_rundown_history: {
+        Args: {
+          batch_window_seconds?: number
+          limit_batches?: number
+          offset_batches?: number
+          target_rundown_id: string
+        }
+        Returns: {
+          batch_id: string
+          details: Json
+          first_operation: string
+          last_operation: string
+          operation_count: number
+          operation_types: string[]
+          profile_picture_url: string
+          summary: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_invitation_details_safe: {
         Args: { invitation_token: string }
         Returns: Json
