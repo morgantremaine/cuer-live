@@ -42,6 +42,7 @@ interface MainActionButtonsProps {
   onReset?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  onShowHistory?: () => void;
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
@@ -75,6 +76,7 @@ const MainActionButtons = ({
   onReset,
   onShowFindReplace,
   onShowNotes,
+  onShowHistory,
   numberingLocked = false,
   onToggleLock
 }: MainActionButtonsProps) => {
@@ -274,7 +276,7 @@ const MainActionButtons = ({
         <span>Blueprint</span>
       </Button>
       
-      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />
+      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} onShowHistory={onShowHistory} />
       
       {rundownId && (
         <ShareRundownMenu 
