@@ -98,6 +98,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     autoScrollEnabled,
     onToggleAutoScroll,
     onShowNotes,
+    onShowHistory,
     // Zoom controls
     zoomLevel,
     onZoomIn,
@@ -273,6 +274,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onUpdateItem={onUpdateItem}
         onShowFindReplace={() => setShowFindReplace(true)}
         onShowNotes={onShowNotes}
+        onShowHistory={onShowHistory}
         // Zoom controls
         zoomLevel={zoomLevel}
         onZoomIn={onZoomIn}
