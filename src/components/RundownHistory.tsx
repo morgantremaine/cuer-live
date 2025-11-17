@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface HistoryEntry {
-  batchId: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  profilePictureUrl: string | null;
-  operationTypes: string[];
+  batch_id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  profile_picture_url: string | null;
+  operation_types: string[];
   summary: string;
-  firstOperation: string;
-  lastOperation: string;
-  operationCount: number;
+  first_operation: string;
+  last_operation: string;
+  operation_count: number;
   details: {
     operations: any[];
     operation_types: string[];
@@ -106,16 +105,6 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     });
   };
 
-  const getInitials = (name: string, email: string) => {
-    if (name && name.trim()) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    if (email && email.length > 0) {
-      return email[0].toUpperCase();
-    }
-    return '??';
-  };
-
   const formatTimestamp = (timestamp: string) => {
     try {
       return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -124,12 +113,72 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     }
   };
 
+  const generateDetailedSummary = (entry: HistoryEntry): string => {
+    if (!entry.details?.operations || entry.details.operations.length === 0) {
+      return entry.summary;
+    }
+
+    const fieldChanges: Record<string, number> = {};
+    let rowsAdded = 0;
+    let rowsDeleted = 0;
+
+    entry.details.operations.forEach((op: any) => {
+      if (op.type === 'add_row') {
+        rowsAdded++;
+      } else if (op.type === 'delete_row') {
+        rowsDeleted++;
+      } else if (op.fieldUpdates) {
+        op.fieldUpdates.forEach((update: any) => {
+          fieldChanges[update.field] = (fieldChanges[update.field] || 0) + 1;
+        });
+      }
+    });
+
+    const parts: string[] = [];
+
+    if (rowsAdded > 0) {
+      parts.push(`Added ${rowsAdded} row${rowsAdded > 1 ? 's' : ''}`);
+    }
+    if (rowsDeleted > 0) {
+      parts.push(`Deleted ${rowsDeleted} row${rowsDeleted > 1 ? 's' : ''}`);
+    }
+
+    const fieldNames = Object.keys(fieldChanges);
+    if (fieldNames.length > 0) {
+      if (fieldNames.length === 1) {
+        const field = fieldNames[0];
+        const count = fieldChanges[field];
+        parts.push(`Edited '${field}' ${count} time${count > 1 ? 's' : ''}`);
+      } else if (fieldNames.length <= 3) {
+        parts.push(`Edited fields: ${fieldNames.map(f => `'${f}'`).join(', ')}`);
+      } else {
+        parts.push(`Edited ${fieldNames.length} fields`);
+      }
+    }
+
+    return parts.length > 0 ? parts.join(' and ') : entry.summary;
+  };
+
   const renderOperationDetails = (details: any) => {
     if (!details?.operations || details.operations.length === 0) return null;
 
     return (
-      <div className="mt-2 pl-12 space-y-1">
+      <div className="mt-2 space-y-1">
         {details.operations.map((op: any, idx: number) => {
+          if (op.type === 'add_row') {
+            return (
+              <div key={idx} className="text-xs text-muted-foreground">
+                • Added row {op.rowNumber || ''}
+              </div>
+            );
+          }
+          if (op.type === 'delete_row') {
+            return (
+              <div key={idx} className="text-xs text-muted-foreground">
+                • Deleted row {op.rowNumber || ''}
+              </div>
+            );
+          }
           if (op.fieldUpdates) {
             return op.fieldUpdates.map((update: any, updateIdx: number) => (
               <div key={`${idx}-${updateIdx}`} className="text-xs text-muted-foreground">
@@ -180,58 +229,49 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           {history.map((entry) => {
-            const isExpanded = expandedBatches.has(entry.batchId);
+            const isExpanded = expandedBatches.has(entry.batch_id);
 
             return (
               <div
-                key={entry.batchId}
+                key={entry.batch_id}
                 className="border rounded-lg p-3 hover:bg-accent/50 transition-colors"
               >
-                <div className="flex items-start gap-3">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={entry.profilePictureUrl || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(entry.userName, entry.userEmail)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-sm truncate">
-                        {entry.userName}
-                      </p>
-                      <p className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatTimestamp(entry.firstOperation)}
-                      </p>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {entry.summary}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-sm truncate">
+                      {entry.user_name}
                     </p>
-
-                    {entry.operationCount > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 mt-2 text-xs hover:bg-transparent"
-                        onClick={() => toggleBatch(entry.batchId)}
-                      >
-                        {isExpanded ? (
-                          <>
-                            <ChevronUp className="h-3 w-3 mr-1" />
-                            Hide details
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="h-3 w-3 mr-1" />
-                            Show details ({entry.operationCount} operations)
-                          </>
-                        )}
-                      </Button>
-                    )}
-
-                    {isExpanded && renderOperationDetails(entry.details)}
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatTimestamp(entry.first_operation)}
+                    </p>
                   </div>
+
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {generateDetailedSummary(entry)}
+                  </p>
+
+                  {entry.operation_count > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 mt-2 text-xs hover:bg-transparent"
+                      onClick={() => toggleBatch(entry.batch_id)}
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          Hide details
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          Show details ({entry.operation_count} operations)
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {isExpanded && renderOperationDetails(entry.details)}
                 </div>
               </div>
             );
