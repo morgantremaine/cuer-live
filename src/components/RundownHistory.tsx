@@ -16,10 +16,12 @@ interface HistoryEntry {
   first_operation: string;
   last_operation: string;
   operation_count: number;
-  details: {
-    operations: any[];
-    operation_types: string[];
-  };
+  details: Array<{
+    id: string;
+    operation_type: string;
+    operation_data: any;
+    created_at: string;
+  }>;
 }
 
 interface RundownHistoryProps {
@@ -114,83 +116,94 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   };
 
   const generateDetailedSummary = (entry: HistoryEntry): string => {
-    if (!entry.details?.operations || entry.details.operations.length === 0) {
+    // Parse the details to create a more informative summary
+    if (!entry.details || entry.details.length === 0) {
       return entry.summary;
     }
 
-    const fieldChanges: Record<string, number> = {};
+    const fieldEdits = new Map<string, number>();
     let rowsAdded = 0;
     let rowsDeleted = 0;
 
-    entry.details.operations.forEach((op: any) => {
-      if (op.type === 'add_row') {
-        rowsAdded++;
-      } else if (op.type === 'delete_row') {
-        rowsDeleted++;
-      } else if (op.fieldUpdates) {
-        op.fieldUpdates.forEach((update: any) => {
-          fieldChanges[update.field] = (fieldChanges[update.field] || 0) + 1;
+    // Analyze all operations
+    entry.details.forEach((op: any) => {
+      if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+        Object.keys(op.operation_data.fieldUpdates).forEach((field) => {
+          fieldEdits.set(field, (fieldEdits.get(field) || 0) + 1);
         });
+      } else if (op.operation_type === 'add_row') {
+        rowsAdded++;
+      } else if (op.operation_type === 'delete_row') {
+        rowsDeleted++;
       }
     });
 
+    // Build summary parts
     const parts: string[] = [];
-
+    
+    if (fieldEdits.size > 0) {
+      const fields = Array.from(fieldEdits.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+      const fieldNames = fields.map(([field]) => `'${field}'`).join(', ');
+      parts.push(`Edited ${fieldNames}`);
+    }
+    
     if (rowsAdded > 0) {
       parts.push(`Added ${rowsAdded} row${rowsAdded > 1 ? 's' : ''}`);
     }
+    
     if (rowsDeleted > 0) {
       parts.push(`Deleted ${rowsDeleted} row${rowsDeleted > 1 ? 's' : ''}`);
     }
 
-    const fieldNames = Object.keys(fieldChanges);
-    if (fieldNames.length > 0) {
-      if (fieldNames.length === 1) {
-        const field = fieldNames[0];
-        const count = fieldChanges[field];
-        parts.push(`Edited '${field}' ${count} time${count > 1 ? 's' : ''}`);
-      } else if (fieldNames.length <= 3) {
-        parts.push(`Edited fields: ${fieldNames.map(f => `'${f}'`).join(', ')}`);
-      } else {
-        parts.push(`Edited ${fieldNames.length} fields`);
-      }
-    }
-
-    return parts.length > 0 ? parts.join(' and ') : entry.summary;
+    return parts.length > 0 ? parts.join(' • ') : entry.summary;
   };
 
-  const renderOperationDetails = (details: any) => {
-    if (!details?.operations || details.operations.length === 0) return null;
+  const renderOperationDetails = (details: HistoryEntry['details']) => {
+    // Render detailed breakdown of operations
+    if (!details || details.length === 0) return null;
 
     return (
-      <div className="mt-2 space-y-1">
-        {details.operations.map((op: any, idx: number) => {
-          if (op.type === 'add_row') {
+      <div className="mt-3 space-y-2 text-sm">
+        {details.map((op: any, idx: number) => {
+          if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
             return (
-              <div key={idx} className="text-xs text-muted-foreground">
-                • Added row {op.rowNumber || ''}
+              <div key={idx} className="pl-4 border-l-2 border-border">
+                <div className="font-medium text-muted-foreground">Field Changes:</div>
+                {Object.entries(op.operation_data.fieldUpdates).map(([field, values]: [string, any]) => (
+                  <div key={field} className="ml-2 text-xs">
+                    <span className="font-mono text-primary">{field}:</span>
+                    {' '}
+                    <span className="text-muted-foreground">{values.oldValue || '(empty)'}</span>
+                    {' → '}
+                    <span className="text-foreground">{values.newValue || '(empty)'}</span>
+                  </div>
+                ))}
               </div>
             );
-          }
-          if (op.type === 'delete_row') {
+          } else if (op.operation_type === 'add_row') {
             return (
-              <div key={idx} className="text-xs text-muted-foreground">
-                • Deleted row {op.rowNumber || ''}
-              </div>
-            );
-          }
-          if (op.fieldUpdates) {
-            return op.fieldUpdates.map((update: any, updateIdx: number) => (
-              <div key={`${idx}-${updateIdx}`} className="text-xs text-muted-foreground">
-                • Changed {update.field}
-                {update.oldValue !== null && update.newValue !== null && (
-                  <span className="ml-1">
-                    from "{String(update.oldValue).slice(0, 30)}{String(update.oldValue).length > 30 ? '...' : ''}" 
-                    to "{String(update.newValue).slice(0, 30)}{String(update.newValue).length > 30 ? '...' : ''}"
-                  </span>
+              <div key={idx} className="pl-4 border-l-2 border-border">
+                <div className="font-medium text-green-600">Added Row</div>
+                {op.operation_data?.newItems && (
+                  <div className="ml-2 text-xs text-muted-foreground">
+                    {op.operation_data.newItems.length} item(s)
+                  </div>
                 )}
               </div>
-            ));
+            );
+          } else if (op.operation_type === 'delete_row') {
+            return (
+              <div key={idx} className="pl-4 border-l-2 border-border">
+                <div className="font-medium text-red-600">Deleted Row</div>
+                {op.operation_data?.deletedItems && (
+                  <div className="ml-2 text-xs text-muted-foreground">
+                    {op.operation_data.deletedItems.length} item(s)
+                  </div>
+                )}
+              </div>
+            );
           }
           return null;
         })}
