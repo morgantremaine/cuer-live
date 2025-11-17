@@ -115,12 +115,6 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     return item?.rowNumber || item?.calculatedRowNumber || '?';
   };
 
-  const getDeletedRowNumbers = (deletedIds: string[]): string[] => {
-    return deletedIds
-      .map(id => getRowNumber(id))
-      .filter(num => num !== '?');
-  };
-
   const toggleBatch = (batchId: string) => {
     setExpandedBatches(prev => {
       const newSet = new Set(prev);
@@ -255,63 +249,53 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     return (
       <div className="mt-3 space-y-3 text-sm">
         {/* Show collapsed edits by row */}
-      {Array.from(editsByItem.entries()).map(([itemId, fields]) => {
-        const rowNum = getRowNumber(itemId);
-        return (
-          <div key={itemId} className="pl-4 border-l-2 border-blue-500">
-            <div className="font-medium text-muted-foreground mb-1">
-              Row {rowNum}:
-            </div>
-            {Array.from(fields.entries()).map(([field, values]) => (
-              <div key={field} className="ml-2 text-xs">
-                <span className="font-mono text-primary">{field}:</span>
-                {' '}
-                <span className="text-muted-foreground">
-                  {values.first || '(empty)'}
-                </span>
-                {' → '}
-                <span className="text-foreground">
-                  {values.last || '(empty)'}
-                </span>
+        {Array.from(editsByItem.entries()).map(([itemId, fields]) => {
+          const rowNum = getRowNumber(itemId);
+          return (
+            <div key={itemId} className="pl-4 border-l-2 border-blue-500">
+              <div className="font-medium text-muted-foreground mb-1">
+                Row {rowNum} - Field Changes:
               </div>
-            ))}
-          </div>
-        );
-      })}
+              {Array.from(fields.entries()).map(([field, values]) => (
+                <div key={field} className="ml-2 text-xs">
+                  <span className="font-mono text-primary">{field}:</span>
+                  {' '}
+                  <span className="text-muted-foreground">
+                    {values.first || '(empty)'}
+                  </span>
+                  {' → '}
+                  <span className="text-foreground">
+                    {values.last || '(empty)'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
         
-      {/* Show added rows */}
-      {addedRows.map((op, idx) => {
-        const insertIndex = op.operation_data?.insertIndex;
-        const itemCount = op.operation_data?.newItems?.length || 0;
-        
-        return (
+        {/* Show added rows */}
+        {addedRows.map((op, idx) => (
           <div key={`add-${idx}`} className="pl-4 border-l-2 border-green-500">
-            <div className="font-medium text-green-600">
-              {insertIndex !== undefined 
-                ? `Added row at position ${insertIndex + 1}${itemCount > 1 ? ` (${itemCount} items)` : ''}`
-                : `Added ${itemCount} row${itemCount > 1 ? 's' : ''}`
-              }
-            </div>
+            <div className="font-medium text-green-600">Added Row</div>
+            {op.operation_data?.newItems && (
+              <div className="ml-2 text-xs text-muted-foreground">
+                {op.operation_data.newItems.length} item(s)
+              </div>
+            )}
           </div>
-        );
-      })}
+        ))}
         
-      {/* Show deleted rows */}
-      {deletedRows.map((op, idx) => {
-        const deletedIds = op.operation_data?.deletedIds || [];
-        const rowNumbers = getDeletedRowNumbers(deletedIds);
-        
-        return (
+        {/* Show deleted rows */}
+        {deletedRows.map((op, idx) => (
           <div key={`del-${idx}`} className="pl-4 border-l-2 border-red-500">
-            <div className="font-medium text-red-600">
-              {rowNumbers.length > 0
-                ? `Deleted row${rowNumbers.length > 1 ? 's' : ''} ${rowNumbers.join(', ')}`
-                : `Deleted ${deletedIds.length} row${deletedIds.length > 1 ? 's' : ''}`
-              }
-            </div>
+            <div className="font-medium text-red-600">Deleted Row</div>
+            {op.operation_data?.deletedItems && (
+              <div className="ml-2 text-xs text-muted-foreground">
+                {op.operation_data.deletedItems.length} item(s)
+              </div>
+            )}
           </div>
-        );
-      })}
+        ))}
       </div>
     );
   };
