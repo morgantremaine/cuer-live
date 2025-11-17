@@ -39,6 +39,7 @@ interface TabletToolbarProps {
   onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  onShowHistory?: () => void;
   // Zoom controls
   zoomLevel?: number;
   onZoomIn?: () => void;
@@ -79,6 +80,7 @@ const TabletToolbar = ({
   onJumpToCurrentSegment,
   onShowFindReplace,
   onShowNotes,
+  onShowHistory,
   // Zoom props
   zoomLevel = 1.0,
   onZoomIn,
@@ -127,6 +129,7 @@ const TabletToolbar = ({
                 rundownData={rundownData}
                 onShowFindReplace={onShowFindReplace}
                 onShowNotes={onShowNotes}
+                onShowHistory={onShowHistory}
                 numberingLocked={numberingLocked}
                 onToggleLock={onToggleLock}
               />

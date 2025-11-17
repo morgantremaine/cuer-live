@@ -40,6 +40,7 @@ interface MobileToolbarProps {
   onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  onShowHistory?: () => void;
   // Zoom controls
   zoomLevel?: number;
   onZoomIn?: () => void;
@@ -80,6 +81,7 @@ const MobileToolbar = ({
   onJumpToCurrentSegment,
   onShowFindReplace,
   onShowNotes,
+  onShowHistory,
   // Zoom props
   zoomLevel,
   onZoomIn,
@@ -145,6 +147,7 @@ const MobileToolbar = ({
                   onReset={onReset}
                   onShowFindReplace={onShowFindReplace}
                   onShowNotes={onShowNotes}
+                  onShowHistory={onShowHistory}
                   numberingLocked={numberingLocked}
                   onToggleLock={onToggleLock}
                 />
