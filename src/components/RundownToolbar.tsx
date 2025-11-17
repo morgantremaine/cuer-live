@@ -42,6 +42,7 @@ interface RundownToolbarProps {
   onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  onShowHistory?: () => void;
   // Zoom controls
   zoomLevel?: number;
   onZoomIn?: () => void;
@@ -83,6 +84,7 @@ const RundownToolbar = ({
   onJumpToCurrentSegment,
   onShowFindReplace,
   onShowNotes,
+  onShowHistory,
   // Zoom props
   zoomLevel,
   onZoomIn,
@@ -125,6 +127,7 @@ const RundownToolbar = ({
     onJumpToCurrentSegment,
     onShowFindReplace,
     onShowNotes,
+    onShowHistory,
     zoomLevel,
     onZoomIn,
     onZoomOut,

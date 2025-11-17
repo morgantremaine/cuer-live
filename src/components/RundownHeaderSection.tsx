@@ -56,6 +56,7 @@ interface RundownHeaderSectionProps {
   onUpdateItem?: (id: string, field: string, value: string) => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  onShowHistory?: () => void;
   hasActiveTeammates?: boolean;
   activeTeammateNames?: string[];
   // Zoom controls
@@ -123,6 +124,7 @@ const RundownHeaderSection = ({
   onUpdateItem,
   onShowFindReplace,
   onShowNotes,
+  onShowHistory,
   hasActiveTeammates,
   activeTeammateNames,
   // Zoom controls
@@ -202,6 +204,7 @@ const RundownHeaderSection = ({
         onJumpToCurrentSegment={onJumpToCurrentSegment}
         onShowFindReplace={onShowFindReplace}
         onShowNotes={onShowNotes}
+        onShowHistory={onShowHistory}
         // Zoom controls
         zoomLevel={zoomLevel}
         onZoomIn={onZoomIn}
