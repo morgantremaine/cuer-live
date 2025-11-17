@@ -34,9 +34,24 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [rundownItems, setRundownItems] = useState<any[]>([]);
 
   useEffect(() => {
     fetchHistory();
+    
+    // Fetch rundown items for row number lookup
+    const fetchRundownItems = async () => {
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('items')
+        .eq('id', rundownId)
+        .single();
+      
+      if (!error && data?.items) {
+        setRundownItems(data.items);
+      }
+    };
+    fetchRundownItems();
 
     // Subscribe to real-time updates
     const channel = supabase
@@ -95,6 +110,11 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     fetchHistory();
   };
 
+  const getRowNumber = (itemId: string): string => {
+    const item = rundownItems.find((i: any) => i.id === itemId);
+    return item?.rowNumber || item?.calculatedRowNumber || '?';
+  };
+
   const toggleBatch = (batchId: string) => {
     setExpandedBatches(prev => {
       const newSet = new Set(prev);
@@ -116,20 +136,39 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   };
 
   const generateDetailedSummary = (entry: HistoryEntry): string => {
-    // Parse the details to create a more informative summary
     if (!entry.details || entry.details.length === 0) {
       return entry.summary;
     }
 
-    const fieldEdits = new Map<string, number>();
+    // Collect all edits, grouping by field and itemId
+    const editsByItem = new Map<string, Map<string, { first: any, last: any }>>();
     let rowsAdded = 0;
     let rowsDeleted = 0;
 
-    // Analyze all operations
     entry.details.forEach((op: any) => {
       if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
-        Object.keys(op.operation_data.fieldUpdates).forEach((field) => {
-          fieldEdits.set(field, (fieldEdits.get(field) || 0) + 1);
+        // fieldUpdates is an ARRAY, not an object
+        const updates = Array.isArray(op.operation_data.fieldUpdates) 
+          ? op.operation_data.fieldUpdates 
+          : [];
+        
+        updates.forEach((update: any) => {
+          const { itemId, field, oldValue, newValue } = update;
+          
+          if (!editsByItem.has(itemId)) {
+            editsByItem.set(itemId, new Map());
+          }
+          
+          const itemEdits = editsByItem.get(itemId)!;
+          
+          if (!itemEdits.has(field)) {
+            // First time seeing this field for this item
+            itemEdits.set(field, { first: oldValue, last: newValue });
+          } else {
+            // Update only the last value (keep first unchanged)
+            const existing = itemEdits.get(field)!;
+            itemEdits.set(field, { first: existing.first, last: newValue });
+          }
         });
       } else if (op.operation_type === 'add_row') {
         rowsAdded++;
@@ -141,12 +180,22 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     // Build summary parts
     const parts: string[] = [];
     
-    if (fieldEdits.size > 0) {
-      const fields = Array.from(fieldEdits.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
-      const fieldNames = fields.map(([field]) => `'${field}'`).join(', ');
-      parts.push(`Edited ${fieldNames}`);
+    if (editsByItem.size > 0) {
+      // Get unique field names across all items
+      const allFields = new Set<string>();
+      editsByItem.forEach(fields => {
+        fields.forEach((_, field) => allFields.add(field));
+      });
+      
+      const fieldList = Array.from(allFields).slice(0, 3).map(f => `'${f}'`).join(', ');
+      
+      if (editsByItem.size === 1) {
+        const [itemId] = Array.from(editsByItem.keys());
+        const rowNum = getRowNumber(itemId);
+        parts.push(`Row ${rowNum}: Edited ${fieldList}`);
+      } else {
+        parts.push(`Edited ${fieldList} in ${editsByItem.size} rows`);
+      }
     }
     
     if (rowsAdded > 0) {
@@ -161,52 +210,92 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   };
 
   const renderOperationDetails = (details: HistoryEntry['details']) => {
-    // Render detailed breakdown of operations
     if (!details || details.length === 0) return null;
 
-    return (
-      <div className="mt-3 space-y-2 text-sm">
-        {details.map((op: any, idx: number) => {
-          if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
-            return (
-              <div key={idx} className="pl-4 border-l-2 border-border">
-                <div className="font-medium text-muted-foreground">Field Changes:</div>
-                {Object.entries(op.operation_data.fieldUpdates).map(([field, values]: [string, any]) => (
-                  <div key={field} className="ml-2 text-xs">
-                    <span className="font-mono text-primary">{field}:</span>
-                    {' '}
-                    <span className="text-muted-foreground">{values.oldValue || '(empty)'}</span>
-                    {' → '}
-                    <span className="text-foreground">{values.newValue || '(empty)'}</span>
-                  </div>
-                ))}
-              </div>
-            );
-          } else if (op.operation_type === 'add_row') {
-            return (
-              <div key={idx} className="pl-4 border-l-2 border-border">
-                <div className="font-medium text-green-600">Added Row</div>
-                {op.operation_data?.newItems && (
-                  <div className="ml-2 text-xs text-muted-foreground">
-                    {op.operation_data.newItems.length} item(s)
-                  </div>
-                )}
-              </div>
-            );
-          } else if (op.operation_type === 'delete_row') {
-            return (
-              <div key={idx} className="pl-4 border-l-2 border-border">
-                <div className="font-medium text-red-600">Deleted Row</div>
-                {op.operation_data?.deletedItems && (
-                  <div className="ml-2 text-xs text-muted-foreground">
-                    {op.operation_data.deletedItems.length} item(s)
-                  </div>
-                )}
-              </div>
-            );
+    // Group all edits by itemId and field, collapsing intermediate values
+    const editsByItem = new Map<string, Map<string, { first: any, last: any }>>();
+    const addedRows: any[] = [];
+    const deletedRows: any[] = [];
+
+    details.forEach((op: any) => {
+      if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+        const updates = Array.isArray(op.operation_data.fieldUpdates) 
+          ? op.operation_data.fieldUpdates 
+          : [];
+        
+        updates.forEach((update: any) => {
+          const { itemId, field, oldValue, newValue } = update;
+          
+          if (!editsByItem.has(itemId)) {
+            editsByItem.set(itemId, new Map());
           }
-          return null;
+          
+          const itemEdits = editsByItem.get(itemId)!;
+          
+          if (!itemEdits.has(field)) {
+            itemEdits.set(field, { first: oldValue, last: newValue });
+          } else {
+            const existing = itemEdits.get(field)!;
+            itemEdits.set(field, { first: existing.first, last: newValue });
+          }
+        });
+      } else if (op.operation_type === 'add_row') {
+        addedRows.push(op);
+      } else if (op.operation_type === 'delete_row') {
+        deletedRows.push(op);
+      }
+    });
+
+    return (
+      <div className="mt-3 space-y-3 text-sm">
+        {/* Show collapsed edits by row */}
+        {Array.from(editsByItem.entries()).map(([itemId, fields]) => {
+          const rowNum = getRowNumber(itemId);
+          return (
+            <div key={itemId} className="pl-4 border-l-2 border-blue-500">
+              <div className="font-medium text-muted-foreground mb-1">
+                Row {rowNum} - Field Changes:
+              </div>
+              {Array.from(fields.entries()).map(([field, values]) => (
+                <div key={field} className="ml-2 text-xs">
+                  <span className="font-mono text-primary">{field}:</span>
+                  {' '}
+                  <span className="text-muted-foreground">
+                    {values.first || '(empty)'}
+                  </span>
+                  {' → '}
+                  <span className="text-foreground">
+                    {values.last || '(empty)'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          );
         })}
+        
+        {/* Show added rows */}
+        {addedRows.map((op, idx) => (
+          <div key={`add-${idx}`} className="pl-4 border-l-2 border-green-500">
+            <div className="font-medium text-green-600">Added Row</div>
+            {op.operation_data?.newItems && (
+              <div className="ml-2 text-xs text-muted-foreground">
+                {op.operation_data.newItems.length} item(s)
+              </div>
+            )}
+          </div>
+        ))}
+        
+        {/* Show deleted rows */}
+        {deletedRows.map((op, idx) => (
+          <div key={`del-${idx}`} className="pl-4 border-l-2 border-red-500">
+            <div className="font-medium text-red-600">Deleted Row</div>
+            {op.operation_data?.deletedItems && (
+              <div className="ml-2 text-xs text-muted-foreground">
+                {op.operation_data.deletedItems.length} item(s)
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     );
   };
