@@ -107,10 +107,13 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   };
 
   const getInitials = (name: string, email: string) => {
-    if (name) {
+    if (name && name.trim()) {
       return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
-    return email[0].toUpperCase();
+    if (email && email.length > 0) {
+      return email[0].toUpperCase();
+    }
+    return '??';
   };
 
   const formatTimestamp = (timestamp: string) => {
