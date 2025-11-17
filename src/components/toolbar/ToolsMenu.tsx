@@ -21,6 +21,7 @@ interface ToolsMenuProps {
   className?: string;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  onShowHistory?: () => void;
 }
 
 export const ToolsMenu: React.FC<ToolsMenuProps> = ({
@@ -28,7 +29,8 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   size = 'sm',
   className = '',
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  onShowHistory
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -170,6 +172,28 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     onShowNotes?.();
   };
 
+  const handleOpenHistory = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open history",
+        description: "Save this rundown first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "History is available with a subscription.",
+        variant: "default"
+      });
+      return;
+    }
+
+    onShowHistory?.();
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -194,7 +218,10 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             Notes
           </DropdownMenuItem>
           
-          
+          <DropdownMenuItem onClick={handleOpenHistory}>
+            <History className="h-4 w-4 mr-2" />
+            History
+          </DropdownMenuItem>
           
           <DropdownMenuItem onClick={handleOpenADView}>
             <Camera className="h-4 w-4 mr-2" />

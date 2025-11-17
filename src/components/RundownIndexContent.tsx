@@ -4,6 +4,8 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import RundownHistory from '@/components/RundownHistory';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
@@ -441,6 +443,9 @@ const RundownIndexContent = () => {
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
+  
+  // State for history sheet
+  const [showHistory, setShowHistory] = React.useState(false);
 
   // Zoom functionality
   const {
@@ -716,6 +721,7 @@ const RundownIndexContent = () => {
         onRetryFailedSaves={coreState.onRetryFailedSaves}
         saveError={coreState.saveError}
         onShowNotes={() => setShowNotesWindow(true)}
+        onShowHistory={() => setShowHistory(true)}
         // Zoom controls
         zoomLevel={zoomLevel}
         onZoomIn={zoomIn}
@@ -748,6 +754,15 @@ const RundownIndexContent = () => {
           rundownId={rundownId}
           onClose={() => setShowNotesWindow(false)}
         />
+      )}
+      
+      {/* History Sheet */}
+      {rundownId && (
+        <Sheet open={showHistory} onOpenChange={setShowHistory}>
+          <SheetContent side="right" className="w-[500px] p-0">
+            <RundownHistory rundownId={rundownId} />
+          </SheetContent>
+        </Sheet>
       )}
       
       <CuerChatButton 

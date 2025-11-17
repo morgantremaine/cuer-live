@@ -233,6 +233,51 @@ serve(async (req) => {
       docVersion: updatedRundown.doc_version
     })
 
+    // Log cell edits to rundown_operations for history tracking
+    try {
+      const operationData = {
+        fieldUpdates: fieldUpdates.map(u => {
+          // Extract old value from current rundown
+          let oldValue = null;
+          if (u.itemId) {
+            const item = currentRundown.items?.find((item: any) => item.id === u.itemId);
+            if (item) {
+              if (u.field.startsWith('customFields.')) {
+                const customFieldKey = u.field.replace('customFields.', '');
+                oldValue = item.customFields?.[customFieldKey] || null;
+              } else {
+                oldValue = item[u.field] || null;
+              }
+            }
+          } else {
+            // Rundown-level field
+            oldValue = currentRundown[u.field] || null;
+          }
+          
+          return {
+            itemId: u.itemId || null,
+            field: u.field,
+            oldValue: oldValue,
+            newValue: u.value,
+            timestamp: u.timestamp
+          };
+        })
+      };
+
+      await supabaseClient.from('rundown_operations').insert({
+        rundown_id: rundownId,
+        user_id: user.id,
+        operation_type: 'cell_edit',
+        operation_data: operationData,
+        created_at: new Date().toISOString()
+      });
+      
+      console.log('📝 Logged cell edit operation to history');
+    } catch (historyError) {
+      // Don't fail the save if history logging fails
+      console.error('⚠️ Failed to log cell edit to history:', historyError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
