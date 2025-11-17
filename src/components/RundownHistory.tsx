@@ -112,7 +112,25 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
 
   const getRowNumber = (itemId: string): string => {
     const item = rundownItems.find((i: any) => i.id === itemId);
-    return item?.rowNumber || item?.calculatedRowNumber || '?';
+    if (!item) return 'Unknown';
+    
+    // Try locked/manual row number first
+    if (item.rowNumber) return item.rowNumber;
+    
+    // Try calculated row number
+    if (item.calculatedRowNumber) return item.calculatedRowNumber;
+    
+    // Fall back to array index (1-based, skip headers)
+    const index = rundownItems.findIndex((i: any) => i.id === itemId);
+    if (index >= 0) {
+      // Count only non-header items before this one
+      const nonHeadersBefore = rundownItems
+        .slice(0, index)
+        .filter((i: any) => i.type !== 'header').length;
+      return `${nonHeadersBefore + 1}`;
+    }
+    
+    return 'New Row';
   };
 
   const toggleBatch = (batchId: string) => {
