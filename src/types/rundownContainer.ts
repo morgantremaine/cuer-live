@@ -100,6 +100,9 @@ export interface RundownContainerProps {
   // Notes window functionality
   onShowNotes?: () => void;
   
+  // History functionality
+  onShowHistory?: () => void;
+  
   // Zoom functionality
   zoomLevel?: number;
   onZoomIn?: () => void;

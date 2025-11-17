@@ -1314,6 +1314,7 @@ export type Database = {
       cleanup_old_operations: { Args: never; Returns: undefined }
       cleanup_old_presence: { Args: never; Returns: undefined }
       cleanup_old_revisions: { Args: never; Returns: undefined }
+      cleanup_old_rundown_operations: { Args: never; Returns: undefined }
       cleanup_orphaned_custom_columns: {
         Args: { new_owner_id: string; target_team_id: string }
         Returns: Json
@@ -1330,6 +1331,27 @@ export type Database = {
       delete_user_completely: {
         Args: { user_uuid: string }
         Returns: undefined
+      }
+      get_batched_rundown_history: {
+        Args: {
+          batch_window_seconds?: number
+          limit_batches?: number
+          offset_batches?: number
+          target_rundown_id: string
+        }
+        Returns: {
+          batch_id: string
+          details: Json
+          first_operation: string
+          last_operation: string
+          operation_count: number
+          operation_types: string[]
+          profile_picture_url: string
+          summary: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
       }
       get_invitation_details_safe: {
         Args: { invitation_token: string }
