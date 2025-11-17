@@ -210,7 +210,18 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
       if (editsByItem.size === 1) {
         const [itemId] = Array.from(editsByItem.keys());
         const rowNum = getRowNumber(itemId);
-        parts.push(`Row ${rowNum}: Edited ${fieldList}`);
+        const itemFields = editsByItem.get(itemId)!;
+        
+        // If only one field was edited, show the values
+        if (itemFields.size === 1) {
+          const [field, values] = Array.from(itemFields.entries())[0];
+          const fromValue = values.first || '(empty)';
+          const toValue = values.last || '(empty)';
+          parts.push(`Row ${rowNum}: '${field}' changed from '${fromValue}' to '${toValue}'`);
+        } else {
+          // Multiple fields edited in one row
+          parts.push(`Row ${rowNum}: Edited ${fieldList}`);
+        }
       } else {
         parts.push(`Edited ${fieldList} in ${editsByItem.size} rows`);
       }
