@@ -26,6 +26,7 @@ export const useDashboardRundownOptimized = ({
   const { user } = useAuth();
   const subscriptionsRef = useRef<Map<string, any>>(new Map());
   const [connectedCount, setConnectedCount] = useState(0);
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const rundownsRef = useRef(rundowns);
 
   // Update rundowns ref when rundowns change
@@ -81,6 +82,19 @@ export const useDashboardRundownOptimized = ({
 
     onRundownUpdate(updatedRundown);
   }, [onRundownUpdate]);
+
+  // Handle visibility changes to force reconnection after sleep
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && enabled && user) {
+        console.log('📊 Dashboard: Visibility restored, forcing channel reconnection');
+        setReconnectTrigger(prev => prev + 1);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [enabled, user]);
 
   // Set up individual subscriptions for each rundown (more efficient than bulk filter) - with stability checks
   useEffect(() => {
@@ -165,7 +179,7 @@ export const useDashboardRundownOptimized = ({
       subscriptionsRef.current.clear();
       setConnectedCount(0);
     };
-  }, [enabled, user?.id, rundowns.map(r => r.id).join(',')]); // Simplified dependency to prevent churn
+  }, [enabled, user?.id, rundowns.map(r => r.id).join(','), reconnectTrigger]); // Simplified dependency to prevent churn
 
   return {
     isConnected: connectedCount > 0,
