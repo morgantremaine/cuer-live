@@ -254,7 +254,7 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
           return (
             <div key={itemId} className="pl-4 border-l-2 border-blue-500">
               <div className="font-medium text-muted-foreground mb-1">
-                Row {rowNum} - Field Changes:
+                Row {rowNum}
               </div>
               {Array.from(fields.entries()).map(([field, values]) => (
                 <div key={field} className="ml-2 text-xs">
