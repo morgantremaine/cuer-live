@@ -98,7 +98,7 @@ const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDia
                   onChange={(e) => setListType(e.target.value as 'column' | 'color')}
                   className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500"
                 />
-                <span className="text-white">Column-Based</span>
+                <span className="text-white">Columns</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -109,7 +109,7 @@ const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDia
                   onChange={(e) => setListType(e.target.value as 'column' | 'color')}
                   className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500"
                 />
-                <span className="text-white">Color-Based</span>
+                <span className="text-white">Colors</span>
               </label>
             </div>
           </div>
