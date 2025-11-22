@@ -251,7 +251,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
 
           <DropdownMenuItem onClick={handleOpenMOSSettings}>
             <Radio className="h-4 w-4 mr-2" />
-            XPRESSION CONNECT
+            Xpression Connect
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
