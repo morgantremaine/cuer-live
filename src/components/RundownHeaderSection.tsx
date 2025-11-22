@@ -107,6 +107,7 @@ const RundownHeaderSection = ({
   showDate,
   onShowDateChange,
   rundownId,
+  teamId,
   onOpenTeleprompter,
   items = [],
   visibleColumns = [],
@@ -191,6 +192,7 @@ const RundownHeaderSection = ({
         onBackward={onBackward}
         onReset={onReset}
         rundownId={rundownId}
+        teamId={teamId}
         onOpenTeleprompter={onOpenTeleprompter}
         onUndo={onUndo}
         canUndo={canUndo}
