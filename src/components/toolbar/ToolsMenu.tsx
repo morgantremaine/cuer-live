@@ -8,15 +8,17 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History } from 'lucide-react';
+import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 // import { RundownActionLog } from '@/components/RundownActionLog';
 import { useSubscription } from '@/hooks/useSubscription';
+import { RundownMOSDialog } from '@/components/integrations/RundownMOSDialog';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
+  teamId?: string;
   size?: 'sm' | 'default' | 'lg';
   className?: string;
   onShowFindReplace?: () => void;
@@ -26,6 +28,7 @@ interface ToolsMenuProps {
 
 export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   rundownId,
+  teamId,
   size = 'sm',
   className = '',
   onShowFindReplace,
@@ -36,6 +39,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [showMOSDialog, setShowMOSDialog] = useState(false);
   const historyButtonRef = useRef<HTMLDivElement>(null);
 
   // Check if user is on free tier
@@ -149,6 +153,28 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     navigate('/help');
   };
 
+  const handleOpenMOSSettings = () => {
+    if (!rundownId) {
+      toast({
+        title: 'Error',
+        description: 'No rundown selected',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!teamId) {
+      toast({
+        title: 'Error',
+        description: 'Team ID not available',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setShowMOSDialog(true);
+  };
+
   const handleOpenNotes = () => {
     if (!rundownId) {
       toast({
@@ -222,6 +248,13 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             <History className="h-4 w-4 mr-2" />
             History
           </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={handleOpenMOSSettings}>
+            <Radio className="h-4 w-4 mr-2" />
+            MOS Settings
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
           
           <DropdownMenuItem onClick={handleOpenADView}>
             <Camera className="h-4 w-4 mr-2" />
@@ -260,6 +293,15 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
         </div>
       )}
       */}
+
+      {rundownId && teamId && (
+        <RundownMOSDialog
+          open={showMOSDialog}
+          onOpenChange={setShowMOSDialog}
+          rundownId={rundownId}
+          teamId={teamId}
+        />
+      )}
     </>
   );
 };

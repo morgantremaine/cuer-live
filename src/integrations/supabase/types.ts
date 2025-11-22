@@ -640,6 +640,8 @@ export type Database = {
           last_updated_by: string | null
           locked_row_numbers: Json | null
           logo_url: string | null
+          mos_enabled: boolean | null
+          mos_integration_id: string | null
           numbering_locked: boolean | null
           operation_mode_enabled: boolean | null
           per_cell_save_enabled: boolean | null
@@ -670,6 +672,8 @@ export type Database = {
           last_updated_by?: string | null
           locked_row_numbers?: Json | null
           logo_url?: string | null
+          mos_enabled?: boolean | null
+          mos_integration_id?: string | null
           numbering_locked?: boolean | null
           operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
@@ -700,6 +704,8 @@ export type Database = {
           last_updated_by?: string | null
           locked_row_numbers?: Json | null
           logo_url?: string | null
+          mos_enabled?: boolean | null
+          mos_integration_id?: string | null
           numbering_locked?: boolean | null
           operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
@@ -721,6 +727,13 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "rundown_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rundowns_mos_integration_id_fkey"
+            columns: ["mos_integration_id"]
+            isOneToOne: false
+            referencedRelation: "team_mos_integrations"
             referencedColumns: ["id"]
           },
           {
