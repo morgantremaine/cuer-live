@@ -336,7 +336,7 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>MOS Integration Settings</DialogTitle>
+          <DialogTitle>XPRESSION MOS SETTINGS</DialogTitle>
           <DialogDescription>
             Configure Ross Xpression MOS integration for this rundown
           </DialogDescription>
