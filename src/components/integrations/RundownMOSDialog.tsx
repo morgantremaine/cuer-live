@@ -1,20 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Wifi, WifiOff, Send, Trash2, Plus, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, XCircle, Send } from 'lucide-react';
-
-interface MOSIntegration {
-  id: string;
-  mos_id: string;
-  xpression_host: string | null;
-  xpression_port: number | null;
-  enabled: boolean;
-}
+import { useToast } from '@/hooks/use-toast';
+import { MOSDebugPanel } from './MOSDebugPanel';
 
 interface RundownMOSDialogProps {
   open: boolean;
@@ -23,69 +19,134 @@ interface RundownMOSDialogProps {
   teamId: string;
 }
 
-export function RundownMOSDialog({ open, onOpenChange, rundownId, teamId }: RundownMOSDialogProps) {
-  const { toast } = useToast();
+interface FieldMapping {
+  id: string;
+  cuer_column_key: string;
+  xpression_field_name: string;
+  field_order: number;
+  is_template_column: boolean;
+}
+
+interface ConnectionStatus {
+  connected: boolean;
+  last_heartbeat: string | null;
+  error_message: string | null;
+  xpression_host: string | null;
+}
+
+// Standard Cuer columns that can be mapped
+const CUER_COLUMNS = [
+  { key: 'rowNumber', label: 'Row Number' },
+  { key: 'name', label: 'Name/Title' },
+  { key: 'startTime', label: 'Start Time' },
+  { key: 'duration', label: 'Duration' },
+  { key: 'endTime', label: 'End Time' },
+  { key: 'elapsedTime', label: 'Elapsed Time' },
+  { key: 'talent', label: 'Talent' },
+  { key: 'script', label: 'Script' },
+  { key: 'gfx', label: 'GFX' },
+  { key: 'video', label: 'Video' },
+  { key: 'images', label: 'Images' },
+  { key: 'notes', label: 'Notes' },
+];
+
+export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
+  open,
+  onOpenChange,
+  rundownId,
+  teamId,
+}) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   
+  // MOS Configuration
   const [mosEnabled, setMosEnabled] = useState(false);
-  const [selectedIntegrationId, setSelectedIntegrationId] = useState<string | null>(null);
-  const [teamIntegrations, setTeamIntegrations] = useState<MOSIntegration[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<{
-    connected: boolean;
-    error_message: string | null;
-    last_heartbeat: string | null;
-  } | null>(null);
+  const [mosId, setMosId] = useState('CUER_MOS_01');
+  const [xpressionHost, setXpressionHost] = useState('');
+  const [xpressionPort, setXpressionPort] = useState(6000);
+  const [debounceMs, setDebounceMs] = useState(1000);
+  const [autoTakeEnabled, setAutoTakeEnabled] = useState(false);
+  
+  // Field Mappings
+  const [mappings, setMappings] = useState<FieldMapping[]>([]);
+  const [customColumns, setCustomColumns] = useState<{ key: string; label: string }[]>([]);
+  const [newMapping, setNewMapping] = useState({
+    cuerColumn: '',
+    xpressionField: '',
+    isTemplateColumn: false,
+  });
+  
+  // Connection Status
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null);
+  
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
       fetchData();
     }
-  }, [open, rundownId, teamId]);
+  }, [open, rundownId]);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+
       // Fetch rundown MOS settings
       const { data: rundownData, error: rundownError } = await supabase
         .from('rundowns')
-        .select('mos_enabled, mos_integration_id')
+        .select('mos_enabled, mos_id, mos_xpression_host, mos_xpression_port, mos_debounce_ms, mos_auto_take_enabled')
         .eq('id', rundownId)
         .single();
 
       if (rundownError) throw rundownError;
 
       setMosEnabled(rundownData?.mos_enabled || false);
-      setSelectedIntegrationId(rundownData?.mos_integration_id || null);
+      setMosId(rundownData?.mos_id || 'CUER_MOS_01');
+      setXpressionHost(rundownData?.mos_xpression_host || '');
+      setXpressionPort(rundownData?.mos_xpression_port || 6000);
+      setDebounceMs(rundownData?.mos_debounce_ms || 1000);
+      setAutoTakeEnabled(rundownData?.mos_auto_take_enabled || false);
 
-      // Fetch team integrations
-      const { data: integrations, error: integrationsError } = await supabase
-        .from('team_mos_integrations')
-        .select('id, mos_id, xpression_host, xpression_port, enabled')
+      // Fetch field mappings
+      const { data: mappingsData, error: mappingsError } = await supabase
+        .from('rundown_mos_field_mappings')
+        .select('*')
+        .eq('rundown_id', rundownId)
+        .order('field_order', { ascending: true });
+
+      if (mappingsError) throw mappingsError;
+      setMappings(mappingsData || []);
+
+      // Fetch custom columns for this team
+      const { data: customColumnsData, error: customColumnsError } = await supabase
+        .from('team_custom_columns')
+        .select('*')
         .eq('team_id', teamId);
 
-      if (integrationsError) throw integrationsError;
-
-      setTeamIntegrations(integrations || []);
-
-      // If no integration selected but one exists, auto-select it
-      if (!rundownData?.mos_integration_id && integrations && integrations.length > 0) {
-        setSelectedIntegrationId(integrations[0].id);
-      }
+      if (customColumnsError) throw customColumnsError;
+      setCustomColumns(
+        (customColumnsData || []).map(col => ({
+          key: col.column_key,
+          label: col.column_name,
+        }))
+      );
 
       // Fetch connection status
       const { data: statusData, error: statusError } = await supabase
         .from('mos_connection_status')
-        .select('connected, error_message, last_heartbeat')
+        .select('*')
         .eq('team_id', teamId)
+        .eq('rundown_id', rundownId)
         .single();
 
-      if (!statusError) {
-        setConnectionStatus(statusData);
+      if (statusError && statusError.code !== 'PGRST116') {
+        console.error('Error fetching connection status:', statusError);
       }
+      setConnectionStatus(statusData);
+
     } catch (error) {
-      console.error('Error fetching MOS data:', error);
+      console.error('Error loading MOS data:', error);
       toast({
         title: 'Error',
         description: 'Failed to load MOS settings',
@@ -97,13 +158,18 @@ export function RundownMOSDialog({ open, onOpenChange, rundownId, teamId }: Rund
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
+      setSaving(true);
+
       const { error } = await supabase
         .from('rundowns')
         .update({
           mos_enabled: mosEnabled,
-          mos_integration_id: selectedIntegrationId,
+          mos_id: mosId,
+          mos_xpression_host: xpressionHost,
+          mos_xpression_port: xpressionPort,
+          mos_debounce_ms: debounceMs,
+          mos_auto_take_enabled: autoTakeEnabled,
         })
         .eq('id', rundownId);
 
@@ -128,35 +194,44 @@ export function RundownMOSDialog({ open, onOpenChange, rundownId, teamId }: Rund
   };
 
   const handleTestSend = async () => {
-    if (!selectedIntegrationId) {
+    if (!xpressionHost || !xpressionPort) {
       toast({
-        title: 'Error',
-        description: 'Please select a MOS integration first',
+        title: 'Configuration Required',
+        description: 'Please configure Xpression host and port first',
         variant: 'destructive',
       });
       return;
     }
 
-    setTesting(true);
     try {
+      setTesting(true);
+
       const { data, error } = await supabase.functions.invoke('mos-send-message', {
         body: {
           teamId,
           rundownId,
           eventType: 'TEST',
-          segmentId: 'test-segment',
-          segmentData: { name: 'Test Message' },
+          segmentId: 'test-segment-' + Date.now(),
+          segmentData: {
+            name: 'Test Message',
+            startTime: '10:00:00',
+            talent: 'Test Talent',
+          },
         },
       });
 
       if (error) throw error;
 
-      toast({
-        title: 'Test Successful',
-        description: 'Test message sent successfully to Xpression',
-      });
+      if (data?.success) {
+        toast({
+          title: 'Test Successful',
+          description: 'Test message sent to Xpression successfully',
+        });
+      } else {
+        throw new Error(data?.message || 'Test failed');
+      }
     } catch (error: any) {
-      console.error('Test send failed:', error);
+      console.error('Test send error:', error);
       toast({
         title: 'Test Failed',
         description: error.message || 'Failed to send test message',
@@ -164,140 +239,363 @@ export function RundownMOSDialog({ open, onOpenChange, rundownId, teamId }: Rund
       });
     } finally {
       setTesting(false);
+      await fetchData(); // Refresh connection status
     }
+  };
+
+  const handleAddMapping = async () => {
+    if (!newMapping.cuerColumn || !newMapping.xpressionField) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select both a Cuer column and Xpression field',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('rundown_mos_field_mappings')
+        .insert({
+          rundown_id: rundownId,
+          cuer_column_key: newMapping.cuerColumn,
+          xpression_field_name: newMapping.xpressionField,
+          is_template_column: newMapping.isTemplateColumn,
+          field_order: mappings.length,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Field mapping added',
+      });
+
+      setNewMapping({
+        cuerColumn: '',
+        xpressionField: '',
+        isTemplateColumn: false,
+      });
+
+      await fetchData();
+    } catch (error) {
+      console.error('Error adding field mapping:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add field mapping',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteMapping = async (mappingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('rundown_mos_field_mappings')
+        .delete()
+        .eq('id', mappingId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Field mapping deleted',
+      });
+
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting field mapping:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete field mapping',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const allColumns = [...CUER_COLUMNS, ...customColumns];
+
+  const getColumnLabel = (key: string) => {
+    const column = allColumns.find(col => col.key === key);
+    return column?.label || key;
   };
 
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         </DialogContent>
       </Dialog>
     );
   }
 
-  const selectedIntegration = teamIntegrations.find(i => i.id === selectedIntegrationId);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>MOS/Xpression Settings</DialogTitle>
+          <DialogTitle>MOS Integration Settings</DialogTitle>
+          <DialogDescription>
+            Configure Ross Xpression MOS integration for this rundown
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Enable/Disable Toggle */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="mos-enabled">Enable MOS for this rundown</Label>
-              <p className="text-sm text-muted-foreground">
-                Send real-time updates to Xpression graphics system
-              </p>
-            </div>
-            <Switch
-              id="mos-enabled"
-              checked={mosEnabled}
-              onCheckedChange={setMosEnabled}
-            />
-          </div>
-
-          {/* Integration Selection */}
-          {teamIntegrations.length > 0 ? (
-            <div className="space-y-2">
-              <Label>MOS Integration</Label>
-              <Select value={selectedIntegrationId || undefined} onValueChange={setSelectedIntegrationId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a MOS integration" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teamIntegrations.map((integration) => (
-                    <SelectItem key={integration.id} value={integration.id}>
-                      {integration.mos_id} - {integration.xpression_host}:{integration.xpression_port}
-                      {!integration.enabled && ' (Disabled)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border bg-muted/50 p-4">
-              <p className="text-sm text-muted-foreground">
-                No MOS integrations configured for this team. Go to Team Settings → Integrations to set one up.
-              </p>
-            </div>
-          )}
-
           {/* Connection Status */}
-          {selectedIntegration && (
-            <div className="rounded-lg border border-border p-4 space-y-3">
-              <h4 className="text-sm font-medium">Connection Status</h4>
-              <div className="flex items-center gap-2">
-                {connectionStatus?.connected ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-foreground">Connected</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-4 w-4 text-destructive" />
-                    <span className="text-sm text-destructive">Disconnected</span>
-                  </>
+          {connectionStatus && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  {connectionStatus.connected ? (
+                    <Wifi className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <WifiOff className="w-4 h-4 text-red-500" />
+                  )}
+                  Connection Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant={connectionStatus.connected ? 'default' : 'destructive'}>
+                    {connectionStatus.connected ? 'Connected' : 'Disconnected'}
+                  </Badge>
+                  {connectionStatus.xpression_host && (
+                    <span className="text-sm text-muted-foreground">
+                      {connectionStatus.xpression_host}
+                    </span>
+                  )}
+                </div>
+                {connectionStatus.last_heartbeat && (
+                  <p className="text-xs text-muted-foreground">
+                    Last seen: {new Date(connectionStatus.last_heartbeat).toLocaleString()}
+                  </p>
                 )}
-              </div>
-              {connectionStatus?.error_message && (
-                <p className="text-xs text-destructive">{connectionStatus.error_message}</p>
-              )}
-              {connectionStatus?.last_heartbeat && (
-                <p className="text-xs text-muted-foreground">
-                  Last heartbeat: {new Date(connectionStatus.last_heartbeat).toLocaleString()}
-                </p>
-              )}
-            </div>
+                {connectionStatus.error_message && (
+                  <p className="text-xs text-destructive">{connectionStatus.error_message}</p>
+                )}
+              </CardContent>
+            </Card>
           )}
 
-          {/* Test Button */}
-          {selectedIntegration && mosEnabled && (
+          {/* MOS Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">MOS Configuration</CardTitle>
+              <CardDescription>
+                Configure Ross Xpression connection settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="mos-enabled">Enable MOS Integration</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Send segment changes to Ross Xpression
+                  </p>
+                </div>
+                <Switch
+                  id="mos-enabled"
+                  checked={mosEnabled}
+                  onCheckedChange={setMosEnabled}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mos-id">MOS ID</Label>
+                  <Input
+                    id="mos-id"
+                    value={mosId}
+                    onChange={(e) => setMosId(e.target.value)}
+                    placeholder="CUER_MOS_01"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="xpression-host">Xpression Host (IP)</Label>
+                  <Input
+                    id="xpression-host"
+                    value={xpressionHost}
+                    onChange={(e) => setXpressionHost(e.target.value)}
+                    placeholder="192.168.1.100"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="xpression-port">Xpression Port</Label>
+                  <Input
+                    id="xpression-port"
+                    type="number"
+                    value={xpressionPort}
+                    onChange={(e) => setXpressionPort(parseInt(e.target.value) || 6000)}
+                    placeholder="6000"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="debounce">Debounce (ms)</Label>
+                  <Input
+                    id="debounce"
+                    type="number"
+                    value={debounceMs}
+                    onChange={(e) => setDebounceMs(parseInt(e.target.value) || 1000)}
+                    placeholder="1000"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  <Label htmlFor="auto-take">Auto-Take Graphics</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically take graphics on segment change
+                  </p>
+                </div>
+                <Switch
+                  id="auto-take"
+                  checked={autoTakeEnabled}
+                  onCheckedChange={setAutoTakeEnabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Field Mappings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Field Mapping</CardTitle>
+              <CardDescription>
+                Map Cuer columns to Xpression template fields
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {mappings.length > 0 && (
+                <div className="space-y-2">
+                  {mappings.map((mapping) => (
+                    <div
+                      key={mapping.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+                    >
+                      <div className="flex-1 flex items-center gap-3">
+                        <div className="text-sm font-medium">{getColumnLabel(mapping.cuer_column_key)}</div>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="text-sm text-muted-foreground">{mapping.xpression_field_name}</div>
+                        {mapping.is_template_column && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            Template
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => handleDeleteMapping(mapping.id)}
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-4 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Cuer Column</Label>
+                    <Select
+                      value={newMapping.cuerColumn}
+                      onValueChange={(value) => setNewMapping({ ...newMapping, cuerColumn: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select column..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="font-semibold text-xs px-2 py-1.5 text-muted-foreground">
+                          Standard Columns
+                        </div>
+                        {CUER_COLUMNS.map((col) => (
+                          <SelectItem key={col.key} value={col.key}>
+                            {col.label}
+                          </SelectItem>
+                        ))}
+                        {customColumns.length > 0 && (
+                          <>
+                            <div className="font-semibold text-xs px-2 py-1.5 text-muted-foreground mt-2">
+                              Custom Columns
+                            </div>
+                            {customColumns.map((col) => (
+                              <SelectItem key={col.key} value={col.key}>
+                                {col.label}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Xpression Field Name</Label>
+                    <Input
+                      value={newMapping.xpressionField}
+                      onChange={(e) => setNewMapping({ ...newMapping, xpressionField: e.target.value })}
+                      placeholder="e.g., F1, F2, Title"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleAddMapping} variant="outline" className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Field Mapping
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Test Send */}
+          {mosEnabled && xpressionHost && (
             <Button
-              variant="outline"
               onClick={handleTestSend}
-              disabled={testing || !selectedIntegration.enabled}
+              variant="outline"
+              disabled={testing}
               className="w-full"
             >
               {testing ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending Test...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending Test Message...
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
+                  <Send className="w-4 h-4 mr-2" />
                   Send Test Message
                 </>
               )}
             </Button>
           )}
 
-          {/* Save Button */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Settings'
-              )}
-            </Button>
-          </div>
+          {/* Message Log */}
+          <MOSDebugPanel teamId={teamId} />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save Settings'
+            )}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-}
+};
