@@ -9,6 +9,7 @@ import { useLocalCollapsedHeaders } from './useLocalCollapsedHeaders';
 import { useAuth } from './useAuth';
 import { useTeamId } from './useTeamId';
 import { useDragAndDrop } from './useDragAndDrop';
+import { useMOSIntegration } from './useMOSIntegration';
 import { arrayMove } from '@dnd-kit/sortable';
 import { getTabId } from '@/utils/tabUtils';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -32,6 +33,13 @@ export const useRundownStateCoordination = () => {
 
   // Single source of truth for all rundown state (with persistence)
   const persistedState = usePersistedRundownState();
+  
+  // Initialize MOS integration
+  const { handleSegmentChange, handleEditorialChange } = useMOSIntegration({
+    teamId: teamId || '',
+    rundownId: persistedState.rundownId || '',
+    enabled: !!teamId && !!persistedState.rundownId,
+  });
   
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
@@ -211,7 +219,8 @@ export const useRundownStateCoordination = () => {
     persistedState.markStructuralChange,
     persistedState.rundownId, // Pass rundownId for broadcasts
     userId, // Pass userId for broadcasts
-    persistedState.recordOperation // Pass recordOperation for operation-based undo
+    persistedState.recordOperation, // Pass recordOperation for operation-based undo
+    handleEditorialChange // Pass MOS editorial change handler
   );
 
   // UI interactions that depend on the core state (NO showcaller interference)
@@ -252,7 +261,17 @@ export const useRundownStateCoordination = () => {
     persistedState.addRow,
     persistedState.addHeader,
     persistedState.deleteRow,
-    persistedState.toggleFloat,
+    (id: string, onEditorialChangeCallback?: (segmentId: string, segmentData?: any, eventType?: string) => void) => {
+      // Wrapper that passes the editorial change handler
+      persistedState.toggleFloat(id);
+      // Call MOS handler after state change if provided
+      if (onEditorialChangeCallback) {
+        const item = performanceOptimization.calculatedItems.find(i => i.id === id);
+        if (item) {
+          onEditorialChangeCallback(id, { ...item, isFloating: !item.isFloating }, 'UPDATE');
+        }
+      }
+    },
     persistedState.deleteMultipleItems,
     addMultipleRows,
     (columnId: string) => {
@@ -437,6 +456,10 @@ export const useRundownStateCoordination = () => {
     },
     interactions,
     uiState,
-    dragAndDrop
+    dragAndDrop,
+    mosIntegration: {
+      handleSegmentChange,
+      handleEditorialChange
+    }
   };
 };

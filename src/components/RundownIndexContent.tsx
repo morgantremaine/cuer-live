@@ -38,7 +38,8 @@ const RundownIndexContent = () => {
     coreState,
     interactions,
     uiState,
-    dragAndDrop
+    dragAndDrop,
+    mosIntegration
   } = useRundownStateCoordination();
   
   // Extract all needed values from the unified state
@@ -106,12 +107,8 @@ const RundownIndexContent = () => {
   const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
 
-  // Initialize MOS integration after rundownId is available
-  const { handleSegmentChange, handleEditorialChange } = useMOSIntegration({
-    teamId: team?.id || '',
-    rundownId: rundownId || '',
-    enabled: !!team?.id && !!rundownId,
-  });
+  // Get MOS integration handlers from coordination
+  const { handleSegmentChange } = mosIntegration;
 
   // Cell editor setup ready
 
