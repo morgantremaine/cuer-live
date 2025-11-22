@@ -525,6 +525,8 @@ const Dashboard = () => {
         allUserTeams={allUserTeams}
         userRole={userRole}
         switchToTeam={switchToTeam}
+        subscriptionTier={subscription_tier}
+        onCreateTeam={() => setShowCreateTeamDialog(true)}
       />
       
       {/* Content area with sidebar and main content */}
