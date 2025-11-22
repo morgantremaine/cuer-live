@@ -88,7 +88,7 @@ const BlueprintListCard = ({
 
   const getItemInfo = (itemText: string) => {
     if (!list.showItemNumber && !list.showStartTime) {
-      return { itemNumber: null, startTime: null };
+      return { itemNumber: null, startTime: null, itemColor: null };
     }
     
     const metadata = getItemMetadata(itemText, list.sourceColumn, rundownItems);
@@ -105,8 +105,13 @@ const BlueprintListCard = ({
     return {
       itemNumber: list.showItemNumber ? metadata.rowNumber : null,
       startTime: list.showStartTime ? metadata.startTime : null,
+      itemColor: null
     };
   };
+
+  // Check if this is a color-based list
+  const isColorList = list.sourceColumn.startsWith('color_');
+  const listColor = isColorList ? list.sourceColumn.replace('color_', '') : null;
 
   const handleToggleUnique = (showUnique: boolean) => {
     if (onToggleUnique) {
@@ -196,6 +201,7 @@ const BlueprintListCard = ({
                   isChecked={isChecked}
                   itemNumber={itemNumber}
                   startTime={startTime}
+                  itemColor={listColor}
                   onCheckboxChange={handleCheckboxChange}
                 />
               );
