@@ -61,8 +61,8 @@ serve(async (req) => {
       throw new Error('Missing required fields: teamId, rundownId, eventType, or segmentId');
     }
 
-    if (!['UPDATE', 'INSERT', 'DELETE', 'MOVE'].includes(eventType)) {
-      throw new Error(`Invalid eventType: ${eventType}. Must be UPDATE, INSERT, DELETE, or MOVE`);
+    if (!['UPDATE', 'INSERT', 'DELETE', 'MOVE', 'TEST'].includes(eventType)) {
+      throw new Error(`Invalid eventType: ${eventType}. Must be UPDATE, INSERT, DELETE, MOVE, or TEST`);
     }
 
     console.log('📡 MOS message request:', { teamId, rundownId, eventType, segmentId });
@@ -73,16 +73,34 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get MOS integration settings
+    // Check if MOS is enabled for this rundown
+    const { data: rundownData, error: rundownError } = await supabase
+      .from('rundowns')
+      .select('mos_enabled, mos_integration_id')
+      .eq('id', rundownId)
+      .single();
+
+    if (rundownError) {
+      throw new Error('Failed to fetch rundown settings');
+    }
+
+    if (!rundownData?.mos_enabled) {
+      throw new Error('MOS integration is not enabled for this rundown');
+    }
+
+    if (!rundownData?.mos_integration_id) {
+      throw new Error('No MOS integration configured for this rundown');
+    }
+
+    // Get MOS integration settings using the rundown's integration ID
     const { data: mosIntegration, error: integrationError } = await supabase
       .from('team_mos_integrations')
       .select('*')
-      .eq('team_id', teamId)
-      .eq('enabled', true)
+      .eq('id', rundownData.mos_integration_id)
       .single();
 
     if (integrationError || !mosIntegration) {
-      throw new Error('MOS integration not enabled for this team');
+      throw new Error('MOS integration not found');
     }
 
     // Check if integration is enabled

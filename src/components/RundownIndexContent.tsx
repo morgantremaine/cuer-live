@@ -702,6 +702,7 @@ const RundownIndexContent = () => {
         showDate={showDate}
         onShowDateChange={handleShowDateChange}
         rundownId={rundownId}
+        teamId={team?.id}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={coreState.undo}
         canUndo={coreState.canUndo}

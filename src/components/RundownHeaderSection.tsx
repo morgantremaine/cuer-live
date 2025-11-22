@@ -38,6 +38,7 @@ interface RundownHeaderSectionProps {
   showDate?: Date | null;
   onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
+  teamId?: string;
   onOpenTeleprompter: () => void;
   items?: any[];
   visibleColumns?: any[];

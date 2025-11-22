@@ -22,6 +22,7 @@ interface RundownToolbarProps {
   onReset: () => void;
   // Share functionality
   rundownId: string | undefined;
+  teamId?: string;
   // Teleprompter functionality
   onOpenTeleprompter: () => void;
   // Undo functionality
@@ -70,6 +71,7 @@ const RundownToolbar = ({
   onBackward,
   onReset,
   rundownId,
+  teamId,
   onOpenTeleprompter,
   onUndo,
   canUndo,
@@ -110,6 +112,7 @@ const RundownToolbar = ({
     canRedo,
     nextRedoAction,
     rundownId,
+    teamId,
     onOpenTeleprompter,
     selectedRowId,
     isPlaying,

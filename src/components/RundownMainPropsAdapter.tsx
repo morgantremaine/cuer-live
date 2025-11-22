@@ -53,6 +53,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     showDate,
     onShowDateChange,
     rundownId,
+    teamId,
     onOpenTeleprompter,
     items,
     visibleColumns,

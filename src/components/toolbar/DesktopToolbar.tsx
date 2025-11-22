@@ -17,6 +17,7 @@ interface DesktopToolbarProps {
   canRedo: boolean;
   nextRedoAction: string | null;
   rundownId: string | undefined;
+  teamId?: string;
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
@@ -58,6 +59,7 @@ const DesktopToolbar = ({
   canRedo,
   nextRedoAction,
   rundownId,
+  teamId,
   selectedRowId,
   isPlaying,
   currentSegmentId,
@@ -101,6 +103,7 @@ const DesktopToolbar = ({
           canRedo={canRedo}
           nextRedoAction={nextRedoAction}
           rundownId={rundownId}
+          teamId={teamId}
           selectedRowId={selectedRowId}
           isMobile={false}
           rundownTitle={rundownTitle}

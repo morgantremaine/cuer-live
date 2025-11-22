@@ -24,6 +24,7 @@ interface MainActionButtonsProps {
   canRedo: boolean;
   nextRedoAction: string | null;
   rundownId: string | undefined;
+  teamId?: string;
   selectedRowId?: string | null;
   isMobile?: boolean;
   rundownTitle?: string;
@@ -59,6 +60,7 @@ const MainActionButtons = ({
   canRedo,
   nextRedoAction,
   rundownId,
+  teamId,
   selectedRowId,
   isMobile = false,
   rundownTitle = 'Untitled Rundown',
@@ -183,6 +185,7 @@ const MainActionButtons = ({
           <div className="w-full">
             <ToolsMenu 
               rundownId={rundownId}
+              teamId={teamId}
               size={buttonSize}
               className="w-full justify-start"
               onShowFindReplace={onShowFindReplace}
@@ -276,7 +279,7 @@ const MainActionButtons = ({
         <span>Blueprint</span>
       </Button>
       
-      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} onShowHistory={onShowHistory} />
+      <ToolsMenu rundownId={rundownId} teamId={teamId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} onShowHistory={onShowHistory} />
       
       {rundownId && (
         <ShareRundownMenu 

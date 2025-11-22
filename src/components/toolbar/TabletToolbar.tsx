@@ -23,6 +23,7 @@ interface TabletToolbarProps {
   canRedo: boolean;
   nextRedoAction: string | null;
   rundownId: string | undefined;
+  teamId?: string;
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
@@ -64,6 +65,7 @@ const TabletToolbar = ({
   canRedo,
   nextRedoAction,
   rundownId,
+  teamId,
   selectedRowId,
   isPlaying,
   currentSegmentId,
@@ -122,8 +124,9 @@ const TabletToolbar = ({
                 onRedo={onRedo}
                 canRedo={canRedo}
                 nextRedoAction={nextRedoAction}
-                rundownId={rundownId}
-                selectedRowId={selectedRowId}
+                  rundownId={rundownId}
+                  teamId={teamId}
+                  selectedRowId={selectedRowId}
                 isMobile={true}
                 rundownTitle={rundownTitle}
                 rundownData={rundownData}

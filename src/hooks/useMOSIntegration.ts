@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MOSIntegrationOptions {
@@ -16,43 +16,68 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSegmentRef = useRef<string | null>(null);
   const debounceMs = useRef(1000);
+  const [rundownMosEnabled, setRundownMosEnabled] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Fetch debounce setting and check if integration is enabled
-    const fetchDebounce = async () => {
+    // First check if MOS is enabled for this specific rundown
+    const checkRundownMOS = async () => {
       try {
-        const { data, error } = await supabase
-          .from('team_mos_integrations')
-          .select('debounce_ms, enabled')
-          .eq('team_id', teamId)
+        const { data: rundownData, error: rundownError } = await supabase
+          .from('rundowns')
+          .select('mos_enabled, mos_integration_id')
+          .eq('id', rundownId)
           .single();
 
-        if (error) {
-          console.error('Failed to fetch MOS integration settings:', error);
+        if (rundownError) {
+          console.error('Failed to fetch rundown MOS settings:', rundownError);
+          setIsInitialized(true);
           return;
         }
 
-        if (data?.debounce_ms) {
-          debounceMs.current = data.debounce_ms;
+        setRundownMosEnabled(rundownData?.mos_enabled || false);
+
+        // Only fetch team settings if rundown has MOS enabled
+        if (rundownData?.mos_enabled && rundownData?.mos_integration_id) {
+          const { data, error } = await supabase
+            .from('team_mos_integrations')
+            .select('debounce_ms, enabled')
+            .eq('id', rundownData.mos_integration_id)
+            .single();
+
+          if (error) {
+            console.error('Failed to fetch MOS integration settings:', error);
+            setIsInitialized(true);
+            return;
+          }
+
+          if (data?.debounce_ms) {
+            debounceMs.current = data.debounce_ms;
+          }
+
+          // If integration is disabled at team level, don't enable the hook
+          if (data && !data.enabled) {
+            console.log('⚠️ MOS integration is disabled at team level');
+          }
         }
 
-        // If integration is disabled, don't enable the hook
-        if (data && !data.enabled) {
-          console.log('⚠️ MOS integration is disabled for this team');
-        }
+        setIsInitialized(true);
       } catch (error) {
-        console.error('Error fetching MOS settings:', error);
+        console.error('Error checking rundown MOS settings:', error);
+        setIsInitialized(true);
       }
     };
 
     if (enabled) {
-      fetchDebounce();
+      checkRundownMOS();
+    } else {
+      setIsInitialized(true);
     }
-  }, [teamId, enabled]);
+  }, [teamId, rundownId, enabled]);
 
   const sendMOSMessage = useCallback(
     async (eventType: string, segmentId: string, segmentData?: SegmentData) => {
-      if (!enabled) return;
+      if (!enabled || !isInitialized || !rundownMosEnabled) return;
 
       try {
         console.log('📡 Sending MOS message:', { eventType, segmentId });
@@ -74,12 +99,12 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
         console.error('❌ Failed to send MOS message:', error);
       }
     },
-    [teamId, rundownId, enabled]
+    [teamId, rundownId, enabled, isInitialized, rundownMosEnabled]
   );
 
   const sendMOSMessageDebounced = useCallback(
     (eventType: string, segmentId: string, segmentData?: SegmentData) => {
-      if (!enabled) return;
+      if (!enabled || !isInitialized || !rundownMosEnabled) return;
 
       // Clear existing timer
       if (debounceTimerRef.current) {
@@ -96,7 +121,7 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
 
   const handleSegmentChange = useCallback(
     (newSegmentId: string | null, segmentData?: SegmentData) => {
-      if (!enabled || !newSegmentId) return;
+      if (!enabled || !isInitialized || !rundownMosEnabled || !newSegmentId) return;
 
       // Skip if same segment
       if (newSegmentId === lastSegmentRef.current) return;
