@@ -145,6 +145,88 @@ export const getUniqueItems = (items: string[]): string[] => {
   return unique;
 };
 
+// Color name mapping for common hex values
+const COLOR_NAMES: Record<string, string> = {
+  '#ef4444': 'Red',
+  '#f97316': 'Orange',
+  '#f59e0b': 'Amber',
+  '#eab308': 'Yellow',
+  '#84cc16': 'Lime',
+  '#22c55e': 'Green',
+  '#10b981': 'Emerald',
+  '#14b8a6': 'Teal',
+  '#06b6d4': 'Cyan',
+  '#0ea5e9': 'Sky',
+  '#3b82f6': 'Blue',
+  '#6366f1': 'Indigo',
+  '#8b5cf6': 'Violet',
+  '#a855f7': 'Purple',
+  '#d946ef': 'Fuchsia',
+  '#ec4899': 'Pink',
+  '#f43f5e': 'Rose',
+  '#fdba74': 'Light Orange',
+  '#fde047': 'Light Yellow',
+  '#86efac': 'Light Green',
+  '#93c5fd': 'Light Blue',
+  '#c4b5fd': 'Light Purple',
+  '#fca5a5': 'Light Red',
+};
+
+// Convert hex color to human-readable name
+export const getColorName = (hex: string): string => {
+  // Check direct mapping first
+  const upperHex = hex.toUpperCase();
+  const lowerHex = hex.toLowerCase();
+  
+  if (COLOR_NAMES[upperHex]) return COLOR_NAMES[upperHex];
+  if (COLOR_NAMES[lowerHex]) return COLOR_NAMES[lowerHex];
+
+  // Try to derive name from HSL
+  try {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+
+    if (max === min) {
+      return 'Gray';
+    }
+
+    const d = max - min;
+    let h = 0;
+
+    if (max === r) {
+      h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    } else if (max === g) {
+      h = ((b - r) / d + 2) / 6;
+    } else {
+      h = ((r - g) / d + 4) / 6;
+    }
+
+    h *= 360;
+
+    // Determine lightness prefix
+    const lightness = l > 0.7 ? 'Light ' : l < 0.3 ? 'Dark ' : '';
+
+    // Determine hue name
+    let hueName = '';
+    if (h < 30 || h >= 330) hueName = 'Red';
+    else if (h < 60) hueName = 'Orange';
+    else if (h < 90) hueName = 'Yellow';
+    else if (h < 150) hueName = 'Green';
+    else if (h < 210) hueName = 'Cyan';
+    else if (h < 270) hueName = 'Blue';
+    else if (h < 330) hueName = 'Purple';
+
+    return `${lightness}${hueName}`;
+  } catch {
+    return 'Custom Color';
+  }
+};
+
 // Get all unique colors used in the rundown (excluding white/default)
 export const getUsedColors = (items: RundownItem[]): AvailableColumn[] => {
   logger.blueprint('getUsedColors called with items:', { count: items.length });
@@ -164,8 +246,8 @@ export const getUsedColors = (items: RundownItem[]): AvailableColumn[] => {
   
   const colorColumns: AvailableColumn[] = [];
   colorCounts.forEach((count, color) => {
-    // Generate a readable name for the color
-    const colorName = `${color} (${count} ${count === 1 ? 'item' : 'items'})`;
+    // Generate a readable name for the color using the color name function
+    const colorName = `${getColorName(color)} (${count} ${count === 1 ? 'item' : 'items'})`;
     colorColumns.push({
       name: colorName,
       value: `color_${color}`
