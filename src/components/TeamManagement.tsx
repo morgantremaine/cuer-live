@@ -8,6 +8,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield, UserX } from 'lucide-react';
+import OrganizationMembers from '@/components/OrganizationMembers';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +57,7 @@ const TeamManagement = () => {
     team,
     teamMembers,
     pendingInvitations,
+    organizationMembers,
     userRole,
     isLoading,
     error,
@@ -66,10 +68,12 @@ const TeamManagement = () => {
     updateTeamName,
     updateMemberRole,
     leaveCurrentTeam,
+    loadOrganizationMembers,
+    addOrgMemberToTeam,
     allUserTeams
   } = useTeam();
   
-  const { max_team_members, loading: subscriptionLoading } = useSubscription();
+  const { max_team_members, subscription_tier, loading: subscriptionLoading } = useSubscription();
   const { toast } = useToast();
 
   // Get the admin's name from team members
@@ -618,6 +622,21 @@ const TeamManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Organization Members - Enterprise Only */}
+      {subscription_tier === 'Enterprise' && (userRole === 'admin' || userRole === 'manager') && team && (
+        <Card>
+          <CardContent className="pt-6">
+            <OrganizationMembers
+              organizationMembers={organizationMembers}
+              currentTeamMembers={teamMembers}
+              organizationOwnerId={team.organization_owner_id || null}
+              onAddMember={addOrgMemberToTeam}
+              onLoadMembers={loadOrganizationMembers}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Leave Team Button (Members Only) */}
       {canLeaveTeam && (
