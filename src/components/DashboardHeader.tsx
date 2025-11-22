@@ -10,7 +10,6 @@ import {
 import { useNavigate } from 'react-router-dom'
 import CuerLogo from '@/components/common/CuerLogo'
 import { Team, UserTeam } from '@/hooks/useTeam'
-import ConnectionBanner from '@/components/ConnectionBanner'
 
 interface DashboardHeaderProps {
   userEmail?: string
@@ -47,9 +46,7 @@ const DashboardHeader = ({
   }
 
   return (
-    <>
-      <ConnectionBanner />
-      <header className="bg-gray-800 border-b border-gray-700">
+    <header className="bg-gray-800 border-b border-gray-700">
         <div className="px-4">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-32">
@@ -163,9 +160,8 @@ const DashboardHeader = ({
             </DropdownMenu>
           </div>
         </div>
-      </div>
-    </header>
-    </>
+        </div>
+      </header>
   )
 }
 

@@ -38,10 +38,10 @@ class RealtimeReconnectionCoordinatorService {
   private readonly CONNECTION_MONITOR_INTERVAL_ACTIVE = 60000; // 60s when active (was 30s)
   private readonly CONNECTION_MONITOR_INTERVAL_HIDDEN = 120000; // 120s when hidden (was 60s)
   
-  // Connection health tracking (increased tolerance)
+  // Connection health tracking - aggressive auto-reload
   private consecutiveFailures: number = 0;
-  private readonly MAX_FAILURES_BEFORE_RELOAD = 10; // 10 failures (was 3)
-  private readonly GRACE_PERIOD_MS = 60000; // 60 second grace period (was 15s)
+  private readonly MAX_FAILURES_BEFORE_RELOAD = 4; // 4 failures (~4 minutes)
+  private readonly GRACE_PERIOD_MS = 30000; // 30 second grace period
   private lastFailureTime: number = 0;
   private isInGracePeriod: boolean = false;
   private gracePeriodTimeout: NodeJS.Timeout | null = null;
