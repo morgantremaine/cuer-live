@@ -164,12 +164,12 @@ const COLOR_NAMES: Record<string, string> = {
   '#d946ef': 'Fuchsia',
   '#ec4899': 'Pink',
   '#f43f5e': 'Rose',
-  '#fdba74': 'Light Orange',
-  '#fde047': 'Light Yellow',
-  '#86efac': 'Light Green',
-  '#93c5fd': 'Light Blue',
-  '#c4b5fd': 'Light Purple',
-  '#fca5a5': 'Light Red',
+  '#fdba74': 'Orange',
+  '#fde047': 'Yellow',
+  '#86efac': 'Green',
+  '#93c5fd': 'Blue',
+  '#c4b5fd': 'Purple',
+  '#fca5a5': 'Red',
 };
 
 // Convert hex color to human-readable name
@@ -208,8 +208,8 @@ export const getColorName = (hex: string): string => {
 
     h *= 360;
 
-    // Determine lightness prefix
-    const lightness = l > 0.7 ? 'Light ' : l < 0.3 ? 'Dark ' : '';
+    // Determine lightness prefix (disabled for cleaner names)
+    const lightness = '';
 
     // Determine hue name
     let hueName = '';
