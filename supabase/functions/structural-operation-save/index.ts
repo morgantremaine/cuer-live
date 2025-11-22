@@ -41,6 +41,34 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authenticated user from the auth token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const authClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await authClient.auth.getUser();
+
+    if (userError || !user) {
+      console.error('❌ Authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('✅ Authenticated user:', user.id);
+
+    // Create service role client for database operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -198,7 +226,7 @@ serve(async (req) => {
           locked_row_numbers: updatedLockedRowNumbers,
           numbering_locked: updatedNumberingLocked,
           updated_at: new Date().toISOString(),
-          last_updated_by: operation.userId,
+          last_updated_by: user.id, // Use authenticated user
           tab_id: operation.tabId || null
         })
         .eq('id', operation.rundownId)
@@ -220,7 +248,7 @@ serve(async (req) => {
           rundown_id: operation.rundownId,
           operation_type: operation.operationType,
           operation_data: operation.operationData,
-          user_id: operation.userId,
+          user_id: user.id, // Use authenticated user
           sequence_number: operation.operationData.sequenceNumber || 0,
           applied_at: new Date().toISOString()
         });
