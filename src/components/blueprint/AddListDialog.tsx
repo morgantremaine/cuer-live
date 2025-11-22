@@ -30,14 +30,19 @@ interface AddListDialogProps {
 const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDialogProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [listType, setListType] = useState<'column' | 'color'>('column');
   const [sourceColumn, setSourceColumn] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && sourceColumn) {
-      onAddList(name.trim(), sourceColumn);
+    const source = listType === 'column' ? sourceColumn : selectedColor;
+    if (name.trim() && source) {
+      onAddList(name.trim(), source);
       setName('');
       setSourceColumn('');
+      setSelectedColor('');
+      setListType('column');
       setOpen(false);
     }
   };
@@ -80,16 +85,45 @@ const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDia
               required
             />
           </div>
+
           <div>
-            <Label htmlFor="source-column" className="text-gray-300">Source Column</Label>
-            <Select value={sourceColumn} onValueChange={setSourceColumn} required>
-              <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:border-gray-500">
-                <SelectValue placeholder="Select a column" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
-                {meaningfulColumns.length > 0 && (
-                  <>
-                    {meaningfulColumns.map((column) => (
+            <Label className="text-gray-300 mb-3 block">List Type</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="listType"
+                  value="column"
+                  checked={listType === 'column'}
+                  onChange={(e) => setListType(e.target.value as 'column' | 'color')}
+                  className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500"
+                />
+                <span className="text-white">Column-Based</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="listType"
+                  value="color"
+                  checked={listType === 'color'}
+                  onChange={(e) => setListType(e.target.value as 'column' | 'color')}
+                  className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500"
+                />
+                <span className="text-white">Color-Based</span>
+              </label>
+            </div>
+          </div>
+
+          {listType === 'column' ? (
+            <div>
+              <Label htmlFor="source-column" className="text-gray-300">Select Column</Label>
+              <Select value={sourceColumn} onValueChange={setSourceColumn} required>
+                <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:border-gray-500">
+                  <SelectValue placeholder="Select a column" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {meaningfulColumns.length > 0 ? (
+                    meaningfulColumns.map((column) => (
                       <SelectItem 
                         key={column.value} 
                         value={column.value}
@@ -97,37 +131,56 @@ const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDia
                       >
                         {column.name}
                       </SelectItem>
-                    ))}
-                  </>
-                )}
-                {colorColumns.length > 0 && (
-                  <>
-                    {meaningfulColumns.length > 0 && (
-                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 border-t border-gray-700 mt-1">
-                        Color-Based Lists
-                      </div>
-                    )}
-                    {colorColumns.map((column) => (
-                      <SelectItem 
-                        key={column.value} 
-                        value={column.value}
-                        className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
+                    ))
+                  ) : (
+                    <div className="px-2 py-4 text-center text-gray-400 text-sm">
+                      No columns available
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div>
+              <Label className="text-gray-300 mb-2 block">Select Color</Label>
+              {colorColumns.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {colorColumns.map((colorOption) => {
+                    const colorHex = colorOption.value.replace('color_', '');
+                    const isSelected = selectedColor === colorOption.value;
+                    return (
+                      <button
+                        key={colorOption.value}
+                        type="button"
+                        onClick={() => setSelectedColor(colorOption.value)}
+                        className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                          isSelected
+                            ? 'border-blue-500 bg-gray-700'
+                            : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
+                        }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded border border-gray-600"
-                            style={{ backgroundColor: column.value.replace('color_', '') }}
-                          />
-                          <span>{column.name}</span>
+                        <div
+                          className="w-10 h-10 rounded border border-gray-600 flex-shrink-0"
+                          style={{ backgroundColor: colorHex }}
+                        />
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="text-white text-sm font-medium truncate">
+                            {colorOption.name}
+                          </div>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end gap-2">
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-400 text-sm">
+                  No colored rows found in this rundown
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
             <Button 
               type="button" 
               variant="outline" 
@@ -138,7 +191,7 @@ const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDia
             </Button>
             <Button 
               type="submit" 
-              disabled={!name.trim() || !sourceColumn}
+              disabled={!name.trim() || (listType === 'column' ? !sourceColumn : !selectedColor)}
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white"
             >
               Create List
