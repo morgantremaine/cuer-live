@@ -329,6 +329,7 @@ const BlueprintContent = () => {
           <div className="flex flex-col sm:flex-row gap-2 mb-6">
             <AddListDialog
               availableColumns={availableColumns}
+              rundownItems={state.rundownItems}
               onAddList={addNewList}
             />
             <Button
@@ -344,6 +345,7 @@ const BlueprintContent = () => {
           {state.lists.length === 0 ? (
             <BlueprintEmptyState
               availableColumns={availableColumns}
+              rundownItems={state.rundownItems}
               onAddList={addNewList}
             />
           ) : (

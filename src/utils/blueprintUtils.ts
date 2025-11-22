@@ -96,6 +96,10 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
         }
       }
     });
+  } else if (sourceColumn.startsWith('color_')) {
+    // Extract items by color
+    const colorValue = sourceColumn.replace('color_', '');
+    return generateListFromColor(items, colorValue);
   } else if (sourceColumn.startsWith('custom_')) {
     // Extract custom field data
     const customFieldKey = sourceColumn.replace('custom_', '');
@@ -141,6 +145,57 @@ export const getUniqueItems = (items: string[]): string[] => {
   return unique;
 };
 
+// Get all unique colors used in the rundown (excluding white/default)
+export const getUsedColors = (items: RundownItem[]): AvailableColumn[] => {
+  logger.blueprint('getUsedColors called with items:', { count: items.length });
+  
+  const colorCounts = new Map<string, number>();
+  
+  items.forEach(item => {
+    const color = item.color;
+    // Skip white/default colors and empty values
+    if (color && 
+        color.toLowerCase() !== '#ffffff' && 
+        color.toLowerCase() !== '#fff' &&
+        color !== '') {
+      colorCounts.set(color, (colorCounts.get(color) || 0) + 1);
+    }
+  });
+  
+  const colorColumns: AvailableColumn[] = [];
+  colorCounts.forEach((count, color) => {
+    // Generate a readable name for the color
+    const colorName = `${color} (${count} ${count === 1 ? 'item' : 'items'})`;
+    colorColumns.push({
+      name: colorName,
+      value: `color_${color}`
+    });
+  });
+  
+  logger.blueprint('Found unique colors:', colorColumns.length);
+  return colorColumns;
+};
+
+// Generate list from items with a specific color
+export const generateListFromColor = (items: RundownItem[], colorValue: string): string[] => {
+  logger.blueprint('generateListFromColor called', { colorValue, itemCount: items.length });
+  
+  const list: string[] = [];
+  
+  items.forEach(item => {
+    if (item.color === colorValue) {
+      // Use the row name/content as the list item text
+      const itemText = item.name || item.notes || item.rowNumber || 'Unnamed Item';
+      if (itemText && String(itemText).trim() !== '') {
+        list.push(String(itemText).trim());
+      }
+    }
+  });
+  
+  logger.blueprint('Generated color-based list:', { colorValue, count: list.length });
+  return list;
+};
+
 export interface ItemMetadata {
   rowNumber: string | null;
   startTime: string | null;
@@ -169,6 +224,14 @@ export const getItemMetadata = (
         item.rowNumber === itemText
       )
     );
+  } else if (sourceColumn.startsWith('color_')) {
+    // Match by color and item text
+    const colorValue = sourceColumn.replace('color_', '');
+    matchedItem = rundownItems.find(item => {
+      if (item.color !== colorValue) return false;
+      const itemName = item.name || item.notes || item.rowNumber || 'Unnamed Item';
+      return String(itemName).trim() === itemText;
+    });
   } else if (sourceColumn.startsWith('custom_')) {
     // Match custom field in regular items
     const customFieldKey = sourceColumn.replace('custom_', '');

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,13 +18,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
+import { getUsedColors } from '@/utils/blueprintUtils';
+import { RundownItem } from '@/types/rundown';
 
 interface AddListDialogProps {
   availableColumns: { name: string; value: string }[];
+  rundownItems: RundownItem[];
   onAddList: (name: string, sourceColumn: string) => void;
 }
 
-const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
+const AddListDialog = ({ availableColumns, rundownItems, onAddList }: AddListDialogProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [sourceColumn, setSourceColumn] = useState('');
@@ -46,6 +49,9 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
       column.value.startsWith('custom_')
     )
   );
+
+  // Get color-based options
+  const colorColumns = useMemo(() => getUsedColors(rundownItems), [rundownItems]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -81,15 +87,43 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
                 <SelectValue placeholder="Select a column" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-600">
-                {meaningfulColumns.map((column) => (
-                  <SelectItem 
-                    key={column.value} 
-                    value={column.value}
-                    className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
-                  >
-                    {column.name}
-                  </SelectItem>
-                ))}
+                {meaningfulColumns.length > 0 && (
+                  <>
+                    {meaningfulColumns.map((column) => (
+                      <SelectItem 
+                        key={column.value} 
+                        value={column.value}
+                        className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
+                      >
+                        {column.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {colorColumns.length > 0 && (
+                  <>
+                    {meaningfulColumns.length > 0 && (
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 border-t border-gray-700 mt-1">
+                        Color-Based Lists
+                      </div>
+                    )}
+                    {colorColumns.map((column) => (
+                      <SelectItem 
+                        key={column.value} 
+                        value={column.value}
+                        className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded border border-gray-600"
+                            style={{ backgroundColor: column.value.replace('color_', '') }}
+                          />
+                          <span>{column.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
