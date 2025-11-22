@@ -28,6 +28,10 @@ export const useDashboardRundownOptimized = ({
   const [connectedCount, setConnectedCount] = useState(0);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const rundownsRef = useRef(rundowns);
+  const errorTimestamps = useRef<Map<string, number>>(new Map());
+  const [tabJustActivated, setTabJustActivated] = useState(false);
+  
+  const ERROR_LOG_THROTTLE_MS = 5000; // 5 seconds between errors per rundown
 
   // Update rundowns ref when rundowns change
   useEffect(() => {
@@ -87,7 +91,17 @@ export const useDashboardRundownOptimized = ({
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && enabled && user) {
-        console.log('📊 Dashboard: Visibility restored, forcing channel reconnection');
+        console.log('📊 Dashboard: Tab visible, entering grace period');
+        setTabJustActivated(true);
+        
+        // Clear error timestamps (fresh start)
+        errorTimestamps.current.clear();
+        
+        // Grace period: 5 seconds
+        setTimeout(() => {
+          setTabJustActivated(false);
+        }, 5000);
+        
         setReconnectTrigger(prev => prev + 1);
       }
     };
@@ -164,7 +178,19 @@ export const useDashboardRundownOptimized = ({
             } else if (status === 'CLOSED') {
               setConnectedCount(prev => Math.max(0, prev - 1));
             } else if (status === 'CHANNEL_ERROR') {
-              console.error('🎯 Dashboard: Connection error for rundown:', rundown.id);
+              // Skip logging during grace period
+              if (tabJustActivated) {
+                return;
+              }
+              
+              // Throttle error logging
+              const now = Date.now();
+              const lastError = errorTimestamps.current.get(rundown.id);
+              
+              if (!lastError || (now - lastError) > ERROR_LOG_THROTTLE_MS) {
+                console.error('🎯 Dashboard: Connection error for rundown:', rundown.id);
+                errorTimestamps.current.set(rundown.id, now);
+              }
             }
           });
 

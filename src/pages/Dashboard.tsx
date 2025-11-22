@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
@@ -65,13 +65,6 @@ const Dashboard = () => {
       prev.map(r => r.id === updatedRundown.id ? updatedRundown : r)
     );
   };
-  
-  // Set up optimized real-time subscriptions for dashboard rundowns
-  const { isConnected: realtimeConnected, connectedCount, totalRundowns } = useDashboardRundownOptimized({
-    rundowns: liveRundowns,
-    onRundownUpdate: handleRundownUpdate,
-    enabled: true
-  });
 
   // Simple loading state - show skeleton until we have actual rundown data
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
@@ -81,6 +74,24 @@ const Dashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(isMobile);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [folderType, setFolderType] = useState<'all' | 'recent' | 'archived' | 'custom'>('recent');
+  
+  // Only subscribe to real-time updates for non-archived rundowns
+  // (unless user is actively viewing the archived folder)
+  const rundownsNeedingRealtime = useMemo(() => {
+    if (folderType === 'archived') {
+      // If viewing archived folder, subscribe to those
+      return liveRundowns.filter(r => r.archived);
+    }
+    // Otherwise, only subscribe to active (non-archived) rundowns
+    return liveRundowns.filter(r => !r.archived);
+  }, [liveRundowns, folderType]);
+  
+  // Set up optimized real-time subscriptions for dashboard rundowns
+  const { isConnected: realtimeConnected, connectedCount, totalRundowns } = useDashboardRundownOptimized({
+    rundowns: rundownsNeedingRealtime,
+    onRundownUpdate: handleRundownUpdate,
+    enabled: true
+  });
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
