@@ -10,7 +10,6 @@ import { Trash2, Plus, TestTube, Key, Eye, EyeOff, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CueDebugPanel } from './CueDebugPanel';
-import { MOSSettings } from './MOSSettings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Integration {
@@ -569,9 +568,8 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
 
   return (
     <Tabs defaultValue="webhooks" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="webhooks">Webhooks & OSC</TabsTrigger>
-        <TabsTrigger value="mos">MOS/Xpression</TabsTrigger>
         <TabsTrigger value="api-keys">API Keys</TabsTrigger>
       </TabsList>
 
@@ -819,10 +817,6 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
           </Button>
         </CardContent>
       </Card>
-      </TabsContent>
-
-      <TabsContent value="mos">
-        <MOSSettings teamId={teamId} />
       </TabsContent>
 
       <TabsContent value="api-keys" className="space-y-6">
