@@ -5,6 +5,8 @@ interface MOSIntegrationOptions {
   teamId: string;
   rundownId: string;
   enabled?: boolean;
+  triggerOnShowcaller?: boolean;
+  triggerOnEditorial?: boolean;
 }
 
 interface SegmentData {
@@ -12,11 +14,19 @@ interface SegmentData {
   [key: string]: any;
 }
 
-export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSIntegrationOptions) => {
+export const useMOSIntegration = ({ 
+  teamId, 
+  rundownId, 
+  enabled = true,
+  triggerOnShowcaller = true,
+  triggerOnEditorial = true 
+}: MOSIntegrationOptions) => {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSegmentRef = useRef<string | null>(null);
   const debounceMs = useRef(1000);
   const [rundownMosEnabled, setRundownMosEnabled] = useState(false);
+  const [rundownTriggerShowcaller, setRundownTriggerShowcaller] = useState(true);
+  const [rundownTriggerEditorial, setRundownTriggerEditorial] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -25,7 +35,7 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
       try {
         const { data: rundownData, error: rundownError } = await supabase
           .from('rundowns')
-          .select('mos_enabled, mos_debounce_ms')
+          .select('mos_enabled, mos_debounce_ms, mos_trigger_on_showcaller, mos_trigger_on_editorial')
           .eq('id', rundownId)
           .single();
 
@@ -36,6 +46,8 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
         }
 
         setRundownMosEnabled(rundownData?.mos_enabled || false);
+        setRundownTriggerShowcaller(rundownData?.mos_trigger_on_showcaller ?? true);
+        setRundownTriggerEditorial(rundownData?.mos_trigger_on_editorial ?? true);
 
         if (rundownData?.mos_debounce_ms) {
           debounceMs.current = rundownData.mos_debounce_ms;
@@ -55,12 +67,12 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
     }
   }, [rundownId, enabled]);
 
-  const sendMOSMessage = useCallback(
+  const sendShowcallerMessage = useCallback(
     async (eventType: string, segmentId: string, segmentData?: SegmentData) => {
-      if (!enabled || !isInitialized || !rundownMosEnabled) return;
+      if (!enabled || !isInitialized || !rundownMosEnabled || !rundownTriggerShowcaller) return;
 
       try {
-        console.log('📡 Sending MOS message:', { eventType, segmentId });
+        console.log('📡 Sending MOS Showcaller message:', { eventType, segmentId });
 
         const { data, error } = await supabase.functions.invoke('mos-send-message', {
           body: {
@@ -74,17 +86,44 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
 
         if (error) throw error;
 
-        console.log('✅ MOS message sent successfully:', data);
+        console.log('✅ MOS Showcaller message sent successfully:', data);
       } catch (error) {
-        console.error('❌ Failed to send MOS message:', error);
+        console.error('❌ Failed to send MOS Showcaller message:', error);
       }
     },
-    [teamId, rundownId, enabled, isInitialized, rundownMosEnabled]
+    [teamId, rundownId, enabled, isInitialized, rundownMosEnabled, rundownTriggerShowcaller]
   );
 
-  const sendMOSMessageDebounced = useCallback(
+  const sendEditorialMessage = useCallback(
+    async (eventType: string, segmentId: string, segmentData?: SegmentData) => {
+      if (!enabled || !isInitialized || !rundownMosEnabled || !rundownTriggerEditorial) return;
+
+      try {
+        console.log('📡 Sending MOS Editorial message:', { eventType, segmentId });
+
+        const { data, error } = await supabase.functions.invoke('mos-send-message', {
+          body: {
+            teamId,
+            rundownId,
+            eventType,
+            segmentId,
+            segmentData,
+          },
+        });
+
+        if (error) throw error;
+
+        console.log('✅ MOS Editorial message sent successfully:', data);
+      } catch (error) {
+        console.error('❌ Failed to send MOS Editorial message:', error);
+      }
+    },
+    [teamId, rundownId, enabled, isInitialized, rundownMosEnabled, rundownTriggerEditorial]
+  );
+
+  const sendShowcallerMessageDebounced = useCallback(
     (eventType: string, segmentId: string, segmentData?: SegmentData) => {
-      if (!enabled || !isInitialized || !rundownMosEnabled) return;
+      if (!enabled || !isInitialized || !rundownMosEnabled || !rundownTriggerShowcaller) return;
 
       // Clear existing timer
       if (debounceTimerRef.current) {
@@ -93,27 +132,56 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
 
       // Set new timer
       debounceTimerRef.current = setTimeout(() => {
-        sendMOSMessage(eventType, segmentId, segmentData);
+        sendShowcallerMessage(eventType, segmentId, segmentData);
       }, debounceMs.current);
     },
-    [sendMOSMessage, enabled]
+    [sendShowcallerMessage, enabled, isInitialized, rundownMosEnabled, rundownTriggerShowcaller]
+  );
+
+  const sendEditorialMessageDebounced = useCallback(
+    (eventType: string, segmentId: string, segmentData?: SegmentData) => {
+      if (!enabled || !isInitialized || !rundownMosEnabled || !rundownTriggerEditorial) return;
+
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Set new timer
+      debounceTimerRef.current = setTimeout(() => {
+        sendEditorialMessage(eventType, segmentId, segmentData);
+      }, debounceMs.current);
+    },
+    [sendEditorialMessage, enabled, isInitialized, rundownMosEnabled, rundownTriggerEditorial]
   );
 
   const handleSegmentChange = useCallback(
     (newSegmentId: string | null, segmentData?: SegmentData) => {
-      if (!enabled || !isInitialized || !rundownMosEnabled || !newSegmentId) return;
+      if (!enabled || !isInitialized || !rundownMosEnabled || !rundownTriggerShowcaller || !newSegmentId) return;
 
       // Skip if same segment
       if (newSegmentId === lastSegmentRef.current) return;
 
-      console.log('🔄 Segment changed:', { from: lastSegmentRef.current, to: newSegmentId });
+      console.log('🔄 Showcaller segment changed:', { from: lastSegmentRef.current, to: newSegmentId });
 
       lastSegmentRef.current = newSegmentId;
 
-      // Send MOS message with debouncing
-      sendMOSMessageDebounced('UPDATE', newSegmentId, segmentData);
+      // Send showcaller MOS message with debouncing
+      sendShowcallerMessageDebounced('UPDATE', newSegmentId, segmentData);
     },
-    [sendMOSMessageDebounced, enabled]
+    [sendShowcallerMessageDebounced, enabled, isInitialized, rundownMosEnabled, rundownTriggerShowcaller]
+  );
+
+  const handleEditorialChange = useCallback(
+    (segmentId: string, segmentData?: SegmentData, eventType: string = 'UPDATE') => {
+      if (!enabled || !isInitialized || !rundownMosEnabled || !rundownTriggerEditorial) return;
+
+      console.log('🔄 Editorial change:', { segmentId, eventType });
+
+      // Send editorial MOS message with debouncing
+      sendEditorialMessageDebounced(eventType, segmentId, segmentData);
+    },
+    [sendEditorialMessageDebounced, enabled, isInitialized, rundownMosEnabled, rundownTriggerEditorial]
   );
 
   // Cleanup on unmount
@@ -126,8 +194,11 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
   }, []);
 
   return {
-    sendMOSMessage,
-    sendMOSMessageDebounced,
+    sendShowcallerMessage,
+    sendEditorialMessage,
+    sendShowcallerMessageDebounced,
+    sendEditorialMessageDebounced,
     handleSegmentChange,
+    handleEditorialChange,
   };
 };

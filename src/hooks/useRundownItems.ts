@@ -230,11 +230,21 @@ export const useRundownItems = (
     });
   }, [markAsChanged]);
 
-  const toggleFloatRow = useCallback((id: string) => {
+  const toggleFloatRow = useCallback((id: string, onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void) => {
     setItems(prevItems => {
       const newItems = prevItems.map(item => 
         item.id === id ? { ...item, isFloating: !item.isFloating } : item
       );
+      
+      // Send MOS message for float/unfloat if editorial trigger is enabled
+      if (onEditorialChange) {
+        const changedItem = newItems.find(item => item.id === id);
+        if (changedItem) {
+          console.log('📡 Sending MOS editorial message for float change:', changedItem.id, changedItem.isFloating);
+          onEditorialChange(changedItem.id, changedItem, 'UPDATE');
+        }
+      }
+      
       markAsChanged();
       return newItems;
     });

@@ -40,7 +40,8 @@ export const useDragAndDrop = (
   markStructuralChange?: () => void,
   rundownId?: string | null,
   currentUserId?: string | null,
-  recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void
+  recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void,
+  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -448,6 +449,19 @@ export const useDragAndDrop = (
       
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
+      
+      // Send MOS messages for reordered items if editorial trigger is enabled
+      if (onEditorialChange) {
+        const movedItems = newItems.filter((item, index) => {
+          const oldItem = items.find(i => i.id === item.id);
+          return oldItem && oldItem.rowNumber !== item.rowNumber;
+        });
+        
+        console.log('📡 Sending MOS editorial messages for reordered items:', movedItems.length);
+        movedItems.forEach(item => {
+          onEditorialChange(item.id, item, 'UPDATE');
+        });
+      }
       
       // Handle reorder via structural coordination if available (database persistence)
       if (markStructuralChange && typeof markStructuralChange === 'function') {

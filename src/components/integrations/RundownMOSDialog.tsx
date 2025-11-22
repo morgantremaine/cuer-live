@@ -48,6 +48,8 @@ const CUER_COLUMNS = [
   { key: 'video', label: 'Video' },
   { key: 'images', label: 'Images' },
   { key: 'notes', label: 'Notes' },
+  { key: 'isFloating', label: 'Floating Status' },
+  { key: 'type', label: 'Item Type' },
 ];
 
 export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
@@ -67,6 +69,8 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
   const [xpressionPort, setXpressionPort] = useState(6000);
   const [debounceMs, setDebounceMs] = useState(1000);
   const [autoTakeEnabled, setAutoTakeEnabled] = useState(false);
+  const [triggerOnShowcaller, setTriggerOnShowcaller] = useState(true);
+  const [triggerOnEditorial, setTriggerOnEditorial] = useState(true);
   
   // Field Mappings
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
@@ -95,18 +99,20 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
       // Fetch rundown MOS settings
       const { data: rundownData, error: rundownError } = await supabase
         .from('rundowns')
-        .select('mos_enabled, mos_id, mos_xpression_host, mos_xpression_port, mos_debounce_ms, mos_auto_take_enabled')
+        .select('mos_enabled, mos_id, mos_xpression_host, mos_xpression_port, mos_debounce_ms, mos_auto_take_enabled, mos_trigger_on_showcaller, mos_trigger_on_editorial')
         .eq('id', rundownId)
         .single();
 
       if (rundownError) throw rundownError;
 
-      setMosEnabled(rundownData?.mos_enabled || false);
-      setMosId(rundownData?.mos_id || 'CUER_MOS_01');
-      setXpressionHost(rundownData?.mos_xpression_host || '');
-      setXpressionPort(rundownData?.mos_xpression_port || 6000);
-      setDebounceMs(rundownData?.mos_debounce_ms || 1000);
-      setAutoTakeEnabled(rundownData?.mos_auto_take_enabled || false);
+        setMosEnabled(rundownData?.mos_enabled || false);
+        setMosId(rundownData?.mos_id || 'CUER_MOS_01');
+        setXpressionHost(rundownData?.mos_xpression_host || '');
+        setXpressionPort(rundownData?.mos_xpression_port || 6000);
+        setDebounceMs(rundownData?.mos_debounce_ms || 1000);
+        setAutoTakeEnabled(rundownData?.mos_auto_take_enabled || false);
+        setTriggerOnShowcaller(rundownData?.mos_trigger_on_showcaller ?? true);
+        setTriggerOnEditorial(rundownData?.mos_trigger_on_editorial ?? true);
 
       // Fetch field mappings
       const { data: mappingsData, error: mappingsError } = await supabase
@@ -170,6 +176,8 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
           mos_xpression_port: xpressionPort,
           mos_debounce_ms: debounceMs,
           mos_auto_take_enabled: autoTakeEnabled,
+          mos_trigger_on_showcaller: triggerOnShowcaller,
+          mos_trigger_on_editorial: triggerOnEditorial,
         })
         .eq('id', rundownId);
 
@@ -462,6 +470,45 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
             </CardContent>
           </Card>
 
+          {/* MOS Trigger Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">MOS Trigger Settings</CardTitle>
+              <CardDescription>
+                Control when MOS messages are sent to Xpression
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="trigger-showcaller">Send MOS on Showcaller</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Update Xpression when the current segment advances during on-air
+                  </p>
+                </div>
+                <Switch
+                  id="trigger-showcaller"
+                  checked={triggerOnShowcaller}
+                  onCheckedChange={setTriggerOnShowcaller}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="trigger-editorial">Send MOS on Editorial Changes</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Update Xpression when segments are reordered or floated/unfloated
+                  </p>
+                </div>
+                <Switch
+                  id="trigger-editorial"
+                  checked={triggerOnEditorial}
+                  onCheckedChange={setTriggerOnEditorial}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Field Mappings */}
           <Card>
             <CardHeader>
@@ -544,6 +591,19 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
                       placeholder="e.g., F1, F2, Title"
                     />
                   </div>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <input
+                    type="checkbox"
+                    id="template-column"
+                    checked={newMapping.isTemplateColumn}
+                    onChange={(e) => setNewMapping({ ...newMapping, isTemplateColumn: e.target.checked })}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  <Label htmlFor="template-column" className="text-sm font-normal cursor-pointer">
+                    This field contains the Xpression template name
+                  </Label>
                 </div>
 
                 <Button onClick={handleAddMapping} variant="outline" className="w-full">
