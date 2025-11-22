@@ -20,7 +20,6 @@ import { useRealtimeConnection } from './RealtimeConnectionProvider';
 import RundownSaveIndicator from './header/RundownSaveIndicator';
 import { useClockFormat } from '@/contexts/ClockFormatContext';
 import { parseTimeInput, isValidTimeInput } from '@/utils/timeInputParser';
-import ConnectionBanner from '@/components/ConnectionBanner';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
