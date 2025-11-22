@@ -1400,6 +1400,10 @@ export type Database = {
         Args: { target_team_id: string; target_user_id: string }
         Returns: undefined
       }
+      create_new_team: {
+        Args: { team_name: string; user_uuid: string }
+        Returns: string
+      }
       delete_user_completely: {
         Args: { user_uuid: string }
         Returns: undefined
