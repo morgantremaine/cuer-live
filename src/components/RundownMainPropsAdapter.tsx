@@ -255,6 +255,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         showDate={showDate}
         onShowDateChange={onShowDateChange}
         rundownId={rundownId}
+        teamId={teamId}
         onOpenTeleprompter={onOpenTeleprompter}
         items={items}
         visibleColumns={visibleColumns}
