@@ -10,6 +10,8 @@ import { Trash2, Plus, TestTube, Key, Eye, EyeOff, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CueDebugPanel } from './CueDebugPanel';
+import { MOSSettings } from './MOSSettings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Integration {
   id: string;
@@ -566,9 +568,16 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
   }
 
   return (
-    <div className="space-y-6">
-      {/* Integrations Section */}
-      <Card>
+    <Tabs defaultValue="webhooks" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="webhooks">Webhooks & OSC</TabsTrigger>
+        <TabsTrigger value="mos">MOS/Xpression</TabsTrigger>
+        <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="webhooks" className="space-y-6">
+        {/* Integrations Section */}
+        <Card>
         <CardHeader>
           <CardTitle>External Integrations</CardTitle>
           <CardDescription>
@@ -810,11 +819,15 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
           </Button>
         </CardContent>
       </Card>
+      </TabsContent>
 
-      <Separator />
+      <TabsContent value="mos">
+        <MOSSettings teamId={teamId} />
+      </TabsContent>
 
-      {/* API Keys Section */}
-      <Card>
+      <TabsContent value="api-keys" className="space-y-6">
+        {/* API Keys Section */}
+        <Card>
         <CardHeader>
           <CardTitle>API Keys</CardTitle>
           <CardDescription>
@@ -902,8 +915,6 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
         </CardContent>
       </Card>
 
-      <Separator />
-
       {/* Debug Panel Section */}
       <Card>
         <CardHeader>
@@ -916,6 +927,7 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
           <CueDebugPanel teamId={teamId} />
         </CardContent>
       </Card>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 };

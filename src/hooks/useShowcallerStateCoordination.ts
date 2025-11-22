@@ -2,6 +2,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useCueIntegration } from './useCueIntegration';
 import { useSimpleShowcallerSync } from './useSimpleShowcallerSync';
+import { useMOSIntegration } from './useMOSIntegration';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -35,6 +36,13 @@ export const useShowcallerStateCoordination = ({
     rundownTitle,
     rundownStartTime
   );
+
+  // Initialize MOS integration
+  const { handleSegmentChange } = useMOSIntegration({
+    teamId: teamId || '',
+    rundownId: rundownId || '',
+    enabled: !!teamId && !!rundownId,
+  });
 
   // Use ONLY the simple sync system - removes the legacy complex system
   const simpleSync = useSimpleShowcallerSync({
@@ -132,7 +140,12 @@ export const useShowcallerStateCoordination = ({
       isPlaying: simpleSync.isPlaying,
       timeRemaining: simpleSync.timeRemaining,
     });
-  }, [simpleSync, userId, getCurrentSegment, getNextSegment, sendCueTrigger]);
+
+    // Send MOS update
+    if (next) {
+      handleSegmentChange(next.id, next);
+    }
+  }, [simpleSync, userId, getCurrentSegment, getNextSegment, sendCueTrigger, handleSegmentChange]);
 
   const coordinatedBackward = useCallback(() => {
     console.log('📺 Coordinated backward called:', { userId });
@@ -147,7 +160,13 @@ export const useShowcallerStateCoordination = ({
       isPlaying: simpleSync.isPlaying,
       timeRemaining: simpleSync.timeRemaining,
     });
-  }, [simpleSync, userId, getCurrentSegment, getNextSegment, sendCueTrigger]);
+
+    // Send MOS update
+    const prev = getPrevSegment();
+    if (prev) {
+      handleSegmentChange(prev.id, prev);
+    }
+  }, [simpleSync, userId, getCurrentSegment, getNextSegment, getPrevSegment, sendCueTrigger, handleSegmentChange]);
 
   const coordinatedReset = useCallback(() => {
     console.log('📺 Coordinated reset called:', { userId });
