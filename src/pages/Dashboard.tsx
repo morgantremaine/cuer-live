@@ -8,6 +8,7 @@ import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
 import { AIRundownDialog } from '@/components/AIRundownDialog';
+import CreateTeamDialog from '@/components/CreateTeamDialog';
 import { CSVImportResult } from '@/utils/csvImport';
 import { RundownItem } from '@/types/rundown';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
@@ -38,7 +39,7 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading, error: teamError, loadTeamData } = useTeam();
+  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading, error: teamError, loadTeamData, createNewTeam } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
@@ -103,6 +104,10 @@ const Dashboard = () => {
     title: ''
   });
   
+  // State for create team dialog
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
+  
   // Handle any pending team invitations after login
   useInvitationHandler();
 
@@ -140,6 +145,16 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const handleCreateTeam = async (teamName: string) => {
+    setIsCreatingTeam(true);
+    try {
+      await createNewTeam(teamName);
+      setShowCreateTeamDialog(false);
+    } finally {
+      setIsCreatingTeam(false);
+    }
   };
 
   const handleOpenRundown = (rundownId: string) => {
@@ -445,6 +460,8 @@ const Dashboard = () => {
           allUserTeams={allUserTeams}
           userRole={userRole}
           switchToTeam={switchToTeam}
+          subscriptionTier={subscription_tier}
+          onCreateTeam={() => setShowCreateTeamDialog(true)}
         />
         
         {showLoadingTimeout || teamError ? (
@@ -652,6 +669,14 @@ const Dashboard = () => {
         onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
         rundownTitle={deleteDialog.title}
         onConfirm={handleConfirmDelete}
+      />
+      
+      {/* Create Team Dialog */}
+      <CreateTeamDialog
+        open={showCreateTeamDialog}
+        onOpenChange={setShowCreateTeamDialog}
+        onCreateTeam={handleCreateTeam}
+        isCreating={isCreatingTeam}
       />
     </div>
   );

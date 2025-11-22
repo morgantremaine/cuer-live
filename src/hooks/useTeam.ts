@@ -900,6 +900,49 @@ export const useTeam = () => {
     };
   }, [user?.id, team]);
 
+  const createNewTeam = useCallback(async (teamName: string) => {
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to create a team',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    try {
+      const { data: newTeamId, error } = await supabase.rpc('create_new_team', {
+        user_uuid: user.id,
+        team_name: teamName
+      });
+
+      if (error) throw error;
+
+      // Reload all teams
+      await loadAllUserTeams();
+      
+      // Switch to the new team
+      if (newTeamId) {
+        setActiveTeam(newTeamId);
+      }
+
+      toast({
+        title: 'Team created',
+        description: `${teamName} has been created successfully`,
+      });
+
+      return newTeamId;
+    } catch (error) {
+      console.error('Error creating team:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create team',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  }, [user, toast, loadAllUserTeams, setActiveTeam]);
+
   return {
     team,
     allUserTeams,
@@ -919,6 +962,7 @@ export const useTeam = () => {
     loadTeamData,
     loadTeamMembers,
     loadPendingInvitations,
-    switchToTeam
+    switchToTeam,
+    createNewTeam,
   };
 };

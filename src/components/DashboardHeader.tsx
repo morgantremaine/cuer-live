@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, User, LogOut, HelpCircle, Crown, ChevronDown, Shield, Users, ArrowLeftRight } from 'lucide-react'
+import { ArrowLeft, User, LogOut, HelpCircle, Crown, ChevronDown, Shield, Users, ArrowLeftRight, Plus } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,8 @@ interface DashboardHeaderProps {
   allUserTeams?: UserTeam[]
   userRole?: 'admin' | 'member' | 'manager'
   switchToTeam?: (teamId: string) => Promise<void>
+  subscriptionTier?: string | null
+  onCreateTeam?: () => void
 }
 
 const DashboardHeader = ({ 
@@ -30,7 +32,9 @@ const DashboardHeader = ({
   team,
   allUserTeams = [],
   userRole,
-  switchToTeam
+  switchToTeam,
+  subscriptionTier,
+  onCreateTeam
 }: DashboardHeaderProps) => {
   const navigate = useNavigate()
 
@@ -121,6 +125,21 @@ const DashboardHeader = ({
                       )}
                     </DropdownMenuItem>
                   ))}
+                  
+                  {subscriptionTier === 'Enterprise' && onCreateTeam && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={onCreateTeam}
+                        className="flex items-center space-x-3 px-3 py-3 text-blue-400 hover:text-blue-300 hover:bg-gray-700 cursor-pointer"
+                      >
+                        <div className="p-1.5 bg-blue-500/20 rounded-md">
+                          <Plus className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">Create New Team</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
