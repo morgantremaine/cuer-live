@@ -553,14 +553,16 @@ export const useTeam = () => {
       // Reload team members after successful deletion
       await loadTeamMembers(team.id);
       
-      return { 
-        result: {
-          rundownsTransferred: data.rundownsTransferred || 0,
-          blueprintsTransferred: data.blueprintsTransferred || 0,
-          layoutsTransferred: data.layoutsTransferred || 0,
-          customColumnsTransferred: data.customColumnsTransferred || 0
-        }
-      };
+    return { 
+      result: {
+        rundownsTransferred: data.rundownsTransferred || 0,
+        blueprintsTransferred: data.blueprintsTransferred || 0,
+        layoutsTransferred: data.layoutsTransferred || 0,
+        customColumnsTransferred: data.customColumnsTransferred || 0,
+        userDeleted: data.userDeleted || false,
+        warning: data.warning
+      }
+    };
     } catch (error) {
       console.error('Exception in removeTeamMemberWithTransfer:', error);
       return { error: 'Failed to remove team member' };

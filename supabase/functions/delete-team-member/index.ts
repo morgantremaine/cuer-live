@@ -119,60 +119,16 @@ serve(async (req) => {
 
     console.log('Transfer completed:', transferResult);
 
-    // Now delete the user from auth.users using service role
-    const userIdToDelete = transferResult.user_id_to_delete;
-    
-    if (userIdToDelete) {
-      console.log('Attempting to delete auth user:', userIdToDelete);
-      
-      try {
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(userIdToDelete);
-        
-        if (deleteError) {
-          console.error('Error deleting auth user:', deleteError);
-          // Still return success since data transfer completed
-          return new Response(
-            JSON.stringify({
-              success: true,
-              rundownsTransferred: transferResult.rundowns_transferred || 0,
-              blueprintsTransferred: transferResult.blueprints_transferred || 0,
-              userDeleted: false,
-              warning: 'Data transferred successfully but failed to delete user account: ' + deleteError.message
-            }),
-            {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              status: 200,
-            }
-          )
-        } else {
-          console.log('Auth user deleted successfully');
-        }
-      } catch (authDeleteError) {
-        console.error('Exception when deleting auth user:', authDeleteError);
-        return new Response(
-          JSON.stringify({
-            success: true,
-            rundownsTransferred: transferResult.rundowns_transferred || 0,
-            blueprintsTransferred: transferResult.blueprints_transferred || 0,
-            userDeleted: false,
-            warning: 'Data transferred successfully but failed to delete user account due to exception'
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        )
-      }
-    } else {
-      console.log('No user ID to delete found in transfer result');
-    }
-
+    // NOTE: We do NOT delete the user's auth account anymore
+    // Users retain their personal team and can still access the system
     return new Response(
       JSON.stringify({
         success: true,
         rundownsTransferred: transferResult.rundowns_transferred || 0,
         blueprintsTransferred: transferResult.blueprints_transferred || 0,
-        userDeleted: true
+        layoutsTransferred: transferResult.layouts_transferred || 0,
+        customColumnsTransferred: transferResult.custom_columns_transferred || 0,
+        userDeleted: false
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
