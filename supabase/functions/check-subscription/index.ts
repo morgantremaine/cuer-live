@@ -17,7 +17,8 @@ const logStep = (step: string, details?: any) => {
 // Tier configurations with team member limits - Updated for new structure  
 const TIER_CONFIG = {
   'Pro': { maxMembers: 3, monthly: 'price_1S73RiCDuejYEwM0nEisV7YU', yearly: 'price_1S73SBCDuejYEwM07oTh5oDW' },
-  'Premium': { maxMembers: 15, monthly: 'price_1S73MoCDuejYEwM0MqlcIpEc', yearly: 'price_1S73OnCDuejYEwM0AEykNo4T' }
+  'Premium': { maxMembers: 15, monthly: 'price_1S73MoCDuejYEwM0MqlcIpEc', yearly: 'price_1S73OnCDuejYEwM0AEykNo4T' },
+  'Enterprise': { maxMembers: 25 }
   // Enterprise is contact-only, no Stripe pricing
 };
 

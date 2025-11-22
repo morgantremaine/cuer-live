@@ -19,8 +19,11 @@ const TIER_CONFIG = {
     maxMembers: 15, 
     monthly: 'price_1SKNMjCDuejYEwM0tPdxRjIE', 
     yearly: 'price_1SKNWxCDuejYEwM07E9QmL5M' 
+  },
+  'Enterprise': {
+    maxMembers: 25
+    // Contact-only, no Stripe checkout
   }
-  // Enterprise is contact-only, no Stripe checkout
 };
 
 const logStep = (step: string, details?: any) => {
