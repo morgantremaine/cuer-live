@@ -1271,18 +1271,21 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          organization_owner_id: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          organization_owner_id?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          organization_owner_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1370,6 +1373,14 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: Json
       }
+      add_org_member_to_team: {
+        Args: {
+          adding_user_id: string
+          target_team_id: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
       can_read_inviter_profile: {
         Args: { profile_user_id: string }
         Returns: boolean
@@ -1443,6 +1454,17 @@ export type Database = {
       }
       get_next_sequence_number: { Args: never; Returns: number }
       get_or_create_user_team: { Args: { user_uuid: string }; Returns: string }
+      get_organization_members: {
+        Args: { org_owner_uuid: string }
+        Returns: {
+          email: string
+          full_name: string
+          profile_picture_url: string
+          team_count: number
+          teams_list: string[]
+          user_id: string
+        }[]
+      }
       get_public_layout_for_rundown: {
         Args: { layout_uuid: string; rundown_uuid: string }
         Returns: Json

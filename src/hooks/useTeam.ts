@@ -18,6 +18,7 @@ const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager'>();
 export interface Team {
   id: string;
   name: string;
+  organization_owner_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -46,6 +47,15 @@ export interface UserTeam {
   joined_at: string;
 }
 
+export interface OrganizationMember {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  profile_picture_url: string | null;
+  team_count: number;
+  teams_list: string[];
+}
+
 export const useTeam = () => {
   const { user } = useAuth();
   const { activeTeamId, setActiveTeam } = useActiveTeam();
@@ -55,6 +65,7 @@ export const useTeam = () => {
   const [allUserTeams, setAllUserTeams] = useState<UserTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [organizationMembers, setOrganizationMembers] = useState<OrganizationMember[]>([]);
   const [userRole, setUserRole] = useState<'admin' | 'member' | 'manager' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +103,7 @@ export const useTeam = () => {
       const teamIds = membershipData.map(m => m.team_id);
       const { data: teamsData, error: teamsError } = await supabase
         .from('teams')
-        .select('id, name, created_at, updated_at')
+        .select('id, name, organization_owner_id, created_at, updated_at')
         .in('id', teamIds);
 
       if (teamsError) {
@@ -213,6 +224,56 @@ export const useTeam = () => {
       console.error('Failed to load pending invitations:', error);
     }
   };
+
+  const loadOrganizationMembers = useCallback(async (organizationOwnerId: string) => {
+    if (!organizationOwnerId) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('get_organization_members', {
+        org_owner_uuid: organizationOwnerId
+      });
+
+      if (error) {
+        console.error('Error loading organization members:', error);
+        setOrganizationMembers([]);
+      } else {
+        setOrganizationMembers(data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load organization members:', error);
+      setOrganizationMembers([]);
+    }
+  }, []);
+
+  const addOrgMemberToTeam = useCallback(async (userId: string) => {
+    if (!team?.id || !user?.id) {
+      return { error: 'No team or user found' };
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('add_org_member_to_team', {
+        target_user_id: userId,
+        target_team_id: team.id,
+        adding_user_id: user.id
+      });
+
+      if (error) {
+        console.error('Error adding org member to team:', error);
+        return { error: error.message };
+      }
+
+      if (!data.success) {
+        return { error: data.error || 'Failed to add member' };
+      }
+
+      // Reload team members
+      await loadTeamMembers(team.id);
+      return { success: true };
+    } catch (error) {
+      console.error('Exception in addOrgMemberToTeam:', error);
+      return { error: 'Failed to add organization member' };
+    }
+  }, [team?.id, user?.id, loadTeamMembers]);
 
   const loadTeamData = useCallback(async () => {
     const currentActiveTeamId = activeTeamId;
@@ -948,6 +1009,7 @@ export const useTeam = () => {
     allUserTeams,
     teamMembers,
     pendingInvitations,
+    organizationMembers,
     userRole,
     isLoading,
     error,
@@ -962,6 +1024,8 @@ export const useTeam = () => {
     loadTeamData,
     loadTeamMembers,
     loadPendingInvitations,
+    loadOrganizationMembers,
+    addOrgMemberToTeam,
     switchToTeam,
     createNewTeam,
   };
