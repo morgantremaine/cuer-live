@@ -17,6 +17,7 @@ interface RundownMOSDialogProps {
   onOpenChange: (open: boolean) => void;
   rundownId: string;
   teamId: string;
+  userEmail?: string;
 }
 
 interface FieldMapping {

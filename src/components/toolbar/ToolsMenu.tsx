@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 // import { RundownActionLog } from '@/components/RundownActionLog';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/hooks/useAuth';
 import { RundownMOSDialog } from '@/components/integrations/RundownMOSDialog';
 
 interface ToolsMenuProps {
@@ -37,6 +38,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { subscription_tier, access_type } = useSubscription();
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [showMOSDialog, setShowMOSDialog] = useState(false);
@@ -45,6 +47,9 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
+
+  // Only show MOS settings for morgan@cuer.live (testing)
+  const showMOSSettings = user?.email === 'morgan@cuer.live';
 
   useEffect(() => {
     if (showHistoryDialog && historyButtonRef.current) {
@@ -249,10 +254,12 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             History
           </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={handleOpenMOSSettings}>
-            <Radio className="h-4 w-4 mr-2" />
-            Xpression Connect
-          </DropdownMenuItem>
+          {showMOSSettings && (
+            <DropdownMenuItem onClick={handleOpenMOSSettings}>
+              <Radio className="h-4 w-4 mr-2" />
+              Xpression Connect
+            </DropdownMenuItem>
+          )}
           
           <DropdownMenuItem onClick={handleOpenADView}>
             <Camera className="h-4 w-4 mr-2" />
@@ -292,12 +299,13 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       )}
       */}
 
-      {rundownId && teamId && (
+      {rundownId && teamId && showMOSSettings && (
         <RundownMOSDialog
           open={showMOSDialog}
           onOpenChange={setShowMOSDialog}
           rundownId={rundownId}
           teamId={teamId}
+          userEmail={user?.email}
         />
       )}
     </>
