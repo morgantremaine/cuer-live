@@ -190,9 +190,11 @@ const TeamManagement = () => {
         ? ` ${transferredItems.join(', ')} transferred to you.`
         : '';
       
+      const warningMessage = result?.warning ? ` Note: ${result.warning}` : '';
+      
       toast({
         title: 'Team member removed',
-        description: `${memberToRemove.name} has been removed from the team and their account deleted.${transferMessage}`,
+        description: `${memberToRemove.name} has been removed from the team.${transferMessage}${warningMessage}`,
       });
     }
     
