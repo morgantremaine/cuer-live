@@ -18,21 +18,37 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
   const debounceMs = useRef(1000);
 
   useEffect(() => {
-    // Fetch debounce setting
+    // Fetch debounce setting and check if integration is enabled
     const fetchDebounce = async () => {
-      const { data } = await supabase
-        .from('team_mos_integrations')
-        .select('debounce_ms')
-        .eq('team_id', teamId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('team_mos_integrations')
+          .select('debounce_ms, enabled')
+          .eq('team_id', teamId)
+          .single();
 
-      if (data?.debounce_ms) {
-        debounceMs.current = data.debounce_ms;
+        if (error) {
+          console.error('Failed to fetch MOS integration settings:', error);
+          return;
+        }
+
+        if (data?.debounce_ms) {
+          debounceMs.current = data.debounce_ms;
+        }
+
+        // If integration is disabled, don't enable the hook
+        if (data && !data.enabled) {
+          console.log('⚠️ MOS integration is disabled for this team');
+        }
+      } catch (error) {
+        console.error('Error fetching MOS settings:', error);
       }
     };
 
-    fetchDebounce();
-  }, [teamId]);
+    if (enabled) {
+      fetchDebounce();
+    }
+  }, [teamId, enabled]);
 
   const sendMOSMessage = useCallback(
     async (eventType: string, segmentId: string, segmentData?: SegmentData) => {

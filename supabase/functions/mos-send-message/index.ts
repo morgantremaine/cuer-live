@@ -47,7 +47,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Parse request body
+    // Parse and validate request body
     const {
       teamId,
       rundownId,
@@ -55,6 +55,15 @@ serve(async (req) => {
       segmentId,
       segmentData,
     } = await req.json();
+
+    // Validate required fields
+    if (!teamId || !rundownId || !eventType || !segmentId) {
+      throw new Error('Missing required fields: teamId, rundownId, eventType, or segmentId');
+    }
+
+    if (!['UPDATE', 'INSERT', 'DELETE', 'MOVE'].includes(eventType)) {
+      throw new Error(`Invalid eventType: ${eventType}. Must be UPDATE, INSERT, DELETE, or MOVE`);
+    }
 
     console.log('📡 MOS message request:', { teamId, rundownId, eventType, segmentId });
 
@@ -74,6 +83,15 @@ serve(async (req) => {
 
     if (integrationError || !mosIntegration) {
       throw new Error('MOS integration not enabled for this team');
+    }
+
+    // Check if integration is enabled
+    if (!mosIntegration.enabled) {
+      console.log('⚠️ MOS integration is disabled for this team');
+      return new Response(
+        JSON.stringify({ success: false, message: 'MOS integration is disabled' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('✅ MOS integration found:', {
@@ -109,39 +127,42 @@ serve(async (req) => {
 
     console.log('🔄 Mapped fields:', fields);
 
-    // Build MOS message
-    const mosMessage: MOSMessage = {
-      mosID: mosIntegration.mos_id,
-      ncsID: 'CUER',
-      messageID: Date.now(),
-      roID: rundownId,
-      roSlug: rundownId,
-    };
-
-    // Add roElementAction based on event type
-    if (eventType === 'UPDATE' || eventType === 'MOVE') {
-      mosMessage.roElementAction = {
-        operation: eventType,
-        element_target: {
-          roElementID: segmentId,
-        },
-        element_source: {
-          roElementID: segmentId,
-          fields: fields,
-        },
-      };
-    }
-
-    console.log('📦 MOS message:', JSON.stringify(mosMessage, null, 2));
-
     // Send to Xpression via TCP
     let status = 'sent';
     let errorMessage: string | null = null;
 
     try {
-      if (mosIntegration.xpression_host && mosIntegration.xpression_port) {
-        // Convert MOS message to XML
-        const xmlMessage = mosMessageToXML(mosMessage);
+      if (!mosIntegration.xpression_host || !mosIntegration.xpression_port) {
+        throw new Error('Xpression host or port not configured');
+      }
+
+      // Build MOS message
+      const mosMessage: MOSMessage = {
+        mosID: mosIntegration.mos_id,
+        ncsID: 'CUER',
+        messageID: Date.now(),
+        roID: rundownId,
+        roSlug: rundownId,
+      };
+
+      // Add roElementAction based on event type
+      if (eventType === 'UPDATE' || eventType === 'MOVE') {
+        mosMessage.roElementAction = {
+          operation: eventType,
+          element_target: {
+            roElementID: segmentId,
+          },
+          element_source: {
+            roElementID: segmentId,
+            fields: fields,
+          },
+        };
+      }
+
+      console.log('📦 MOS message:', JSON.stringify(mosMessage, null, 2));
+
+      // Convert MOS message to XML
+      const xmlMessage = mosMessageToXML(mosMessage);
         
         // Send via TCP
         const conn = await Deno.connect({
@@ -165,9 +186,6 @@ serve(async (req) => {
             xpression_host: mosIntegration.xpression_host,
             error_message: null,
           });
-      } else {
-        throw new Error('Xpression host or port not configured');
-      }
     } catch (error) {
       console.error('❌ Failed to send MOS message:', error);
       status = 'failed';
