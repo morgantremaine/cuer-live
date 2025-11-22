@@ -12,6 +12,9 @@ const ConnectionBanner = ({ className }: ConnectionBannerProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [status, setStatus] = useState<'reconnecting' | 'degraded' | 'critical'>('reconnecting');
   const [isDismissed, setIsDismissed] = useState(false);
+  const [firstFailureTime, setFirstFailureTime] = useState<number | null>(null);
+  
+  const MIN_FAILURE_DURATION_MS = 30000; // 30 seconds
 
   useEffect(() => {
     const checkInterval = setInterval(() => {
@@ -21,13 +24,23 @@ const ConnectionBanner = ({ className }: ConnectionBannerProps) => {
       const consecutiveFailures = connectionStatus.consecutiveFailures;
       const isReconnecting = connectionStatus.isReconnecting;
       
+      // Track when failures started
+      if (consecutiveFailures > 0 && !firstFailureTime) {
+        setFirstFailureTime(Date.now());
+      } else if (consecutiveFailures === 0) {
+        setFirstFailureTime(null);
+      }
+      
+      // Calculate how long failures have persisted
+      const failureDuration = firstFailureTime ? Date.now() - firstFailureTime : 0;
+      
       let newStatus: 'reconnecting' | 'degraded' | 'critical' = 'reconnecting';
       let shouldShow = false;
 
-      if (consecutiveFailures >= 3) {
+      if (consecutiveFailures >= 6) {
         newStatus = 'critical';
         shouldShow = true;
-      } else if (consecutiveFailures >= 2 || isReconnecting) {
+      } else if (consecutiveFailures >= 4 && failureDuration >= MIN_FAILURE_DURATION_MS) {
         newStatus = 'degraded';
         shouldShow = true;
       } else if (consecutiveFailures === 0) {
@@ -47,7 +60,7 @@ const ConnectionBanner = ({ className }: ConnectionBannerProps) => {
     }, 2000); // Check every 2 seconds
 
     return () => clearInterval(checkInterval);
-  }, [isDismissed]);
+  }, [isDismissed, firstFailureTime]);
 
   const handleReloadNow = () => {
     window.location.reload();

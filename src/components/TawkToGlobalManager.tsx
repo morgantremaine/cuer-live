@@ -18,7 +18,8 @@ const TawkToGlobalManager = () => {
   ];
 
   // Load the Tawk.to widget once globally
-  useTawkTo({ showOnThisPage: true });
+  const shouldShow = allowedPaths.includes(location.pathname);
+  useTawkTo({ showOnThisPage: shouldShow });
 
   // Manage widget visibility based on current route
   useEffect(() => {
