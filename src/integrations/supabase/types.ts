@@ -692,6 +692,8 @@ export type Database = {
           mos_debounce_ms: number | null
           mos_enabled: boolean | null
           mos_id: string | null
+          mos_trigger_on_editorial: boolean | null
+          mos_trigger_on_showcaller: boolean | null
           mos_xpression_host: string | null
           mos_xpression_port: number | null
           numbering_locked: boolean | null
@@ -728,6 +730,8 @@ export type Database = {
           mos_debounce_ms?: number | null
           mos_enabled?: boolean | null
           mos_id?: string | null
+          mos_trigger_on_editorial?: boolean | null
+          mos_trigger_on_showcaller?: boolean | null
           mos_xpression_host?: string | null
           mos_xpression_port?: number | null
           numbering_locked?: boolean | null
@@ -764,6 +768,8 @@ export type Database = {
           mos_debounce_ms?: number | null
           mos_enabled?: boolean | null
           mos_id?: string | null
+          mos_trigger_on_editorial?: boolean | null
+          mos_trigger_on_showcaller?: boolean | null
           mos_xpression_host?: string | null
           mos_xpression_port?: number | null
           numbering_locked?: boolean | null

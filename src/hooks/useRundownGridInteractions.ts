@@ -9,7 +9,7 @@ export const useRundownGridInteractions = (
   addRow: () => void,
   addHeader: () => void,
   deleteRow: (id: string) => void,
-  toggleFloatRow: (id: string) => void,
+  toggleFloatRow: (id: string, onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void) => void,
   deleteMultipleRows: (ids: string[]) => void,
   addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void,
   handleDeleteColumn: (columnId: string) => void,

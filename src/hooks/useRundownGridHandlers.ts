@@ -9,7 +9,7 @@ interface UseRundownGridHandlersProps {
   addRow: (insertIndex?: number, selectedRows?: Set<string>) => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
-  toggleFloatRow: (id: string) => void;
+  toggleFloatRow: (id: string, onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void) => void;
   deleteMultipleRows: (ids: string[]) => void;
   addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void;
   handleDeleteColumn: (columnId: string) => void;
@@ -130,8 +130,8 @@ export const useRundownGridHandlers = ({
     deleteRow(id);
   }, [deleteRow]);
 
-  const handleToggleFloat = useCallback((id: string) => {
-    toggleFloatRow(id);
+  const handleToggleFloat = useCallback((id: string, onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void) => {
+    toggleFloatRow(id, onEditorialChange);
   }, [toggleFloatRow]);
 
   const handleColorSelect = useCallback((id: string, color: string) => {

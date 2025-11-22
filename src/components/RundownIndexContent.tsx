@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -21,12 +22,17 @@ import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useMOSIntegration } from '@/hooks/useMOSIntegration';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  
+  // Get team data and user for MOS integration setup
+  const { team } = useTeam();
+  const { user } = useAuth();
   
   const {
     coreState,
@@ -97,16 +103,11 @@ const RundownIndexContent = () => {
     toggleLock
   } = coreState;
 
-  // Get team data for column deletion
-  const { team } = useTeam();
-
-  // Get current user for cell editing indicators
-  const { user } = useAuth();
   const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
 
-  // Initialize MOS integration for sending messages to Xpression
-  const { handleSegmentChange } = useMOSIntegration({
+  // Initialize MOS integration after rundownId is available
+  const { handleSegmentChange, handleEditorialChange } = useMOSIntegration({
     teamId: team?.id || '',
     rundownId: rundownId || '',
     enabled: !!team?.id && !!rundownId,
