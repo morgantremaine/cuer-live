@@ -18,6 +18,7 @@ import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
+import { useMOSIntegration } from '@/hooks/useMOSIntegration';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 // Import timing test to run calculations check
@@ -103,6 +104,13 @@ const RundownIndexContent = () => {
   const { user } = useAuth();
   const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
+
+  // Initialize MOS integration for sending messages to Xpression
+  const { handleSegmentChange } = useMOSIntegration({
+    teamId: team?.id || '',
+    rundownId: rundownId || '',
+    enabled: !!team?.id && !!rundownId,
+  });
 
   // Cell editor setup ready
 
@@ -471,6 +479,17 @@ const RundownIndexContent = () => {
       document.title = 'Cuer';
     };
   }, [rundownTitle]);
+
+  // Send MOS messages to Xpression when current segment changes
+  useEffect(() => {
+    if (currentSegmentId && items.length > 0) {
+      const currentSegment = items.find(item => item.id === currentSegmentId);
+      if (currentSegment) {
+        // Send segment data to MOS integration
+        handleSegmentChange(currentSegmentId, currentSegment);
+      }
+    }
+  }, [currentSegmentId, items, handleSegmentChange]);
 
 
   // Create the handleJumpToHere function that respects current playing state
