@@ -309,6 +309,7 @@ export type Database = {
           connected: boolean
           error_message: string | null
           last_heartbeat: string | null
+          rundown_id: string
           team_id: string
           updated_at: string
           xpression_host: string | null
@@ -317,6 +318,7 @@ export type Database = {
           connected?: boolean
           error_message?: string | null
           last_heartbeat?: string | null
+          rundown_id: string
           team_id: string
           updated_at?: string
           xpression_host?: string | null
@@ -325,15 +327,23 @@ export type Database = {
           connected?: boolean
           error_message?: string | null
           last_heartbeat?: string | null
+          rundown_id?: string
           team_id?: string
           updated_at?: string
           xpression_host?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "mos_connection_status_rundown_id_fkey"
+            columns: ["rundown_id"]
+            isOneToOne: false
+            referencedRelation: "rundowns"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "mos_connection_status_team_id_fkey"
             columns: ["team_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -443,6 +453,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      rundown_mos_field_mappings: {
+        Row: {
+          created_at: string | null
+          cuer_column_key: string
+          field_order: number | null
+          id: string
+          is_template_column: boolean | null
+          rundown_id: string
+          xpression_field_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          cuer_column_key: string
+          field_order?: number | null
+          id?: string
+          is_template_column?: boolean | null
+          rundown_id: string
+          xpression_field_name: string
+        }
+        Update: {
+          created_at?: string | null
+          cuer_column_key?: string
+          field_order?: number | null
+          id?: string
+          is_template_column?: boolean | null
+          rundown_id?: string
+          xpression_field_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rundown_mos_field_mappings_rundown_id_fkey"
+            columns: ["rundown_id"]
+            isOneToOne: false
+            referencedRelation: "rundowns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rundown_operations: {
         Row: {
@@ -640,8 +688,12 @@ export type Database = {
           last_updated_by: string | null
           locked_row_numbers: Json | null
           logo_url: string | null
+          mos_auto_take_enabled: boolean | null
+          mos_debounce_ms: number | null
           mos_enabled: boolean | null
-          mos_integration_id: string | null
+          mos_id: string | null
+          mos_xpression_host: string | null
+          mos_xpression_port: number | null
           numbering_locked: boolean | null
           operation_mode_enabled: boolean | null
           per_cell_save_enabled: boolean | null
@@ -672,8 +724,12 @@ export type Database = {
           last_updated_by?: string | null
           locked_row_numbers?: Json | null
           logo_url?: string | null
+          mos_auto_take_enabled?: boolean | null
+          mos_debounce_ms?: number | null
           mos_enabled?: boolean | null
-          mos_integration_id?: string | null
+          mos_id?: string | null
+          mos_xpression_host?: string | null
+          mos_xpression_port?: number | null
           numbering_locked?: boolean | null
           operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
@@ -704,8 +760,12 @@ export type Database = {
           last_updated_by?: string | null
           locked_row_numbers?: Json | null
           logo_url?: string | null
+          mos_auto_take_enabled?: boolean | null
+          mos_debounce_ms?: number | null
           mos_enabled?: boolean | null
-          mos_integration_id?: string | null
+          mos_id?: string | null
+          mos_xpression_host?: string | null
+          mos_xpression_port?: number | null
           numbering_locked?: boolean | null
           operation_mode_enabled?: boolean | null
           per_cell_save_enabled?: boolean | null
@@ -727,13 +787,6 @@ export type Database = {
             columns: ["folder_id"]
             isOneToOne: false
             referencedRelation: "rundown_folders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rundowns_mos_integration_id_fkey"
-            columns: ["mos_integration_id"]
-            isOneToOne: false
-            referencedRelation: "team_mos_integrations"
             referencedColumns: ["id"]
           },
           {

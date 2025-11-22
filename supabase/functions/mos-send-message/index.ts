@@ -73,10 +73,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if MOS is enabled for this rundown
+    // Get MOS configuration directly from rundown
     const { data: rundownData, error: rundownError } = await supabase
       .from('rundowns')
-      .select('mos_enabled, mos_integration_id')
+      .select('mos_enabled, mos_id, mos_xpression_host, mos_xpression_port, mos_debounce_ms, mos_auto_take_enabled')
       .eq('id', rundownId)
       .single();
 
@@ -88,42 +88,21 @@ serve(async (req) => {
       throw new Error('MOS integration is not enabled for this rundown');
     }
 
-    if (!rundownData?.mos_integration_id) {
-      throw new Error('No MOS integration configured for this rundown');
+    if (!rundownData?.mos_xpression_host || !rundownData?.mos_xpression_port) {
+      throw new Error('MOS Xpression host or port not configured for this rundown');
     }
 
-    // Get MOS integration settings using the rundown's integration ID
-    const { data: mosIntegration, error: integrationError } = await supabase
-      .from('team_mos_integrations')
-      .select('*')
-      .eq('id', rundownData.mos_integration_id)
-      .single();
-
-    if (integrationError || !mosIntegration) {
-      throw new Error('MOS integration not found');
-    }
-
-    // Check if integration is enabled
-    if (!mosIntegration.enabled) {
-      console.log('⚠️ MOS integration is disabled for this team');
-      return new Response(
-        JSON.stringify({ success: false, message: 'MOS integration is disabled' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('✅ MOS integration found:', {
-      mosId: mosIntegration.mos_id,
-      host: mosIntegration.xpression_host,
-      port: mosIntegration.xpression_port,
+    console.log('✅ MOS configuration found:', {
+      mosId: rundownData.mos_id,
+      host: rundownData.mos_xpression_host,
+      port: rundownData.mos_xpression_port,
     });
 
-    // Get field mappings
+    // Get field mappings for this rundown
     const { data: fieldMappings, error: mappingsError } = await supabase
-      .from('team_mos_field_mappings')
+      .from('rundown_mos_field_mappings')
       .select('*')
-      .eq('team_id', teamId)
-      .eq('mos_integration_id', mosIntegration.id)
+      .eq('rundown_id', rundownId)
       .order('field_order', { ascending: true });
 
     if (mappingsError) {
@@ -149,34 +128,30 @@ serve(async (req) => {
     let status = 'sent';
     let errorMessage: string | null = null;
 
-    try {
-      if (!mosIntegration.xpression_host || !mosIntegration.xpression_port) {
-        throw new Error('Xpression host or port not configured');
-      }
+    // Build MOS message
+    const mosMessage: MOSMessage = {
+      mosID: rundownData.mos_id || 'CUER_MOS_01',
+      ncsID: 'CUER',
+      messageID: Date.now(),
+      roID: rundownId,
+      roSlug: rundownId,
+    };
 
-      // Build MOS message
-      const mosMessage: MOSMessage = {
-        mosID: mosIntegration.mos_id,
-        ncsID: 'CUER',
-        messageID: Date.now(),
-        roID: rundownId,
-        roSlug: rundownId,
+    // Add roElementAction based on event type
+    if (eventType === 'UPDATE' || eventType === 'MOVE') {
+      mosMessage.roElementAction = {
+        operation: eventType,
+        element_target: {
+          roElementID: segmentId,
+        },
+        element_source: {
+          roElementID: segmentId,
+          fields: fields,
+        },
       };
+    }
 
-      // Add roElementAction based on event type
-      if (eventType === 'UPDATE' || eventType === 'MOVE') {
-        mosMessage.roElementAction = {
-          operation: eventType,
-          element_target: {
-            roElementID: segmentId,
-          },
-          element_source: {
-            roElementID: segmentId,
-            fields: fields,
-          },
-        };
-      }
-
+    try {
       console.log('📦 MOS message:', JSON.stringify(mosMessage, null, 2));
 
       // Convert MOS message to XML
@@ -184,8 +159,8 @@ serve(async (req) => {
         
         // Send via TCP
         const conn = await Deno.connect({
-          hostname: mosIntegration.xpression_host,
-          port: mosIntegration.xpression_port,
+          hostname: rundownData.mos_xpression_host,
+          port: rundownData.mos_xpression_port,
         });
 
         const encoder = new TextEncoder();
@@ -199,9 +174,10 @@ serve(async (req) => {
           .from('mos_connection_status')
           .upsert({
             team_id: teamId,
+            rundown_id: rundownId,
             connected: true,
             last_heartbeat: new Date().toISOString(),
-            xpression_host: mosIntegration.xpression_host,
+            xpression_host: rundownData.mos_xpression_host,
             error_message: null,
           });
     } catch (error) {
@@ -214,9 +190,10 @@ serve(async (req) => {
         .from('mos_connection_status')
         .upsert({
           team_id: teamId,
+          rundown_id: rundownId,
           connected: false,
           last_heartbeat: new Date().toISOString(),
-          xpression_host: mosIntegration.xpression_host,
+          xpression_host: rundownData.mos_xpression_host,
           error_message: errorMessage,
         });
     }
@@ -225,7 +202,7 @@ serve(async (req) => {
     await supabase.from('mos_message_log').insert({
       team_id: teamId,
       rundown_id: rundownId,
-      event_type: eventType,
+      message_type: eventType,
       message_payload: mosMessage,
       status: status,
       error_message: errorMessage,

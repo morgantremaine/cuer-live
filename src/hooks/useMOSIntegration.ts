@@ -20,12 +20,12 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // First check if MOS is enabled for this specific rundown
+    // Fetch MOS configuration directly from rundown
     const checkRundownMOS = async () => {
       try {
         const { data: rundownData, error: rundownError } = await supabase
           .from('rundowns')
-          .select('mos_enabled, mos_integration_id')
+          .select('mos_enabled, mos_debounce_ms')
           .eq('id', rundownId)
           .single();
 
@@ -37,28 +37,8 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
 
         setRundownMosEnabled(rundownData?.mos_enabled || false);
 
-        // Only fetch team settings if rundown has MOS enabled
-        if (rundownData?.mos_enabled && rundownData?.mos_integration_id) {
-          const { data, error } = await supabase
-            .from('team_mos_integrations')
-            .select('debounce_ms, enabled')
-            .eq('id', rundownData.mos_integration_id)
-            .single();
-
-          if (error) {
-            console.error('Failed to fetch MOS integration settings:', error);
-            setIsInitialized(true);
-            return;
-          }
-
-          if (data?.debounce_ms) {
-            debounceMs.current = data.debounce_ms;
-          }
-
-          // If integration is disabled at team level, don't enable the hook
-          if (data && !data.enabled) {
-            console.log('⚠️ MOS integration is disabled at team level');
-          }
+        if (rundownData?.mos_debounce_ms) {
+          debounceMs.current = rundownData.mos_debounce_ms;
         }
 
         setIsInitialized(true);
@@ -73,7 +53,7 @@ export const useMOSIntegration = ({ teamId, rundownId, enabled = true }: MOSInte
     } else {
       setIsInitialized(true);
     }
-  }, [teamId, rundownId, enabled]);
+  }, [rundownId, enabled]);
 
   const sendMOSMessage = useCallback(
     async (eventType: string, segmentId: string, segmentData?: SegmentData) => {
