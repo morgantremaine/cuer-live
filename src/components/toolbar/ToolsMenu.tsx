@@ -254,8 +254,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             Xpression Connect
           </DropdownMenuItem>
           
-          <DropdownMenuSeparator />
-          
           <DropdownMenuItem onClick={handleOpenADView}>
             <Camera className="h-4 w-4 mr-2" />
             AD View
