@@ -29,6 +29,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import AdminNotificationSender from '@/components/AdminNotificationSender';
+import AdminBannerController from '@/components/AdminBannerController';
+import DashboardBanner from '@/components/DashboardBanner';
 import { Plus, Wrench, Calculator, Clock, Timer } from 'lucide-react';
 import {
   DropdownMenu,
@@ -575,6 +577,9 @@ const Dashboard = () => {
         {showMainContent && (
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-8">
+              {/* Dashboard Banner */}
+              <DashboardBanner />
+              
               {/* Action buttons */}
               {userRole !== 'teleprompter' && (
                 <div className="flex gap-4 mb-6 flex-wrap">
@@ -647,8 +652,9 @@ const Dashboard = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                 )}
+                  )}
                  <AdminNotificationSender userEmail={user?.email} />
+                 <AdminBannerController userEmail={user?.email} />
                   {/* Admin only: Delete test user button */}
                  {user?.email === 'morgan@cuer.live' && (
                    <>
