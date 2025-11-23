@@ -882,6 +882,52 @@ export const useTeam = () => {
     };
   }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam, loadAllUserTeams, switchToTeam]);
 
+  // Subscribe to role changes for the current user
+  useEffect(() => {
+    if (!user?.id || !team?.id) return;
+
+    const channelKey = `team-member-role-${user.id}-${team.id}`;
+    
+    // Use global channel tracking to prevent duplicates
+    if (globalRealtimeChannels.has(channelKey)) {
+      return;
+    }
+    
+    const roleChannel = supabase
+      .channel(channelKey)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'team_members',
+        filter: `user_id=eq.${user.id}`
+      }, async (payload) => {
+        const oldMembership = payload.old as { team_id: string; role: string };
+        const newMembership = payload.new as { team_id: string; role: string };
+        
+        // Check if role changed for the current team
+        if (newMembership.team_id === team.id && oldMembership.role !== newMembership.role) {
+          console.log('🔄 Role updated via realtime:', oldMembership.role, '->', newMembership.role);
+          
+          // Reload team data to get fresh role
+          await loadTeamData();
+          
+          // Show notification about role change
+          toast({
+            title: 'Role Updated',
+            description: `Your role has been changed to ${newMembership.role}`,
+          });
+        }
+      })
+      .subscribe();
+    
+    globalRealtimeChannels.set(channelKey, roleChannel);
+    
+    return () => {
+      supabase.removeChannel(roleChannel);
+      globalRealtimeChannels.delete(channelKey);
+    };
+  }, [user?.id, team?.id, toast, loadTeamData]);
+
   // Subscribe to team updates for real-time name changes
   useEffect(() => {
     if (!user?.id || !activeTeamId) return;
