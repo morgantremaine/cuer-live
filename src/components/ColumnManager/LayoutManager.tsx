@@ -328,8 +328,8 @@ const LayoutManager = ({
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{layout.name}</span>
-                        {layout.is_default && (
-                          <span title="Default layout for team">
+                        {layout.is_default && layout.creator_role === 'admin' && (
+                          <span title="Default layout (Team Admin)">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           </span>
                         )}
