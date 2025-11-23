@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
     }
 
     // Determine max team members based on tier
-    const maxTeamMembers = tier === 'Network' ? 25 : tier === 'Premium' ? 15 : 5
+    const maxTeamMembers = tier === 'Enterprise' ? 25 : tier === 'Network' ? 25 : tier === 'Premium' ? 15 : 5
+    console.log('Grandfathering user:', { email, tier, maxTeamMembers })
 
     // Update or insert subscriber record with service role
     const { data, error } = await supabaseAdmin
