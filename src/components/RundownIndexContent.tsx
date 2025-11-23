@@ -145,9 +145,16 @@ const RundownIndexContent = () => {
 
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
+    console.log('🎯 handleScrollToActiveTeammate called');
+    
     // Find the scroll container
     const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
-    if (!scrollContainer) return;
+    if (!scrollContainer) {
+      console.warn('❌ Scroll container not found');
+      return;
+    }
+    
+    console.log('✅ Found scroll container, searching for active editors...');
 
     // Iterate through all items and fields to find first cell with an active editor
     for (const item of items) {
@@ -156,6 +163,8 @@ const RundownIndexContent = () => {
       for (const field of fields) {
         const editor = getEditorForCell(item.id, field);
         if (editor) {
+          console.log(`👤 Found active editor: ${editor.userName} editing ${field} on item ${item.id}`);
+          
           // Found an active editor - find the specific cell element
           const cellKey = `${item.id}-${field}`;
           
@@ -172,6 +181,7 @@ const RundownIndexContent = () => {
           }
           
           if (cellElement) {
+            console.log('✅ Found cell element, scrolling...');
             // Scroll the specific cell into view with both vertical and horizontal scrolling
             cellElement.scrollIntoView({
               behavior: 'smooth',
@@ -185,6 +195,7 @@ const RundownIndexContent = () => {
               cellElement?.classList.remove('ring-2', 'ring-blue-500');
             }, 2000);
           } else {
+            console.warn('⚠️ Cell element not found, falling back to row scroll');
             // Fallback to row-level scroll if we can't find the specific cell
             handleScrollToEditor(item.id);
           }
@@ -193,6 +204,8 @@ const RundownIndexContent = () => {
         }
       }
     }
+    
+    console.warn('❌ No active editors found');
   }, [items, visibleColumns, getEditorForCell, handleScrollToEditor]);
 
   // Set up user presence tracking for this rundown
