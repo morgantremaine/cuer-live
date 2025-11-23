@@ -40,6 +40,7 @@ interface RundownContextMenuProps {
   onMoveDown?: () => void;
   scriptText?: string;
   allItems?: any[];
+  userRole?: string | null;
 }
 
 const RundownContextMenu = memo(({
@@ -67,10 +68,12 @@ const RundownContextMenu = memo(({
   onMoveUp,
   onMoveDown,
   scriptText,
-  allItems
+  allItems,
+  userRole
 }: RundownContextMenuProps) => {
   const { isMobile } = useResponsiveLayout();
   const isMultipleSelection = selectedCount > 1;
+  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
 
   
   // Define color options for the submenu (same as original ColorPicker)
@@ -219,8 +222,8 @@ const RundownContextMenu = memo(({
           
           {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
           
-          {/* Jump to here - only show for regular segments and single selection */}
-          {onJumpToHere && itemType === 'regular' && !isMultipleSelection && (
+          {/* Jump to here - only show for regular segments, single selection, and showcaller roles */}
+          {onJumpToHere && itemType === 'regular' && !isMultipleSelection && canUseShowcaller && (
             <>
               <ContextMenuItem 
                 onClick={handleJumpToHere} 

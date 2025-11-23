@@ -52,6 +52,7 @@ interface TabletToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
+  userRole?: string | null;
 }
 
 const TabletToolbar = ({
@@ -93,9 +94,11 @@ const TabletToolbar = ({
   isDefaultZoom = true,
   // Lock props
   numberingLocked = false,
-  onToggleLock
+  onToggleLock,
+  userRole
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
 
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
@@ -140,23 +143,26 @@ const TabletToolbar = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex justify-center flex-1">
-          <PlaybackControls
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            currentSegmentId={currentSegmentId}
-            timeRemaining={timeRemaining}
-            onPlay={onPlay}
-            onPause={onPause}
-            onForward={onForward}
-            onBackward={onBackward}
-            onReset={onReset}
-            size="sm"
-            autoScrollEnabled={autoScrollEnabled}
-            onToggleAutoScroll={onToggleAutoScroll}
-            onJumpToCurrentSegment={onJumpToCurrentSegment}
-          />
-        </div>
+        {/* Playback Controls - Only for admin, manager, and showcaller roles */}
+        {canUseShowcaller && (
+          <div className="flex justify-center flex-1">
+            <PlaybackControls
+              selectedRowId={selectedRowId}
+              isPlaying={isPlaying}
+              currentSegmentId={currentSegmentId}
+              timeRemaining={timeRemaining}
+              onPlay={onPlay}
+              onPause={onPause}
+              onForward={onForward}
+              onBackward={onBackward}
+              onReset={onReset}
+              size="sm"
+              autoScrollEnabled={autoScrollEnabled}
+              onToggleAutoScroll={onToggleAutoScroll}
+              onJumpToCurrentSegment={onJumpToCurrentSegment}
+            />
+          </div>
+        )}
 
         {/* Zoom Controls */}
         {onZoomIn && onZoomOut && onResetZoom && (

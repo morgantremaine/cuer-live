@@ -50,7 +50,7 @@ const TeamManagement = () => {
   const [isLeavingTeam, setIsLeavingTeam] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [isMounting, setIsMounting] = useState(true);
-  const [roleChangeDialog, setRoleChangeDialog] = useState<{ memberId: string; memberName: string; newRole: 'member' | 'manager' | 'teleprompter' } | null>(null);
+  const [roleChangeDialog, setRoleChangeDialog] = useState<{ memberId: string; memberName: string; newRole: 'member' | 'manager' | 'showcaller' | 'teleprompter' } | null>(null);
   const [isChangingRole, setIsChangingRole] = useState(false);
   
   const {
@@ -286,7 +286,7 @@ const TeamManagement = () => {
     }
   };
 
-  const handleRoleChangeClick = (memberId: string, memberName: string, newRole: 'member' | 'manager' | 'teleprompter') => {
+  const handleRoleChangeClick = (memberId: string, memberName: string, newRole: 'member' | 'manager' | 'showcaller' | 'teleprompter') => {
     setRoleChangeDialog({ memberId, memberName, newRole });
   };
 
@@ -586,7 +586,7 @@ const TeamManagement = () => {
                     {userRole === 'admin' && member.role !== 'admin' ? (
                         <Select
                           value={member.role}
-                          onValueChange={(newRole: 'member' | 'manager' | 'teleprompter') => 
+                          onValueChange={(newRole: 'member' | 'manager' | 'showcaller' | 'teleprompter') => 
                             handleRoleChangeClick(
                               member.id, 
                               member.profiles?.full_name || member.profiles?.email || 'Unknown User',
@@ -600,6 +600,7 @@ const TeamManagement = () => {
                           <SelectContent>
                             <SelectItem value="member">Member</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="showcaller">Showcaller</SelectItem>
                             <SelectItem value="teleprompter">Teleprompter</SelectItem>
                           </SelectContent>
                         </Select>
@@ -607,6 +608,7 @@ const TeamManagement = () => {
                       <Badge variant={
                         member.role === 'admin' ? 'default' : 
                         member.role === 'manager' ? 'secondary' : 
+                        member.role === 'showcaller' ? 'secondary' :
                         member.role === 'teleprompter' ? 'outline' : 
                         'outline'
                       }>
@@ -776,6 +778,8 @@ const TeamManagement = () => {
             <AlertDialogTitle>
               {roleChangeDialog?.newRole === 'manager' 
                 ? 'Promote to Manager' 
+                : roleChangeDialog?.newRole === 'showcaller'
+                ? 'Change to Showcaller'
                 : roleChangeDialog?.newRole === 'teleprompter'
                 ? 'Change to Teleprompter'
                 : 'Change to Member'}
@@ -784,6 +788,10 @@ const TeamManagement = () => {
             {roleChangeDialog?.newRole === 'manager' ? (
               <div>
                 <strong>{roleChangeDialog.memberName}</strong> will be promoted to Manager and will now have the ability to manage team members (invite and remove).
+              </div>
+            ) : roleChangeDialog?.newRole === 'showcaller' ? (
+              <div>
+                <strong>{roleChangeDialog.memberName}</strong> will be changed to Showcaller and will have full rundown editing permissions plus the ability to control showcaller playback.
               </div>
             ) : roleChangeDialog?.newRole === 'teleprompter' ? (
               <div>

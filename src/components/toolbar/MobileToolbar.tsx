@@ -53,6 +53,7 @@ interface MobileToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
+  userRole?: string | null;
 }
 
 const MobileToolbar = ({
@@ -94,9 +95,11 @@ const MobileToolbar = ({
   isDefaultZoom,
   // Lock props
   numberingLocked = false,
-  onToggleLock
+  onToggleLock,
+  userRole
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
 
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {

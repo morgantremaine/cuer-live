@@ -55,6 +55,7 @@ interface RundownToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
+  userRole?: string | null;
 }
 
 const RundownToolbar = ({
@@ -97,7 +98,8 @@ const RundownToolbar = ({
   isDefaultZoom,
   // Lock props
   numberingLocked,
-  onToggleLock
+  onToggleLock,
+  userRole
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -139,7 +141,8 @@ const RundownToolbar = ({
     canZoomOut,
     isDefaultZoom,
     numberingLocked,
-    onToggleLock
+    onToggleLock,
+    userRole
   };
 
   if (isMobile) {

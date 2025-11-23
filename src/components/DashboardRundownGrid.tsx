@@ -33,7 +33,7 @@ import { useRundownSorting } from '@/hooks/useRundownSorting'
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member' | 'manager' | 'teleprompter';
+  role: 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter';
   joined_at: string;
   profiles?: {
     email: string;
@@ -59,7 +59,7 @@ interface DashboardRundownGridProps {
   currentUserId?: string
   teamMembers?: TeamMember[]
   folderType?: 'all' | 'recent' | 'archived' | 'custom'
-  userRole?: 'admin' | 'member' | 'manager' | 'teleprompter' | null
+  userRole?: 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter' | null
 }
 
 const DashboardRundownGrid = ({ 

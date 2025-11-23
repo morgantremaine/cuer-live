@@ -16,6 +16,7 @@ interface UseRundownKeyboardShortcutsProps {
   canUndo: boolean;
   onRedo: () => void;
   canRedo: boolean;
+  userRole?: string | null;
 }
 
 export const useRundownKeyboardShortcuts = ({
@@ -33,7 +34,8 @@ export const useRundownKeyboardShortcuts = ({
   onUndo,
   canUndo,
   onRedo,
-  canRedo
+  canRedo,
+  userRole
 }: UseRundownKeyboardShortcutsProps) => {
   useEffect(() => {
     const isEditableElement = (target: EventTarget | null): boolean => {
@@ -103,36 +105,41 @@ export const useRundownKeyboardShortcuts = ({
       }
 
       // Showcaller controls (only when NOT using modifier keys)
-      // Space bar: Play/Pause
-      if (e.key === ' ' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        console.log('⌨️ Keyboard shortcut: Showcaller play/pause');
-        if (isShowcallerPlaying) {
-          onShowcallerPause();
-        } else {
-          onShowcallerPlay();
+      // Only allow showcaller controls for admin, manager, and showcaller roles
+      const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
+      
+      if (canUseShowcaller) {
+        // Space bar: Play/Pause
+        if (e.key === ' ' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          console.log('⌨️ Keyboard shortcut: Showcaller play/pause');
+          if (isShowcallerPlaying) {
+            onShowcallerPause();
+          } else {
+            onShowcallerPlay();
+          }
         }
-      }
 
-      // Left or Up arrow: Backward
-      if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        console.log('⌨️ Keyboard shortcut: Showcaller backward');
-        onShowcallerBackward();
-      }
+        // Left or Up arrow: Backward
+        if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          console.log('⌨️ Keyboard shortcut: Showcaller backward');
+          onShowcallerBackward();
+        }
 
-      // Right or Down arrow: Forward
-      if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        console.log('⌨️ Keyboard shortcut: Showcaller forward');
-        onShowcallerForward();
-      }
+        // Right or Down arrow: Forward
+        if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          console.log('⌨️ Keyboard shortcut: Showcaller forward');
+          onShowcallerForward();
+        }
 
-      // Enter/Return: Reset (without modifier keys)
-      if (e.key === 'Enter' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        console.log('⌨️ Keyboard shortcut: Showcaller reset');
-        onShowcallerReset();
+        // Enter/Return: Reset (without modifier keys)
+        if (e.key === 'Enter' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          console.log('⌨️ Keyboard shortcut: Showcaller reset');
+          onShowcallerReset();
+        }
       }
     };
 
@@ -141,5 +148,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo]);
+  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole]);
 };
