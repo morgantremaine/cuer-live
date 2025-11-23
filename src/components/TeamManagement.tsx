@@ -724,11 +724,14 @@ const TeamManagement = () => {
                     </div>
                   )}
                   
-                  <div className="bg-destructive/10 p-3 rounded border-l-4 border-destructive">
-                    <div className="font-semibold text-destructive mb-2">Warning:</div>
-                    <div className="text-sm">
-                      The member's account will be permanently deleted. This action cannot be undone.
-                    </div>
+                  <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded border-l-4 border-amber-500">
+                    <div className="font-semibold text-amber-800 dark:text-amber-200 mb-2">What happens:</div>
+                    <ul className="space-y-1 text-sm text-amber-700 dark:text-amber-300">
+                      <li>• Member will be removed from this team</li>
+                      <li>• Their rundowns and blueprints will be transferred to you</li>
+                      <li>• They will keep their account and personal team</li>
+                      <li>• They can be re-invited in the future</li>
+                    </ul>
                   </div>
                 </div>
               )}
