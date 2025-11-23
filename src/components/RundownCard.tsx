@@ -37,6 +37,7 @@ interface RundownCardProps {
   adminTeams?: Array<{ id: string; name: string }>
   isTeamAdmin?: boolean
   isArchived?: boolean
+  userRole?: 'admin' | 'member' | 'manager' | 'teleprompter' | null
 }
 
 const RundownCard = ({ 
@@ -48,6 +49,7 @@ const RundownCard = ({
   onDuplicate,
   onDuplicateToTeam,
   adminTeams = [],
+  userRole = null,
   isTeamAdmin = false,
   isArchived = false 
 }: RundownCardProps) => {
