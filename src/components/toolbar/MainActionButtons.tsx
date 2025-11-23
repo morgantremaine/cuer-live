@@ -205,9 +205,9 @@ const MainActionButtons = ({
           )}
         </div>
 
-        {/* Playback controls - only in mobile view and for admin/manager/showcaller */}
+        {/* Playback controls - only in mobile view and everyone except members */}
         {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && 
-         (userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller') && (
+         userRole !== 'member' && (
           <div className="border-t pt-3">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Playback Controls</div>
             <div className="flex justify-center">
@@ -222,7 +222,6 @@ const MainActionButtons = ({
                 onBackward={onBackward}
                 onReset={onReset}
                 size="sm"
-                onJumpToCurrentSegment={onJumpToCurrentSegment}
               />
             </div>
           </div>

@@ -55,7 +55,7 @@ interface RundownToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
-  userRole?: string | null;
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const RundownToolbar = ({
