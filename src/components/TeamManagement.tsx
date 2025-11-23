@@ -781,15 +781,19 @@ const TeamManagement = () => {
                 : 'Change to Member'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {roleChangeDialog?.newRole === 'manager' ? (
-                <div>
-                  <strong>{roleChangeDialog.memberName}</strong> will be promoted to Manager and will now have the ability to manage team members (invite and remove).
-                </div>
-              ) : (
-                <div>
-                  <strong>{roleChangeDialog?.memberName}</strong> will be demoted to Member and will lose the ability to manage team members.
-                </div>
-              )}
+            {roleChangeDialog?.newRole === 'manager' ? (
+              <div>
+                <strong>{roleChangeDialog.memberName}</strong> will be promoted to Manager and will now have the ability to manage team members (invite and remove).
+              </div>
+            ) : roleChangeDialog?.newRole === 'teleprompter' ? (
+              <div>
+                <strong>{roleChangeDialog.memberName}</strong> will be changed to Teleprompter and will only be able to access the teleprompter feature. They will lose access to editing rundowns and managing team members.
+              </div>
+            ) : (
+              <div>
+                <strong>{roleChangeDialog?.memberName}</strong> will be changed to Member with standard access and will lose the ability to manage team members.
+              </div>
+            )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
