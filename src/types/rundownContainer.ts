@@ -147,5 +147,5 @@ export interface RundownContainerProps {
   onScrollToActiveTeammate?: () => void;
   
   // User role for permissions
-  userRole?: string | null;
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }

@@ -111,7 +111,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     // Row number locking
     numberingLocked,
     onToggleLock,
-    dragAndDrop
+    dragAndDrop,
+    userRole
   } = props;
 
   // Create rundown data for CSV export
@@ -288,6 +289,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         // Row number locking
         numberingLocked={numberingLocked}
         onToggleLock={onToggleLock}
+        userRole={userRole}
       />
 
       {/* Main Content */}
