@@ -16,6 +16,7 @@ const helpSections = [
   { id: 'column-manager', title: 'Layout Manager', icon: FileText },
   { id: 'find-replace', title: 'Find & Replace', icon: Search },
   { id: 'team-collaboration', title: 'Team Collaboration', icon: Users },
+  { id: 'team-roles', title: 'Team Roles', icon: Users },
   { id: 'connection-status', title: 'Connection Status', icon: Wifi },
   { id: 'showcaller', title: 'Showcaller', icon: Radio },
   { id: 'ai-helper', title: 'AI Helper', icon: Bot },
@@ -408,14 +409,49 @@ const Help = () => {
                 </ul>
               </div>
               
-              <div className="mt-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Team Roles</h3>
-                <p className="text-sm mb-2">Teams have three permission levels:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                  <li><strong>Admin:</strong> Full control - can manage team settings, invite/remove members, and edit all rundowns</li>
-                  <li><strong>Manager:</strong> Can invite new team members and manage team resources, but cannot change team settings or remove other members</li>
-                  <li><strong>Member:</strong> Can create and edit rundowns but cannot manage team membership or settings</li>
-                </ul>
+            </div>
+          </section>
+
+                {/* Team Roles */}
+                <section id="team-roles" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Users className="h-6 w-6 mr-2 text-purple-600" />
+              Team Roles
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Teams support five different roles, each with specific permissions and capabilities. Assign roles based on each team member's responsibilities:</p>
+              
+              <div className="space-y-4 mt-4">
+                <div className="border-l-4 border-red-500 pl-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Admin</h3>
+                  <p className="text-sm">Full access to all features and team management. Can manage team settings, invite/remove members, billing, and has complete control over all rundowns.</p>
+                </div>
+                
+                <div className="border-l-4 border-orange-500 pl-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Manager</h3>
+                  <p className="text-sm">Can manage team members and edit all content. Has full editing permissions but cannot access billing or delete the team.</p>
+                </div>
+                
+                <div className="border-l-4 border-blue-500 pl-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Showcaller</h3>
+                  <p className="text-sm">Can edit all rundown content and call shows. Perfect for directors and production staff who need full editing access and showcaller controls.</p>
+                </div>
+                
+                <div className="border-l-4 border-green-500 pl-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Crew</h3>
+                  <p className="text-sm">Standard crew member with full editing access. Can create, edit, and manage rundowns but cannot invite new team members or change team settings.</p>
+                </div>
+                
+                <div className="border-l-4 border-purple-500 pl-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Teleprompter</h3>
+                  <p className="text-sm">Can view and control teleprompter display. Limited to viewing rundowns and operating the teleprompter - cannot edit rundown content.</p>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-6">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <strong>Tip:</strong> You can see role descriptions by hovering over the role options when inviting team members or changing someone's role in Team Management.
+                </p>
               </div>
             </div>
           </section>
