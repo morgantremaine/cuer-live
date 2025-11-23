@@ -598,9 +598,9 @@ const TeamManagement = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="member">Member</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="showcaller">Showcaller</SelectItem>
+                            <SelectItem value="member">Member</SelectItem>
                             <SelectItem value="teleprompter">Teleprompter</SelectItem>
                           </SelectContent>
                         </Select>
