@@ -89,6 +89,18 @@ const Help = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Handle hash navigation on page load
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const sectionId = hash.replace('#', '');
+      // Small delay to ensure DOM is fully rendered
+      setTimeout(() => {
+        scrollToSection(sectionId);
+      }, 100);
+    }
+  }, []);
+
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       <SEO 
