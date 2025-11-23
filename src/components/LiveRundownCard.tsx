@@ -6,7 +6,11 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -55,6 +59,9 @@ interface LiveRundownCardProps {
   onArchive?: (rundownId: string, title: string, e: React.MouseEvent) => void;
   onUnarchive?: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void;
   onDuplicate?: (rundownId: string, title: string, items: RundownItem[], e: React.MouseEvent) => void;
+  onDuplicateToTeam?: (rundownId: string, targetTeamId: string, targetTeamName: string, title: string, e: React.MouseEvent) => void;
+  adminTeams?: Array<{ id: string; name: string }>;
+  isTeamAdmin?: boolean;
   isArchived?: boolean;
   currentUserId?: string;
   teamMembers?: TeamMember[];
@@ -68,6 +75,9 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
   onArchive,
   onUnarchive,
   onDuplicate,
+  onDuplicateToTeam,
+  adminTeams = [],
+  isTeamAdmin = false,
   isArchived = false,
   currentUserId,
   teamMembers = [],
@@ -294,6 +304,33 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
                 </DropdownMenuItem>
+              )}
+              
+              {isTeamAdmin && onDuplicateToTeam && adminTeams.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="text-gray-300 hover:text-white hover:bg-gray-700">
+                      <Copy className="h-4 w-4 mr-2" />
+                      Duplicate to Team...
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
+                      {adminTeams.map((team) => (
+                        <DropdownMenuItem
+                          key={team.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDuplicateToTeam(rundown.id, team.id, team.name, rundown.title, e);
+                          }}
+                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                        >
+                          <span className="mr-2">👥</span>
+                          {team.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </>
               )}
               
               {onArchive && (

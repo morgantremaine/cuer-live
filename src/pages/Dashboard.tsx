@@ -19,6 +19,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { useRundownLimits } from '@/hooks/useRundownLimits';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useAdminTeams } from '@/hooks/useAdminTeams';
 import { Column } from '@/types/columns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDashboardRundownOptimized } from '@/hooks/useDashboardRundownOptimized';
@@ -41,11 +42,12 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading, error: teamError, loadTeamData, createNewTeam } = useTeam();
   const teamId = team?.id;
-  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, duplicateRundownToTeam, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
   const rundownLimits = useRundownLimits(savedRundowns);
   const { folders, moveRundownToFolder, loading: foldersLoading } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
+  const { adminTeams } = useAdminTeams();
   
   // Enable realtime notifications for connection issues
   useRealtimeNotifications();
@@ -302,6 +304,30 @@ const Dashboard = () => {
       toast({
         title: 'Error',
         description: 'Failed to duplicate rundown. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDuplicateToTeam = async (
+    rundownId: string,
+    targetTeamId: string,
+    targetTeamName: string,
+    title: string,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+    try {
+      await duplicateRundownToTeam(rundownId, targetTeamId, targetTeamName, title);
+      toast({
+        title: 'Rundown Duplicated',
+        description: `"${title}" has been copied to ${targetTeamName}`,
+      });
+    } catch (error) {
+      console.error('Error duplicating rundown to team:', error);
+      toast({
+        title: 'Duplication Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -654,6 +680,9 @@ const Dashboard = () => {
                 onArchive={handleArchiveRundown}
                 onUnarchive={handleUnarchiveRundown}
                 onDuplicate={handleDuplicateRundown}
+                onDuplicateToTeam={handleDuplicateToTeam}
+                adminTeams={adminTeams}
+                isTeamAdmin={userRole === 'admin'}
                 isArchived={folderType === 'archived'}
                 folderType={folderType}
                 showEmptyState={true}

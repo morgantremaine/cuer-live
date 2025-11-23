@@ -128,6 +128,41 @@ export class RundownOperations {
     }
   }
 
+  async duplicateRundownToTeam(
+    rundown: SavedRundown, 
+    targetTeamId: string,
+    targetTeamName: string
+  ): Promise<string> {
+    if (!this.user) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      // Create the duplicated rundown with new team_id
+      const duplicatedRundown: Omit<SavedRundown, 'id'> = {
+        user_id: this.user.id,
+        title: `${rundown.title} (Copy to ${targetTeamName})`,
+        items: rundown.items || [],
+        columns: rundown.columns,
+        timezone: rundown.timezone,
+        start_time: rundown.start_time,
+        icon: rundown.icon,
+        team_id: targetTeamId,  // Set to target team
+        folder_id: null,         // Clear folder (team-specific)
+        archived: false,
+        undo_history: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Save the duplicated rundown and return its ID
+      return await this.saveRundown(duplicatedRundown as SavedRundown);
+    } catch (error) {
+      console.error('Error duplicating rundown to team:', error);
+      throw error;
+    }
+  }
+
   private async getRundownById(id: string): Promise<SavedRundown | null> {
     try {
       const { data, error } = await supabase
