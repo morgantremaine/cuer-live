@@ -244,10 +244,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             </>
           )}
           
-          <DropdownMenuItem onClick={handleOpenNotes}>
-            <StickyNote className="h-4 w-4 mr-2" />
-            Notes
-          </DropdownMenuItem>
           
           <DropdownMenuItem onClick={handleOpenHistory}>
             <History className="h-4 w-4 mr-2" />

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Plus, Eye, Undo, Redo, MapPin, Search, FileText } from 'lucide-react';
+import { Plus, Eye, Undo, Redo, MapPin, Search, FileText, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -179,6 +179,12 @@ const MainActionButtons = ({
             <FileText className="h-4 w-4" />
             <span>Blueprint</span>
           </Button>
+          {onShowNotes && (
+            <Button onClick={onShowNotes} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+              <StickyNote className="h-4 w-4" />
+              <span>Notes</span>
+            </Button>
+          )}
         </div>
 
 
@@ -280,6 +286,13 @@ const MainActionButtons = ({
         <FileText className="h-4 w-4" />
         <span>Blueprint</span>
       </Button>
+
+      {onShowNotes && (
+        <Button onClick={onShowNotes} variant="outline" size={buttonSize} className={buttonClass}>
+          <StickyNote className="h-4 w-4" />
+          <span>Notes</span>
+        </Button>
+      )}
       
       <ToolsMenu rundownId={rundownId} teamId={teamId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} onShowHistory={onShowHistory} />
       
