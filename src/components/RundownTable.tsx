@@ -57,6 +57,8 @@ interface RundownTableProps {
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
   onScrollToEditor?: (itemId: string) => void;
+  // User role for permissions
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const RundownTable = ({
@@ -110,7 +112,8 @@ const RundownTable = ({
   getEditorForCell,
   onCellFocus,
   onCellBlur,
-  onScrollToEditor
+  onScrollToEditor,
+  userRole
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -214,6 +217,7 @@ const RundownTable = ({
                    onCellFocus={onCellFocus}
                    onCellBlur={onCellBlur}
                    onScrollToEditor={onScrollToEditor}
+                   userRole={userRole}
                 />
                 
                 {/* Drop indicator AFTER the last row */}
