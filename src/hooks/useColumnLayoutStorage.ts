@@ -33,11 +33,31 @@ export const useColumnLayoutStorage = () => {
 
     setLoading(true)
     try {
-      // Load layouts for the active team only (both user's own and team-shared layouts)
+      // Step 1: Get all team member user IDs
+      const { data: teamMembers, error: teamMembersError } = await supabase
+        .from('team_members')
+        .select('user_id')
+        .eq('team_id', activeTeamId)
+
+      if (teamMembersError) {
+        toast({
+          title: 'Error',
+          description: 'Failed to load team members',
+          variant: 'destructive',
+        })
+        console.error('Error loading team members:', teamMembersError)
+        setLoading(false)
+        return
+      }
+
+      const teamMemberIds = teamMembers?.map(m => m.user_id) || []
+
+      // Step 2: Load personal layouts (team_id IS NULL) from team members
       const { data: layoutsData, error } = await supabase
         .from('column_layouts')
         .select('*')
-        .or(`and(user_id.eq.${user.id},team_id.eq.${activeTeamId}),and(team_id.eq.${activeTeamId},user_id.neq.${user.id})`)
+        .is('team_id', null)  // Only personal layouts
+        .in('user_id', teamMemberIds)  // From current team members
         .order('updated_at', { ascending: false })
 
       if (error) {
@@ -97,9 +117,6 @@ export const useColumnLayoutStorage = () => {
     if (!user) return
 
     try {
-      // Use the active team from the team switcher
-      const teamId = activeTeamId
-
       // Save only visible columns to preserve exact layout state
       const visibleColumns = columns.filter(col => col.isVisible !== false)
       console.log('💾 Saving layout with', visibleColumns.length, 'visible columns out of', columns.length, 'total')
@@ -108,7 +125,7 @@ export const useColumnLayoutStorage = () => {
         .from('column_layouts')
         .insert({
           user_id: user.id,
-          team_id: teamId,
+          team_id: null,  // Personal layout, no team binding
           name,
           columns: visibleColumns, // Save only visible columns
           is_default: isDefault,
@@ -257,16 +274,16 @@ export const useColumnLayoutStorage = () => {
     return layout.user_id === user?.id
   }
 
-  // Set a layout as the default for the team
+  // Set a layout as the user's default for all teams
   const setDefaultLayout = async (layoutId: string) => {
-    if (!user || !activeTeamId) return
+    if (!user) return
 
     try {
       const { error } = await supabase
         .from('column_layouts')
         .update({ is_default: true })
         .eq('id', layoutId)
-        .eq('team_id', activeTeamId)
+        .eq('user_id', user.id)  // Only update YOUR layouts
 
       if (error) {
         toast({
@@ -278,7 +295,7 @@ export const useColumnLayoutStorage = () => {
       } else {
         toast({
           title: 'Success',
-          description: 'Default layout updated successfully!',
+          description: 'This layout is now your default for all teams',
         })
         loadLayouts()
       }
@@ -288,16 +305,20 @@ export const useColumnLayoutStorage = () => {
     }
   }
 
-  // Get the default layout for the team
+  // Get the user's default layout
   const getDefaultLayout = async () => {
-    if (!activeTeamId) return null
+    if (!user) return null
 
     try {
       const { data, error } = await supabase
-        .rpc('get_team_default_layout', { team_uuid: activeTeamId })
-        .single()
+        .from('column_layouts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .is('team_id', null)
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error) {
         console.error('Error getting default layout:', error)
         return null
       }

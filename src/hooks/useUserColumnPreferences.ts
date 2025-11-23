@@ -229,7 +229,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         .eq('rundown_id', rundownId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       // Check if we have saved user preferences
       if (!error && data?.column_layout) {
@@ -283,7 +283,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           try {
             const { data: defaultLayoutData } = await supabase
               .rpc('get_team_default_layout', { team_uuid: team.id })
-              .single();
+              .maybeSingle();
             
             const layoutData = defaultLayoutData as Record<string, any> | null;
             
