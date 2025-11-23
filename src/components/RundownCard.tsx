@@ -7,6 +7,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
@@ -29,6 +33,9 @@ interface RundownCardProps {
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onDuplicateToTeam?: (id: string, targetTeamId: string, targetTeamName: string, title: string, e: React.MouseEvent) => void
+  adminTeams?: Array<{ id: string; name: string }>
+  isTeamAdmin?: boolean
   isArchived?: boolean
 }
 
@@ -39,6 +46,9 @@ const RundownCard = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
+  onDuplicateToTeam,
+  adminTeams = [],
+  isTeamAdmin = false,
   isArchived = false 
 }: RundownCardProps) => {
   const navigate = useNavigate();
@@ -90,7 +100,33 @@ const RundownCard = ({
                     Duplicate
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem 
+                {isTeamAdmin && onDuplicateToTeam && adminTeams.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white">
+                        <Copy className="h-4 w-4 mr-2" />
+                        Duplicate to Team...
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
+                        {adminTeams.map((team) => (
+                          <DropdownMenuItem
+                            key={team.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDuplicateToTeam(rundown.id, team.id, team.name, rundown.title, e);
+                            }}
+                            className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                          >
+                            <span className="mr-2">👥</span>
+                            {team.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </>
+                )}
+                <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation()
                     onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
@@ -165,7 +201,33 @@ const RundownCard = ({
                   Duplicate
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem 
+              {isTeamAdmin && onDuplicateToTeam && adminTeams.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white">
+                      <Copy className="h-4 w-4 mr-2" />
+                      Duplicate to Team...
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
+                      {adminTeams.map((team) => (
+                        <DropdownMenuItem
+                          key={team.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDuplicateToTeam(rundown.id, team.id, team.name, rundown.title, e);
+                          }}
+                          className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                        >
+                          <span className="mr-2">👥</span>
+                          {team.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </>
+              )}
+              <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation()
                   onArchive?.(rundown.id, rundown.title, e)

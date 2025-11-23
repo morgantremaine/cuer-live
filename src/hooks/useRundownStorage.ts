@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUniversalTimer } from './useUniversalTimer';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +6,7 @@ import { useTeamId } from './useTeamId';
 import { useSubscription } from './useSubscription';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { SavedRundown } from './useRundownStorage/types';
+import { RundownOperations } from './useRundownStorage/operations';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
@@ -351,6 +351,32 @@ export const useRundownStorage = () => {
     return data.id;
   }, [user, teamId]);
 
+  const duplicateRundownToTeam = useCallback(async (
+    rundownId: string,
+    targetTeamId: string,
+    targetTeamName: string,
+    rundownTitle: string
+  ): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Fetch the full rundown
+      const rundown = savedRundowns.find(r => r.id === rundownId);
+      if (!rundown) {
+        throw new Error('Rundown not found');
+      }
+
+      // Duplicate to target team using operations
+      const operations = new RundownOperations(user, saveRundown, setSavedRundowns);
+      await operations.duplicateRundownToTeam(rundown, targetTeamId, targetTeamName);
+
+      return true;
+    } catch (error) {
+      console.error('Error duplicating rundown to team:', error);
+      throw error;
+    }
+  }, [user, savedRundowns, saveRundown]);
+
   return {
     savedRundowns,
     loading,
@@ -359,6 +385,7 @@ export const useRundownStorage = () => {
     saveRundown,
     updateRundown,
     deleteRundown,
-    duplicateRundown
+    duplicateRundown,
+    duplicateRundownToTeam
   };
 };
