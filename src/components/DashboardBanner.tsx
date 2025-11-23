@@ -56,6 +56,9 @@ const DashboardBanner = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
+      
+      // TEMPORARY: Only show banner for testing account
+      if (user.user.email !== 'morgantremaine@gmail.com') return;
 
       // Get active banner that user hasn't dismissed
       const { data, error } = await supabase
@@ -92,6 +95,9 @@ const DashboardBanner = () => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
+      
+      // TEMPORARY: Only show banner for testing account
+      if (user.user.email !== 'morgantremaine@gmail.com') return;
 
       // Check if user has dismissed this banner
       const { data: dismissal } = await supabase
