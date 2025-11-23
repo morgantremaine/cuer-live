@@ -212,12 +212,14 @@ export const useRundownStorage = () => {
       throw error;
     }
 
-    // Add to local state
-    const newRundown = {
-      ...data,
-      items: Array.isArray(data.items) ? data.items : []
-    };
-    setSavedRundowns(prev => [newRundown, ...prev]);
+    // Only add to local state if it belongs to the current team
+    if (data.team_id === teamId) {
+      const newRundown = {
+        ...data,
+        items: Array.isArray(data.items) ? data.items : []
+      };
+      setSavedRundowns(prev => [newRundown, ...prev]);
+    }
 
     return data.id;
   }, [user, teamId]);
