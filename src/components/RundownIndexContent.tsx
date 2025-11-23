@@ -145,6 +145,10 @@ const RundownIndexContent = () => {
 
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
+    // Find the scroll container
+    const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollContainer) return;
+
     // Iterate through all items and fields to find first cell with an active editor
     for (const item of items) {
       // Check common fields that can be edited
@@ -152,8 +156,39 @@ const RundownIndexContent = () => {
       for (const field of fields) {
         const editor = getEditorForCell(item.id, field);
         if (editor) {
-          // Found an active editor - scroll to this item
-          handleScrollToEditor(item.id);
+          // Found an active editor - find the specific cell element
+          const cellKey = `${item.id}-${field}`;
+          
+          // Try to find the cell element by data-cell-id or data-cell-ref
+          let cellElement = scrollContainer.querySelector(`[data-cell-id="${cellKey}"]`) ||
+                           scrollContainer.querySelector(`[data-cell-ref="${cellKey}"]`);
+          
+          // Fallback: try to find by input/textarea with the cell key
+          if (!cellElement) {
+            const input = scrollContainer.querySelector(`input[data-cell-id="${cellKey}"], textarea[data-cell-id="${cellKey}"]`);
+            if (input) {
+              cellElement = input.closest('td, div[role="cell"]') || input;
+            }
+          }
+          
+          if (cellElement) {
+            // Scroll the specific cell into view with both vertical and horizontal scrolling
+            cellElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+              inline: 'center'
+            });
+            
+            // Highlight the cell briefly to draw attention
+            cellElement.classList.add('ring-2', 'ring-blue-500');
+            setTimeout(() => {
+              cellElement?.classList.remove('ring-2', 'ring-blue-500');
+            }, 2000);
+          } else {
+            // Fallback to row-level scroll if we can't find the specific cell
+            handleScrollToEditor(item.id);
+          }
+          
           return;
         }
       }
