@@ -89,10 +89,6 @@ const OrganizationMembers: React.FC<OrganizationMembersProps> = ({
               className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                </div>
-                
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium truncate">
