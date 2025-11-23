@@ -194,7 +194,7 @@ export const useRundownStorage = () => {
         title: rundown.title,
         items: rundown.items,
         user_id: user.id,
-        team_id: teamId,
+        team_id: rundown.team_id || teamId,
         columns: rundown.columns,
         timezone: rundown.timezone,
         start_time: rundown.start_time,
