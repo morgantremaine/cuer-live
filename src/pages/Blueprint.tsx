@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
-import { useOptimizedRundownCalculations } from '@/hooks/useOptimizedRundownCalculations';
+import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import AddListDialog from '@/components/blueprint/AddListDialog';
@@ -407,7 +407,7 @@ const Blueprint = () => {
 
   // Calculate timing for items before passing to blueprint
   // MUST be called before any conditional returns (React hooks rule)
-  const { itemsWithTiming } = useOptimizedRundownCalculations(
+  const itemsWithTiming = calculateItemsWithTiming(
     rundown?.items || [],
     rundown?.start_time || '09:00:00'
   );

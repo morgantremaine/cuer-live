@@ -345,7 +345,7 @@ export const getItemMetadata = (
   });
 
   return {
-    rowNumber: matchedItem?.rowNumber || null,
+    rowNumber: (matchedItem as any)?.calculatedRowNumber || matchedItem?.rowNumber || null,
     startTime: matchedItem?.startTime || null
   };
 };
