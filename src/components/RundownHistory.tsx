@@ -10,7 +10,6 @@ interface HistoryEntry {
   user_id: string;
   user_name: string;
   user_email: string;
-  profile_picture_url: string | null;
   operation_types: string[];
   summary: string;
   first_operation: string;

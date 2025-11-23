@@ -52,7 +52,6 @@ export interface OrganizationMember {
   user_id: string;
   email: string;
   full_name: string | null;
-  profile_picture_url: string | null;
   team_count: number;
   teams_list: string[];
 }
