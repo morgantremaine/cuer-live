@@ -71,6 +71,8 @@ interface RundownHeaderSectionProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
+  // User role for permissions
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const RundownHeaderSection = ({
@@ -139,7 +141,9 @@ const RundownHeaderSection = ({
   isDefaultZoom,
   // Row number locking
   numberingLocked,
-  onToggleLock
+  onToggleLock,
+  // User role for permissions
+  userRole
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -219,6 +223,8 @@ const RundownHeaderSection = ({
         // Row number locking
         numberingLocked={numberingLocked}
         onToggleLock={onToggleLock}
+        // User role for permissions
+        userRole={userRole}
       />
     </div>
   );
