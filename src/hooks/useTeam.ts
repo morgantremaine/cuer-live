@@ -38,6 +38,7 @@ export interface PendingInvitation {
   id: string;
   email: string;
   created_at: string;
+  role?: string;
 }
 
 export interface UserTeam {
@@ -209,7 +210,7 @@ export const useTeam = () => {
     try {
       const { data, error } = await supabase
         .from('team_invitations')
-        .select('id, email, created_at')
+        .select('id, email, created_at, role')
         .eq('team_id', teamId)
         .eq('accepted', false)
         .gt('expires_at', new Date().toISOString())
@@ -474,7 +475,7 @@ export const useTeam = () => {
     loadTeamData();
   }, [team?.id, activeTeamId, setActiveTeam, loadTeamData, user?.id]);
 
-  const inviteTeamMember = async (email: string) => {
+  const inviteTeamMember = async (email: string, role: 'member' | 'manager' | 'showcaller' | 'teleprompter' = 'member') => {
     if (!team?.id) {
       return { error: 'No team found' };
     }
@@ -496,7 +497,7 @@ export const useTeam = () => {
       }
 
       // Use profile data if available, otherwise fall back to auth metadata
-      const inviterName = profileData?.full_name || 
+      const inviterName = profileData?.full_name ||
                          user.user_metadata?.full_name || 
                          profileData?.email || 
                          user.email || 
@@ -506,7 +507,8 @@ export const useTeam = () => {
         email,
         teamId: team.id,
         inviterName,
-        teamName: team.name
+        teamName: team.name,
+        role
       });
 
       const { data, error } = await supabase.functions.invoke('send-team-invitation', {
@@ -514,7 +516,8 @@ export const useTeam = () => {
           email, 
           teamId: team.id,
           inviterName,
-          teamName: team.name
+          teamName: team.name,
+          role
         }
       });
 

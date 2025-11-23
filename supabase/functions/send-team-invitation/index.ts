@@ -9,6 +9,17 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+function getRoleDisplayName(role: string): string {
+  const roleMap: Record<string, string> = {
+    'admin': 'Admin',
+    'manager': 'Manager',
+    'showcaller': 'Showcaller',
+    'member': 'Crew',
+    'teleprompter': 'Teleprompter'
+  };
+  return roleMap[role] || role;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -17,13 +28,26 @@ serve(async (req) => {
   try {
     console.log('Send team invitation function called');
     
-    const { email, teamId, inviterName, teamName } = await req.json()
-    console.log('Request body:', { email, teamId, inviterName, teamName });
+    const { email, teamId, inviterName, teamName, role = 'member' } = await req.json()
+    console.log('Request body:', { email, teamId, inviterName, teamName, role });
 
     if (!email || !teamId) {
       console.error('Missing required fields:', { email, teamId });
       return new Response(
         JSON.stringify({ error: 'Missing required fields: email and teamId' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
+    // Validate role
+    const validRoles = ['member', 'manager', 'showcaller', 'teleprompter'];
+    if (!validRoles.includes(role)) {
+      console.error('Invalid role:', role);
+      return new Response(
+        JSON.stringify({ error: 'Invalid role specified' }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
@@ -189,6 +213,7 @@ serve(async (req) => {
         team_id: teamId,
         invited_by: user.id,
         token,
+        role,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
       })
       .select()
@@ -386,7 +411,7 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi there!</p>
                 
-                <p><span class="highlight">${safeInviterName}</span> has invited you to join their team on Cuer.</p>
+                <p><span class="highlight">${safeInviterName}</span> has invited you to join their team on Cuer as a <strong>${getRoleDisplayName(role)}</strong>.</p>
                 
                 <p>Cuer is a powerful rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
                 

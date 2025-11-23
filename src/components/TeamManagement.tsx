@@ -49,6 +49,7 @@ interface TransferPreview {
 
 const TeamManagement = () => {
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'member' | 'manager' | 'showcaller' | 'teleprompter'>('member');
   const [isInviting, setIsInviting] = useState(false);
   const [transferPreview, setTransferPreview] = useState<TransferPreview | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
@@ -104,11 +105,11 @@ const TeamManagement = () => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
 
-    console.log('Inviting team member:', inviteEmail.trim());
+    console.log('Inviting team member:', inviteEmail.trim(), 'with role:', inviteRole);
     setIsInviting(true);
     
     try {
-      const { error } = await inviteTeamMember(inviteEmail.trim());
+      const { error } = await inviteTeamMember(inviteEmail.trim(), inviteRole);
       
       if (error) {
         console.error('Error inviting team member:', error);
@@ -121,9 +122,10 @@ const TeamManagement = () => {
         console.log('Team member invited successfully');
         toast({
           title: 'Success',
-          description: 'Invitation sent successfully!',
+          description: `Invitation sent successfully! They will join as ${getRoleDisplayName(inviteRole)}.`,
         });
         setInviteEmail('');
+        setInviteRole('member'); // Reset to default
       }
     } catch (err) {
       console.error('Unexpected error inviting team member:', err);
@@ -482,23 +484,36 @@ const TeamManagement = () => {
               )}
               
               {/* Invite form */}
-              <form onSubmit={handleInviteMember} className="flex gap-4">
-                <div className="flex-1">
-                  <Input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="Enter email address"
-                    required
-                    disabled={!canInviteMore}
-                  />
+              <form onSubmit={handleInviteMember} className="space-y-3">
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <Input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="Enter email address"
+                      required
+                      disabled={!canInviteMore}
+                    />
+                  </div>
+                  <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'member' | 'manager' | 'showcaller' | 'teleprompter')}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="showcaller">Showcaller</SelectItem>
+                      <SelectItem value="member">Crew</SelectItem>
+                      <SelectItem value="teleprompter">Teleprompter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="submit" 
+                    disabled={isInviting || !canInviteMore}
+                  >
+                    {isInviting ? 'Inviting...' : 'Send Invite'}
+                  </Button>
                 </div>
-                <Button 
-                  type="submit" 
-                  disabled={isInviting || !canInviteMore}
-                >
-                  {isInviting ? 'Inviting...' : 'Send Invite'}
-                </Button>
               </form>
             </div>
           </CardContent>
@@ -521,7 +536,8 @@ const TeamManagement = () => {
                   <div>
                     <span className="font-medium">{invitation.email}</span>
                     <p className="text-sm text-muted-foreground">
-                      Invited {new Date(invitation.created_at).toLocaleDateString()}
+                      Invited {new Date(invitation.created_at).toLocaleDateString()} · 
+                      Will join as {getRoleDisplayName(invitation.role || 'member')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
