@@ -9,6 +9,7 @@ import {
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
+import AutoScrollToggle from './AutoScrollToggle';
 import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -52,7 +53,7 @@ interface TabletToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
-  userRole?: string | null;
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const TabletToolbar = ({
@@ -98,7 +99,7 @@ const TabletToolbar = ({
   userRole
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
+  const canUseShowcaller = userRole !== 'member';
 
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
@@ -143,7 +144,7 @@ const TabletToolbar = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Playback Controls - Only for admin, manager, and showcaller roles */}
+        {/* Playback Controls - Everyone except members */}
         {canUseShowcaller && (
           <div className="flex justify-center flex-1">
             <PlaybackControls
@@ -157,11 +158,18 @@ const TabletToolbar = ({
               onBackward={onBackward}
               onReset={onReset}
               size="sm"
-              autoScrollEnabled={autoScrollEnabled}
-              onToggleAutoScroll={onToggleAutoScroll}
-              onJumpToCurrentSegment={onJumpToCurrentSegment}
             />
           </div>
+        )}
+
+        {/* Autoscroll - Available to ALL roles */}
+        {onToggleAutoScroll && (
+          <AutoScrollToggle
+            autoScrollEnabled={autoScrollEnabled}
+            onToggleAutoScroll={onToggleAutoScroll}
+            onJumpToCurrentSegment={onJumpToCurrentSegment}
+            size="sm"
+          />
         )}
 
         {/* Zoom Controls */}

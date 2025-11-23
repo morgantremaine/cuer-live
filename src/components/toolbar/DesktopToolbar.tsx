@@ -3,6 +3,7 @@ import React from 'react';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
+import AutoScrollToggle from './AutoScrollToggle';
 import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -91,7 +92,7 @@ const DesktopToolbar = ({
   onToggleLock,
   userRole
 }: DesktopToolbarProps) => {
-  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
+  const canUseShowcaller = userRole !== 'member';
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-1">
@@ -120,7 +121,7 @@ const DesktopToolbar = ({
       </div>
 
       <div className="flex items-center space-x-1">
-        {/* Playback Controls - Only for admin, manager, and showcaller roles */}
+        {/* Playback Controls - Everyone except members */}
         {canUseShowcaller && (
           <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
             <PlaybackControls
@@ -134,9 +135,18 @@ const DesktopToolbar = ({
               onBackward={onBackward}
               onReset={onReset}
               size="sm"
+            />
+          </div>
+        )}
+
+        {/* Autoscroll - Available to ALL roles */}
+        {onToggleAutoScroll && (
+          <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
+            <AutoScrollToggle
               autoScrollEnabled={autoScrollEnabled}
               onToggleAutoScroll={onToggleAutoScroll}
               onJumpToCurrentSegment={onJumpToCurrentSegment}
+              size="sm"
             />
           </div>
         )}

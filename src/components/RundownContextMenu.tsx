@@ -73,7 +73,7 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const { isMobile } = useResponsiveLayout();
   const isMultipleSelection = selectedCount > 1;
-  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
+  const canUseShowcaller = userRole !== 'member';
 
   
   // Define color options for the submenu (same as original ColorPicker)

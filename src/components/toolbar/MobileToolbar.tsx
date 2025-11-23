@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { ChevronDown, MapPin } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
+import AutoScrollToggle from './AutoScrollToggle';
 import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -53,7 +53,7 @@ interface MobileToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
-  userRole?: string | null;
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const MobileToolbar = ({
@@ -99,13 +99,6 @@ const MobileToolbar = ({
   userRole
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
-
-  const handleToggleAutoScroll = (checked: boolean) => {
-    if (onToggleAutoScroll) {
-      onToggleAutoScroll();
-    }
-  };
 
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
@@ -156,26 +149,20 @@ const MobileToolbar = ({
                   onShowHistory={onShowHistory}
                   numberingLocked={numberingLocked}
                   onToggleLock={onToggleLock}
+                  userRole={userRole}
                 />
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Autoscroll toggle on toolbar */}
+          {/* Auto-scroll - Available to ALL roles */}
           {onToggleAutoScroll && (
-            <div 
-              className="flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer h-9"
-              onClick={onJumpToCurrentSegment}
-              title="Jump to current segment"
-            >
-              <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-              <Switch
-                checked={autoScrollEnabled}
-                onCheckedChange={handleToggleAutoScroll}
-                className="scale-75"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
+            <AutoScrollToggle
+              autoScrollEnabled={autoScrollEnabled}
+              onToggleAutoScroll={onToggleAutoScroll}
+              onJumpToCurrentSegment={onJumpToCurrentSegment}
+              size="sm"
+            />
           )}
         </div>
 
