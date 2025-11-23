@@ -682,7 +682,7 @@ const Dashboard = () => {
                 onDuplicate={handleDuplicateRundown}
                 onDuplicateToTeam={handleDuplicateToTeam}
                 adminTeams={adminTeams}
-                isTeamAdmin={userRole === 'admin'}
+                isTeamAdmin={userRole === 'admin' || userRole === 'manager'}
                 isArchived={folderType === 'archived'}
                 folderType={folderType}
                 showEmptyState={true}

@@ -19,12 +19,12 @@ export const useAdminTeams = () => {
     
     setLoading(true);
     try {
-      // Get teams where user is admin
+      // Get teams where user is admin or manager
       const { data: memberships, error } = await supabase
         .from('team_members')
         .select('team_id, teams(id, name)')
         .eq('user_id', user.id)
-        .eq('role', 'admin');
+        .in('role', ['admin', 'manager']);
 
       if (error) throw error;
 
