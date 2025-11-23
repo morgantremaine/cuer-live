@@ -58,6 +58,8 @@ interface OptimizedVirtualRundownTableProps {
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
   onScrollToEditor?: (itemId: string) => void;
+  // User role for permissions
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 /**

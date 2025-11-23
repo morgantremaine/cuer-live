@@ -87,6 +87,8 @@ interface RundownContentProps {
   onCellFocus?: (itemId: string, field: string) => void;
   onCellBlur?: (itemId: string, field: string) => void;
   onScrollToEditor?: (itemId: string) => void;
+  // User role for permissions
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -162,7 +164,8 @@ const RundownContent = React.memo<RundownContentProps>(({
   getEditorForCell,
   onCellFocus,
   onCellBlur,
-  onScrollToEditor
+  onScrollToEditor,
+  userRole
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -516,6 +519,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               onCellFocus={onCellFocus}
               onCellBlur={onCellBlur}
               onScrollToEditor={onScrollToEditor}
+              userRole={userRole}
             />
                       </SortableContext>
                     </DndContext>
@@ -572,6 +576,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               onCellFocus={onCellFocus}
               onCellBlur={onCellBlur}
               onScrollToEditor={onScrollToEditor}
+              userRole={userRole}
             />
                   )}
                 </table>
