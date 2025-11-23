@@ -19,6 +19,7 @@ interface ColumnLayout {
     full_name: string | null
     email: string
   }
+  creator_role?: string
 }
 
 export const useColumnLayoutStorage = () => {
@@ -33,10 +34,10 @@ export const useColumnLayoutStorage = () => {
 
     setLoading(true)
     try {
-      // Step 1: Get all team member user IDs
+      // Step 1: Get all team member user IDs with their roles
       const { data: teamMembers, error: teamMembersError } = await supabase
         .from('team_members')
-        .select('user_id')
+        .select('user_id, role')
         .eq('team_id', activeTeamId)
 
       if (teamMembersError) {
@@ -51,6 +52,11 @@ export const useColumnLayoutStorage = () => {
       }
 
       const teamMemberIds = teamMembers?.map(m => m.user_id) || []
+      
+      // Create a map of userId -> role for easy lookup
+      const userRoleMap = new Map(
+        (teamMembers || []).map(tm => [tm.user_id, tm.role])
+      )
 
       // Step 2: Load personal layouts (team_id IS NULL) from team members
       const { data: layoutsData, error } = await supabase
@@ -89,15 +95,17 @@ export const useColumnLayoutStorage = () => {
         }
       }
 
-      // Map the data to include creator profile information
+      // Map the data to include creator profile information and role
       const mappedLayouts = (layoutsData || []).map(layout => {
         const creatorProfile = profilesData.find(p => p.id === layout.user_id)
+        const creatorRole = userRoleMap.get(layout.user_id) || 'member'
         return {
           ...layout,
           creator_profile: creatorProfile ? {
             full_name: creatorProfile.full_name,
             email: creatorProfile.email
-          } : null
+          } : null,
+          creator_role: creatorRole
         }
       })
       
