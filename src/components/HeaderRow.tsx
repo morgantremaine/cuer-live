@@ -47,6 +47,7 @@ interface HeaderRowProps {
   markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -80,7 +81,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     onDragOver,
     onDrop,
     onDragEnd,
-    isDragging
+    isDragging,
+    userRole
   } = props;
 
   const { rowClass } = useRowStyling({
@@ -199,6 +201,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       onAddHeader={onAddHeader}
       onMoveUp={onMoveUp}
       onMoveDown={onMoveDown}
+      userRole={userRole}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}

@@ -51,6 +51,7 @@ interface RundownRowProps {
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -97,6 +98,7 @@ const RundownRow = (props: RundownRowProps) => {
         markActiveTyping={props.markActiveTyping}
         isHeaderCollapsed={props.isHeaderCollapsed}
         getHeaderGroupItemIds={props.getHeaderGroupItemIds}
+        userRole={props.userRole}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
@@ -128,6 +130,7 @@ const RundownRow = (props: RundownRowProps) => {
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
       allItems={props.allItems}
+      userRole={props.userRole}
     />
   );
 };

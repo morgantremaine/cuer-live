@@ -51,6 +51,7 @@ interface RegularRowProps {
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -88,7 +89,8 @@ const RegularRow = (props: RegularRowProps) => {
     onDrop,
     onDragEnd,
     isDragging,
-    allItems
+    allItems,
+    userRole
   } = props;
 
   const { rowClass, backgroundColorOverride } = useRowStyling({
@@ -254,6 +256,7 @@ const RegularRow = (props: RegularRowProps) => {
       onAutoTimeToScriptMultiple={handleAutoTimeToScriptMultiple}
       scriptText={item.script}
       allItems={allItems}
+      userRole={userRole}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
