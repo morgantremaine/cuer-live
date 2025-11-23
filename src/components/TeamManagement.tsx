@@ -28,6 +28,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+const getRoleDisplayName = (role: string): string => {
+  const roleMap: Record<string, string> = {
+    'admin': 'Admin',
+    'manager': 'Manager',
+    'showcaller': 'Showcaller',
+    'member': 'Crew',
+    'teleprompter': 'Teleprompter'
+  };
+  return roleMap[role] || role;
+};
+
 interface TransferPreview {
   member_email: string;
   member_name: string | null;
@@ -307,7 +318,7 @@ const TeamManagement = () => {
         ? 'promoted to Manager' 
         : roleChangeDialog.newRole === 'teleprompter' 
         ? 'assigned Teleprompter role'
-        : 'changed to Member';
+        : 'changed to Crew';
       toast({
         title: 'Role Updated',
         description: `${roleChangeDialog.memberName} has been ${action}.`,
@@ -600,7 +611,7 @@ const TeamManagement = () => {
                           <SelectContent>
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="showcaller">Showcaller</SelectItem>
-                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="member">Crew</SelectItem>
                             <SelectItem value="teleprompter">Teleprompter</SelectItem>
                           </SelectContent>
                         </Select>
@@ -612,7 +623,7 @@ const TeamManagement = () => {
                         member.role === 'teleprompter' ? 'outline' : 
                         'outline'
                       }>
-                        {member.role}
+                        {getRoleDisplayName(member.role)}
                       </Badge>
                     )}
                     {(userRole === 'admin' || userRole === 'manager') && member.role !== 'admin' && (
@@ -782,7 +793,7 @@ const TeamManagement = () => {
                 ? 'Change to Showcaller'
                 : roleChangeDialog?.newRole === 'teleprompter'
                 ? 'Change to Teleprompter'
-                : 'Change to Member'}
+                : 'Change to Crew'}
             </AlertDialogTitle>
             <AlertDialogDescription>
             {roleChangeDialog?.newRole === 'manager' ? (
@@ -799,7 +810,7 @@ const TeamManagement = () => {
               </div>
             ) : (
               <div>
-                <strong>{roleChangeDialog?.memberName}</strong> will be changed to Member with standard access and will lose the ability to manage team members.
+                <strong>{roleChangeDialog?.memberName}</strong> will be changed to Crew with standard access and will lose the ability to manage team members.
               </div>
             )}
             </AlertDialogDescription>
