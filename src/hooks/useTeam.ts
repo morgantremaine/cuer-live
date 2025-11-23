@@ -13,7 +13,7 @@ const globalLoadPromises = new Map<string, Promise<void>>();
 const globalRealtimeChannels = new Map<string, any>();
 // Global cache for team data and roles to share across hook instances
 const globalTeamCache = new Map<string, Team>();
-const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager' | 'teleprompter'>();
+const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter'>();
 
 export interface Team {
   id: string;
@@ -26,7 +26,7 @@ export interface Team {
 export interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member' | 'manager' | 'teleprompter';
+  role: 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter';
   joined_at: string;
   profiles?: {
     email: string;
@@ -43,7 +43,7 @@ export interface PendingInvitation {
 export interface UserTeam {
   id: string;
   name: string;
-  role: 'admin' | 'member' | 'manager' | 'teleprompter';
+  role: 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter';
   joined_at: string;
 }
 
@@ -66,7 +66,7 @@ export const useTeam = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [organizationMembers, setOrganizationMembers] = useState<OrganizationMember[]>([]);
-  const [userRole, setUserRole] = useState<'admin' | 'member' | 'manager' | 'teleprompter' | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
@@ -758,7 +758,7 @@ export const useTeam = () => {
     }
   };
 
-  const updateMemberRole = async (memberId: string, newRole: 'member' | 'manager' | 'teleprompter') => {
+  const updateMemberRole = async (memberId: string, newRole: 'member' | 'manager' | 'showcaller' | 'teleprompter') => {
     if (!team?.id) {
       return { error: 'No team found' };
     }

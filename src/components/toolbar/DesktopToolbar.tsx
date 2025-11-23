@@ -46,6 +46,7 @@ interface DesktopToolbarProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
+  userRole?: string | null;
 }
 
 const DesktopToolbar = ({
@@ -87,8 +88,10 @@ const DesktopToolbar = ({
   isDefaultZoom = true,
   // Lock props
   numberingLocked = false,
-  onToggleLock
+  onToggleLock,
+  userRole
 }: DesktopToolbarProps) => {
+  const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
       <div className="flex space-x-1">
@@ -117,24 +120,26 @@ const DesktopToolbar = ({
       </div>
 
       <div className="flex items-center space-x-1">
-        {/* Playback Controls */}
-        <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
-          <PlaybackControls
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            currentSegmentId={currentSegmentId}
-            timeRemaining={timeRemaining}
-            onPlay={onPlay}
-            onPause={onPause}
-            onForward={onForward}
-            onBackward={onBackward}
-            onReset={onReset}
-            size="sm"
-            autoScrollEnabled={autoScrollEnabled}
-            onToggleAutoScroll={onToggleAutoScroll}
-            onJumpToCurrentSegment={onJumpToCurrentSegment}
-          />
-        </div>
+        {/* Playback Controls - Only for admin, manager, and showcaller roles */}
+        {canUseShowcaller && (
+          <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
+            <PlaybackControls
+              selectedRowId={selectedRowId}
+              isPlaying={isPlaying}
+              currentSegmentId={currentSegmentId}
+              timeRemaining={timeRemaining}
+              onPlay={onPlay}
+              onPause={onPause}
+              onForward={onForward}
+              onBackward={onBackward}
+              onReset={onReset}
+              size="sm"
+              autoScrollEnabled={autoScrollEnabled}
+              onToggleAutoScroll={onToggleAutoScroll}
+              onJumpToCurrentSegment={onJumpToCurrentSegment}
+            />
+          </div>
+        )}
 
         {/* Zoom Controls */}
         {onZoomIn && onZoomOut && onResetZoom && (

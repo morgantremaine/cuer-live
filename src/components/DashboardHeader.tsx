@@ -18,7 +18,7 @@ interface DashboardHeaderProps {
   onBack?: () => void
   team?: Team | null
   allUserTeams?: UserTeam[]
-  userRole?: 'admin' | 'member' | 'manager' | 'teleprompter'
+  userRole?: 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter'
   switchToTeam?: (teamId: string) => Promise<void>
   subscriptionTier?: string | null
   onCreateTeam?: () => void

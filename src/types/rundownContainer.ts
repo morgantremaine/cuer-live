@@ -145,4 +145,7 @@ export interface RundownContainerProps {
   onCellBlur?: (itemId: string, field: string) => void;
   onScrollToEditor?: (itemId: string) => void;
   onScrollToActiveTeammate?: () => void;
+  
+  // User role for permissions
+  userRole?: string | null;
 }

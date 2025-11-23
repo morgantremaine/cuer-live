@@ -31,7 +31,7 @@ const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   // Get team data and user for MOS integration setup
-  const { team } = useTeam();
+  const { team, userRole } = useTeam();
   const { user } = useAuth();
   
   const {
@@ -411,7 +411,8 @@ const RundownIndexContent = () => {
     onUndo: undo,
     canUndo: canUndo,
     onRedo: coreState.redo,
-    canRedo: coreState.canRedo
+    canRedo: coreState.canRedo,
+    userRole: userRole
   });
 
   const { 
@@ -764,6 +765,7 @@ const RundownIndexContent = () => {
         onCellBlur={(itemId, field) => handleCellEditComplete(itemId, field, '')}
         onScrollToEditor={handleScrollToEditor}
         onScrollToActiveTeammate={handleScrollToActiveTeammate}
+        userRole={userRole}
       />
       
       {/* Floating Notes Window */}
