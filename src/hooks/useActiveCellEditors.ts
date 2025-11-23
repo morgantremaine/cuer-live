@@ -6,9 +6,11 @@ interface ActiveEditor {
   userId: string;
   userName: string;
   timestamp: number;
+  isActive: boolean; // true = currently focused, false = recently blurred
 }
 
-const STALE_TIMEOUT = 10000; // 10 seconds - safety net for disconnects/crashes
+const GRACE_PERIOD = 5000; // 5 seconds - keep editors after blur for autoscroll
+const STALE_TIMEOUT = 120000; // 120 seconds - safety net for disconnects/crashes
 
 /**
  * Hook to track which users are actively editing which cells
@@ -61,12 +63,20 @@ export const useActiveCellEditors = (rundownId: string | null) => {
             next.set(cellKey, {
               userId: update.userId,
               userName: update.userName,
-              timestamp: update.timestamp
+              timestamp: update.timestamp,
+              isActive: true
             });
           } else {
-            // Remove editor on blur
-            console.log(`❌ Removing editor from Map: ${cellKey}`);
-            next.delete(cellKey);
+            // Keep editor in map but mark as inactive (for grace period)
+            const existing = next.get(cellKey);
+            if (existing) {
+              console.log(`⏸️ Marking editor as inactive in Map: ${cellKey}`);
+              next.set(cellKey, {
+                ...existing,
+                timestamp: update.timestamp,
+                isActive: false
+              });
+            }
           }
 
           console.log('📊 activeEditors Map after update:', {
@@ -93,15 +103,27 @@ export const useActiveCellEditors = (rundownId: string | null) => {
         const staleEditors: string[] = [];
 
         for (const [cellKey, editor] of next.entries()) {
-          if (now - editor.timestamp > STALE_TIMEOUT) {
-            next.delete(cellKey);
-            staleEditors.push(`${cellKey} (${editor.userName})`);
-            changed = true;
+          const age = now - editor.timestamp;
+          
+          if (editor.isActive) {
+            // Remove actively editing cells after STALE_TIMEOUT
+            if (age > STALE_TIMEOUT) {
+              next.delete(cellKey);
+              staleEditors.push(`${cellKey} (${editor.userName}) - stale`);
+              changed = true;
+            }
+          } else {
+            // Remove inactive (blurred) cells after GRACE_PERIOD
+            if (age > GRACE_PERIOD) {
+              next.delete(cellKey);
+              staleEditors.push(`${cellKey} (${editor.userName}) - grace period expired`);
+              changed = true;
+            }
           }
         }
 
         if (staleEditors.length > 0) {
-          console.log('🧹 Cleaned up stale editors:', staleEditors);
+          console.log('🧹 Cleaned up editors:', staleEditors);
         }
 
         return changed ? next : prev;
