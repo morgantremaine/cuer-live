@@ -47,6 +47,7 @@ interface MainActionButtonsProps {
   // Row number locking
   numberingLocked?: boolean;
   onToggleLock?: () => void;
+  userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
 }
 
 const MainActionButtons = ({
@@ -80,7 +81,8 @@ const MainActionButtons = ({
   onShowNotes,
   onShowHistory,
   numberingLocked = false,
-  onToggleLock
+  onToggleLock,
+  userRole
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -203,8 +205,9 @@ const MainActionButtons = ({
           )}
         </div>
 
-        {/* Playback controls - only in mobile view */}
-        {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && (
+        {/* Playback controls - only in mobile view and for admin/manager/showcaller */}
+        {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && 
+         (userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller') && (
           <div className="border-t pt-3">
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Playback Controls</div>
             <div className="flex justify-center">
