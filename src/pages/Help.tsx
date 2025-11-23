@@ -447,12 +447,6 @@ const Help = () => {
                   <p className="text-sm">Can view and control teleprompter display. Limited to viewing rundowns and operating the teleprompter - cannot edit rundown content.</p>
                 </div>
               </div>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-6">
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Tip:</strong> You can see role descriptions by hovering over the role options when inviting team members or changing someone's role in Team Management.
-                </p>
-              </div>
             </div>
           </section>
 
