@@ -501,10 +501,10 @@ const TeamManagement = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="showcaller">Showcaller</SelectItem>
-                      <SelectItem value="member">Crew</SelectItem>
-                      <SelectItem value="teleprompter">Teleprompter</SelectItem>
+                      <SelectItem value="manager" title="Can manage team members and edit all content">Manager</SelectItem>
+                      <SelectItem value="showcaller" title="Can edit all rundown content and call shows">Showcaller</SelectItem>
+                      <SelectItem value="member" title="Standard crew member with full editing access">Crew</SelectItem>
+                      <SelectItem value="teleprompter" title="Can view and control teleprompter display">Teleprompter</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button 
@@ -625,10 +625,10 @@ const TeamManagement = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="showcaller">Showcaller</SelectItem>
-                            <SelectItem value="member">Crew</SelectItem>
-                            <SelectItem value="teleprompter">Teleprompter</SelectItem>
+                            <SelectItem value="manager" title="Can manage team members and edit all content">Manager</SelectItem>
+                            <SelectItem value="showcaller" title="Can edit all rundown content and call shows">Showcaller</SelectItem>
+                            <SelectItem value="member" title="Standard crew member with full editing access">Crew</SelectItem>
+                            <SelectItem value="teleprompter" title="Can view and control teleprompter display">Teleprompter</SelectItem>
                           </SelectContent>
                         </Select>
                     ) : (
