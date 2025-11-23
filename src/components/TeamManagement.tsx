@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield, UserX } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield, UserX, HelpCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import OrganizationMembers from '@/components/OrganizationMembers';
 import {
   AlertDialog,
@@ -452,10 +453,19 @@ const TeamManagement = () => {
       {(userRole === 'admin' || userRole === 'manager') && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              Invite Team Members
-            </CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5" />
+                    Invite Team Members
+                  </div>
+                  <Link 
+                    to="/help#team-roles" 
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    title="Learn about team roles"
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                  </Link>
+                </CardTitle>
             <CardDescription>
               Add new members to your team by sending email invitations.
             </CardDescription>
