@@ -497,7 +497,7 @@ const TeamManagement = () => {
                     />
                   </div>
                   <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'member' | 'manager' | 'showcaller' | 'teleprompter')}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px] bg-muted">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
