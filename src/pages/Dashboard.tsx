@@ -576,42 +576,43 @@ const Dashboard = () => {
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-8">
               {/* Action buttons */}
-              <div className="flex gap-4 mb-6 flex-wrap">
-                <CreateNewButton 
-                  onClick={handleCreateNew}
-                  disabled={!rundownLimits.canCreateNew}
-                  disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
-                  onDisabledClick={handleDisabledCreateClick}
-                />
-                <AIRundownDialog 
-                  onCreateRundown={handleCreateRundown}
-                  disabled={!rundownLimits.canCreateNew}
-                  disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
-                />
-                {!isMobile && (
-                  rundownLimits.canImport ? (
-                    <CSVImportDialog onImport={handleCSVImport}>
+              {userRole !== 'teleprompter' && (
+                <div className="flex gap-4 mb-6 flex-wrap">
+                  <CreateNewButton 
+                    onClick={handleCreateNew}
+                    disabled={!rundownLimits.canCreateNew}
+                    disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
+                    onDisabledClick={handleDisabledCreateClick}
+                  />
+                  <AIRundownDialog 
+                    onCreateRundown={handleCreateRundown}
+                    disabled={!rundownLimits.canCreateNew}
+                    disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
+                  />
+                  {!isMobile && (
+                    rundownLimits.canImport ? (
+                      <CSVImportDialog onImport={handleCSVImport}>
+                        <Button 
+                          size="lg" 
+                          className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Import CSV
+                        </Button>
+                      </CSVImportDialog>
+                    ) : (
                       <Button 
                         size="lg" 
-                        className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2"
+                        onClick={handleDisabledImportClick}
+                        className="bg-gray-300 text-gray-600 border-0 flex items-center gap-2 opacity-60 cursor-pointer"
+                        title={`Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.`}
                       >
                         <Plus className="h-4 w-4" />
                         Import CSV
                       </Button>
-                    </CSVImportDialog>
-                  ) : (
-                    <Button 
-                      size="lg" 
-                      onClick={handleDisabledImportClick}
-                      className="bg-gray-300 text-gray-600 border-0 flex items-center gap-2 opacity-60 cursor-pointer"
-                      title={`Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.`}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Import CSV
-                    </Button>
-                  )
-                )}
-                {!isMobile && (
+                    )
+                  )}
+                  {!isMobile && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button 
@@ -646,30 +647,31 @@ const Dashboard = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )}
-                <AdminNotificationSender userEmail={user?.email} />
-                 {/* Admin only: Delete test user button */}
-                {user?.email === 'morgan@cuer.live' && (
-                  <>
-                    <Button
-                      size="lg"
-                      onClick={() => navigate('/admin/health')}
-                      variant="outline"
-                      className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-                    >
-                      System Health
-                    </Button>
-                    <Button
-                      size="lg"
-                      onClick={() => navigate('/delete-test-user')}
-                      variant="outline"
-                      className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                    >
-                      Delete Test User
-                    </Button>
-                  </>
-                )}
-              </div>
+                 )}
+                 <AdminNotificationSender userEmail={user?.email} />
+                  {/* Admin only: Delete test user button */}
+                 {user?.email === 'morgan@cuer.live' && (
+                   <>
+                     <Button
+                       size="lg"
+                       onClick={() => navigate('/admin/health')}
+                       variant="outline"
+                       className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                     >
+                       System Health
+                     </Button>
+                     <Button
+                       size="lg"
+                       onClick={() => navigate('/delete-test-user')}
+                       variant="outline"
+                       className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                     >
+                       Delete Test User
+                     </Button>
+                   </>
+                 )}
+               </div>
+              )}
 
               <DashboardRundownGrid
                 title={folderTitle}
@@ -688,6 +690,7 @@ const Dashboard = () => {
                 showEmptyState={true}
                 currentUserId={user?.id}
                 teamMembers={teamMembers}
+                userRole={userRole}
               />
             </div>
           </main>

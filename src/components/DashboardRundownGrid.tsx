@@ -33,7 +33,7 @@ import { useRundownSorting } from '@/hooks/useRundownSorting'
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member' | 'manager';
+  role: 'admin' | 'member' | 'manager' | 'teleprompter';
   joined_at: string;
   profiles?: {
     email: string;
@@ -59,6 +59,7 @@ interface DashboardRundownGridProps {
   currentUserId?: string
   teamMembers?: TeamMember[]
   folderType?: 'all' | 'recent' | 'archived' | 'custom'
+  userRole?: 'admin' | 'member' | 'manager' | 'teleprompter' | null
 }
 
 const DashboardRundownGrid = ({ 
@@ -78,6 +79,7 @@ const DashboardRundownGrid = ({
   showEmptyState = true,
   currentUserId,
   teamMembers = [],
+  userRole = null,
   folderType
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
@@ -447,99 +449,101 @@ const DashboardRundownGrid = ({
                     </CardDescription>
                   </div>
                   
-                  {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
-                      {onDuplicate && (
-                        <DropdownMenuItem 
-                          onClick={(e) => onDuplicate(rundown.id, rundown.title, rundown.items, e)}
-                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                  {/* Three-dot menu - Hidden for teleprompter role */}
+                  {userRole !== 'teleprompter' && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                         >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {isTeamAdmin && onDuplicateToTeam && adminTeams.length > 0 && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="text-gray-300 hover:text-white hover:bg-gray-700">
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplicate to Team...
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
-                              {adminTeams.map((team) => (
-                                <DropdownMenuItem
-                                  key={team.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDuplicateToTeam(rundown.id, team.id, team.name, rundown.title, e);
-                                  }}
-                                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                                >
-                                  <span className="mr-2">👥</span>
-                                  {team.name}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                        </>
-                      )}
-                      
-                      {onArchive && (
-                        <DropdownMenuItem 
-                          onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                        >
-                          <Archive className="h-4 w-4 mr-2" />
-                          Archive
-                        </DropdownMenuItem>
-                      )}
-                      
-                      {onDelete && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem 
-                              onSelect={(e) => e.preventDefault()}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-gray-800 border-gray-700">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-400">
-                                Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={(e) => onDelete(rundown.id, rundown.title, e)}
-                                className="bg-red-600 hover:bg-red-700 text-white border-0"
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
+                        {onDuplicate && (
+                          <DropdownMenuItem 
+                            onClick={(e) => onDuplicate(rundown.id, rundown.title, rundown.items, e)}
+                            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {isTeamAdmin && onDuplicateToTeam && adminTeams.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger className="text-gray-300 hover:text-white hover:bg-gray-700">
+                                <Copy className="h-4 w-4 mr-2" />
+                                Duplicate to Team...
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
+                                {adminTeams.map((team) => (
+                                  <DropdownMenuItem
+                                    key={team.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDuplicateToTeam(rundown.id, team.id, team.name, rundown.title, e);
+                                    }}
+                                    className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                                  >
+                                    <span className="mr-2">👥</span>
+                                    {team.name}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          </>
+                        )}
+                        
+                        {onArchive && (
+                          <DropdownMenuItem 
+                            onClick={(e) => onArchive(rundown.id, rundown.title, e)}
+                            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                          >
+                            <Archive className="h-4 w-4 mr-2" />
+                            Archive
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {onDelete && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem 
+                                onSelect={(e) => e.preventDefault()}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer"
                               >
+                                <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-gray-800 border-gray-700">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-400">
+                                  Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={(e) => onDelete(rundown.id, rundown.title, e)}
+                                  className="bg-red-600 hover:bg-red-700 text-white border-0"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </CardHeader>
               
@@ -583,31 +587,35 @@ const DashboardRundownGrid = ({
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => onOpen(rundown.id)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
-                  >
-                    <Play className="h-4 w-4 mr-1" />
-                    Open Rundown
-                  </Button>
+                  {userRole !== 'teleprompter' && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => onOpen(rundown.id)}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
+                    >
+                      <Play className="h-4 w-4 mr-1" />
+                      Open Rundown
+                    </Button>
+                  )}
                   
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
-                      className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-                    >
-                      <FileText className="h-4 w-4 mr-1" />
-                      Blueprint
-                    </Button>
+                    {userRole !== 'teleprompter' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
+                        className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        Blueprint
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => window.open(`/rundown/${rundown.id}/teleprompter`, '_blank')}
-                      className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                      className={userRole === 'teleprompter' ? 'w-full border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700' : 'flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700'}
                     >
                       <Monitor className="h-4 w-4 mr-1" />
                       Prompter
