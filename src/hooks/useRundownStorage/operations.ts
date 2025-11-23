@@ -141,7 +141,7 @@ export class RundownOperations {
       // Create the duplicated rundown with new team_id
       const duplicatedRundown: Omit<SavedRundown, 'id'> = {
         user_id: this.user.id,
-        title: `${rundown.title} (Copy to ${targetTeamName})`,
+        title: `${rundown.title} (Copy)`,
         items: rundown.items || [],
         columns: rundown.columns,
         timezone: rundown.timezone,
