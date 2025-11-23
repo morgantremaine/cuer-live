@@ -104,7 +104,7 @@ const RundownIndexContent = () => {
     toggleLock
   } = coreState;
 
-  const userId = user?.id || '';
+  const userId = user?.id;
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
 
   // Get MOS integration handlers from coordination
