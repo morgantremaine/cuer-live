@@ -120,23 +120,46 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Determine what save status to show
-  let saveStatusElement = null;
+  // Don't show indicators if changes are only column-related, unless we're flashing "Saved"
+  // Allow teammate editing indicator to show regardless
+  if (!hasContentChanges && !showTemporarySaved && !showSaved && !isTeammateEditing) {
+    return null;
+  }
+
+  // Show teammate editing state if teammates are making changes (suppress in mobile)
+  if (isTeammateEditing && !isMobile) {
+    const displayText = activeTeammateNames.length > 0 
+      ? `${activeTeammateNames.join(', ')} ${activeTeammateNames.length === 1 ? 'is' : 'are'} editing...`
+      : 'Teammate editing...';
+      
+    return (
+      <div 
+        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2 cursor-pointer hover:text-blue-700 dark:hover:text-blue-300"
+        onClick={onScrollToTeammate}
+        title="Click to scroll to where they're editing"
+      >
+        <Users className="h-4 w-4" />
+        <span>{displayText}</span>
+      </div>
+    );
+  }
 
   if (isSaving) {
-    saveStatusElement = (
-      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs">
+    return (
+      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>{isLongSave ? 'Still saving...' : 'Saving...'}</span>
       </div>
     );
-  } else if (saveError || failedSavesCount > 0) {
+  }
+
+  if (saveError || failedSavesCount > 0) {
     const errorMessage = failedSavesCount > 0 
       ? `${failedSavesCount} update${failedSavesCount === 1 ? '' : 's'} failed`
       : 'Save failed';
       
-    saveStatusElement = (
-      <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs">
+    return (
+      <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs ml-2">
         <AlertCircle className="h-4 w-4" />
         <span>{errorMessage}</span>
         {onRetry && (
@@ -149,64 +172,37 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
         )}
       </div>
     );
-  } else if (hasUnsavedChanges) {
-    saveStatusElement = (
-      <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 text-xs">
+  }
+
+  if (hasUnsavedChanges) {
+    return (
+      <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 text-xs ml-2">
         <AlertCircle className="h-4 w-4" />
         <span>Unsaved changes</span>
       </div>
     );
-  } else if (showSaved && lastSaved) {
-    saveStatusElement = (
-      <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs">
+  }
+
+  if (showSaved && lastSaved) {
+    return (
+      <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs ml-2">
         <CheckCircle className="h-4 w-4" />
         <span>Saved {formatLastSaved(lastSaved)}</span>
       </div>
     );
-  } else if (showTemporarySaved) {
-    saveStatusElement = (
-      <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs">
+  }
+
+  // Show temporary "Saved" state for auto-save systems without lastSaved tracking
+  if (showTemporarySaved) {
+    return (
+      <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs ml-2">
         <CheckCircle className="h-4 w-4" />
         <span>Saved</span>
       </div>
     );
   }
 
-  // Only show save status if we have content changes
-  if (saveStatusElement && !hasContentChanges && !showTemporarySaved && !showSaved) {
-    saveStatusElement = null;
-  }
-
-  // Determine if we should show teammate editing indicator
-  let teammateElement = null;
-  if (isTeammateEditing && !isMobile) {
-    const displayText = activeTeammateNames.length > 0 
-      ? `${activeTeammateNames.join(', ')} ${activeTeammateNames.length === 1 ? 'is' : 'are'} editing...`
-      : 'Teammate editing...';
-      
-    teammateElement = (
-      <div 
-        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs cursor-pointer hover:text-blue-700 dark:hover:text-blue-300"
-        onClick={onScrollToTeammate}
-        title="Click to scroll to where they're editing"
-      >
-        <Users className="h-4 w-4" />
-        <span>{displayText}</span>
-      </div>
-    );
-  }
-
-  // Show both if both exist, or just one, or null if neither
-  if (!saveStatusElement && !teammateElement) {
-    return null;
-  }
-
-  return (
-    <div className="flex items-center gap-4 ml-2">
-      {saveStatusElement}
-      {teammateElement}
-    </div>
-  );
+  return null;
 };
 
 export default RundownSaveIndicator;

@@ -104,7 +104,7 @@ const RundownIndexContent = () => {
     toggleLock
   } = coreState;
 
-  const userId = user?.id;
+  const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
 
   // Get MOS integration handlers from coordination
@@ -145,17 +145,6 @@ const RundownIndexContent = () => {
 
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
-    console.log('🎯 handleScrollToActiveTeammate called');
-    
-    // Find the scroll container
-    const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
-    if (!scrollContainer) {
-      console.warn('❌ Scroll container not found');
-      return;
-    }
-    
-    console.log('✅ Found scroll container, searching for active editors...');
-
     // Iterate through all items and fields to find first cell with an active editor
     for (const item of items) {
       // Check common fields that can be edited
@@ -163,49 +152,12 @@ const RundownIndexContent = () => {
       for (const field of fields) {
         const editor = getEditorForCell(item.id, field);
         if (editor) {
-          console.log(`👤 Found active editor: ${editor.userName} editing ${field} on item ${item.id}`);
-          
-          // Found an active editor - find the specific cell element
-          const cellKey = `${item.id}-${field}`;
-          
-          // Try to find the cell element by data-cell-id or data-cell-ref
-          let cellElement = scrollContainer.querySelector(`[data-cell-id="${cellKey}"]`) ||
-                           scrollContainer.querySelector(`[data-cell-ref="${cellKey}"]`);
-          
-          // Fallback: try to find by input/textarea with the cell key
-          if (!cellElement) {
-            const input = scrollContainer.querySelector(`input[data-cell-id="${cellKey}"], textarea[data-cell-id="${cellKey}"]`);
-            if (input) {
-              cellElement = input.closest('td, div[role="cell"]') || input;
-            }
-          }
-          
-          if (cellElement) {
-            console.log('✅ Found cell element, scrolling...');
-            // Scroll the specific cell into view with both vertical and horizontal scrolling
-            cellElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'center'
-            });
-            
-            // Highlight the cell briefly to draw attention
-            cellElement.classList.add('ring-2', 'ring-blue-500');
-            setTimeout(() => {
-              cellElement?.classList.remove('ring-2', 'ring-blue-500');
-            }, 2000);
-          } else {
-            console.warn('⚠️ Cell element not found, falling back to row scroll');
-            // Fallback to row-level scroll if we can't find the specific cell
-            handleScrollToEditor(item.id);
-          }
-          
+          // Found an active editor - scroll to this item
+          handleScrollToEditor(item.id);
           return;
         }
       }
     }
-    
-    console.warn('❌ No active editors found');
   }, [items, visibleColumns, getEditorForCell, handleScrollToEditor]);
 
   // Set up user presence tracking for this rundown

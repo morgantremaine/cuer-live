@@ -458,7 +458,6 @@ const RundownHeader = ({
               activeTeammateNames={activeTeammateNames}
               isMobile={true}
               onRetry={onRetry}
-              onScrollToTeammate={onScrollToActiveTeammate}
             />
             <ShowcallerTimingIndicator
               {...timingStatus}
@@ -533,7 +532,6 @@ const RundownHeader = ({
                 isTeammateEditing={showTeammateEditing} 
                 activeTeammateNames={activeTeammateNames}
                 onRetry={onRetry}
-                onScrollToTeammate={onScrollToActiveTeammate}
               />
               </>
               )}

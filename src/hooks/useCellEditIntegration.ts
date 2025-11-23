@@ -74,17 +74,12 @@ export const useCellEditIntegration = ({
     fieldName: string,
     currentValue: any
   ) => {
-    console.log('🔔 handleCellEditStart called', { rundownId, userId, userName, itemId, fieldName });
-    
-    if (!rundownId || userId === undefined || !userName) {
-      console.log('⏭️ Skipping broadcast - missing required data', { rundownId, userId, userName });
+    if (!rundownId || !userId || !userName) {
       return;
     }
 
     const tabId = getTabId();
 
-    console.log('📤 Broadcasting cell focus (START)', { rundownId, itemId, fieldName, userId, userName, tabId });
-    
     // Broadcast focus state to other users
     cellBroadcast.broadcastCellFocus(
       rundownId,
@@ -103,17 +98,12 @@ export const useCellEditIntegration = ({
     fieldName: string,
     finalValue: any
   ) => {
-    console.log('🔔 handleCellEditComplete called', { rundownId, userId, userName, itemId, fieldName });
-    
-    if (!rundownId || userId === undefined || !userName) {
-      console.log('⏭️ Skipping broadcast - missing required data', { rundownId, userId, userName });
+    if (!rundownId || !userId || !userName) {
       return;
     }
 
     const tabId = getTabId();
 
-    console.log('📤 Broadcasting cell focus (COMPLETE)', { rundownId, itemId, fieldName, userId, userName, tabId });
-    
     // Broadcast blur state to other users
     cellBroadcast.broadcastCellFocus(
       rundownId,
