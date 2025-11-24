@@ -68,7 +68,7 @@ export const FailedOperationsWarning = ({
   };
 
   return (
-    <Alert variant="destructive" className="mb-4 border-l-4 border-destructive">
+    <Alert variant="destructive" className="mx-4 mt-4 mb-4 border-l-4 border-destructive">
       <AlertCircle className="h-4 w-4" />
       <AlertDescription className="flex items-center justify-between gap-4">
         <div className="flex-1">

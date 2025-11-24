@@ -224,12 +224,10 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     <div className="flex flex-col h-full">
       {/* Failed Operations Warning */}
       {rundownId && (
-        <div className="px-4 pt-4">
-          <FailedOperationsWarning 
-            rundownId={rundownId}
-            onRetry={props.onRetryFailedSaves}
-          />
-        </div>
+        <FailedOperationsWarning 
+          rundownId={rundownId}
+          onRetry={props.onRetryFailedSaves}
+        />
       )}
       
       {/* Toolbar Section */}
