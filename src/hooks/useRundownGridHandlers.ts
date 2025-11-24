@@ -201,7 +201,7 @@ export const useRundownGridHandlers = ({
       // Use structural save coordination for per-cell mode (database persistence)
       if (markStructuralChange) {
         debugLogger.grid('🧪 STRUCTURAL CHANGE: paste completed - triggering structural coordination');
-        markStructuralChange('copy_rows', { newItems: itemsToPaste, insertIndex });
+        markStructuralChange('copy_rows', { items: itemsToPaste, insertIndex });
       } else {
         // Fallback for non-per-cell mode
         markAsChanged();
