@@ -3,6 +3,7 @@ import { Plus, Eye, Undo, Redo, MapPin, Search, FileText, StickyNote } from 'luc
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
+import { PrintRundownMenu } from '@/components/PrintRundownMenu';
 import { ToolsMenu } from './ToolsMenu';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
@@ -188,8 +189,8 @@ const MainActionButtons = ({
         </div>
 
 
-        {/* Tools and Share menus */}
-        <div className="grid grid-cols-2 gap-2 w-full">
+        {/* Tools, Print, and Share menus */}
+        <div className="grid grid-cols-3 gap-2 w-full">
           <div className="w-full">
             <ToolsMenu 
               rundownId={rundownId}
@@ -201,13 +202,24 @@ const MainActionButtons = ({
             />
           </div>
           {rundownId && (
-            <div className="w-full">
-              <ShareRundownMenu 
-                rundownId={rundownId} 
-                rundownTitle={rundownTitle}
-                rundownData={rundownData}
-              />
-            </div>
+            <>
+              <div className="w-full">
+                <PrintRundownMenu 
+                  rundownId={rundownId} 
+                  rundownTitle={rundownTitle}
+                  rundownData={rundownData}
+                  size={buttonSize}
+                  className="w-full"
+                />
+              </div>
+              <div className="w-full">
+                <ShareRundownMenu 
+                  rundownId={rundownId} 
+                  rundownTitle={rundownTitle}
+                  rundownData={rundownData}
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -297,11 +309,19 @@ const MainActionButtons = ({
       <ToolsMenu rundownId={rundownId} teamId={teamId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} onShowHistory={onShowHistory} />
       
       {rundownId && (
-        <ShareRundownMenu 
-          rundownId={rundownId} 
-          rundownTitle={rundownTitle}
-          rundownData={rundownData}
-        />
+        <>
+          <PrintRundownMenu 
+            rundownId={rundownId} 
+            rundownTitle={rundownTitle}
+            rundownData={rundownData}
+            size={buttonSize}
+          />
+          <ShareRundownMenu 
+            rundownId={rundownId} 
+            rundownTitle={rundownTitle}
+            rundownData={rundownData}
+          />
+        </>
       )}
     </>
   );
