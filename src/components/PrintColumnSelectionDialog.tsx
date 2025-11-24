@@ -74,7 +74,7 @@ export const PrintColumnSelectionDialog: React.FC<PrintColumnSelectionDialogProp
     });
 
     onPrint(selectedIndices);
-    onOpenChange(false);
+    // Don't close immediately - let parent handle it after print triggers
   };
 
   return (
