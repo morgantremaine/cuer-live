@@ -17,10 +17,15 @@ export const handleSharedRundownPrintWithColumns = (
     existingPrintStyles.remove();
   }
 
-  // Find the actual rundown table to extract its structure (use same selectors as main rundown)
-  const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table, table');
-  if (!existingTable) {
-    console.error('Could not find rundown table to print');
+  // Find the split rundown tables (header and body are separate tables)
+  const headerTable = document.querySelector('table[data-rundown-table="header"]');
+  const bodyTable = document.querySelector('table[data-rundown-table="body"]');
+  
+  if (!headerTable || !bodyTable) {
+    console.error('Could not find rundown tables to print', { 
+      headerTable: !!headerTable, 
+      bodyTable: !!bodyTable 
+    });
     return;
   }
 
@@ -109,12 +114,15 @@ export const handleSharedRundownPrintWithColumns = (
     return '09:00:00';
   };
 
-  // Extract actual table structure
-  const headerRow = existingTable.querySelector('thead tr');
-  const bodyRows = existingTable.querySelectorAll('tbody tr');
+  // Extract actual table structure from separate tables
+  const headerRow = headerTable.querySelector('thead tr');
+  const bodyRows = bodyTable.querySelectorAll('tbody tr');
   
   if (!headerRow || bodyRows.length === 0) {
-    console.error('No rundown content found to print');
+    console.error('No rundown content found to print', {
+      headerRow: !!headerRow,
+      bodyRowsCount: bodyRows.length
+    });
     return;
   }
 
@@ -487,14 +495,15 @@ export const handleSharedRundownPrintWithColumns = (
 
 // Legacy function for backward compatibility - prints all columns
 export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[]) => {
-  // Find the table to determine how many columns there are
-  const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table, table');
-  if (!existingTable) {
-    console.error('Could not find rundown table to print');
+  // Find the split rundown tables to determine how many columns there are
+  const headerTable = document.querySelector('table[data-rundown-table="header"]');
+  
+  if (!headerTable) {
+    console.error('Could not find rundown header table to print');
     return;
   }
   
-  const headerRow = existingTable.querySelector('thead tr');
+  const headerRow = headerTable.querySelector('thead tr');
   const headerCells = headerRow?.querySelectorAll('th');
   const columnCount = headerCells?.length || 0;
   
