@@ -118,9 +118,32 @@ export const useConsolidatedRealtimeRundown = ({
   }, [rundownId]);
 
   // Define performCatchupSync before it's used in handleOnline
-  const performCatchupSync = useCallback(async (): Promise<boolean> => {
+  const performCatchupSync = useCallback(async (options?: { skipFailedOpsCheck?: boolean }): Promise<boolean> => {
     const state = globalSubscriptions.get(rundownId || '');
     if (!rundownId || !state) return false;
+    
+    // CRITICAL: Check for pending failed structural operations FIRST
+    // Don't overwrite local state that contains unsaved changes
+    if (!options?.skipFailedOpsCheck) {
+      try {
+        const storageKey = `rundown_failed_operations_${rundownId}`;
+        const storedFailedOps = localStorage.getItem(storageKey);
+        
+        if (storedFailedOps) {
+          const failedOps = JSON.parse(storedFailedOps);
+          if (failedOps.length > 0) {
+            console.warn(`⚠️ Skipping catch-up sync - ${failedOps.length} failed structural operations pending`);
+            toast.warning('Sync Paused', {
+              description: `${failedOps.length} unsaved change${failedOps.length > 1 ? 's' : ''} detected. Please check your connection.`,
+              duration: 5000
+            });
+            return false; // Don't sync - preserve local state
+          }
+        }
+      } catch (error) {
+        console.error('Error checking failed operations:', error);
+      }
+    }
     
     try {
       // Step 1: Quick version check first (50ms vs 500ms)

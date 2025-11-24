@@ -5,6 +5,7 @@ import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import FindReplaceDialog from './FindReplaceDialog';
+import { FailedOperationsWarning } from './FailedOperationsWarning';
 import { RundownContainerProps } from '@/types/rundownContainer';
 import { CSVExportData } from '@/utils/csvExport';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
@@ -221,6 +222,16 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Failed Operations Warning */}
+      {rundownId && (
+        <div className="px-4 pt-4">
+          <FailedOperationsWarning 
+            rundownId={rundownId}
+            onRetry={props.onRetryFailedSaves}
+          />
+        </div>
+      )}
+      
       {/* Toolbar Section */}
       <RundownHeaderSection
         currentTime={currentTime}
