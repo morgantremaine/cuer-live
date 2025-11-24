@@ -70,7 +70,13 @@ class ShowcallerBroadcastManager {
         }
         
         if (status === 'CHANNEL_ERROR') {
-          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
+          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId, {
+            navigator_online: navigator.onLine,
+            document_hidden: document.hidden,
+            timestamp: new Date().toISOString(),
+            reconnecting: this.reconnecting.get(rundownId),
+            reconnectAttempts: this.reconnectAttempts.get(rundownId)
+          });
           this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
           this.reconnectStartTimes.delete(rundownId);
           console.log('📺 Channel issue reported - coordinator will handle reconnection');

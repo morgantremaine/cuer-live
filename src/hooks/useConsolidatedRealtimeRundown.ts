@@ -85,6 +85,8 @@ export const useConsolidatedRealtimeRundown = ({
   const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateTimeRef = useRef<number>(Date.now());
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastCatchupAttemptRef = useRef<number>(0);
+  const MIN_CATCHUP_INTERVAL = 15000; // 15 seconds minimum between catch-ups
 
   // Quick version check - lightweight pre-check before full sync
   const performQuickVersionCheck = useCallback(async (): Promise<{ needsSync: boolean; serverVersion?: number }> => {
@@ -121,6 +123,17 @@ export const useConsolidatedRealtimeRundown = ({
   const performCatchupSync = useCallback(async (options?: { skipFailedOpsCheck?: boolean }): Promise<boolean> => {
     const state = globalSubscriptions.get(rundownId || '');
     if (!rundownId || !state) return false;
+    
+    // Debounce: Don't allow catch-ups more than once every 15 seconds
+    const now = Date.now();
+    const timeSinceLastCatchup = now - lastCatchupAttemptRef.current;
+    
+    if (timeSinceLastCatchup < MIN_CATCHUP_INTERVAL) {
+      console.log(`⏱️ Skipping catch-up sync - too soon (${Math.round(timeSinceLastCatchup/1000)}s since last attempt)`);
+      return false;
+    }
+    
+    lastCatchupAttemptRef.current = now;
     
     // CRITICAL: Check for pending failed structural operations FIRST
     // Don't overwrite local state that contains unsaved changes
@@ -166,17 +179,22 @@ export const useConsolidatedRealtimeRundown = ({
       
       const { data, error } = await supabase
         .from('rundowns')
-        .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
+        .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state, tab_id')
         .eq('id', rundownId)
         .single();
         
       if (!error && data) {
         const serverDoc = data.doc_version || 0;
-        const missedUpdates = Math.max(0, serverDoc - knownDocVersion);
+        const currentTabId = getTabId();
+        const isOwnUpdate = data.tab_id === currentTabId;
+        
+        // Only count as "missed" if from a different tab
+        const missedUpdates = isOwnUpdate ? 0 : Math.max(0, serverDoc - knownDocVersion);
         
         console.log('🔄 Catch-up sync result:', {
           serverVersion: serverDoc,
           lastKnownVersion: knownDocVersion,
+          fromSameTab: isOwnUpdate,
           missedUpdates
         });
         
@@ -185,13 +203,18 @@ export const useConsolidatedRealtimeRundown = ({
           state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
           state.offlineSince = undefined; // Clear offline timestamp
           
-          state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-            try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
-          });
+          // Only apply callback if from different tab (avoid re-processing own updates)
+          if (!isOwnUpdate) {
+            state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+              try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+            });
+          }
           
-          // Show user notification if updates were synced
+          // FIXED: Only show toast for actual missed updates from OTHER users/tabs
           if (missedUpdates > 0) {
-            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} made while offline`);
+            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} from other users`);
+          } else if (serverDoc > knownDocVersion) {
+            console.log(`✅ Caught up with ${serverDoc - knownDocVersion} own operation(s) - no toast needed`);
           }
           return true; // Updates were found and applied
         } else {
@@ -346,7 +369,7 @@ export const useConsolidatedRealtimeRundown = ({
           lastUpdateTimeRef.current = Date.now(); // Reset timer
         }
       }
-    }, 30000); // Check every 30 seconds
+    }, 60000); // Check every 60 seconds (reduced from 30s for less noise)
     
     return () => clearInterval(checkInterval);
   }, [enabled, rundownId, isConnected, performCatchupSync]);
