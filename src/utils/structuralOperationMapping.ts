@@ -67,7 +67,7 @@ export function mapOperationDataToPayload(
     case 'copy_rows':
       // For copy operations: { items, index }
       return {
-        items: operationData.newItems,
+        items: operationData.items,
         index: operationData.insertIndex
       };
     
@@ -110,7 +110,7 @@ export function validateOperationData(
       return !!(operationData.newItems?.length > 0 && operationData.insertIndex !== undefined);
     
     case 'copy_rows':
-      return !!(operationData.newItems?.length > 0 && operationData.insertIndex !== undefined);
+      return !!(operationData.items?.length > 0 && operationData.insertIndex !== undefined);
     
     case 'delete_row':
       return !!(operationData.deletedIds?.length > 0);
