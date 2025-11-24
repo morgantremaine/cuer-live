@@ -139,8 +139,8 @@ const Teleprompter = () => {
         return;
       }
 
-      // Handle structural events for instant collaboration (add/remove/reorder)
-      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
+      // Handle structural events for instant collaboration (add/remove/reorder/copy)
+      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder' || update.field === 'items:copy') {
         setRundownData(prev => {
           if (!prev) return prev;
 
@@ -167,17 +167,52 @@ const Teleprompter = () => {
             return prev;
           }
 
-          // items:reorder
-          const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
-          if (order.length > 0) {
-            const indexMap = new Map(order.map((id, idx) => [id, idx]));
-            const reordered = [...prev.items].sort((a, b) => {
-              const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
-              const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
-              return ai - bi;
-            });
-            return { ...prev, items: reordered };
+          if (update.field === 'items:reorder') {
+            const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
+            if (order.length > 0) {
+              const indexMap = new Map(order.map((id, idx) => [id, idx]));
+              const reordered = [...prev.items].sort((a, b) => {
+                const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                return ai - bi;
+              });
+              return { ...prev, items: reordered };
+            }
+            return prev;
           }
+
+          if (update.field === 'items:copy') {
+            const payload = update.value || {};
+            const items = payload.items || [];
+            const index = Math.max(0, Math.min(payload.index ?? prev.items.length, prev.items.length));
+            
+            if (items.length > 0) {
+              // Filter out duplicates (in case item already exists)
+              const newItemsToAdd = items.filter((item: RundownItem) => 
+                !prev.items.find(i => i.id === item.id)
+              );
+              
+              if (newItemsToAdd.length > 0) {
+                const newItems = [...prev.items];
+                newItems.splice(index, 0, ...newItemsToAdd);
+                
+                // Recalculate timing and row numbers using the shared calculation function
+                const itemsWithCalculations = calculateItemsWithTiming(
+                  newItems,
+                  (prev as any).startTime || '09:00:00',
+                  (prev as any).numberingLocked || false,
+                  (prev as any).lockedRowNumbers || {}
+                );
+                
+                return { 
+                  ...prev, 
+                  items: itemsWithCalculations 
+                };
+              }
+            }
+            return prev;
+          }
+
           return prev;
         });
         return;
