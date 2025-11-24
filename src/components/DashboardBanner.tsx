@@ -140,8 +140,8 @@ const DashboardBanner = () => {
     <div className="mb-2 animate-in slide-in-from-top-2">
       <Alert className="relative overflow-hidden p-2 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 border-l-4 border-blue-400 dark:border-blue-300 shadow-lg">
         <AlertDescription className="flex items-start gap-2 py-0">
-          <div className="flex items-start gap-2 flex-1">
-            <Megaphone className="h-4 w-4 text-blue-100 dark:text-blue-200 mt-0 shrink-0" />
+          <div className="flex items-center gap-2 flex-1">
+            <Megaphone className="h-5 w-5 text-blue-100 dark:text-blue-200 shrink-0" />
             <div className="flex flex-col gap-0.5 flex-1">
               <Badge variant="secondary" className="w-fit text-xs font-semibold uppercase tracking-wider py-0 px-1.5 bg-blue-500 dark:bg-blue-600 text-white border-none">
                 CUER ANNOUNCEMENT
