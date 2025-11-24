@@ -1512,19 +1512,7 @@ export const useSimplifiedRundownState = () => {
         markStructuralChange('delete_row', { deletedIds: [id] });
       }
       
-      // Broadcast row removal for immediate realtime sync
-      if (rundownId && currentUserId) {
-        // Track that this change was made by the current user
-        lastChangeUserIdRef.current = currentUserId;
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:remove',
-          { id },
-          currentUserId,
-          getTabId()
-        );
-      }
+      // Broadcast handled by structural save system (after successful DB save)
     }, [actions.deleteItem, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange, recordOperation, finalizeAllTypingSessions]),
 
     addRow: useCallback((insertIndex?: number, selectedRows?: Set<string>) => {
@@ -1540,22 +1528,7 @@ export const useSimplifiedRundownState = () => {
         });
       }
       
-      // Best-effort immediate hint: broadcast new order so other clients can reflect movement
-      if (rundownId && currentUserId) {
-        const order = state.items.map(i => i.id);
-        // Track that this change was made by the current user
-        lastChangeUserIdRef.current = currentUserId;
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId,
-            getTabId()
-          );
-        }, 0);
-      }
+      // Broadcast handled by structural save system (after successful DB save)
     }, [helpers.addRow, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
@@ -1568,21 +1541,7 @@ export const useSimplifiedRundownState = () => {
         markStructuralChange('add_header', { items: state.items });
       }
       
-      if (rundownId && currentUserId) {
-        const order = state.items.map(i => i.id);
-        // Track that this change was made by the current user
-        lastChangeUserIdRef.current = currentUserId;
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId,
-            getTabId()
-          );
-        }, 0);
-      }
+      // Broadcast handled by structural save system (after successful DB save)
     }, [helpers.addHeader, state.items, state.title, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
@@ -1703,20 +1662,7 @@ export const useSimplifiedRundownState = () => {
       description: 'Add row'
     });
     
-    // Broadcast add at index for immediate realtime sync (use the updated item from array)
-    if (rundownId && currentUserId) {
-      const itemToBroadcast = newItems.find(i => i.id === newItem.id) || newItem;
-      // Track that this change was made by the current user
-      lastChangeUserIdRef.current = currentUserId;
-      cellBroadcast.broadcastCellUpdate(
-        rundownId,
-        undefined,
-        'items:add',
-        { item: itemToBroadcast, index: actualIndex },
-        currentUserId,
-        getTabId()
-      );
-    }
+    // Broadcast handled by structural save system (after successful DB save)
     
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
@@ -1780,19 +1726,7 @@ export const useSimplifiedRundownState = () => {
       description: 'Add header'
     });
     
-    // Broadcast header add at index for immediate realtime sync
-    if (rundownId && currentUserId) {
-      // Track that this change was made by the current user
-      lastChangeUserIdRef.current = currentUserId;
-      cellBroadcast.broadcastCellUpdate(
-        rundownId,
-        undefined,
-        'items:add',
-        { item: newHeader, index: actualIndex },
-        currentUserId,
-        getTabId()
-      );
-    }
+    // Broadcast handled by structural save system (after successful DB save)
     
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
@@ -1926,19 +1860,7 @@ export const useSimplifiedRundownState = () => {
         markStructuralChange('delete_row', { deletedIds: itemIds });
       }
       
-      // Broadcast multiple row removals for immediate realtime sync
-      if (rundownId && currentUserId) {
-        // Track that this change was made by the current user
-        lastChangeUserIdRef.current = currentUserId;
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:remove-multiple',
-          { ids: itemIds },
-          currentUserId,
-          getTabId()
-        );
-      }
+      // Broadcast handled by structural save system (after successful DB save)
     }, [actions.deleteMultipleItems, state.items, finalizeAllTypingSessions, recordOperation, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
     addItem: useCallback((item: any, targetIndex?: number) => {
       // Re-enable autosave after local edit if it was blocked due to teammate update
