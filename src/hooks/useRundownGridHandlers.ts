@@ -196,18 +196,7 @@ export const useRundownGridHandlers = ({
         return newItems;
       });
       
-      // Broadcast copy for immediate realtime sync (dual broadcasting like add_row)
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:copy',
-          { items: itemsToPaste, index: insertIndex },
-          currentUserId,
-          getTabId()
-        );
-        debugLogger.grid('📋 Broadcasting copy operation', { itemCount: itemsToPaste.length, insertIndex });
-      }
+      // Broadcast handled by structural save system (after successful DB save)
       
       // Use structural save coordination for per-cell mode (database persistence)
       if (markStructuralChange) {
