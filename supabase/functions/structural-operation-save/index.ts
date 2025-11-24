@@ -25,6 +25,32 @@ interface StructuralOperation {
   tabId?: string;
 }
 
+// Renumber all items to maintain sequential numbering
+function renumberItems(items: any[]): any[] {
+  let headerIndex = 0;
+  let regularItemIndex = 1;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  
+  return items.map(item => {
+    if (item.type === 'header') {
+      const newHeaderLetter = letters[headerIndex] || 'A';
+      headerIndex++;
+      return {
+        ...item,
+        rowNumber: newHeaderLetter,
+        segmentName: newHeaderLetter
+      };
+    } else {
+      const newRowNumber = regularItemIndex.toString();
+      regularItemIndex++;
+      return {
+        ...item,
+        rowNumber: newRowNumber
+      };
+    }
+  });
+}
+
 serve(async (req) => {
   console.log('🏗️ Structural operation save function called');
 
@@ -135,6 +161,11 @@ serve(async (req) => {
           const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
           
           updatedItems.splice(insertIndex, 0, ...newItems);
+          
+          // Renumber all items to maintain sequential numbering
+          console.log('🔢 Renumbering items after add operation');
+          updatedItems = renumberItems(updatedItems);
+          
           actionDescription = `Added ${newItems.length} ${operation.operationType === 'add_header' ? 'header' : 'row'}(s) at index ${insertIndex}`;
           console.log(`✅ ${actionDescription}`);
           break;
@@ -149,6 +180,10 @@ serve(async (req) => {
           deletedIds.forEach(id => {
             delete updatedLockedRowNumbers[id];
           });
+          
+          // Renumber all items to maintain sequential numbering
+          console.log('🔢 Renumbering items after delete operation');
+          updatedItems = renumberItems(updatedItems);
           
           actionDescription = `Deleted ${beforeCount - updatedItems.length} row(s)`;
           console.log(`✅ ${actionDescription}`);
@@ -166,6 +201,10 @@ serve(async (req) => {
           // Insert items at the new position
           updatedItems.splice(insertIndex, 0, ...items);
           
+          // Renumber all items to maintain sequential numbering
+          console.log('🔢 Renumbering items after move operation');
+          updatedItems = renumberItems(updatedItems);
+          
           actionDescription = `Moved ${items.length} row(s) to index ${insertIndex}`;
           console.log(`✅ ${actionDescription}`);
           break;
@@ -178,6 +217,10 @@ serve(async (req) => {
           // Insert copied items at the new position
           updatedItems.splice(insertIndex, 0, ...items);
           
+          // Renumber all items to maintain sequential numbering
+          console.log('🔢 Renumbering items after copy operation');
+          updatedItems = renumberItems(updatedItems);
+          
           actionDescription = `Copied ${items.length} row(s) to index ${insertIndex}`;
           console.log(`✅ ${actionDescription}`);
           break;
@@ -189,6 +232,10 @@ serve(async (req) => {
           // Reorder items based on the provided order
           const itemsMap = new Map(updatedItems.map(item => [item.id, item]));
           updatedItems = newOrder.map(id => itemsMap.get(id)).filter(Boolean) as any[];
+          
+          // Renumber all items to maintain sequential numbering
+          console.log('🔢 Renumbering items after reorder operation');
+          updatedItems = renumberItems(updatedItems);
           
           actionDescription = `Reordered ${updatedItems.length} items`;
           console.log(`✅ ${actionDescription}`);
