@@ -129,7 +129,14 @@ export class CellBroadcastManager {
         this.reconnecting.delete(rundownId);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
-        console.warn('🔌 Cell realtime channel error:', key, status);
+        console.warn('🔌 Cell realtime channel error:', key, status, {
+          navigator_online: navigator.onLine,
+          document_hidden: document.hidden,
+          timestamp: new Date().toISOString(),
+          reconnecting: this.reconnecting.get(rundownId),
+          reconnectAttempts: this.reconnectAttempts.get(rundownId),
+          callbacksCount: this.callbacks.get(rundownId)?.size || 0
+        });
         
         // Track connection failures for health monitoring
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
