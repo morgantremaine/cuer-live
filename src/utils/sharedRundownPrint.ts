@@ -1,6 +1,11 @@
 import { RundownItem } from '@/types/rundown';
 
-export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[]) => {
+// New function with column selection
+export const handleSharedRundownPrintWithColumns = (
+  rundownTitle: string,
+  items: RundownItem[],
+  selectedColumnIndices: number[]
+) => {
   // Remove any existing print content
   const existingPrintContent = document.getElementById('shared-print-only-content');
   if (existingPrintContent) {
@@ -128,7 +133,12 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
   // Copy header structure (use same approach as main rundown)
   const headerCells = headerRow.querySelectorAll('th');
-  headerCells.forEach(th => {
+  headerCells.forEach((th, index) => {
+    // Only include columns that are in selectedColumnIndices
+    if (!selectedColumnIndices.includes(index)) {
+      return;
+    }
+
     const thElement = th as HTMLElement;
     // Get clean header text
     let content = '';
@@ -210,6 +220,11 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     
     const cells = rowElement.querySelectorAll('td');
     cells.forEach((cell, cellIndex) => {
+      // Only include columns that are in selectedColumnIndices
+      if (!selectedColumnIndices.includes(cellIndex)) {
+        return;
+      }
+
       const cellElement = cell as HTMLElement;
       
       // Extract clean content from the cell
@@ -468,4 +483,24 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     if (styles) styles.remove();
     if (content) content.remove();
   }, 2000);
+};
+
+// Legacy function for backward compatibility - prints all columns
+export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[]) => {
+  // Find the table to determine how many columns there are
+  const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table, table');
+  if (!existingTable) {
+    console.error('Could not find rundown table to print');
+    return;
+  }
+  
+  const headerRow = existingTable.querySelector('thead tr');
+  const headerCells = headerRow?.querySelectorAll('th');
+  const columnCount = headerCells?.length || 0;
+  
+  // Create array of all column indices [0, 1, 2, ..., n]
+  const allColumnIndices = Array.from({ length: columnCount }, (_, i) => i);
+  
+  // Call the new function with all columns selected
+  handleSharedRundownPrintWithColumns(rundownTitle, items, allColumnIndices);
 };
