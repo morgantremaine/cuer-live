@@ -204,19 +204,19 @@ const MainActionButtons = ({
           {rundownId && (
             <>
               <div className="w-full">
+                <ShareRundownMenu 
+                  rundownId={rundownId} 
+                  rundownTitle={rundownTitle}
+                  rundownData={rundownData}
+                />
+              </div>
+              <div className="w-full">
                 <PrintRundownMenu 
                   rundownId={rundownId} 
                   rundownTitle={rundownTitle}
                   rundownData={rundownData}
                   size={buttonSize}
                   className="w-full"
-                />
-              </div>
-              <div className="w-full">
-                <ShareRundownMenu 
-                  rundownId={rundownId} 
-                  rundownTitle={rundownTitle}
-                  rundownData={rundownData}
                 />
               </div>
             </>
@@ -310,16 +310,16 @@ const MainActionButtons = ({
       
       {rundownId && (
         <>
+          <ShareRundownMenu 
+            rundownId={rundownId} 
+            rundownTitle={rundownTitle}
+            rundownData={rundownData}
+          />
           <PrintRundownMenu 
             rundownId={rundownId} 
             rundownTitle={rundownTitle}
             rundownData={rundownData}
             size={buttonSize}
-          />
-          <ShareRundownMenu 
-            rundownId={rundownId} 
-            rundownTitle={rundownTitle}
-            rundownData={rundownData}
           />
         </>
       )}
