@@ -141,16 +141,65 @@ export const useStructuralSave = (
       }
 
       for (const operation of operations) {
-        // PHASE 1: BROADCAST FIRST (Dual Broadcasting Pattern - immediate broadcast)
-        // This ensures other users see changes instantly, before database persistence
+        // PHASE 1: SAVE FIRST (Ensures data integrity)
+        // Only broadcast after successful database save to prevent ghost data
+        const { data, error } = await saveWithTimeout(
+          () => supabase.functions.invoke('structural-operation-save', {
+            body: operation
+          }),
+          `structural-save-${operation.operationType}`,
+          20000
+        );
+
+        // Check for auth-specific errors
+        const isAuthError = error && (
+          error.message?.includes('JWT') ||
+          error.message?.includes('token') ||
+          error.message?.includes('auth') ||
+          error.message?.includes('session') ||
+          error.status === 401 ||
+          error.status === 403
+        );
+
+        if (error || !data?.success) {
+          const errorMsg = error?.message || 'Unknown error';
+          
+          if (isAuthError) {
+            console.error('🔒 AUTH ERROR during structural save:', errorMsg);
+            toast.error('Authentication Error', {
+              description: 'Please refresh the page to continue editing.',
+              duration: 10000
+            });
+          } else {
+            console.error('🌐 NETWORK ERROR during structural save:', errorMsg);
+          }
+          
+          throw new Error(errorMsg);
+        }
+
+        // Verify save actually succeeded
+        if (!data || !data.success) {
+          console.error('❌ Save response invalid:', data);
+          throw new Error('Save verification failed - no success confirmation');
+        }
+
+        // Track our own update to prevent conflict detection
+        if (data.updatedAt) {
+          const context = rundownId ? `realtime-${rundownId}` : undefined;
+          ownUpdateTracker.track(data.updatedAt, context);
+        }
+        
+        console.log('✅ Structural operation saved to database:', operation.operationType);
+
+        // PHASE 2: BROADCAST AFTER SUCCESS (prevents ghost data)
+        // Only broadcast once we know the save succeeded
         if (rundownId && currentUserId) {
-          // Import mapping functions dynamically to avoid circular dependencies
           const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
           
           const broadcastField = mapOperationToBroadcastField(operation.operationType);
           const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
           
-          console.log('📡 Broadcasting structural operation (BEFORE save):', {
+          console.log('📡 Broadcasting structural operation (AFTER save):', {
             operationType: operation.operationType,
             broadcastField,
             payload
@@ -164,30 +213,6 @@ export const useStructuralSave = (
             currentUserId,
             getTabId()
           );
-        }
-        
-        // PHASE 2: DATABASE PERSISTENCE (parallel/after broadcast)
-        const { data, error } = await saveWithTimeout(
-          () => supabase.functions.invoke('structural-operation-save', {
-            body: operation
-          }),
-          `structural-save-${operation.operationType}`,
-          20000
-        );
-
-        if (error) {
-          console.error('Structural save error:', error);
-          throw error;
-        }
-
-        if (data?.success) {
-          // Track our own update to prevent conflict detection via centralized tracker
-          if (data.updatedAt) {
-            const context = rundownId ? `realtime-${rundownId}` : undefined;
-            ownUpdateTracker.track(data.updatedAt, context);
-          }
-          
-          console.log('✅ Structural operation saved to database:', operation.operationType);
         }
       }
       
