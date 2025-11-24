@@ -37,6 +37,11 @@ export const PrintRundownMenu: React.FC<PrintRundownMenuProps> = ({
   const handlePrintWithColumns = (selectedColumnIndices: number[]) => {
     if (rundownData?.items) {
       handleSharedRundownPrintWithColumns(rundownTitle, rundownData.items, selectedColumnIndices);
+      
+      // Close dialog after print has been triggered
+      setTimeout(() => {
+        setShowColumnDialog(false);
+      }, 200);
     }
   };
 
