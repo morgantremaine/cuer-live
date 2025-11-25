@@ -1,8 +1,5 @@
-
-import React, { useState } from 'react';
-import { Clock, ChevronDown } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -11,6 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useClockFormat } from '@/contexts/ClockFormatContext';
 
 interface TimezoneSelectorProps {
@@ -45,81 +47,78 @@ const TimezoneSelector = ({
   timeDisplay = '', 
   large = false 
 }: TimezoneSelectorProps) => {
-  const [isOpen, setIsOpen] = useState(false);
   const { clockFormat, toggleClockFormat } = useClockFormat();
 
   const handleTimezoneChange = (value: string) => {
     console.log('TimezoneSelector: Changing timezone from', currentTimezone, 'to', value);
     onTimezoneChange(value);
-    setIsOpen(false);
   };
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1 flex items-center gap-2"
-      >
-        {showTime && (
-          <span className={`font-mono ${large ? 'text-lg' : 'text-sm'}`}>
-            {timeDisplay}
-          </span>
-        )}
-      </Button>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1 flex items-center gap-2"
+        >
+          {showTime && (
+            <span className={`font-mono ${large ? 'text-lg' : 'text-sm'}`}>
+              {timeDisplay}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
       
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-1 z-[60] bg-popover text-popover-foreground border rounded-lg shadow-md p-3 min-w-[200px]">
-          {/* Clock Format Selector */}
-          <div className="mb-3 pb-3 border-b border-border">
-            <Label className="text-xs text-muted-foreground mb-2 block">
-              Time Format
-            </Label>
-            <div className="flex gap-1 p-1 bg-muted rounded-md">
-              <button
-                onClick={() => clockFormat !== '12' && toggleClockFormat()}
-                className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
-                  clockFormat === '12'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                12h
-              </button>
-              <button
-                onClick={() => clockFormat !== '24' && toggleClockFormat()}
-                className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
-                  clockFormat === '24'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                24h
-              </button>
-            </div>
+      <PopoverContent align="end" className="w-[200px] p-3 z-[60]">
+        {/* Clock Format Selector */}
+        <div className="mb-3 pb-3 border-b border-border">
+          <Label className="text-xs text-muted-foreground mb-2 block">
+            Time Format
+          </Label>
+          <div className="flex gap-1 p-1 bg-muted rounded-md">
+            <button
+              onClick={() => clockFormat !== '12' && toggleClockFormat()}
+              className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                clockFormat === '12'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              12h
+            </button>
+            <button
+              onClick={() => clockFormat !== '24' && toggleClockFormat()}
+              className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                clockFormat === '24'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              24h
+            </button>
           </div>
-
-          {/* Timezone Selector */}
-          <Select value={currentTimezone} onValueChange={handleTimezoneChange}>
-            <SelectTrigger className="w-full bg-background border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border z-[60] shadow-md">
-              {timezones.map((tz) => (
-                <SelectItem 
-                  key={tz.value} 
-                  value={tz.value}
-                  className="hover:bg-accent cursor-pointer"
-                >
-                  {tz.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
-      )}
-    </div>
+
+        {/* Timezone Selector */}
+        <Select value={currentTimezone} onValueChange={handleTimezoneChange}>
+          <SelectTrigger className="w-full bg-background border">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-popover border z-[60] shadow-md">
+            {timezones.map((tz) => (
+              <SelectItem 
+                key={tz.value} 
+                value={tz.value}
+                className="hover:bg-accent cursor-pointer"
+              >
+                {tz.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </PopoverContent>
+    </Popover>
   );
 };
 
