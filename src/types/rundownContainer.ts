@@ -148,8 +148,4 @@ export interface RundownContainerProps {
   
   // User role for permissions
   userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
-  
-  // Print dialog control
-  showPrintDialog?: boolean;
-  onShowPrintDialogChange?: (show: boolean) => void;
 }

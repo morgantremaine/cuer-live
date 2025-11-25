@@ -18,8 +18,6 @@ interface PrintRundownMenuProps {
   rundownData?: CSVExportData;
   size?: 'sm' | 'default' | 'lg';
   className?: string;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 }
 
 export const PrintRundownMenu: React.FC<PrintRundownMenuProps> = ({
@@ -28,14 +26,8 @@ export const PrintRundownMenu: React.FC<PrintRundownMenuProps> = ({
   rundownData,
   size = 'sm',
   className = '',
-  open: controlledOpen,
-  onOpenChange: controlledOnOpenChange,
 }) => {
-  const [internalShowColumnDialog, setInternalShowColumnDialog] = useState(false);
-  
-  // Use controlled or uncontrolled state
-  const showColumnDialog = controlledOpen !== undefined ? controlledOpen : internalShowColumnDialog;
-  const setShowColumnDialog = controlledOnOpenChange || setInternalShowColumnDialog;
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
 
   const handlePrint = () => {
     // Open the column selection dialog

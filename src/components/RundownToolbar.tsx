@@ -56,9 +56,6 @@ interface RundownToolbarProps {
   numberingLocked?: boolean;
   onToggleLock?: () => void;
   userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
-  // Print dialog control
-  showPrintDialog?: boolean;
-  onShowPrintDialogChange?: (show: boolean) => void;
 }
 
 const RundownToolbar = ({
@@ -102,10 +99,7 @@ const RundownToolbar = ({
   // Lock props
   numberingLocked,
   onToggleLock,
-  userRole,
-  // Print dialog control
-  showPrintDialog,
-  onShowPrintDialogChange
+  userRole
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -148,9 +142,7 @@ const RundownToolbar = ({
     isDefaultZoom,
     numberingLocked,
     onToggleLock,
-    userRole,
-    showPrintDialog,
-    onShowPrintDialogChange
+    userRole
   };
 
   if (isMobile) {

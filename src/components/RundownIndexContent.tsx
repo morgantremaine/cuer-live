@@ -398,8 +398,7 @@ const RundownIndexContent = () => {
     canUndo: canUndo,
     onRedo: coreState.redo,
     canRedo: coreState.canRedo,
-    userRole: userRole,
-    onPrint: () => setShowPrintDialog(true)
+    userRole: userRole
   });
 
   const { 
@@ -420,9 +419,6 @@ const RundownIndexContent = () => {
   
   // State for history sheet
   const [showHistory, setShowHistory] = React.useState(false);
-
-  // State for print dialog
-  const [showPrintDialog, setShowPrintDialog] = React.useState(false);
 
   // Zoom functionality
   const {
@@ -727,8 +723,6 @@ const RundownIndexContent = () => {
         onScrollToEditor={handleScrollToEditor}
         onScrollToActiveTeammate={handleScrollToActiveTeammate}
         userRole={userRole}
-        showPrintDialog={showPrintDialog}
-        onShowPrintDialogChange={setShowPrintDialog}
       />
       
       {/* Floating Notes Window */}

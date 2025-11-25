@@ -17,7 +17,6 @@ interface UseRundownKeyboardShortcutsProps {
   onRedo: () => void;
   canRedo: boolean;
   userRole?: string | null;
-  onPrint: () => void;
 }
 
 export const useRundownKeyboardShortcuts = ({
@@ -36,8 +35,7 @@ export const useRundownKeyboardShortcuts = ({
   canUndo,
   onRedo,
   canRedo,
-  userRole,
-  onPrint
+  userRole
 }: UseRundownKeyboardShortcutsProps) => {
   useEffect(() => {
     const isEditableElement = (target: EventTarget | null): boolean => {
@@ -106,14 +104,6 @@ export const useRundownKeyboardShortcuts = ({
         return;
       }
 
-      // Print: Ctrl/Cmd + P
-      if (isCtrlOrCmd && e.key.toLowerCase() === 'p') {
-        e.preventDefault();
-        console.log('🖨️ Keyboard shortcut: Open print menu');
-        onPrint();
-        return;
-      }
-
       // Showcaller controls (only when NOT using modifier keys)
       // Only allow showcaller controls for admin, manager, and showcaller roles
       const canUseShowcaller = userRole === 'admin' || userRole === 'manager' || userRole === 'showcaller';
@@ -158,5 +148,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole, onPrint]);
+  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole]);
 };

@@ -272,7 +272,6 @@ const Help = () => {
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + V</kbd> - Paste rows</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Shift + Enter</kbd> - Add new segment</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Enter</kbd> - Line break in cell</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + P</kbd> - Open print menu</li>
                 </ul>
               </div>
               <div>

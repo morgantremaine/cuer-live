@@ -54,9 +54,6 @@ interface MobileToolbarProps {
   numberingLocked?: boolean;
   onToggleLock?: () => void;
   userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
-  // Print dialog control
-  showPrintDialog?: boolean;
-  onShowPrintDialogChange?: (show: boolean) => void;
 }
 
 const MobileToolbar = ({
@@ -99,10 +96,7 @@ const MobileToolbar = ({
   // Lock props
   numberingLocked = false,
   onToggleLock,
-  userRole,
-  // Print props
-  showPrintDialog,
-  onShowPrintDialogChange
+  userRole
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -156,8 +150,6 @@ const MobileToolbar = ({
                   numberingLocked={numberingLocked}
                   onToggleLock={onToggleLock}
                   userRole={userRole}
-                  showPrintDialog={showPrintDialog}
-                  onShowPrintDialogChange={onShowPrintDialogChange}
                 />
               </div>
             </DropdownMenuContent>
