@@ -152,6 +152,22 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     }
   };
 
+  // Helper to safely render any value as a string
+  const renderValue = (value: any): string => {
+    if (value === null || value === undefined) return '(empty)';
+    if (typeof value === 'string') return value || '(empty)';
+    if (typeof value === 'object') {
+      // For custom column objects like { custom_xxx: "value" }, extract the value
+      const keys = Object.keys(value);
+      if (keys.length === 1) {
+        return String(value[keys[0]] || '(empty)');
+      }
+      // For complex objects, stringify them
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   const generateDetailedSummary = (entry: HistoryEntry): string => {
     if (!entry.details || entry.details.length === 0) {
       return entry.summary;
@@ -214,8 +230,8 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
         // If only one field was edited, show the values
         if (itemFields.size === 1) {
           const [field, values] = Array.from(itemFields.entries())[0];
-          const fromValue = values.first || '(empty)';
-          const toValue = values.last || '(empty)';
+          const fromValue = renderValue(values.first);
+          const toValue = renderValue(values.last);
           parts.push(`Row ${rowNum}: '${field}' changed from '${fromValue}' to '${toValue}'`);
         } else {
           // Multiple fields edited in one row
@@ -289,11 +305,11 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
                   <span className="font-mono text-primary">{field}:</span>
                   {' '}
                   <span className="text-muted-foreground">
-                    {values.first || '(empty)'}
+                    {renderValue(values.first)}
                   </span>
                   {' → '}
                   <span className="text-foreground">
-                    {values.last || '(empty)'}
+                    {renderValue(values.last)}
                   </span>
                 </div>
               ))}
