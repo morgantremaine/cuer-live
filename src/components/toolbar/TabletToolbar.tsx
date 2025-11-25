@@ -54,6 +54,9 @@ interface TabletToolbarProps {
   numberingLocked?: boolean;
   onToggleLock?: () => void;
   userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
+  // Print dialog control
+  showPrintDialog?: boolean;
+  onShowPrintDialogChange?: (show: boolean) => void;
 }
 
 const TabletToolbar = ({
@@ -96,7 +99,10 @@ const TabletToolbar = ({
   // Lock props
   numberingLocked = false,
   onToggleLock,
-  userRole
+  userRole,
+  // Print props
+  showPrintDialog,
+  onShowPrintDialogChange
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const canUseShowcaller = userRole !== 'member';
@@ -139,6 +145,8 @@ const TabletToolbar = ({
                 onShowHistory={onShowHistory}
                 numberingLocked={numberingLocked}
                 onToggleLock={onToggleLock}
+                showPrintDialog={showPrintDialog}
+                onShowPrintDialogChange={onShowPrintDialogChange}
               />
             </div>
           </DropdownMenuContent>

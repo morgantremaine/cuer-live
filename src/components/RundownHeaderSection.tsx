@@ -73,6 +73,9 @@ interface RundownHeaderSectionProps {
   onToggleLock?: () => void;
   // User role for permissions
   userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
+  // Print dialog control
+  showPrintDialog?: boolean;
+  onShowPrintDialogChange?: (show: boolean) => void;
 }
 
 const RundownHeaderSection = ({
@@ -143,7 +146,10 @@ const RundownHeaderSection = ({
   numberingLocked,
   onToggleLock,
   // User role for permissions
-  userRole
+  userRole,
+  // Print dialog control
+  showPrintDialog,
+  onShowPrintDialogChange
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -225,6 +231,9 @@ const RundownHeaderSection = ({
         onToggleLock={onToggleLock}
         // User role for permissions
         userRole={userRole}
+        // Print dialog control
+        showPrintDialog={showPrintDialog}
+        onShowPrintDialogChange={onShowPrintDialogChange}
       />
     </div>
   );

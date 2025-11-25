@@ -49,6 +49,9 @@ interface MainActionButtonsProps {
   numberingLocked?: boolean;
   onToggleLock?: () => void;
   userRole?: 'admin' | 'manager' | 'member' | 'showcaller' | 'teleprompter' | null;
+  // Print dialog control
+  showPrintDialog?: boolean;
+  onShowPrintDialogChange?: (show: boolean) => void;
 }
 
 const MainActionButtons = ({
@@ -83,7 +86,9 @@ const MainActionButtons = ({
   onShowHistory,
   numberingLocked = false,
   onToggleLock,
-  userRole
+  userRole,
+  showPrintDialog,
+  onShowPrintDialogChange
 }: MainActionButtonsProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -217,6 +222,8 @@ const MainActionButtons = ({
                   rundownData={rundownData}
                   size={buttonSize}
                   className="w-full"
+                  open={showPrintDialog}
+                  onOpenChange={onShowPrintDialogChange}
                 />
               </div>
             </>
@@ -320,6 +327,8 @@ const MainActionButtons = ({
             rundownTitle={rundownTitle}
             rundownData={rundownData}
             size={buttonSize}
+            open={showPrintDialog}
+            onOpenChange={onShowPrintDialogChange}
           />
         </>
       )}
