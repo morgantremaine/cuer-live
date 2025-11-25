@@ -49,12 +49,8 @@ const LayoutManager = ({
   };
 
   const handleUpdateLayout = async (layoutId: string, layoutNameToUpdate: string) => {
-    console.log('🔄 LayoutManager: Updating layout', layoutId, 'with', columns.length, 'current columns');
-    console.log('📊 Current columns:', columns.map(c => ({ id: c.id, name: c.name, isVisible: c.isVisible })));
-    
     try {
       await onUpdateLayout(layoutId, layoutNameToUpdate, columns);
-      console.log('✅ Layout update completed successfully');
     } catch (error) {
       console.error('❌ Error updating layout:', error);
     }
@@ -73,8 +69,6 @@ const LayoutManager = ({
   };
 
   const handleLoadLayout = (layout: any) => {
-    console.log('🔄 LayoutManager: Loading layout:', layout);
-    
     let columnsToLoad: Column[] = [];
     
     // Handle different layout data formats
@@ -101,7 +95,6 @@ const LayoutManager = ({
       return;
     }
 
-    console.log('✅ LayoutManager: Applying layout as persistent user preference');
     onLoadLayout(validColumns);
   };
 
@@ -139,29 +132,6 @@ const LayoutManager = ({
   // Group layouts by ownership
   const userLayouts = savedLayouts.filter(isUserLayout);
   const teamLayouts = savedLayouts.filter(layout => !isUserLayout(layout));
-
-  // Debug logging for default layout feature
-  console.log("🔍 LayoutManager Debug:", {
-    isTeamAdmin,
-    hasSetDefaultHandler: !!onSetDefaultLayout,
-    totalLayouts: savedLayouts.length,
-    userLayoutsCount: userLayouts.length,
-    teamLayoutsCount: teamLayouts.length,
-    userLayoutsDetails: userLayouts.map(l => ({
-      id: l.id,
-      name: l.name,
-      team_id: l.team_id,
-      is_default: l.is_default,
-      willShowStarButton: isTeamAdmin && !!onSetDefaultLayout && !l.is_default
-    })),
-    teamLayoutsDetails: teamLayouts.map(l => ({
-      id: l.id,
-      name: l.name,
-      team_id: l.team_id,
-      is_default: l.is_default,
-      willShowStarButton: isTeamAdmin && !!onSetDefaultLayout && !l.is_default
-    }))
-  });
 
   return (
     <div className="space-y-2 h-full flex flex-col">
