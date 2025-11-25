@@ -79,25 +79,53 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
     if (!user?.id) return;
 
     try {
-      // Build query to only fetch layouts relevant to this rundown
-      let query = supabase
-        .from('column_layouts')
-        .select('*');
-
-      // Filter by user's personal layouts OR the rundown's team layouts
+      let layoutsData = [];
+      
       if (rundownTeamId) {
-        // For team rundowns: show user's personal layouts + that team's layouts
-        query = query.or(`user_id.eq.${user.id},team_id.eq.${rundownTeamId}`);
+        // For team rundowns: get layouts from ALL team members
+        
+        // Step 1: Get all team member user IDs
+        const { data: teamMembers, error: teamMembersError } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .eq('team_id', rundownTeamId);
+
+        if (teamMembersError) {
+          console.error('Error loading team members:', teamMembersError);
+          return;
+        }
+
+        const teamMemberIds = (teamMembers || []).map(m => m.user_id);
+        
+        // Step 2: Load personal layouts from ALL team members
+        const { data, error } = await supabase
+          .from('column_layouts')
+          .select('*')
+          .is('team_id', null)  // Personal layouts only
+          .in('user_id', teamMemberIds)  // From all team members
+          .order('updated_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading available layouts:', error);
+          return;
+        }
+        
+        layoutsData = data || [];
       } else {
         // For personal rundowns: only show user's personal layouts
-        query = query.eq('user_id', user.id).is('team_id', null);
-      }
+        const { data, error } = await supabase
+          .from('column_layouts')
+          .select('*')
+          .eq('user_id', user.id)
+          .is('team_id', null)
+          .order('updated_at', { ascending: false });
 
-      const { data: layoutsData, error } = await query.order('updated_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading available layouts:', error);
-        return;
+        if (error) {
+          console.error('Error loading available layouts:', error);
+          return;
+        }
+        
+        layoutsData = data || [];
       }
 
       // Get unique user IDs from the layouts to fetch their profiles
