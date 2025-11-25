@@ -48,6 +48,9 @@ interface DesktopToolbarProps {
   numberingLocked?: boolean;
   onToggleLock?: () => void;
   userRole?: string | null;
+  // Print dialog control
+  showPrintDialog?: boolean;
+  onShowPrintDialogChange?: (show: boolean) => void;
 }
 
 const DesktopToolbar = ({
@@ -90,7 +93,10 @@ const DesktopToolbar = ({
   // Lock props
   numberingLocked = false,
   onToggleLock,
-  userRole
+  userRole,
+  // Print props
+  showPrintDialog,
+  onShowPrintDialogChange
 }: DesktopToolbarProps) => {
   const canUseShowcaller = userRole !== 'member';
   return (
@@ -117,6 +123,8 @@ const DesktopToolbar = ({
           onShowHistory={onShowHistory}
           numberingLocked={numberingLocked}
           onToggleLock={onToggleLock}
+          showPrintDialog={showPrintDialog}
+          onShowPrintDialogChange={onShowPrintDialogChange}
         />
       </div>
 
