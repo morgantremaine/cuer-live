@@ -5,6 +5,37 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
+// Color value to name mapping
+const COLOR_NAMES: Record<string, string> = {
+  '': 'Default',
+  '#fca5a5': 'Red',
+  '#fdba74': 'Orange', 
+  '#fde047': 'Yellow',
+  '#86efac': 'Green',
+  '#93c5fd': 'Blue',
+  '#c4b5fd': 'Purple',
+  '#f9a8d4': 'Pink',
+  '#d1d5db': 'Gray'
+};
+
+// Built-in field name mappings
+const FIELD_DISPLAY_NAMES: Record<string, string> = {
+  name: 'Segment Name',
+  startTime: 'Start Time',
+  duration: 'Duration',
+  endTime: 'End Time',
+  elapsedTime: 'Elapsed Time',
+  talent: 'Talent',
+  script: 'Script',
+  gfx: 'GFX',
+  video: 'Video',
+  images: 'Images',
+  notes: 'Notes',
+  color: 'Color',
+  rowNumber: 'Row Number',
+  type: 'Type'
+};
+
 interface HistoryEntry {
   batch_id: string;
   user_id: string;
@@ -34,20 +65,50 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [rundownItems, setRundownItems] = useState<any[]>([]);
+  const [customColumnNames, setCustomColumnNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchHistory();
     
-    // Fetch rundown items for row number lookup
+    // Fetch rundown items and columns for row number lookup and custom column names
     const fetchRundownItems = async () => {
       const { data, error } = await supabase
         .from('rundowns')
-        .select('items')
+        .select('items, columns, team_id')
         .eq('id', rundownId)
         .single();
       
-      if (!error && data?.items) {
-        setRundownItems(data.items);
+      if (!error && data) {
+        if (data.items) {
+          setRundownItems(data.items);
+        }
+        
+        // Build custom column name mapping from rundown columns
+        if (data.columns) {
+          const columnMapping: Record<string, string> = {};
+          data.columns.forEach((col: any) => {
+            if (col.isCustom && col.key) {
+              columnMapping[col.key] = col.name;
+            }
+          });
+          setCustomColumnNames(columnMapping);
+        }
+        
+        // Also fetch team custom columns as fallback
+        if (data.team_id) {
+          const { data: teamColumns } = await supabase.rpc('get_team_custom_columns', {
+            team_uuid: data.team_id
+          });
+          
+          if (teamColumns) {
+            teamColumns.forEach((col: any) => {
+              if (!customColumnNames[col.column_key]) {
+                customColumnNames[col.column_key] = col.column_name;
+              }
+            });
+            setCustomColumnNames(prev => ({ ...prev, ...customColumnNames }));
+          }
+        }
       }
     };
     fetchRundownItems();
@@ -152,8 +213,28 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     }
   };
 
+  // Helper to convert field key to display name
+  const getFieldDisplayName = (field: string): string | null => {
+    // Skip the parent customFields object entirely
+    if (field === 'customFields') return null;
+    
+    // Handle customFields.custom_xxx
+    if (field.startsWith('customFields.')) {
+      const customKey = field.replace('customFields.', '');
+      return customColumnNames[customKey] || customKey;
+    }
+    
+    // Handle built-in fields
+    return FIELD_DISPLAY_NAMES[field] || field;
+  };
+
   // Helper to safely render any value as a string
-  const renderValue = (value: any): string => {
+  const renderValue = (value: any, fieldName?: string): string => {
+    // Handle color field specially
+    if (fieldName === 'color' && typeof value === 'string') {
+      return COLOR_NAMES[value.toLowerCase()] || value || 'Default';
+    }
+    
     if (value === null || value === undefined) return '(empty)';
     if (typeof value === 'string') return value || '(empty)';
     if (typeof value === 'object') {
@@ -214,10 +295,13 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     const parts: string[] = [];
     
     if (editsByItem.size > 0) {
-      // Get unique field names across all items
+      // Get unique field names across all items, filtering out customFields parent
       const allFields = new Set<string>();
       editsByItem.forEach(fields => {
-        fields.forEach((_, field) => allFields.add(field));
+        fields.forEach((_, field) => {
+          const displayName = getFieldDisplayName(field);
+          if (displayName) allFields.add(displayName);
+        });
       });
       
       const fieldList = Array.from(allFields).slice(0, 3).map(f => `'${f}'`).join(', ');
@@ -227,17 +311,23 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
         const rowNum = getRowNumber(itemId);
         const itemFields = editsByItem.get(itemId)!;
         
+        // Filter out customFields parent and get valid fields
+        const validFields = Array.from(itemFields.entries()).filter(([field]) => 
+          getFieldDisplayName(field) !== null
+        );
+        
         // If only one field was edited, show the values
-        if (itemFields.size === 1) {
-          const [field, values] = Array.from(itemFields.entries())[0];
-          const fromValue = renderValue(values.first);
-          const toValue = renderValue(values.last);
-          parts.push(`Row ${rowNum}: '${field}' changed from '${fromValue}' to '${toValue}'`);
-        } else {
+        if (validFields.length === 1) {
+          const [field, values] = validFields[0];
+          const displayName = getFieldDisplayName(field) || field;
+          const fromValue = renderValue(values.first, field);
+          const toValue = renderValue(values.last, field);
+          parts.push(`Row ${rowNum}: '${displayName}' changed from '${fromValue}' to '${toValue}'`);
+        } else if (validFields.length > 1) {
           // Multiple fields edited in one row
           parts.push(`Row ${rowNum}: Edited ${fieldList}`);
         }
-      } else {
+      } else if (allFields.size > 0) {
         parts.push(`Edited ${fieldList} in ${editsByItem.size} rows`);
       }
     }
@@ -300,19 +390,25 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
               <div className="font-medium text-muted-foreground mb-1">
                 Row {rowNum}
               </div>
-              {Array.from(fields.entries()).map(([field, values]) => (
-                <div key={field} className="ml-2 text-xs">
-                  <span className="font-mono text-primary">{field}:</span>
-                  {' '}
-                  <span className="text-muted-foreground">
-                    {renderValue(values.first)}
-                  </span>
-                  {' → '}
-                  <span className="text-foreground">
-                    {renderValue(values.last)}
-                  </span>
-                </div>
-              ))}
+              {Array.from(fields.entries()).map(([field, values]) => {
+                const displayName = getFieldDisplayName(field);
+                // Skip customFields parent object
+                if (!displayName) return null;
+                
+                return (
+                  <div key={field} className="ml-2 text-xs">
+                    <span className="font-mono text-primary">{displayName}:</span>
+                    {' '}
+                    <span className="text-muted-foreground">
+                      {renderValue(values.first, field)}
+                    </span>
+                    {' → '}
+                    <span className="text-foreground">
+                      {renderValue(values.last, field)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
