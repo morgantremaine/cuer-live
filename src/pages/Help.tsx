@@ -261,7 +261,7 @@ const Help = () => {
                 <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Tab</kbd> - Move to next cell</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Shift + Tab</kbd> - Move to previous cell</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Save and move down</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Move to next cell down</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Escape</kbd> - Cancel edit</li>
                 </ul>
               </div>
@@ -275,18 +275,11 @@ const Help = () => {
                 </ul>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Find & Replace</h3>
-                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + F</kbd> - Open Find & Replace</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Next match</li>
-                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Shift + Enter</kbd> - Previous match</li>
-                </ul>
-              </div>
-              <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Teleprompter</h3>
                 <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Arrow Keys</kbd> - Adjust scroll speed</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Space</kbd> - Pause/Resume scroll</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">B</kbd> - Toggle blackout (in fullscreen)</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Esc</kbd> - Exit fullscreen</li>
                 </ul>
               </div>
