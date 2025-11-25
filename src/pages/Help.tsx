@@ -313,10 +313,6 @@ const Help = () => {
                   </ul>
                 </div>
               </div>
-              
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-4 mt-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Important:</strong> Unlocking row numbers is permanent - rows like 3.1, 3.2, 3.3 will be renumbered to 3, 4, 5 and cannot be reverted. Use this feature carefully, especially during live production.</p>
-              </div>
             </div>
           </section>
 
