@@ -141,7 +141,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 
   // Handle layout submenu opening to refresh layouts
   const handleLayoutSubmenuOpen = () => {
-    console.log('🔄 Refreshing layouts for shared rundown menu');
     reloadLayouts();
   };
 

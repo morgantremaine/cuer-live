@@ -251,22 +251,14 @@ const RundownIndexContent = () => {
   }, [setColumns]);
 
   const handleDeleteColumnWrapper = useCallback(async (columnId: string) => {
-    console.log('🗑️ Delete column wrapper called with ID:', columnId);
-    
     const columnToDelete = userColumns.find(col => col.id === columnId);
     if (!columnToDelete) {
-      console.error('🗑️ Column not found:', columnId);
+      console.error('Column not found:', columnId);
       return;
     }
 
-    console.log('🗑️ Column to delete:', columnToDelete);
-    console.log('🗑️ Is team column:', (columnToDelete as any).isTeamColumn);
-    console.log('🗑️ Team ID:', team?.id);
-
     // If it's a team column, delete it from the database
     if ((columnToDelete as any).isTeamColumn && team?.id) {
-      console.log('🗑️ Deleting team column from database...');
-      
       try {
         const { error } = await supabase
           .from('team_custom_columns')
@@ -275,11 +267,9 @@ const RundownIndexContent = () => {
           .eq('column_key', columnToDelete.key);
 
         if (error) {
-          console.error('🗑️ Error deleting team custom column:', error);
+          console.error('Error deleting team custom column:', error);
           return; // Don't proceed with local deletion if database deletion failed
         }
-
-        console.log('🗑️ Successfully deleted team column from database');
 
         // Clean up this column from all user column preferences for this team
         const { error: cleanupError } = await supabase
@@ -289,21 +279,17 @@ const RundownIndexContent = () => {
           });
 
         if (cleanupError) {
-          console.warn('🗑️ Warning: Could not clean up deleted team column from user preferences:', cleanupError);
-        } else {
-          console.log('🗑️ Successfully cleaned up team column references');
+          console.warn('Warning: Could not clean up deleted team column from user preferences:', cleanupError);
         }
       } catch (dbError) {
-        console.error('🗑️ Error deleting team column from database:', dbError);
+        console.error('Error deleting team column from database:', dbError);
         return; // Don't proceed with local deletion if database operation failed
       }
     }
 
     // Remove from local state
-    console.log('🗑️ Removing column from local state...');
     const filtered = userColumns.filter(col => col.id !== columnId);
     setColumns(filtered); // Auto-save
-    console.log('🗑️ Column deletion complete');
   }, [userColumns, setColumns, team?.id]);
 
   const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
@@ -427,26 +413,6 @@ const RundownIndexContent = () => {
 
   // State for column manager
   const [showColumnManager, setShowColumnManager] = React.useState(false);
-  
-  // Enhanced column manager opener that ensures fresh data
-  useEffect(() => {
-    if (showColumnManager) {
-      console.log('📊 Column Manager opened - current columns:', {
-        totalColumns: userColumns.length,
-        visibleColumns: visibleColumns.length,
-        defaultColumns: userColumns.filter(col => !col.isCustom).length,
-        customColumns: userColumns.filter(col => col.isCustom && !(col as any).isTeamColumn).length,
-        teamColumns: userColumns.filter(col => (col as any).isTeamColumn).length,
-        columnDetails: userColumns.map(col => ({
-          name: col.name,
-          key: col.key,
-          isCustom: col.isCustom,
-          isTeamColumn: (col as any).isTeamColumn || false,
-          isVisible: col.isVisible
-        }))
-      });
-    }
-  }, [showColumnManager, userColumns, visibleColumns]);
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
@@ -575,10 +541,8 @@ const RundownIndexContent = () => {
   // Remove duplicate handlers - using the ones from earlier in the file
 
   const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
-    console.log('🔄 RundownIndexContent: Loading layout with', layoutColumns.length, 'columns');
-    
     if (!Array.isArray(layoutColumns)) {
-      console.error('❌ Invalid layout columns - not an array:', layoutColumns);
+      console.error('Invalid layout columns - not an array:', layoutColumns);
       return;
     }
 
@@ -592,11 +556,10 @@ const RundownIndexContent = () => {
     );
 
     if (validColumns.length === 0) {
-      console.error('❌ No valid columns found in layout');
+      console.error('No valid columns found in layout');
       return;
     }
 
-    console.log('✅ Applying layout as persistent user preference for this rundown');
     // Use applyLayout to permanently set this as the user's preference for this rundown  
     setColumns(validColumns);
   };
@@ -651,13 +614,7 @@ const RundownIndexContent = () => {
         onTimezoneChange={handleTimezoneChange}
         totalRuntime={totalRuntime}
         showColumnManager={showColumnManager}
-        setShowColumnManager={(show: boolean) => {
-          if (show) {
-            // Column manager will use the current columns from state
-            console.log('🔄 Opening column manager - using current columns from state');
-          }
-          setShowColumnManager(show);
-        }}
+        setShowColumnManager={setShowColumnManager}
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
