@@ -59,6 +59,19 @@ export class CellBroadcastManager {
   
   constructor() {
     debugLogger.realtime('CellBroadcast initialized (simplified for single sessions)');
+    
+    // Listen for network online events to clear stale reconnecting flags
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        console.log('🌐 Network online - clearing stale cell reconnection guards');
+        // Clear all reconnecting flags to allow immediate reconnection
+        this.reconnecting.clear();
+        this.reconnectStartTimes.clear();
+        // Clear guard timeouts
+        this.reconnectGuardTimeouts.forEach(timeout => clearTimeout(timeout));
+        this.reconnectGuardTimeouts.clear();
+      });
+    }
   }
 
   private ensureChannel(rundownId: string): RealtimeChannel {
