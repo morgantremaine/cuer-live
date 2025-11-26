@@ -107,13 +107,14 @@ export const useShowcallerBroadcastSync = ({
     // Monitor window focus to ensure connection stays active
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // When tab becomes visible, check connection after a brief delay
+        // When tab becomes visible, check connection and trigger reconnection if needed
         setTimeout(() => {
           const connected = showcallerBroadcast.isChannelConnected(rundownId);
           if (!connected) {
-            console.log('📺 🔄 Tab visible but showcaller not connected, may need reconnection');
+            console.log('📺 🔄 Tab visible but showcaller not connected, triggering reconnection');
+            showcallerBroadcast.forceReconnect(rundownId);
           }
-        }, 1000);
+        }, 2000);
       }
     };
 
