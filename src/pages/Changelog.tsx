@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import aiRundownSummaryImage from '@/assets/changelog/ai-rundown-summary-v122.png';
+import printColumnSelectionImage from '@/assets/changelog/print-column-selection-v123.png';
 import { SEO } from '@/components/SEO';
 
 const Changelog: React.FC = () => {
@@ -30,6 +31,41 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.2.3 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.2.3</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">🖨️ Custom Print Columns</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Enhanced Print Control:</strong> Printing the rundown now lets you choose which columns from your current view you want to include in the printed output:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>Select Columns:</strong> Choose exactly which columns to include when printing your rundown</li>
+                      <li><strong>Always Include Row Numbers:</strong> The row number column is always included for reference</li>
+                      <li><strong>Quick Selection:</strong> Use "Select All" and "Deselect All" buttons for fast column selection</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src={printColumnSelectionImage}
+                        alt="Print dialog showing column selection options for customizing printed output"
+                        className="w-full max-w-2xl mx-auto rounded"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Choose which columns to include when printing your rundown
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.2.2 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center mb-4">

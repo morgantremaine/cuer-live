@@ -547,7 +547,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       <div className="p-4 border-t border-gray-700">
         <div className="text-center text-xs text-gray-500">
           <div>© {new Date().getFullYear()} Cuer Live</div>
-          <div className="mt-1">Version 1.2.2</div>
+          <div className="mt-1">Version 1.2.3</div>
           <div className="mt-2">
             <a 
               href="/changelog" 
