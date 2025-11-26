@@ -147,6 +147,7 @@ export class CellBroadcastManager {
         
         // Trigger reconnection with exponential backoff
         const attempts = this.reconnectAttempts.get(rundownId) || 0;
+        this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
         const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
         console.log(`🔌 Scheduling cell reconnection in ${delay}ms (attempt ${attempts + 1})`);
         
@@ -412,7 +413,7 @@ export class CellBroadcastManager {
     
     this.channels.delete(rundownId);
     this.subscribed.delete(rundownId);
-    this.reconnectAttempts.set(rundownId, 0); // Reset attempts
+    // Don't reset attempts here - let SUBSCRIBED handler reset on success
     
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);

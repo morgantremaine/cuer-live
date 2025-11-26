@@ -82,6 +82,7 @@ class ShowcallerBroadcastManager {
           
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
+          this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
@@ -95,6 +96,7 @@ class ShowcallerBroadcastManager {
           
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
+          this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
@@ -108,6 +110,7 @@ class ShowcallerBroadcastManager {
           
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
+          this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
@@ -131,6 +134,14 @@ class ShowcallerBroadcastManager {
   // Force reconnection (called by RealtimeReconnectionCoordinator)
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
+    
+    // Check auth first before attempting reconnection
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      console.warn('📺 ⚠️ Cannot reconnect showcaller - invalid auth session');
+      this.reconnecting.delete(rundownId);
+      return;
+    }
     
     const currentStatus = this.connectionStatus.get(rundownId);
     const isReconnecting = this.reconnecting.get(rundownId);
