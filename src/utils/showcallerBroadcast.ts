@@ -77,19 +77,43 @@ class ShowcallerBroadcastManager {
             reconnecting: this.reconnecting.get(rundownId),
             reconnectAttempts: this.reconnectAttempts.get(rundownId)
           });
-          this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
+          this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
-          console.log('📺 Channel issue reported - coordinator will handle reconnection');
+          
+          // Trigger reconnection with exponential backoff
+          const attempts = this.reconnectAttempts.get(rundownId) || 0;
+          const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
+          console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
+          
+          setTimeout(() => {
+            this.forceReconnect(rundownId);
+          }, delay);
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
-          this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
+          this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
-          console.log('📺 Channel issue reported - coordinator will handle reconnection');
+          
+          // Trigger reconnection with exponential backoff
+          const attempts = this.reconnectAttempts.get(rundownId) || 0;
+          const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
+          console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
+          
+          setTimeout(() => {
+            this.forceReconnect(rundownId);
+          }, delay);
         } else if (status === 'TIMED_OUT') {
           console.warn('📺 ⚠️ Showcaller broadcast channel timed out:', rundownId);
-          this.reconnecting.delete(rundownId); // ✅ CRITICAL FIX: Clear reconnecting flag
+          this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
-          console.log('📺 Channel issue reported - coordinator will handle reconnection');
+          
+          // Trigger reconnection with exponential backoff
+          const attempts = this.reconnectAttempts.get(rundownId) || 0;
+          const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
+          console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
+          
+          setTimeout(() => {
+            this.forceReconnect(rundownId);
+          }, delay);
         } else if (status === 'SUBSCRIBED') {
           // Reset reconnect attempts and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);

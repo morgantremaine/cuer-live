@@ -144,6 +144,15 @@ export class CellBroadcastManager {
         
         // Report to coordinator instead of handling reconnection directly
         console.log('🔌 Cell channel issue reported - coordinator will handle reconnection');
+        
+        // Trigger reconnection with exponential backoff
+        const attempts = this.reconnectAttempts.get(rundownId) || 0;
+        const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
+        console.log(`🔌 Scheduling cell reconnection in ${delay}ms (attempt ${attempts + 1})`);
+        
+        setTimeout(() => {
+          this.forceReconnect(rundownId);
+        }, delay);
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
