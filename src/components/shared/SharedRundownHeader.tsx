@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import CuerLogo from '@/components/common/CuerLogo';
-import { handleSharedRundownPrint } from '@/utils/sharedRundownPrint';
+import { handleSharedRundownPrintWithColumns } from '@/utils/sharedRundownPrint';
 import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 import { useClockFormat } from '@/contexts/ClockFormatContext';
+import { PrintColumnSelectionDialog } from '@/components/PrintColumnSelectionDialog';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -20,7 +21,8 @@ interface SharedRundownHeaderProps {
   onToggleTheme: () => void;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  items?: any[]; // Add items prop for runtime calculation
+  items?: any[];
+  visibleColumns?: any[];
 }
 
 export const SharedRundownHeader = ({
@@ -35,10 +37,12 @@ export const SharedRundownHeader = ({
   onToggleTheme,
   autoScrollEnabled = false,
   onToggleAutoScroll,
-  items = []
+  items = [],
+  visibleColumns = []
 }: SharedRundownHeaderProps) => {
   const { clockFormat, formatTime, toggleClockFormat } = useClockFormat();
   const [isClockPopoverOpen, setIsClockPopoverOpen] = useState(false);
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
   
   // Calculate total runtime (excluding floated items)
   const calculateTotalRuntime = () => {
@@ -63,6 +67,15 @@ export const SharedRundownHeader = ({
   };
 
   const totalRuntime = calculateTotalRuntime();
+
+  const handlePrintWithColumns = (selectedColumnIndices: number[]) => {
+    handleSharedRundownPrintWithColumns(
+      title,
+      items,
+      selectedColumnIndices
+    );
+    setShowColumnDialog(false);
+  };
 
   return (
     <div className={`${isDark ? 'bg-gray-900' : 'bg-gray-200'}`}>
@@ -97,10 +110,7 @@ export const SharedRundownHeader = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  // Use the same print logic as the main rundown
-                  handleSharedRundownPrint(title, items);
-                }}
+                onClick={() => setShowColumnDialog(true)}
                 className={`${
                   isDark 
                     ? 'border-gray-600 hover:bg-gray-700' 
@@ -203,6 +213,13 @@ export const SharedRundownHeader = ({
           </div>
         </div>
       </div>
+
+      <PrintColumnSelectionDialog
+        open={showColumnDialog}
+        onOpenChange={setShowColumnDialog}
+        columns={visibleColumns}
+        onPrint={handlePrintWithColumns}
+      />
     </div>
   );
 };
