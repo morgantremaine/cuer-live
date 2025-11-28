@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import TextDiffDisplay from './TextDiffDisplay';
 
 // Color value to name mapping
 const COLOR_NAMES: Record<string, string> = {
@@ -249,6 +250,18 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     return String(value);
   };
 
+  // Helper to determine if text is "long" (needs diff display)
+  const isLongText = (value: any): boolean => {
+    if (typeof value !== 'string') return false;
+    return value.length > 60;
+  };
+
+  // Helper to truncate text for summaries
+  const truncateText = (text: string, maxLength: number = 50): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   const generateDetailedSummary = (entry: HistoryEntry): string => {
     if (!entry.details || entry.details.length === 0) {
       return entry.summary;
@@ -322,7 +335,13 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
           const displayName = getFieldDisplayName(field) || field;
           const fromValue = renderValue(values.first, field);
           const toValue = renderValue(values.last, field);
-          parts.push(`Row ${rowNum}: '${displayName}' changed from '${fromValue}' to '${toValue}'`);
+          
+          // For long text, just show field changed without values
+          if (isLongText(fromValue) || isLongText(toValue)) {
+            parts.push(`Row ${rowNum}: ${displayName} changed`);
+          } else {
+            parts.push(`Row ${rowNum}: '${displayName}' changed from '${fromValue}' to '${toValue}'`);
+          }
         } else if (validFields.length > 1) {
           // Multiple fields edited in one row
           parts.push(`Row ${rowNum}: Edited ${fieldList}`);
@@ -395,16 +414,33 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
                 // Skip customFields parent object
                 if (!displayName) return null;
                 
+                const oldValueStr = renderValue(values.first, field);
+                const newValueStr = renderValue(values.last, field);
+                
+                // Use TextDiffDisplay for long text
+                if (isLongText(oldValueStr) || isLongText(newValueStr)) {
+                  return (
+                    <TextDiffDisplay
+                      key={field}
+                      fieldName={displayName}
+                      oldValue={oldValueStr}
+                      newValue={newValueStr}
+                      defaultCollapsed={true}
+                    />
+                  );
+                }
+                
+                // Regular inline display for short text
                 return (
                   <div key={field} className="ml-2 text-xs">
                     <span className="font-mono text-primary">{displayName}:</span>
                     {' '}
                     <span className="text-muted-foreground">
-                      {renderValue(values.first, field)}
+                      {oldValueStr}
                     </span>
                     {' → '}
                     <span className="text-foreground">
-                      {renderValue(values.last, field)}
+                      {newValueStr}
                     </span>
                   </div>
                 );
