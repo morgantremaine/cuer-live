@@ -166,89 +166,74 @@ const CellRenderer = ({
     const cellKey = `${item.id}-${column.key}`;
     const isCellExpanded = expandedCells?.has(cellKey);
     
-    const cellContent = (
-      <ExpandableScriptCell
-        value={value}
+    // Always wrap with editor indicator to maintain consistent DOM structure
+    return (
+      <CellEditorIndicator 
+        isActive={!!activeEditor}
+        userName={activeEditor?.userName}
+        userId={activeEditor?.userId}
         itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={showcallerTextColor}
-        columnExpanded={columnExpandState[column.key]}
-        fieldType={column.key as 'script' | 'notes'}
-        isExpanded={isCellExpanded}
-        onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
-        onUpdateValue={(newValue) => {
-          onUpdateItem(item.id, column.key, newValue);
-        }}
-        onKeyDown={onKeyDown}
-        onCellFocus={onCellFocus ? () => onCellFocus(item.id, column.key) : undefined}
-        onCellBlur={onCellBlur ? () => onCellBlur(item.id, column.key) : undefined}
-      />
-    );
-
-    // Wrap with editor indicator if someone else is editing
-    if (activeEditor) {
-      return (
-        <CellEditorIndicator 
-          userName={activeEditor.userName} 
-          userId={activeEditor.userId}
+      >
+        <ExpandableScriptCell
+          value={value}
           itemId={item.id}
-        >
-          {cellContent}
-        </CellEditorIndicator>
-      );
-    }
-
-    return cellContent;
+          cellRefKey={column.key}
+          cellRefs={cellRefs}
+          textColor={showcallerTextColor}
+          columnExpanded={columnExpandState[column.key]}
+          fieldType={column.key as 'script' | 'notes'}
+          isExpanded={isCellExpanded}
+          onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
+          onUpdateValue={(newValue) => {
+            onUpdateItem(item.id, column.key, newValue);
+          }}
+          onKeyDown={onKeyDown}
+          onCellFocus={onCellFocus ? () => onCellFocus(item.id, column.key) : undefined}
+          onCellBlur={onCellBlur ? () => onCellBlur(item.id, column.key) : undefined}
+        />
+      </CellEditorIndicator>
+    );
   }
 
   // Check if this is a time-related field that should be centered
   const isTimeField = column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime' || column.key === 'backTime';
 
-  // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
-  const cellContent = (
-    <TextAreaCell
-      value={value}
+  // Always wrap with editor indicator to maintain consistent DOM structure
+  return (
+    <CellEditorIndicator 
+      isActive={!!activeEditor}
+      userName={activeEditor?.userName}
+      userId={activeEditor?.userId}
       itemId={item.id}
-      cellRefKey={column.key}
-      cellRefs={cellRefs}
-      textColor={textColor}
-      backgroundColor={backgroundColor}
-      isDuration={isTimeField}
-      fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
-      onUpdateValue={(newValue) => {
-        // Handle custom fields vs built-in fields
-        if (column.isCustom) {
-          const field = `customFields.${column.key}`;
-          onUpdateItem(item.id, field, newValue);
-        } else {
-          // For segmentName column, always update the 'name' field
-          // For name column, also update the 'name' field
-          const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
-          onUpdateItem(item.id, field, newValue);
-        }
-      }}
-      onCellClick={(e) => onCellClick(item.id, column.key)}
-      onKeyDown={onKeyDown}
-      onCellFocus={onCellFocus ? () => onCellFocus(item.id, column.key) : undefined}
-      onCellBlur={onCellBlur ? () => onCellBlur(item.id, column.key) : undefined}
-    />
-  );
-
-  // Wrap with editor indicator if someone else is editing
-  if (activeEditor) {
-    return (
-      <CellEditorIndicator 
-        userName={activeEditor.userName} 
-        userId={activeEditor.userId}
+    >
+      <TextAreaCell
+        value={value}
         itemId={item.id}
-      >
-        {cellContent}
-      </CellEditorIndicator>
-    );
-  }
-
-  return cellContent;
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={textColor}
+        backgroundColor={backgroundColor}
+        isDuration={isTimeField}
+        fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
+        onUpdateValue={(newValue) => {
+          // Handle custom fields vs built-in fields
+          if (column.isCustom) {
+            const field = `customFields.${column.key}`;
+            onUpdateItem(item.id, field, newValue);
+          } else {
+            // For segmentName column, always update the 'name' field
+            // For name column, also update the 'name' field
+            const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
+            onUpdateItem(item.id, field, newValue);
+          }
+        }}
+        onCellClick={(e) => onCellClick(item.id, column.key)}
+        onKeyDown={onKeyDown}
+        onCellFocus={onCellFocus ? () => onCellFocus(item.id, column.key) : undefined}
+        onCellBlur={onCellBlur ? () => onCellBlur(item.id, column.key) : undefined}
+      />
+    </CellEditorIndicator>
+  );
 };
 
 export default CellRenderer;
