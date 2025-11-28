@@ -143,28 +143,16 @@ const RundownIndexContent = () => {
     }
   }, []);
 
-  // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
-  const handleScrollToActiveTeammate = useCallback(() => {
-    // Get all active editors directly from the map - O(k) where k is small
-    const allEditors = getAllActiveEditors();
-    
-    // Find the first editor that isn't the current user
-    const teammateEditor = allEditors.find(
-      ({ editor }) => editor.userId !== userId
-    );
-    
-    if (teammateEditor) {
-      handleScrollToEditor(teammateEditor.itemId);
-    } else {
-      console.log('No active teammate editors found');
-    }
-  }, [getAllActiveEditors, userId, handleScrollToEditor]);
+  // Track the last edit location for presence broadcasting
+  const [lastEditLocation, setLastEditLocation] = useState<{ itemId: string; field: string } | null>(null);
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
     rundownId,
     enabled: true,
     hasUnsavedChanges,
+    lastEditedItemId: lastEditLocation?.itemId,
+    lastEditedField: lastEditLocation?.field,
   });
 
   // Track reconnection status
@@ -191,6 +179,30 @@ const RundownIndexContent = () => {
     
     return isActive && isEditing;
   });
+
+  // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
+  const handleScrollToActiveTeammate = useCallback(() => {
+    // Find active teammates with location data from presence
+    const teammateWithLocation = activeTeammates.find(
+      (user) => user.lastEditedItemId
+    );
+    
+    if (teammateWithLocation?.lastEditedItemId) {
+      handleScrollToEditor(teammateWithLocation.lastEditedItemId);
+    } else {
+      // Fallback to cell editors (if they happen to be in focus)
+      const allEditors = getAllActiveEditors();
+      const teammateEditor = allEditors.find(
+        ({ editor }) => editor.userId !== userId
+      );
+      
+      if (teammateEditor) {
+        handleScrollToEditor(teammateEditor.itemId);
+      } else {
+        console.log('No teammate location found');
+      }
+    }
+  }, [activeTeammates, getAllActiveEditors, userId, handleScrollToEditor]);
 
   const hasActiveTeammates = activeTeammates.length > 0;
   const activeTeammateNames = activeTeammates.map(user => user.userFullName || 'Unknown User');

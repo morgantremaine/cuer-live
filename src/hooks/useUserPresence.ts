@@ -11,6 +11,8 @@ interface UserPresenceState {
   rundownId?: string;
   hasUnsavedChanges?: boolean;
   userFullName?: string;
+  lastEditedItemId?: string;
+  lastEditedField?: string;
 }
 
 interface UseUserPresenceOptions {
@@ -18,6 +20,8 @@ interface UseUserPresenceOptions {
   onSessionConflict?: () => void;
   enabled?: boolean;
   hasUnsavedChanges?: boolean;
+  lastEditedItemId?: string;
+  lastEditedField?: string;
 }
 
 export const useUserPresence = ({ 
@@ -25,6 +29,8 @@ export const useUserPresence = ({
   onSessionConflict,
   enabled = true, 
   hasUnsavedChanges = false,
+  lastEditedItemId,
+  lastEditedField,
 }: UseUserPresenceOptions = {}) => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
@@ -58,6 +64,8 @@ export const useUserPresence = ({
       rundownId,
       hasUnsavedChanges: !!hasUnsavedChanges,
       userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
+      lastEditedItemId,
+      lastEditedField,
     };
 
     // Set up presence event handlers
@@ -138,7 +146,7 @@ export const useUserPresence = ({
       
       setIsConnected(false);
     };
-  }, [enabled, user, channelName, rundownId, hasSessionConflict, onSessionConflict]);
+  }, [enabled, user, channelName, rundownId, hasSessionConflict, onSessionConflict, lastEditedItemId, lastEditedField]);
 
   // Update presence immediately when hasUnsavedChanges changes
   useEffect(() => {
@@ -154,10 +162,12 @@ export const useUserPresence = ({
       rundownId,
       hasUnsavedChanges: hasUnsavedRef.current,
       userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
+      lastEditedItemId,
+      lastEditedField,
     };
     
     channelRef.current.track(presenceData);
-  }, [hasUnsavedChanges, enabled, user, rundownId, hasSessionConflict]);
+  }, [hasUnsavedChanges, enabled, user, rundownId, hasSessionConflict, lastEditedItemId, lastEditedField]);
 
   // Method to manually disconnect (for logout)
   const disconnect = async () => {
