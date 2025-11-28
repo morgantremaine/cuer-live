@@ -19,7 +19,25 @@ const COLOR_NAMES: Record<string, string> = {
   '#d1d5db': 'Gray'
 };
 
-// Built-in field name mappings
+// Rundown-level field identifiers
+const RUNDOWN_LEVEL_FIELDS = [
+  'title', 'startTime', 'endTime', 'timezone', 'showDate', 
+  'externalNotes', 'numberingLocked', 'lockedRowNumbers'
+];
+
+// Rundown-level field display names
+const RUNDOWN_FIELD_DISPLAY_NAMES: Record<string, string> = {
+  title: 'Rundown Title',
+  startTime: 'Start Time',
+  endTime: 'End Time',
+  timezone: 'Time Zone',
+  showDate: 'Show Date',
+  externalNotes: 'External Notes',
+  numberingLocked: 'Row Numbering Lock',
+  lockedRowNumbers: 'Locked Row Numbers'
+};
+
+// Built-in field name mappings for row-level fields
 const FIELD_DISPLAY_NAMES: Record<string, string> = {
   name: 'Segment Name',
   startTime: 'Start Time',
@@ -214,8 +232,18 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     }
   };
 
+  // Helper to check if a field is rundown-level
+  const isRundownLevelField = (field: string): boolean => {
+    return RUNDOWN_LEVEL_FIELDS.includes(field);
+  };
+
+  // Helper to check if an operation is rundown-level
+  const isRundownLevelChange = (itemId: string | null | undefined, field: string): boolean => {
+    return !itemId || isRundownLevelField(field);
+  };
+
   // Helper to convert field key to display name
-  const getFieldDisplayName = (field: string): string | null => {
+  const getFieldDisplayName = (field: string, isRundownLevel: boolean = false): string | null => {
     // Skip the parent customFields object entirely
     if (field === 'customFields') return null;
     
@@ -223,6 +251,11 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     if (field.startsWith('customFields.')) {
       const customKey = field.replace('customFields.', '');
       return customColumnNames[customKey] || customKey;
+    }
+    
+    // Handle rundown-level fields
+    if (isRundownLevel || isRundownLevelField(field)) {
+      return RUNDOWN_FIELD_DISPLAY_NAMES[field] || field;
     }
     
     // Handle built-in fields
@@ -267,14 +300,14 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
       return entry.summary;
     }
 
-    // Collect all edits, grouping by field and itemId
+    // Collect edits, separating rundown-level and row-level
     const editsByItem = new Map<string, Map<string, { first: any, last: any }>>();
+    const rundownLevelEdits = new Map<string, { first: any, last: any }>();
     let rowsAdded = 0;
     let rowsDeleted = 0;
 
     entry.details.forEach((op: any) => {
       if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
-        // fieldUpdates is an ARRAY, not an object
         const updates = Array.isArray(op.operation_data.fieldUpdates) 
           ? op.operation_data.fieldUpdates 
           : [];
@@ -282,19 +315,28 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
         updates.forEach((update: any) => {
           const { itemId, field, oldValue, newValue } = update;
           
-          if (!editsByItem.has(itemId)) {
-            editsByItem.set(itemId, new Map());
-          }
-          
-          const itemEdits = editsByItem.get(itemId)!;
-          
-          if (!itemEdits.has(field)) {
-            // First time seeing this field for this item
-            itemEdits.set(field, { first: oldValue, last: newValue });
+          // Check if this is a rundown-level change
+          if (isRundownLevelChange(itemId, field)) {
+            if (!rundownLevelEdits.has(field)) {
+              rundownLevelEdits.set(field, { first: oldValue, last: newValue });
+            } else {
+              const existing = rundownLevelEdits.get(field)!;
+              rundownLevelEdits.set(field, { first: existing.first, last: newValue });
+            }
           } else {
-            // Update only the last value (keep first unchanged)
-            const existing = itemEdits.get(field)!;
-            itemEdits.set(field, { first: existing.first, last: newValue });
+            // Row-level change
+            if (!editsByItem.has(itemId)) {
+              editsByItem.set(itemId, new Map());
+            }
+            
+            const itemEdits = editsByItem.get(itemId)!;
+            
+            if (!itemEdits.has(field)) {
+              itemEdits.set(field, { first: oldValue, last: newValue });
+            } else {
+              const existing = itemEdits.get(field)!;
+              itemEdits.set(field, { first: existing.first, last: newValue });
+            }
           }
         });
       } else if (op.operation_type === 'add_row') {
@@ -307,8 +349,32 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     // Build summary parts
     const parts: string[] = [];
     
+    // Handle rundown-level edits
+    if (rundownLevelEdits.size > 0) {
+      const rundownFields = Array.from(rundownLevelEdits.keys())
+        .map(field => getFieldDisplayName(field, true))
+        .filter(Boolean);
+      
+      if (rundownFields.length === 1) {
+        const field = Array.from(rundownLevelEdits.keys())[0];
+        const values = rundownLevelEdits.get(field)!;
+        const displayName = getFieldDisplayName(field, true) || field;
+        const fromValue = renderValue(values.first, field);
+        const toValue = renderValue(values.last, field);
+        
+        if (isLongText(fromValue) || isLongText(toValue)) {
+          parts.push(`Changed '${displayName}'`);
+        } else {
+          parts.push(`Changed '${displayName}' from '${fromValue}' to '${toValue}'`);
+        }
+      } else {
+        const fieldList = rundownFields.slice(0, 3).map(f => `'${f}'`).join(', ');
+        parts.push(`Changed ${fieldList}`);
+      }
+    }
+    
+    // Handle row-level edits
     if (editsByItem.size > 0) {
-      // Get unique field names across all items, filtering out customFields parent
       const allFields = new Set<string>();
       editsByItem.forEach(fields => {
         fields.forEach((_, field) => {
@@ -324,26 +390,22 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
         const rowNum = getRowNumber(itemId);
         const itemFields = editsByItem.get(itemId)!;
         
-        // Filter out customFields parent and get valid fields
         const validFields = Array.from(itemFields.entries()).filter(([field]) => 
           getFieldDisplayName(field) !== null
         );
         
-        // If only one field was edited, show the values
         if (validFields.length === 1) {
           const [field, values] = validFields[0];
           const displayName = getFieldDisplayName(field) || field;
           const fromValue = renderValue(values.first, field);
           const toValue = renderValue(values.last, field);
           
-          // For long text, just show field changed without values
           if (isLongText(fromValue) || isLongText(toValue)) {
             parts.push(`Row ${rowNum}: ${displayName} changed`);
           } else {
             parts.push(`Row ${rowNum}: '${displayName}' changed from '${fromValue}' to '${toValue}'`);
           }
         } else if (validFields.length > 1) {
-          // Multiple fields edited in one row
           parts.push(`Row ${rowNum}: Edited ${fieldList}`);
         }
       } else if (allFields.size > 0) {
@@ -365,8 +427,9 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   const renderOperationDetails = (details: HistoryEntry['details']) => {
     if (!details || details.length === 0) return null;
 
-    // Group all edits by itemId and field, collapsing intermediate values
+    // Separate rundown-level and row-level edits
     const editsByItem = new Map<string, Map<string, { first: any, last: any }>>();
+    const rundownLevelEdits = new Map<string, { first: any, last: any }>();
     const addedRows: any[] = [];
     const deletedRows: any[] = [];
 
@@ -379,17 +442,28 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
         updates.forEach((update: any) => {
           const { itemId, field, oldValue, newValue } = update;
           
-          if (!editsByItem.has(itemId)) {
-            editsByItem.set(itemId, new Map());
-          }
-          
-          const itemEdits = editsByItem.get(itemId)!;
-          
-          if (!itemEdits.has(field)) {
-            itemEdits.set(field, { first: oldValue, last: newValue });
+          if (isRundownLevelChange(itemId, field)) {
+            // Rundown-level change
+            if (!rundownLevelEdits.has(field)) {
+              rundownLevelEdits.set(field, { first: oldValue, last: newValue });
+            } else {
+              const existing = rundownLevelEdits.get(field)!;
+              rundownLevelEdits.set(field, { first: existing.first, last: newValue });
+            }
           } else {
-            const existing = itemEdits.get(field)!;
-            itemEdits.set(field, { first: existing.first, last: newValue });
+            // Row-level change
+            if (!editsByItem.has(itemId)) {
+              editsByItem.set(itemId, new Map());
+            }
+            
+            const itemEdits = editsByItem.get(itemId)!;
+            
+            if (!itemEdits.has(field)) {
+              itemEdits.set(field, { first: oldValue, last: newValue });
+            } else {
+              const existing = itemEdits.get(field)!;
+              itemEdits.set(field, { first: existing.first, last: newValue });
+            }
           }
         });
       } else if (op.operation_type === 'add_row') {
@@ -401,6 +475,50 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
 
     return (
       <div className="mt-3 space-y-3 text-sm">
+        {/* Show rundown-level edits */}
+        {rundownLevelEdits.size > 0 && (
+          <div className="pl-4 border-l-2 border-purple-500">
+            <div className="font-medium text-muted-foreground mb-1">
+              Rundown Settings
+            </div>
+            {Array.from(rundownLevelEdits.entries()).map(([field, values]) => {
+              const displayName = getFieldDisplayName(field, true);
+              if (!displayName) return null;
+              
+              const oldValueStr = renderValue(values.first, field);
+              const newValueStr = renderValue(values.last, field);
+              
+              // Use TextDiffDisplay for long text
+              if (isLongText(oldValueStr) || isLongText(newValueStr)) {
+                return (
+                  <TextDiffDisplay
+                    key={field}
+                    fieldName={displayName}
+                    oldValue={oldValueStr}
+                    newValue={newValueStr}
+                    defaultCollapsed={true}
+                  />
+                );
+              }
+              
+              // Regular inline display for short text
+              return (
+                <div key={field} className="ml-2 text-xs">
+                  <span className="font-mono text-primary">{displayName}:</span>
+                  {' '}
+                  <span className="text-muted-foreground">
+                    {oldValueStr}
+                  </span>
+                  {' → '}
+                  <span className="text-foreground">
+                    {newValueStr}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        
         {/* Show collapsed edits by row */}
         {Array.from(editsByItem.entries()).map(([itemId, fields]) => {
           const rowNum = getRowNumber(itemId);
