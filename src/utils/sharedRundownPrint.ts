@@ -17,10 +17,21 @@ export const handleSharedRundownPrintWithColumns = (
     existingPrintStyles.remove();
   }
 
-  // Find the split rundown tables (header and body are separate tables)
-  const headerTable = document.querySelector('table[data-rundown-table="header"]');
-  const bodyTable = document.querySelector('table[data-rundown-table="body"]');
-  
+  // Find rundown tables - support both split tables (main rundown) and single table (shared rundown)
+  let headerTable = document.querySelector('table[data-rundown-table="header"]');
+  let bodyTable = document.querySelector('table[data-rundown-table="body"]');
+  let isSingleTableMode = false;
+
+  // Fallback for shared rundown which uses a single table
+  if (!headerTable || !bodyTable) {
+    const singleTable = document.querySelector('.print-container table.print-table');
+    if (singleTable) {
+      headerTable = singleTable;
+      bodyTable = singleTable;
+      isSingleTableMode = true;
+    }
+  }
+
   if (!headerTable || !bodyTable) {
     console.error('Could not find rundown tables to print', { 
       headerTable: !!headerTable, 
@@ -512,8 +523,13 @@ export const handleSharedRundownPrintWithColumns = (
 
 // Legacy function for backward compatibility - prints all columns
 export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[]) => {
-  // Find the split rundown tables to determine how many columns there are
-  const headerTable = document.querySelector('table[data-rundown-table="header"]');
+  // Find rundown tables - support both split tables (main) and single table (shared)
+  let headerTable = document.querySelector('table[data-rundown-table="header"]');
+  
+  // Fallback for shared rundown
+  if (!headerTable) {
+    headerTable = document.querySelector('.print-container table.print-table');
+  }
   
   if (!headerTable) {
     console.error('Could not find rundown header table to print');
