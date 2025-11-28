@@ -127,17 +127,12 @@ const RundownIndexContent = () => {
   const handleScrollToEditor = useCallback((itemId: string) => {
     // Find the scroll container from the DOM
     const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
-    console.log('🎯 SCROLL: Looking for scroll container:', !!scrollContainer);
     
-    if (!scrollContainer) {
-      console.error('🎯 SCROLL: No scroll container found!');
-      return;
-    }
+    if (!scrollContainer) return;
     
     const targetElement = scrollContainer.querySelector(
       `[data-item-id="${itemId}"]`
     );
-    console.log('🎯 SCROLL: Looking for element with id:', itemId, 'Found:', !!targetElement);
     
     if (targetElement) {
       targetElement.scrollIntoView({
@@ -145,9 +140,6 @@ const RundownIndexContent = () => {
         block: 'center',
         inline: 'nearest'
       });
-      console.log('🎯 SCROLL: scrollIntoView called');
-    } else {
-      console.error('🎯 SCROLL: Target element not found for itemId:', itemId);
     }
   }, []);
 
@@ -176,16 +168,6 @@ const RundownIndexContent = () => {
     
     return () => clearInterval(interval);
   }, []);
-
-  // Debug: Log raw other users data
-  console.log('🟣 OTHER USERS RAW:', otherUsers.map(u => ({
-    userId: u.userId,
-    userFullName: u.userFullName,
-    lastEditedItemId: u.lastEditedItemId,
-    lastEditedField: u.lastEditedField,
-    hasUnsavedChanges: u.hasUnsavedChanges,
-    lastSeen: u.lastSeen
-  })));
   
   // Show teammate editing when any teammate is active and has unsaved changes
   const activeTeammates = otherUsers.filter(user => {
@@ -200,35 +182,24 @@ const RundownIndexContent = () => {
 
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
-    console.log('📍 Scroll to teammate - Full teammate data:', activeTeammates.map(t => ({
-      userId: t.userId,
-      userFullName: t.userFullName,
-      lastEditedItemId: t.lastEditedItemId,
-      lastEditedField: t.lastEditedField,
-      hasUnsavedChanges: t.hasUnsavedChanges
-    })));
-    
     // Find active teammates with location data from presence
     const teammateWithLocation = activeTeammates.find(
-      (user) => user.lastEditedItemId
+      user => user.lastEditedItemId && user.lastEditedField
     );
     
-    console.log('📍 Found teammate with location:', teammateWithLocation);
-    
-    if (teammateWithLocation?.lastEditedItemId) {
+    if (teammateWithLocation && teammateWithLocation.lastEditedItemId) {
+      console.log('📍 Found teammate with location:', teammateWithLocation);
       console.log('📍 Scrolling to itemId:', teammateWithLocation.lastEditedItemId);
       handleScrollToEditor(teammateWithLocation.lastEditedItemId);
     } else {
-      // Fallback to cell editors (if they happen to be in focus)
+      // Fallback: use cell editor tracking if no presence location data
       const allEditors = getAllActiveEditors();
       const teammateEditor = allEditors.find(
-        ({ editor }) => editor.userId !== userId
+        editor => editor.editor.userId !== userId
       );
       
       if (teammateEditor) {
         handleScrollToEditor(teammateEditor.itemId);
-      } else {
-        console.log('📍 No teammate location found');
       }
     }
   }, [activeTeammates, getAllActiveEditors, userId, handleScrollToEditor]);
@@ -531,7 +502,6 @@ const RundownIndexContent = () => {
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
-    console.log('🟡 CELL CLICK: Setting lastEditLocation:', { itemId, field });
     // Track the edit location for presence broadcasting
     setLastEditLocation({ itemId, field });
     const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
