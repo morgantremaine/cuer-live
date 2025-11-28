@@ -89,7 +89,23 @@ export const useActiveCellEditors = (rundownId: string | null) => {
     [activeEditors]
   );
 
+  // Get all active editors (for finding teammate locations)
+  const getAllActiveEditors = useCallback((): Array<{
+    cellKey: string;
+    itemId: string;
+    field: string;
+    editor: ActiveEditor;
+  }> => {
+    return Array.from(activeEditors.entries()).map(([cellKey, editor]) => {
+      // Parse cellKey format: "itemId-field" or "rundown-field"
+      const [itemId, ...fieldParts] = cellKey.split('-');
+      const field = fieldParts.join('-'); // Handle fields with dashes
+      return { cellKey, itemId, field, editor };
+    });
+  }, [activeEditors]);
+
   return {
-    getEditorForCell
+    getEditorForCell,
+    getAllActiveEditors
   };
 };

@@ -113,7 +113,7 @@ const RundownIndexContent = () => {
   // Cell editor setup ready
 
   // Set up per-cell active editor tracking
-  const { getEditorForCell } = useActiveCellEditors(rundownId);
+  const { getEditorForCell, getAllActiveEditors } = useActiveCellEditors(rundownId);
 
   // Set up cell edit integration for broadcasting focus states
   const { handleCellEditStart, handleCellEditComplete } = useCellEditIntegration({
@@ -145,20 +145,20 @@ const RundownIndexContent = () => {
 
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
-    // Iterate through all items and fields to find first cell with an active editor
-    for (const item of items) {
-      // Check common fields that can be edited
-      const fields = ['name', 'script', 'duration', 'notes', ...visibleColumns.map(col => col.key)];
-      for (const field of fields) {
-        const editor = getEditorForCell(item.id, field);
-        if (editor) {
-          // Found an active editor - scroll to this item
-          handleScrollToEditor(item.id);
-          return;
-        }
-      }
+    // Get all active editors directly from the map - O(k) where k is small
+    const allEditors = getAllActiveEditors();
+    
+    // Find the first editor that isn't the current user
+    const teammateEditor = allEditors.find(
+      ({ editor }) => editor.userId !== userId
+    );
+    
+    if (teammateEditor) {
+      handleScrollToEditor(teammateEditor.itemId);
+    } else {
+      console.log('No active teammate editors found');
     }
-  }, [items, visibleColumns, getEditorForCell, handleScrollToEditor]);
+  }, [getAllActiveEditors, userId, handleScrollToEditor]);
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
