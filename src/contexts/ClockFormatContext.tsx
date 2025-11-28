@@ -43,8 +43,8 @@ export const ClockFormatProvider = ({ children }: { children: ReactNode }) => {
       const ampm = hour24 >= 12 ? 'PM' : 'AM';
       
       return seconds 
-        ? `${hour12}:${minutes}:${seconds} ${ampm}`
-        : `${hour12}:${minutes} ${ampm}`;
+        ? `${hour12}:${minutes}:${seconds}\u00A0${ampm}`
+        : `${hour12}:${minutes}\u00A0${ampm}`;
     }
     
     // For 24-hour format, remove leading zero from hours
