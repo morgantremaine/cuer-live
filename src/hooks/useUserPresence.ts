@@ -72,11 +72,19 @@ export const useUserPresence = ({
     channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
+        console.log('🟢 PRESENCE SYNC: Raw presence state:', presenceState);
         
         // Check for session conflicts (same user, different session)
         const allPresences = Object.values(presenceState).flat() as any[];
         const myPresences = allPresences.filter((p: any) => p.userId === user.id);
         const otherPresences = allPresences.filter((p: any) => p.userId !== user.id);
+        
+        console.log('🟢 PRESENCE SYNC: Other users with location:', otherPresences.map((u: any) => ({
+          userId: u.userId,
+          lastEditedItemId: u.lastEditedItemId,
+          lastEditedField: u.lastEditedField,
+          hasUnsavedChanges: u.hasUnsavedChanges
+        })));
         
         setOtherUsers(otherPresences as UserPresenceState[]);
         
@@ -165,6 +173,13 @@ export const useUserPresence = ({
       lastEditedItemId,
       lastEditedField,
     };
+    
+    console.log('🔵 PRESENCE: Tracking presence with data:', {
+      userId: user.id,
+      lastEditedItemId,
+      lastEditedField,
+      hasUnsavedChanges: hasUnsavedRef.current
+    });
     
     channelRef.current.track(presenceData);
   }, [hasUnsavedChanges, enabled, user, rundownId, hasSessionConflict, lastEditedItemId, lastEditedField]);
