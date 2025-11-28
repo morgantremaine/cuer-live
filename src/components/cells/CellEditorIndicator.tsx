@@ -7,14 +7,14 @@ interface CellEditorIndicatorProps {
   children: React.ReactNode;
 }
 
-// Generate consistent color for a user based on their ID
-const getUserColor = (userId: string): string => {
+// Generate consistent color for a user based on their ID (hex value)
+const getUserColorHex = (userId: string): string => {
   const colors = [
-    'outline-blue-400 ring-blue-400/20',
-    'outline-green-400 ring-green-400/20',
-    'outline-purple-400 ring-purple-400/20',
-    'outline-amber-400 ring-amber-400/20',
-    'outline-pink-400 ring-pink-400/20',
+    '#60a5fa', // blue-400
+    '#4ade80', // green-400
+    '#a78bfa', // purple-400
+    '#fbbf24', // amber-400
+    '#f472b6', // pink-400
   ];
   
   // Simple hash function to get consistent color per user
@@ -54,11 +54,14 @@ export const CellEditorIndicator: React.FC<CellEditorIndicatorProps> = ({
   itemId,
   children
 }) => {
-  const borderColor = getUserColor(userId);
+  const borderColorHex = getUserColorHex(userId);
   const badgeColor = getBadgeColor(userId);
 
   return (
-    <div className={`relative outline outline-2 ${borderColor} ring-2 rounded-sm`}>
+    <div 
+      className="relative rounded-sm"
+      style={{ boxShadow: `inset 0 0 0 2px ${borderColorHex}` }}
+    >
       {/* Floating user badge */}
       <div className="absolute -top-2.5 -right-2 z-50">
         <div className={`${badgeColor} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
