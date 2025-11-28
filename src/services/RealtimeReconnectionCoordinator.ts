@@ -1,4 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { websocketHealthCheck } from '@/utils/websocketHealth';
+import { handleChunkLoadError, shouldSkipChunkReload } from '@/utils/chunkLoadErrorHandler';
 
 type ReconnectionHandler = () => Promise<void>;
 
@@ -201,9 +203,18 @@ class RealtimeReconnectionCoordinatorService {
     this.lastPerformanceTime = performance.now();
     this.lastSystemTime = Date.now();
     
+    // Wait for DNS to stabilize after wake from sleep
+    console.log('⏳ Waiting for DNS stabilization...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Skip if we recently reloaded for chunk errors
+    if (shouldSkipChunkReload()) {
+      console.log('⏭️ Skipping check - recently reloaded for chunk error');
+      return;
+    }
+    
     // Check if WebSocket is dead - but give it a grace period to reconnect
     try {
-      const { websocketHealthCheck } = await import('@/utils/websocketHealth');
       const isAlive = await websocketHealthCheck.isWebSocketAlive();
       
       if (!isAlive) {
@@ -224,7 +235,6 @@ class RealtimeReconnectionCoordinatorService {
       }
     } catch (error: any) {
       console.error('❌ Error checking WebSocket health on network online:', error);
-      const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
       handleChunkLoadError(error, 'network-online-websocket-check');
     }
   }
@@ -298,7 +308,6 @@ class RealtimeReconnectionCoordinatorService {
       
       // Check WebSocket health with grace period and retry logic
       try {
-        const { websocketHealthCheck } = await import('@/utils/websocketHealth');
         const isAlive = await websocketHealthCheck.isWebSocketAlive();
         
         if (!isAlive) {
@@ -329,7 +338,6 @@ class RealtimeReconnectionCoordinatorService {
       } catch (error: any) {
         console.error('❌ Error in periodic WebSocket check:', error);
         this.consecutiveFailures++;
-        const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
         handleChunkLoadError(error, 'periodic-websocket-check');
       }
     }, interval);
@@ -390,7 +398,6 @@ class RealtimeReconnectionCoordinatorService {
     try {
       // Check if WebSocket is actually dead before forcing reload
       try {
-        const { websocketHealthCheck } = await import('@/utils/websocketHealth');
         const isWebSocketAlive = await websocketHealthCheck.isWebSocketAlive();
         
         if (!isWebSocketAlive) {
@@ -401,7 +408,6 @@ class RealtimeReconnectionCoordinatorService {
         }
       } catch (error: any) {
         console.error('❌ Error during reconnection WebSocket check:', error);
-        const { handleChunkLoadError } = await import('@/utils/chunkLoadErrorHandler');
         handleChunkLoadError(error, 'reconnection-websocket-check');
       }
     } finally {
