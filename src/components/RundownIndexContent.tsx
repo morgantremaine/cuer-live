@@ -502,6 +502,8 @@ const RundownIndexContent = () => {
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
+    // Track the edit location for presence broadcasting
+    setLastEditLocation({ itemId, field });
     const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
     handleCellClick(itemId, field, mockEvent);
   };
