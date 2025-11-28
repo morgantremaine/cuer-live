@@ -1,9 +1,10 @@
 import React from 'react';
 
 interface CellEditorIndicatorProps {
-  userName: string;
-  userId: string;
+  userName?: string;
+  userId?: string;
   itemId: string;
+  isActive: boolean;
   children: React.ReactNode;
 }
 
@@ -52,22 +53,26 @@ export const CellEditorIndicator: React.FC<CellEditorIndicatorProps> = ({
   userName,
   userId,
   itemId,
+  isActive,
   children
 }) => {
-  const borderColorHex = getUserColorHex(userId);
-  const badgeColor = getBadgeColor(userId);
+  // Only compute colors if active
+  const borderColorHex = isActive && userId ? getUserColorHex(userId) : 'transparent';
+  const badgeColor = isActive && userId ? getBadgeColor(userId) : '';
 
   return (
     <div 
       className="relative rounded-sm"
-      style={{ boxShadow: `inset 0 0 0 2px ${borderColorHex}` }}
+      style={{ boxShadow: isActive ? `inset 0 0 0 2px ${borderColorHex}` : 'none' }}
     >
-      {/* Floating user badge */}
-      <div className="absolute -top-2.5 -right-2 z-50">
-        <div className={`${badgeColor} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
-          {userName}
+      {/* Only render badge when active */}
+      {isActive && userName && (
+        <div className="absolute -top-2.5 -right-2 z-50">
+          <div className={`${badgeColor} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
+            {userName}
+          </div>
         </div>
-      </div>
+      )}
       
       {/* Cell content */}
       {children}

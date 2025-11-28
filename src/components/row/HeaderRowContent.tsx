@@ -228,15 +228,17 @@ const HeaderRowContent = ({
                   </div>
                 );
                 
-                return activeEditor ? (
+                // Always wrap to maintain consistent DOM structure
+                return (
                   <CellEditorIndicator
-                    userName={activeEditor.userName}
-                    userId={activeEditor.userId}
+                    isActive={!!activeEditor}
+                    userName={activeEditor?.userName}
+                    userId={activeEditor?.userId}
                     itemId={item.id}
                   >
                     {cellContent}
                   </CellEditorIndicator>
-                ) : cellContent;
+                );
               })()}
             </td>
           );
