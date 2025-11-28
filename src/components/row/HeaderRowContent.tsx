@@ -1,12 +1,12 @@
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
-import { CellEditorIndicator } from '../cells/CellEditorIndicator';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getMinimumWidth } from '@/utils/columnSizing';
 import { useDebouncedInput } from '@/hooks/useDebouncedInput';
+import { getUserColorHex, getBadgeBgClass } from '@/utils/editorColors';
 
 interface HeaderRowContentProps {
   item: RundownItem;
@@ -121,24 +121,35 @@ const HeaderRowContent = ({
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
           const headerName = debouncedHeaderName.value;
-            return (
-              <td
-                key={column.id}
-                className="align-middle min-h-[115px] relative"
-                style={{ 
-                  width: cellBackgroundColor ? 'auto' : normalizedWidth,
-                  minWidth: cellBackgroundColor ? `${Math.max(headerName.length + 15, 20)}ch` : `max(${normalizedWidth}, ${Math.max(headerName.length + 10, 15)}ch)`,
-                  maxWidth: 'none',
-                  backgroundColor: cellBackgroundColor,
-                  overflow: 'visible',
-                  borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                  position: cellBackgroundColor ? 'relative' : 'static',
-                  zIndex: cellBackgroundColor ? 1 : 'auto'
-                }}
+          const activeEditor = getEditorForCell?.(item.id, 'name');
+          
+          return (
+            <td
+              key={column.id}
+              className="align-middle min-h-[115px] relative"
+              style={{ 
+                width: cellBackgroundColor ? 'auto' : normalizedWidth,
+                minWidth: cellBackgroundColor ? `${Math.max(headerName.length + 15, 20)}ch` : `max(${normalizedWidth}, ${Math.max(headerName.length + 10, 15)}ch)`,
+                maxWidth: 'none',
+                backgroundColor: cellBackgroundColor,
+                overflow: 'visible',
+                borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
+                position: cellBackgroundColor ? 'relative' : 'static',
+                zIndex: cellBackgroundColor ? 1 : 'auto',
+                boxShadow: activeEditor ? `inset 0 0 0 2px ${getUserColorHex(activeEditor.userId)}` : 'none'
+              }}
             >
-              {/* Check if another user is editing this cell */}
+              {/* Badge positioned relative to td */}
+              {activeEditor && (
+                <div className="absolute -top-2.5 -right-2 z-50">
+                  <div className={`${getBadgeBgClass(activeEditor.userId)} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
+                    {activeEditor.userName}
+                  </div>
+                </div>
+              )}
+              
+              {/* Cell content */}
               {(() => {
-                const activeEditor = getEditorForCell?.(item.id, 'name');
                 const cellContent = (
                   <div 
                     className="px-2 py-8 flex items-center"
@@ -228,17 +239,7 @@ const HeaderRowContent = ({
                   </div>
                 );
                 
-                // Always wrap to maintain consistent DOM structure
-                return (
-                  <CellEditorIndicator
-                    isActive={!!activeEditor}
-                    userName={activeEditor?.userName}
-                    userId={activeEditor?.userId}
-                    itemId={item.id}
-                  >
-                    {cellContent}
-                  </CellEditorIndicator>
-                );
+                return cellContent;
               })()}
             </td>
           );

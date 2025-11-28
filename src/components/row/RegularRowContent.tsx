@@ -5,6 +5,7 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getMinimumWidth } from '@/utils/columnSizing';
+import { getUserColorHex, getBadgeBgClass } from '@/utils/editorColors';
 
 interface RegularRowContentProps {
   item: RundownItem;
@@ -88,18 +89,31 @@ const RegularRowContent = ({
         const rawWidth = parseFloat(columnWidth.replace('px', ''));
         const normalizedWidth = `${Math.max(isNaN(rawWidth) ? 0 : rawWidth, getMinimumWidth(column))}px`;
         
+        // Get active editor for this cell
+        const activeEditor = getEditorForCell ? getEditorForCell(item.id, column.key) : null;
+        
         return (
           <td
             key={column.id}
-            className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
+            className={`align-middle ${isCurrentSegmentName || activeEditor ? 'relative' : ''}`}
             style={{ 
               width: normalizedWidth,
               minWidth: normalizedWidth,
               maxWidth: normalizedWidth,
               backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent',
-              borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
+              borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))',
+              boxShadow: activeEditor ? `inset 0 0 0 2px ${getUserColorHex(activeEditor.userId)}` : 'none'
             }}
           >
+            {/* Badge positioned relative to td */}
+            {activeEditor && (
+              <div className="absolute -top-2.5 -right-2 z-50">
+                <div className={`${getBadgeBgClass(activeEditor.userId)} text-white text-xs px-2 py-0.5 rounded-full shadow-md whitespace-nowrap`}>
+                  {activeEditor.userName}
+                </div>
+              </div>
+            )}
+            
             <CellRenderer
               column={column}
               item={item}
@@ -115,7 +129,6 @@ const RegularRowContent = ({
               onKeyDown={onKeyDown}
               markActiveTyping={markActiveTyping}
               width={normalizedWidth}
-              activeEditor={getEditorForCell ? getEditorForCell(item.id, column.key) : null}
               onCellFocus={onCellFocus}
               onCellBlur={onCellBlur}
             />
