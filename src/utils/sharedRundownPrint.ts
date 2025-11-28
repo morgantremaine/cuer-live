@@ -321,8 +321,8 @@ export const handleSharedRundownPrintWithColumns = (
         }
       }
       
-      // Clean up content
-      content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      // Clean up content (preserve non-breaking spaces for AM/PM)
+      content = content.replace(/[ \t\n\r\f\v]+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
       
       printHTML += `<td>${content}</td>`;
     });
