@@ -16,6 +16,7 @@ export const useShowcallerBroadcastSync = ({
   const { user, tokenReady } = useAuth();
   const callbackRef = useRef(onBroadcastReceived);
   const lastBroadcastRef = useRef<number>(0);
+  const lastReconnectTriggerRef = useRef<number>(0); // Track last reconnection trigger
   const [isConnected, setIsConnected] = useState<boolean>(false);
   
   // Keep callback updated
@@ -104,14 +105,24 @@ export const useShowcallerBroadcastSync = ({
       }
     }, 10000); // Check every 10 seconds
 
-    // Monitor window focus to ensure connection stays active
+    // Monitor window focus to ensure connection stays active (with debouncing)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        // Debounce: only trigger reconnection if not triggered recently
+        const now = Date.now();
+        const timeSinceLastTrigger = now - lastReconnectTriggerRef.current;
+        
+        if (timeSinceLastTrigger < 5000) {
+          console.log(`📺 Skipping visibility reconnection trigger - debounced (${timeSinceLastTrigger}ms since last trigger)`);
+          return;
+        }
+        
         // When tab becomes visible, check connection and trigger reconnection if needed
         setTimeout(() => {
           const connected = showcallerBroadcast.isChannelConnected(rundownId);
           if (!connected) {
             console.log('📺 🔄 Tab visible but showcaller not connected, triggering reconnection');
+            lastReconnectTriggerRef.current = Date.now();
             showcallerBroadcast.forceReconnect(rundownId);
           }
         }, 2000);

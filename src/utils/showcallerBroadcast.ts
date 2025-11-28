@@ -25,7 +25,9 @@ class ShowcallerBroadcastManager {
   private reconnecting: Map<string, boolean> = new Map(); // Guard against reconnection storms
   private reconnectGuardTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private reconnectStartTimes: Map<string, number> = new Map();
+  private consecutiveFailures: Map<string, number> = new Map(); // Track consecutive failures
   private readonly RECONNECT_TIMEOUT_MS = 10000; // 10 second timeout for faster recovery after sleep
+  private readonly MAX_FAILURES_BEFORE_RELOAD = 5; // Force reload after 5 consecutive failures
 
   constructor() {
     // Listen for network online events to clear stale reconnecting flags
@@ -80,9 +82,20 @@ class ShowcallerBroadcastManager {
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
           
+          // Track consecutive failures
+          const failures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
+          this.consecutiveFailures.set(rundownId, failures);
+          console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+          
+          if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
+            console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
+            window.location.reload();
+            return;
+          }
+          
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
-          this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
+          this.reconnectAttempts.set(rundownId, attempts + 1);
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
@@ -94,9 +107,20 @@ class ShowcallerBroadcastManager {
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
           
+          // Track consecutive failures
+          const failures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
+          this.consecutiveFailures.set(rundownId, failures);
+          console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+          
+          if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
+            console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
+            window.location.reload();
+            return;
+          }
+          
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
-          this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
+          this.reconnectAttempts.set(rundownId, attempts + 1);
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
@@ -108,9 +132,20 @@ class ShowcallerBroadcastManager {
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
           
+          // Track consecutive failures
+          const failures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
+          this.consecutiveFailures.set(rundownId, failures);
+          console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+          
+          if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
+            console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
+            window.location.reload();
+            return;
+          }
+          
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
-          this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
+          this.reconnectAttempts.set(rundownId, attempts + 1);
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
@@ -118,8 +153,9 @@ class ShowcallerBroadcastManager {
             this.forceReconnect(rundownId);
           }, delay);
         } else if (status === 'SUBSCRIBED') {
-          // Reset reconnect attempts and clear guard flag on successful connection
+          // Reset reconnect attempts, failures, and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);
+          this.consecutiveFailures.delete(rundownId);
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
         }
@@ -148,15 +184,20 @@ class ShowcallerBroadcastManager {
     const startTime = this.reconnectStartTimes.get(rundownId);
     
     // CRITICAL FIX: If channel is definitely dead (TIMED_OUT/CLOSED/CHANNEL_ERROR), 
-    // bypass the guard and reconnect immediately
+    // bypass the guard and reconnect immediately without setting guard
     const isChannelDead = currentStatus === 'TIMED_OUT' || 
                           currentStatus === 'CLOSED' || 
                           currentStatus === 'CHANNEL_ERROR';
     
-    if (isReconnecting && startTime && !isChannelDead) {
+    if (isChannelDead) {
+      // Channel is dead - clear any existing guard and proceed WITHOUT setting new guard
+      console.log('📺 💀 Channel is dead, clearing guard and proceeding with immediate reconnect');
+      this.clearReconnectingState(rundownId);
+    } else if (isReconnecting && startTime) {
+      // Only check guard for non-dead channels
       const timeSinceStart = Date.now() - startTime;
       if (timeSinceStart < this.RECONNECT_TIMEOUT_MS) {
-        console.log(`⏭️ Skipping reconnect - already reconnecting: ${rundownId}`);
+        console.log(`⏭️ Skipping reconnect - already reconnecting: ${rundownId} (source: ${new Error().stack?.split('\n')[2]?.trim()})`);
         return;
       } else {
         console.warn(`⚠️ Reconnection timeout exceeded for ${rundownId}, clearing stuck state`);
@@ -164,25 +205,22 @@ class ShowcallerBroadcastManager {
       }
     }
     
-    // If channel is dead, force clear the guard immediately
-    if (isChannelDead && isReconnecting) {
-      console.log('📺 💀 Channel is dead, clearing reconnecting guard for immediate reconnect');
-      this.clearReconnectingState(rundownId);
+    // ONLY set guard for non-dead channels
+    if (!isChannelDead) {
+      console.log(`📺 Setting reconnection guard for ${rundownId} (non-dead channel)`);
+      this.reconnecting.set(rundownId, true);
+      this.reconnectStartTimes.set(rundownId, Date.now());
+      
+      // Set timeout to clear stuck reconnecting state
+      const guardTimeout = setTimeout(() => {
+        if (this.reconnecting.get(rundownId)) {
+          console.warn(`⏱️ Reconnection guard timeout for ${rundownId}, forcing clear`);
+          this.clearReconnectingState(rundownId);
+        }
+      }, this.RECONNECT_TIMEOUT_MS);
+      
+      this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
     }
-    
-    // Set guard flag to prevent feedback loop
-    this.reconnecting.set(rundownId, true);
-    this.reconnectStartTimes.set(rundownId, Date.now());
-    
-    // Set timeout to clear stuck reconnecting state
-    const guardTimeout = setTimeout(() => {
-      if (this.reconnecting.get(rundownId)) {
-        console.warn(`⏱️ Reconnection guard timeout for ${rundownId}, forcing clear`);
-        this.clearReconnectingState(rundownId);
-      }
-    }, this.RECONNECT_TIMEOUT_MS);
-    
-    this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
     
     // Clean up and reconnect immediately (coordinator validates auth)
     const existingChannel = this.channels.get(rundownId);

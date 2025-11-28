@@ -42,12 +42,14 @@ export class CellBroadcastManager {
   private reconnecting = new Map<string, boolean>(); // Guard against reconnection storms
   private reconnectGuardTimeouts = new Map<string, NodeJS.Timeout>();
   private reconnectStartTimes = new Map<string, number>();
+  private consecutiveFailures = new Map<string, number>(); // Track consecutive failures
   
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
   private pendingBroadcasts = new Map<string, CellUpdate>();
   private readonly TYPING_DEBOUNCE_MS = 300; // 300ms debounce for typing
   private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
+  private readonly MAX_FAILURES_BEFORE_RELOAD = 5; // Force reload after 5 consecutive failures
   
   // Health monitoring
   private connectionStatus = new Map<string, string>();
@@ -136,9 +138,10 @@ export class CellBroadcastManager {
       
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
-        // Reset failure count and clear guard flag on successful connection
+        // Reset failure count, consecutive failures, and clear guard flag on successful connection
         this.broadcastFailureCount.set(rundownId, 0);
         this.reconnectAttempts.delete(rundownId);
+        this.consecutiveFailures.delete(rundownId);
         this.reconnecting.delete(rundownId);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
@@ -155,12 +158,23 @@ export class CellBroadcastManager {
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
         
+        // Track consecutive failures
+        const consecutiveFailures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
+        this.consecutiveFailures.set(rundownId, consecutiveFailures);
+        console.log(`🔌 Consecutive failures: ${consecutiveFailures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+        
+        if (consecutiveFailures >= this.MAX_FAILURES_BEFORE_RELOAD) {
+          console.error('🚨 Cell: Too many consecutive failures - forcing page reload');
+          window.location.reload();
+          return;
+        }
+        
         // Report to coordinator instead of handling reconnection directly
         console.log('🔌 Cell channel issue reported - coordinator will handle reconnection');
         
         // Trigger reconnection with exponential backoff
         const attempts = this.reconnectAttempts.get(rundownId) || 0;
-        this.reconnectAttempts.set(rundownId, attempts + 1); // INCREMENT counter
+        this.reconnectAttempts.set(rundownId, attempts + 1);
         const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
         console.log(`🔌 Scheduling cell reconnection in ${delay}ms (attempt ${attempts + 1})`);
         
@@ -377,14 +391,25 @@ export class CellBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
     
-    // Check if stuck in reconnecting state (timeout)
+    // Check current connection status
+    const currentStatus = this.connectionStatus.get(rundownId);
     const isReconnecting = this.reconnecting.get(rundownId);
     const startTime = this.reconnectStartTimes.get(rundownId);
     
-    if (isReconnecting && startTime) {
+    // CRITICAL FIX: If channel is definitely dead, bypass guard and reconnect immediately
+    const isChannelDead = currentStatus === 'TIMED_OUT' || 
+                          currentStatus === 'CLOSED' || 
+                          currentStatus === 'CHANNEL_ERROR';
+    
+    if (isChannelDead) {
+      // Channel is dead - clear any existing guard and proceed WITHOUT setting new guard
+      console.log('📱 💀 Cell channel is dead, clearing guard and proceeding with immediate reconnect');
+      this.clearReconnectingState(rundownId);
+    } else if (isReconnecting && startTime) {
+      // Only check guard for non-dead channels
       const timeSinceStart = Date.now() - startTime;
       if (timeSinceStart < this.RECONNECT_TIMEOUT_MS) {
-        console.log(`⏭️ Skipping cell reconnect - already reconnecting: ${rundownId}`);
+        console.log(`⏭️ Skipping cell reconnect - already reconnecting: ${rundownId} (source: ${new Error().stack?.split('\n')[2]?.trim()})`);
         return;
       } else {
         console.warn(`⚠️ Cell reconnection timeout exceeded for ${rundownId}, clearing stuck state`);
@@ -392,19 +417,22 @@ export class CellBroadcastManager {
       }
     }
     
-    // Set guard flag to prevent feedback loop
-    this.reconnecting.set(rundownId, true);
-    this.reconnectStartTimes.set(rundownId, Date.now());
-    
-    // Set timeout to clear stuck reconnecting state
-    const guardTimeout = setTimeout(() => {
-      if (this.reconnecting.get(rundownId)) {
-        console.warn(`⏱️ Cell reconnection guard timeout for ${rundownId}, forcing clear`);
-        this.clearReconnectingState(rundownId);
-      }
-    }, this.RECONNECT_TIMEOUT_MS);
-    
-    this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
+    // ONLY set guard for non-dead channels
+    if (!isChannelDead) {
+      console.log(`📱 Setting reconnection guard for ${rundownId} (non-dead channel)`);
+      this.reconnecting.set(rundownId, true);
+      this.reconnectStartTimes.set(rundownId, Date.now());
+      
+      // Set timeout to clear stuck reconnecting state
+      const guardTimeout = setTimeout(() => {
+        if (this.reconnecting.get(rundownId)) {
+          console.warn(`⏱️ Cell reconnection guard timeout for ${rundownId}, forcing clear`);
+          this.clearReconnectingState(rundownId);
+        }
+      }, this.RECONNECT_TIMEOUT_MS);
+      
+      this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
+    }
     
     // Check auth first
     const { data: { session }, error } = await supabase.auth.getSession();
