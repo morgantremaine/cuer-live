@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { toast } from 'sonner';
 
 // Simplified message payload for single sessions
 interface CellUpdate {
@@ -165,7 +166,13 @@ export class CellBroadcastManager {
         
         if (consecutiveFailures >= this.MAX_FAILURES_BEFORE_RELOAD) {
           console.error('🚨 Cell: Too many consecutive failures - forcing page reload');
-          window.location.reload();
+          toast.error("Connection could not be restored", {
+            description: "Refreshing page in 3 seconds to recover...",
+            duration: 3000,
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
           return;
         }
         

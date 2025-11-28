@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useMOSIntegration } from '@/hooks/useMOSIntegration';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -29,6 +30,9 @@ import '@/utils/timingValidationTest';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  
+  // Enable realtime connection notifications
+  useRealtimeNotifications();
   
   // Get team data and user for MOS integration setup
   const { team, userRole } = useTeam();

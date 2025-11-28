@@ -37,8 +37,8 @@ export const useRealtimeNotifications = () => {
         } else if (currentStatus === 'reconnecting') {
           // Reconnecting
           toastIdRef.current = toast({
-            title: "Reconnecting to Server...",
-            description: "Please wait while we restore the connection",
+            title: "⚠️ Connection Lost",
+            description: "Your changes are being saved locally. Reconnecting...",
             duration: Infinity, // Keep showing until resolved
           }).id;
         } else if (currentStatus === 'healthy' && lastStatusRef.current !== 'healthy') {
