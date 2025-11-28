@@ -271,35 +271,52 @@ export const handleSharedRundownPrintWithColumns = (
       if (dataType === 'header') {
         const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
         if (headerText.includes('duration') || headerText.includes('dur')) {
-          // Try to get duration from the current duration column (which has print-only span)
           let foundContent = false;
           
-          // Look for print-only content in the current duration cell
-          const printOnlySpan = cellElement.querySelector('.print\\:inline-block, [class*="print:inline-block"]');
-          if (printOnlySpan && printOnlySpan.textContent) {
-            const spanText = printOnlySpan.textContent.trim();
-            if (spanText && spanText.match(/\d{2}:\d{2}:\d{2}/)) {
+          // Try to get duration from any span in the current duration cell
+          const spans = cellElement.querySelectorAll('span');
+          for (const span of spans) {
+            const spanText = span.textContent?.trim() || '';
+            if (spanText && spanText.match(/^\d{2}:\d{2}:\d{2}$/)) {
               content = spanText;
+              foundContent = true;
+              break;
+            }
+          }
+          
+          // Fallback: extract duration from header name column (second td, not first which is row number)
+          if (!foundContent) {
+            const headerRow = cellElement.closest('tr');
+            const nameCell = headerRow?.querySelector('td:nth-child(2)');
+            
+            if (nameCell) {
+              const nameCellText = nameCell.textContent || '';
+              const durationMatch = nameCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
+              if (durationMatch) {
+                content = durationMatch[1];
+                foundContent = true;
+              }
+            }
+          }
+          
+          // Ultimate fallback: calculate from items array
+          if (!foundContent && items?.length) {
+            const rowIndex = Array.from(bodyRows).indexOf(row as Element);
+            if (rowIndex >= 0 && items[rowIndex]?.type === 'header') {
+              let segmentDuration = 0;
+              for (let i = rowIndex + 1; i < items.length; i++) {
+                if (items[i].type === 'header') break;
+                if (!items[i].isFloating && !items[i].isFloated) {
+                  segmentDuration += timeToSeconds(items[i].duration || '00:00');
+                }
+              }
+              content = secondsToTime(segmentDuration);
               foundContent = true;
             }
           }
           
-          // Fallback: extract duration from header name in first column
           if (!foundContent) {
-            const headerRow = cellElement.closest('tr');
-            const firstCell = headerRow?.querySelector('td:first-child, th:first-child');
-            
-            if (firstCell) {
-              const firstCellText = firstCell.textContent || '';
-              const durationMatch = firstCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
-              if (durationMatch) {
-                content = durationMatch[1];
-              } else {
-                content = '00:00:00';
-              }
-            } else {
-              content = '00:00:00';
-            }
+            content = ''; // Leave empty rather than showing 00:00:00
           }
         }
       }
