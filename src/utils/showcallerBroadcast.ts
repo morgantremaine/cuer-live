@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { toast } from 'sonner';
 
 export interface ShowcallerBroadcastState {
   rundownId: string;
@@ -89,7 +90,13 @@ class ShowcallerBroadcastManager {
           
           if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
             console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
-            window.location.reload();
+            toast.error("Connection could not be restored", {
+              description: "Refreshing page in 3 seconds to recover...",
+              duration: 3000,
+            });
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
             return;
           }
           
@@ -114,7 +121,13 @@ class ShowcallerBroadcastManager {
           
           if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
             console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
-            window.location.reload();
+            toast.error("Connection could not be restored", {
+              description: "Refreshing page in 3 seconds to recover...",
+              duration: 3000,
+            });
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
             return;
           }
           
@@ -139,7 +152,13 @@ class ShowcallerBroadcastManager {
           
           if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
             console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
-            window.location.reload();
+            toast.error("Connection could not be restored", {
+              description: "Refreshing page in 3 seconds to recover...",
+              duration: 3000,
+            });
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
             return;
           }
           

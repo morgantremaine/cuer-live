@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { websocketHealthCheck } from '@/utils/websocketHealth';
 import { handleChunkLoadError, shouldSkipChunkReload } from '@/utils/chunkLoadErrorHandler';
+import { toast } from 'sonner';
 
 type ReconnectionHandler = () => Promise<void>;
 
@@ -182,8 +183,13 @@ class RealtimeReconnectionCoordinatorService {
    */
   private forceReload(reason: string) {
     console.error(`🔄 Force reload triggered: ${reason}`);
-    // Immediate reload - no delays, no messaging
-    window.location.reload();
+    toast.error("Connection could not be restored", {
+      description: "Refreshing page in 3 seconds to recover...",
+      duration: 3000,
+    });
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
   }
 
   /**
