@@ -182,12 +182,17 @@ const RundownIndexContent = () => {
 
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
+    console.log('📍 Scroll to teammate - activeTeammates:', activeTeammates);
+    
     // Find active teammates with location data from presence
     const teammateWithLocation = activeTeammates.find(
       (user) => user.lastEditedItemId
     );
     
+    console.log('📍 Found teammate with location:', teammateWithLocation);
+    
     if (teammateWithLocation?.lastEditedItemId) {
+      console.log('📍 Scrolling to itemId:', teammateWithLocation.lastEditedItemId);
       handleScrollToEditor(teammateWithLocation.lastEditedItemId);
     } else {
       // Fallback to cell editors (if they happen to be in focus)

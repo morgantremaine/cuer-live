@@ -146,7 +146,7 @@ export const useUserPresence = ({
       
       setIsConnected(false);
     };
-  }, [enabled, user, channelName, rundownId, hasSessionConflict, onSessionConflict, lastEditedItemId, lastEditedField]);
+  }, [enabled, user, channelName, rundownId, hasSessionConflict, onSessionConflict]);
 
   // Update presence immediately when hasUnsavedChanges changes
   useEffect(() => {
