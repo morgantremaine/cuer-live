@@ -10,6 +10,7 @@ export const useTeleprompterControls = () => {
   const [showAllSegments, setShowAllSegments] = useState(false);
   const [isBlackout, setIsBlackout] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wheelDeltaRef = useRef<number>(0);
 
   // Define speed steps: negative for reverse, 0 for stop, positive for forward
   // Extended range from -5x to 5x in 0.5x steps
@@ -104,16 +105,21 @@ export const useTeleprompterControls = () => {
       // Prevent default scroll behavior
       event.preventDefault();
       
-      // Determine direction: deltaY > 0 = scroll down = increase speed
-      // deltaY < 0 = scroll up = decrease speed
-      if (event.deltaY > 0) {
-        // Increase speed (move right in speed array) - same as ArrowRight/ArrowDown
+      // Accumulate delta - one mouse notch is typically ~100 pixels
+      wheelDeltaRef.current += event.deltaY;
+      
+      const NOTCH_THRESHOLD = 100; // Pixels per "notch"
+      
+      // Check if we've accumulated enough for a speed step
+      if (wheelDeltaRef.current >= NOTCH_THRESHOLD) {
+        // Consumed one notch worth - increase speed
+        wheelDeltaRef.current -= NOTCH_THRESHOLD;
+        
         setCurrentSpeedIndex(prevIndex => {
           const newIndex = Math.min(speedSteps.length - 1, prevIndex + 1);
           const newSpeed = speedSteps[newIndex];
           setScrollSpeed(Math.abs(newSpeed));
           
-          // Auto-start scrolling if speed is not 0
           if (newSpeed !== 0) {
             setIsScrolling(true);
           } else {
@@ -122,14 +128,15 @@ export const useTeleprompterControls = () => {
           
           return newIndex;
         });
-      } else if (event.deltaY < 0) {
-        // Decrease speed (move left in speed array) - same as ArrowLeft/ArrowUp
+      } else if (wheelDeltaRef.current <= -NOTCH_THRESHOLD) {
+        // Consumed one notch worth - decrease speed
+        wheelDeltaRef.current += NOTCH_THRESHOLD;
+        
         setCurrentSpeedIndex(prevIndex => {
           const newIndex = Math.max(0, prevIndex - 1);
           const newSpeed = speedSteps[newIndex];
           setScrollSpeed(Math.abs(newSpeed));
           
-          // Auto-start scrolling if speed is not 0
           if (newSpeed !== 0) {
             setIsScrolling(true);
           } else {
