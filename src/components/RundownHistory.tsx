@@ -619,8 +619,17 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
           </div>
         )}
         
-        {/* Show collapsed edits by row */}
-        {Array.from(editsByItem.entries()).map(([itemId, fields]) => {
+        {/* Check if we have a reorder operation with valid move metadata */}
+        {(() => {
+          const hasValidMoveMetadata = reorderOperations.some(op => {
+            const { movedItemNames, fromIndex, toIndex } = op.operation_data || {};
+            return movedItemNames?.length > 0 && fromIndex !== undefined && toIndex !== undefined;
+          });
+          
+          // Show collapsed edits by row - but NOT if this is a reorder with move metadata
+          if (hasValidMoveMetadata) return null;
+          
+          return Array.from(editsByItem.entries()).map(([itemId, fields]) => {
           const rowNum = getRowNumber(itemId);
           return (
             <div key={itemId} className="pl-4 border-l-2 border-blue-500">
@@ -665,7 +674,8 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
               })}
             </div>
           );
-        })}
+        });
+        })()}
         
         {/* Show added rows */}
         {addedRows.map((op, idx) => (
