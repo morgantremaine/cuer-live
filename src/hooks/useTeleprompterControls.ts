@@ -95,6 +95,60 @@ export const useTeleprompterControls = () => {
     };
   }, [isFullscreen, isScrolling]);
 
+  // Handle mouse wheel events for speed control - only when in fullscreen mode
+  useEffect(() => {
+    const handleWheel = (event: WheelEvent) => {
+      // Only handle wheel in fullscreen mode
+      if (!isFullscreen) return;
+      
+      // Prevent default scroll behavior
+      event.preventDefault();
+      
+      // Determine direction: deltaY > 0 = scroll down = increase speed
+      // deltaY < 0 = scroll up = decrease speed
+      if (event.deltaY > 0) {
+        // Increase speed (move right in speed array) - same as ArrowRight/ArrowDown
+        setCurrentSpeedIndex(prevIndex => {
+          const newIndex = Math.min(speedSteps.length - 1, prevIndex + 1);
+          const newSpeed = speedSteps[newIndex];
+          setScrollSpeed(Math.abs(newSpeed));
+          
+          // Auto-start scrolling if speed is not 0
+          if (newSpeed !== 0) {
+            setIsScrolling(true);
+          } else {
+            setIsScrolling(false);
+          }
+          
+          return newIndex;
+        });
+      } else if (event.deltaY < 0) {
+        // Decrease speed (move left in speed array) - same as ArrowLeft/ArrowUp
+        setCurrentSpeedIndex(prevIndex => {
+          const newIndex = Math.max(0, prevIndex - 1);
+          const newSpeed = speedSteps[newIndex];
+          setScrollSpeed(Math.abs(newSpeed));
+          
+          // Auto-start scrolling if speed is not 0
+          if (newSpeed !== 0) {
+            setIsScrolling(true);
+          } else {
+            setIsScrolling(false);
+          }
+          
+          return newIndex;
+        });
+      }
+    };
+
+    // Add wheel event listener with passive: false to allow preventDefault
+    document.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+    };
+  }, [isFullscreen]);
+
   // Listen for browser fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
