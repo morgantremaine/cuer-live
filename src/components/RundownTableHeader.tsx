@@ -230,7 +230,10 @@ const RundownTableHeader = ({
             width: `${64 * zoomLevel}px`, 
             minWidth: `${64 * zoomLevel}px`,
             maxWidth: `${64 * zoomLevel}px`,
-            borderRight: '1px solid hsl(var(--border))'
+            borderRight: '1px solid hsl(var(--border))',
+            position: 'sticky',
+            left: 0,
+            zIndex: 30
           }}
         >
           <div className="flex items-center justify-center w-full h-full">
