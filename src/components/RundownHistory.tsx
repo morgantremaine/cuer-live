@@ -224,6 +224,26 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     });
   };
 
+  const shouldShowDetailsButton = (entry: HistoryEntry): boolean => {
+    // Don't show if only one operation
+    if (entry.operation_count <= 1) return false;
+    
+    // Count unique field/item combinations to detect meaningful changes
+    const uniqueChanges = new Set<string>();
+    entry.details?.forEach((op: any) => {
+      if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+        op.operation_data.fieldUpdates.forEach((u: any) => {
+          uniqueChanges.add(`${u.itemId || 'rundown'}-${u.field}`);
+        });
+      } else if (op.operation_type === 'add_row' || op.operation_type === 'delete_row') {
+        uniqueChanges.add(op.operation_type);
+      }
+    });
+    
+    // Only show button if there are multiple distinct changes (not just duplicate operations)
+    return uniqueChanges.size > 1;
+  };
+
   const formatTimestamp = (timestamp: string) => {
     try {
       return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -320,7 +340,12 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     let rowsAdded = 0;
     let rowsDeleted = 0;
 
-    entry.details.forEach((op: any) => {
+    // Sort details by created_at ascending to get correct old->new order
+    const sortedDetails = [...entry.details].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    sortedDetails.forEach((op: any) => {
       if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
         const updates = Array.isArray(op.operation_data.fieldUpdates) 
           ? op.operation_data.fieldUpdates 
@@ -447,7 +472,12 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     const addedRows: any[] = [];
     const deletedRows: any[] = [];
 
-    details.forEach((op: any) => {
+    // Sort details by created_at ascending to get correct old->new order
+    const sortedDetails = [...details].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    sortedDetails.forEach((op: any) => {
       if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
         const updates = Array.isArray(op.operation_data.fieldUpdates) 
           ? op.operation_data.fieldUpdates 
@@ -660,7 +690,7 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
                     {generateDetailedSummary(entry)}
                   </p>
 
-                  {entry.operation_count > 1 && (
+                  {shouldShowDetailsButton(entry) && (
                     <Button
                       variant="ghost"
                       size="sm"

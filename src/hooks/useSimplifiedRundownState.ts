@@ -1551,11 +1551,7 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       if (state.title !== newTitle) {
-        // Track field change for per-cell save system
-        if (cellEditIntegration.isPerCellEnabled) {
-          console.log('🧪 SIMPLIFIED STATE: Tracking title change for per-cell save');
-          cellEditIntegration.handleCellChange(undefined, 'title', newTitle);
-        }
+        // Field change tracking handled by useEffect that monitors state changes
         
         // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
@@ -1878,11 +1874,7 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       
-      // Track field change for per-cell save system
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 SIMPLIFIED STATE: Tracking startTime change for per-cell save');
-        cellEditIntegration.handleCellChange(undefined, 'startTime', newStartTime);
-      }
+      // Field change tracking handled by useEffect that monitors state changes
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1900,11 +1892,7 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       
-      // Track field change for per-cell save system
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 SIMPLIFIED STATE: Tracking endTime change for per-cell save');
-        cellEditIntegration.handleCellChange(undefined, 'endTime', newEndTime);
-      }
+      // Field change tracking handled by useEffect that monitors state changes
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1922,11 +1910,7 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       
-      // Track field change for per-cell save system
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 SIMPLIFIED STATE: Tracking timezone change for per-cell save');
-        cellEditIntegration.handleCellChange(undefined, 'timezone', newTimezone);
-      }
+      // Field change tracking handled by useEffect that monitors state changes
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1944,11 +1928,7 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       
-      // Track field change for per-cell save system
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 SIMPLIFIED STATE: Tracking showDate change for per-cell save');
-        cellEditIntegration.handleCellChange(undefined, 'showDate', newShowDate);
-      }
+      // Field change tracking handled by useEffect that monitors state changes
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
