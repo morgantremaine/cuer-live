@@ -11,13 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 
 import { formatDistanceToNow, format } from 'date-fns';
 
-// Calculated fields to exclude from change detection
+// Fields that change as side effects of structural operations
 const CALCULATED_FIELDS = [
   'calculatedEndTime',
   'calculatedBackTime', 
   'calculatedStartTime',
   'calculatedRowNumber',
-  'calculatedElapsedTime'
+  'calculatedElapsedTime',
+  'rowNumber', // Changes with position
+  'color' // Sometimes auto-changes
 ];
 
 interface ActionLogEntry {
@@ -83,15 +85,8 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
         .order('applied_at', { ascending: false })
         .limit(100);
 
-      // Create a map of operations by timestamp (rounded to second) for matching
-      const operationsMap = new Map();
-      operationsData?.forEach(op => {
-        const timestamp = new Date(op.applied_at).toISOString().split('.')[0];
-        if (!operationsMap.has(timestamp)) {
-          operationsMap.set(timestamp, []);
-        }
-        operationsMap.get(timestamp).push(op);
-      });
+      // Create operation lookups - use wider time window for matching
+      const operationsByTime = operationsData || [];
 
       // Get unique user IDs
       const userIds = [...new Set(revisionsData?.map(r => r.created_by).filter(Boolean) || [])];
@@ -138,13 +133,16 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
           });
         }
 
-        // Check for corresponding operations
-        const timestamp = new Date(revision.created_at).toISOString().split('.')[0];
-        const operations = operationsMap.get(timestamp) || [];
+        // Match operations within 30 seconds before this revision
+        const revisionTime = new Date(revision.created_at).getTime();
+        const matchedOperations = operationsByTime.filter(op => {
+          const opTime = new Date(op.applied_at).getTime();
+          return opTime <= revisionTime && opTime >= revisionTime - 30000;
+        });
         
-        // If we have operation data, use it for better descriptions
-        if (operations.length > 0) {
-          operations.forEach((op, index) => {
+        // If we have operation data, use it exclusively (skip revision analysis)
+        if (matchedOperations.length > 0) {
+          matchedOperations.forEach((op, index) => {
             const description = getOperationDescription(op);
             if (description) {
               logEntries.push({
@@ -250,60 +248,55 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
     const oldById = new Map(oldItems.map(item => [item.id, item]));
     const newById = new Map(newItems.map(item => [item.id, item]));
     
-    // Check if this is a reorder (same IDs, different positions)
     const oldIds = oldItems.map(i => i.id);
     const newIds = newItems.map(i => i.id);
     
-    if (oldIds.length === newIds.length) {
-      const oldIdsSet = new Set(oldIds);
-      const newIdsSet = new Set(newIds);
-      const sameIds = oldIdsSet.size === newIdsSet.size && 
-                      [...oldIdsSet].every(id => newIdsSet.has(id));
-      
-      if (sameIds && JSON.stringify(oldIds) !== JSON.stringify(newIds)) {
-        return [{ action: 'Reordered rows' }];
-      }
+    // Find common IDs
+    const commonOldIds = oldIds.filter(id => newById.has(id));
+    const commonNewIds = newIds.filter(id => oldById.has(id));
+    
+    // Check if common items have been reordered
+    const isReordered = commonOldIds.length > 1 && 
+                       JSON.stringify(commonOldIds) !== JSON.stringify(commonNewIds);
+    
+    // Detect structural changes
+    const addedItems = newItems.filter(item => !oldById.has(item.id));
+    const deletedItems = oldItems.filter(item => !newById.has(item.id));
+    
+    // Show structural changes as single actions
+    if (isReordered) {
+      changes.push({ action: 'Reordered rows' });
     }
-
-    // Check for item count changes
-    if (newItems.length > oldItems.length) {
-      const addedItems = newItems.filter(item => !oldById.has(item.id));
-      addedItems.forEach(item => {
-        changes.push({
-          action: `Added new item`,
-          textChanged: item?.name || 'Untitled'
-        });
-      });
-    } else if (newItems.length < oldItems.length) {
-      const deletedItems = oldItems.filter(item => !newById.has(item.id));
-      const deletedCount = deletedItems.length;
-      changes.push({
-        action: `Deleted ${deletedCount} item(s)`
+    
+    if (addedItems.length > 0) {
+      changes.push({ 
+        action: `Added ${addedItems.length} row${addedItems.length > 1 ? 's' : ''}`,
+        textChanged: addedItems.length === 1 ? addedItems[0]?.name || 'Untitled' : undefined
       });
     }
-
-    // Check for content changes in existing items (by ID)
-    newItems.forEach((newItem) => {
-      const oldItem = oldById.get(newItem.id);
-      if (!oldItem) return;
-
-      // Check for meaningful field changes (skip calculated fields)
-      const fields = [
+    
+    if (deletedItems.length > 0) {
+      changes.push({ 
+        action: `Deleted ${deletedItems.length} row${deletedItems.length > 1 ? 's' : ''}`
+      });
+    }
+    
+    // If structural changes occurred, only check for meaningful content edits
+    // (not positional/calculated field changes)
+    if (isReordered || addedItems.length > 0 || deletedItems.length > 0) {
+      const meaningfulFields = [
         { key: 'name', label: 'item title' },
         { key: 'script', label: 'script' },
         { key: 'notes', label: 'notes' },
         { key: 'talent', label: 'talent' }
       ];
 
-      fields.forEach(field => {
-        if (oldItem[field.key] !== newItem[field.key]) {
-          if (field.key === 'talent') {
-            const textChanged = `"${oldItem[field.key] || ''}" → "${newItem[field.key] || ''}"`;
-            changes.push({
-              action: `Updated ${field.label}`,
-              textChanged
-            });
-          } else {
+      newItems.forEach((newItem) => {
+        const oldItem = oldById.get(newItem.id);
+        if (!oldItem) return;
+
+        meaningfulFields.forEach(field => {
+          if (oldItem[field.key] !== newItem[field.key]) {
             const oldText = oldItem[field.key] || '';
             const newText = newItem[field.key] || '';
             const textChanged = getTextDifference(oldText, newText);
@@ -312,6 +305,33 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
               textChanged
             });
           }
+        });
+      });
+
+      return changes;
+    }
+
+    // No structural changes - do full field analysis
+    const fields = [
+      { key: 'name', label: 'item title' },
+      { key: 'script', label: 'script' },
+      { key: 'notes', label: 'notes' },
+      { key: 'talent', label: 'talent' }
+    ];
+
+    newItems.forEach((newItem) => {
+      const oldItem = oldById.get(newItem.id);
+      if (!oldItem) return;
+
+      fields.forEach(field => {
+        if (oldItem[field.key] !== newItem[field.key]) {
+          const oldText = oldItem[field.key] || '';
+          const newText = newItem[field.key] || '';
+          const textChanged = getTextDifference(oldText, newText);
+          changes.push({
+            action: `Updated ${field.label}`,
+            textChanged
+          });
         }
       });
     });
