@@ -236,7 +236,24 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
   };
 
   const shouldShowDetailsButton = (entry: HistoryEntry): boolean => {
-    // Don't show if only one operation
+    // Check if any operation has long text (like script) that needs expansion
+    const hasLongTextContent = entry.details?.some((op: any) => {
+      if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+        return op.operation_data.fieldUpdates.some((u: any) => {
+          if (CALCULATED_FIELDS.includes(u.field)) return false;
+          const oldValueStr = String(u.oldValue || '');
+          const newValueStr = String(u.newValue || '');
+          // If either old or new value is long, we need the expand button
+          return oldValueStr.length > 60 || newValueStr.length > 60;
+        });
+      }
+      return false;
+    });
+    
+    // Always show expand button if there's long text content
+    if (hasLongTextContent) return true;
+    
+    // Don't show if only one operation (unless has long text, handled above)
     if (entry.operation_count <= 1) return false;
     
     // Check if there's a reorder with valid move metadata
