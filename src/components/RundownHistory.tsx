@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, parseISO } from 'date-fns';
 import TextDiffDisplay from './TextDiffDisplay';
 
 // Color value to name mapping
@@ -267,6 +267,20 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     // Handle color field specially
     if (fieldName === 'color' && typeof value === 'string') {
       return COLOR_NAMES[value.toLowerCase()] || value || 'Default';
+    }
+    
+    // Handle date fields - format nicely without time
+    if (fieldName === 'showDate' && value) {
+      try {
+        // Handle both ISO strings and date-only strings
+        const dateStr = typeof value === 'string' ? value : String(value);
+        // Extract just the date portion if it's an ISO string
+        const dateOnly = dateStr.split('T')[0];
+        const date = parseISO(dateOnly);
+        return format(date, 'MMM d, yyyy'); // e.g., "Dec 2, 2025"
+      } catch {
+        return value || '(empty)';
+      }
     }
     
     if (value === null || value === undefined) return '(empty)';
