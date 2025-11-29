@@ -68,6 +68,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     isProcessingRealtimeUpdate,
     hasActiveTeammates,
     activeTeammateNames,
+    presentUsers,
+    onScrollToUser,
     onScrollToActiveTeammate,
     cellRefs,
     columns,
@@ -280,6 +282,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         hasActiveTeammates={hasActiveTeammates}
         activeTeammateNames={activeTeammateNames}
+        presentUsers={presentUsers}
+        onScrollToUser={onScrollToUser}
         onScrollToActiveTeammate={onScrollToActiveTeammate}
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}

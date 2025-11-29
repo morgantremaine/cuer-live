@@ -61,6 +61,14 @@ interface RundownHeaderProps {
   onRetry?: () => Promise<void>;
   hasActiveTeammates?: boolean;
   activeTeammateNames?: string[];
+  presentUsers?: Array<{
+    userId: string;
+    userFullName: string;
+    isEditing: boolean;
+    lastEditedItemId?: string;
+    lastEditedField?: string;
+  }>;
+  onScrollToUser?: (user: { userId: string; lastEditedItemId?: string }) => void;
   onScrollToActiveTeammate?: () => void;
   saveError?: string | null;
 }
@@ -98,6 +106,8 @@ const RundownHeader = ({
   onUpdateItem,
   hasActiveTeammates,
   activeTeammateNames = [],
+  presentUsers = [],
+  onScrollToUser,
   saveCompletionCount,
   failedSavesCount,
   onRetry,
@@ -702,7 +712,16 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} activeTeammateNames={activeTeammateNames} onRetry={onRetry} onScrollToTeammate={onScrollToActiveTeammate} />
+          <RundownSaveIndicator 
+            saveState={saveState} 
+            shouldShowSavedFlash={shouldShowSavedFlash} 
+            isTeammateEditing={showTeammateEditing} 
+            activeTeammateNames={activeTeammateNames}
+            presentUsers={presentUsers}
+            onScrollToUser={onScrollToUser}
+            onRetry={onRetry} 
+            onScrollToTeammate={onScrollToActiveTeammate} 
+          />
           </>
           )}
           </div>

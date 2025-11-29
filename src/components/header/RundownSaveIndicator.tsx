@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { debugLogger } from '@/utils/debugLogger';
+import PresenceAvatars, { PresenceUser } from './PresenceAvatars';
 
 interface SaveState {
   isSaving: boolean;
@@ -17,12 +18,24 @@ interface RundownSaveIndicatorProps {
   shouldShowSavedFlash?: boolean;
   isTeammateEditing?: boolean;
   activeTeammateNames?: string[];
+  presentUsers?: PresenceUser[];
+  onScrollToUser?: (user: PresenceUser) => void;
   isMobile?: boolean; // Add mobile prop to suppress teammate editing
   onRetry?: () => void; // Callback to trigger manual retry
   onScrollToTeammate?: () => void; // Callback to scroll to active teammate's cell
 }
 
-const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false, onRetry, onScrollToTeammate }: RundownSaveIndicatorProps) => {
+const RundownSaveIndicator = ({ 
+  saveState, 
+  shouldShowSavedFlash, 
+  isTeammateEditing = false, 
+  activeTeammateNames = [], 
+  presentUsers = [],
+  onScrollToUser,
+  isMobile = false, 
+  onRetry, 
+  onScrollToTeammate 
+}: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true, saveCompletionCount, failedSavesCount = 0 } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
@@ -177,34 +190,27 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     saveStatusElement = null;
   }
 
-  // Determine if we should show teammate editing indicator
-  let teammateElement = null;
-  if (isTeammateEditing && !isMobile) {
-    const displayText = activeTeammateNames.length > 0 
-      ? `${activeTeammateNames.join(', ')} ${activeTeammateNames.length === 1 ? 'is' : 'are'} editing...`
-      : 'Teammate editing...';
-      
-    teammateElement = (
-      <div 
-        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs cursor-pointer hover:text-blue-700 dark:hover:text-blue-300"
-        onClick={onScrollToTeammate}
-        title="Click to scroll to where they're editing"
-      >
-        <Users className="h-4 w-4" />
-        <span>{displayText}</span>
-      </div>
+  // Determine if we should show presence avatars
+  let presenceElement = null;
+  if (presentUsers.length > 0 && !isMobile && onScrollToUser) {
+    presenceElement = (
+      <PresenceAvatars 
+        users={presentUsers}
+        onScrollToUser={onScrollToUser}
+        maxVisible={3}
+      />
     );
   }
 
-  // Show both if both exist, or just one, or null if neither
-  if (!saveStatusElement && !teammateElement) {
+  // Show both save status and presence avatars if both exist, or just one, or null if neither
+  if (!saveStatusElement && !presenceElement) {
     return null;
   }
 
   return (
     <div className="flex items-center gap-4 ml-2">
       {saveStatusElement}
-      {teammateElement}
+      {presenceElement}
     </div>
   );
 };

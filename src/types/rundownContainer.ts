@@ -90,6 +90,14 @@ export interface RundownContainerProps {
   isProcessingRealtimeUpdate?: boolean;
   hasActiveTeammates?: boolean;
   activeTeammateNames?: string[];
+  presentUsers?: Array<{
+    userId: string;
+    userFullName: string;
+    isEditing: boolean;
+    lastEditedItemId?: string;
+    lastEditedField?: string;
+  }>;
+  onScrollToUser?: (user: { userId: string; lastEditedItemId?: string }) => void;
   
   // Jump to here functionality
   onJumpToHere?: (segmentId: string) => void;
