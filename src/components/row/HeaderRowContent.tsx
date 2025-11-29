@@ -92,8 +92,11 @@ const HeaderRowContent = ({
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px',
-          backgroundColor: cellBackgroundColor,
-          borderRight: cellBackgroundColor ? 'none' : '1px solid hsl(var(--border))'
+          backgroundColor: cellBackgroundColor || 'hsl(var(--background))',
+          borderRight: cellBackgroundColor ? 'none' : '1px solid hsl(var(--border))',
+          position: 'sticky',
+          left: 0,
+          zIndex: 10
         }}
       >
         <div className="flex items-center justify-center w-full h-full">

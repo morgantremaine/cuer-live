@@ -66,7 +66,11 @@ const RegularRowContent = ({
           width: '64px',
           minWidth: '64px',
           maxWidth: '64px',
-          borderRight: '1px solid hsl(var(--border))'
+          borderRight: '1px solid hsl(var(--border))',
+          position: 'sticky',
+          left: 0,
+          zIndex: 10,
+          backgroundColor: backgroundColor || 'hsl(var(--background))'
         }}
       >
         <div className="flex items-center justify-center relative w-full">
