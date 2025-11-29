@@ -58,7 +58,6 @@ const PresenceAvatars = ({ users, onScrollToUser, maxVisible = 3 }: PresenceAvat
           user.isEditing && ringClass,
           isClickable && 'cursor-pointer hover:scale-110'
         )}
-        onClick={() => handleAvatarClick(user)}
       >
         {initials}
         {user.isEditing && (
@@ -70,18 +69,28 @@ const PresenceAvatars = ({ users, onScrollToUser, maxVisible = 3 }: PresenceAvat
     );
 
     if (!showTooltip) {
-      return avatar;
+      return (
+        <div key={user.userId} onClick={() => handleAvatarClick(user)}>
+          {avatar}
+        </div>
+      );
     }
 
     return (
       <TooltipProvider key={user.userId}>
         <Tooltip>
           <TooltipTrigger asChild>
-            {avatar}
+            <button
+              type="button"
+              className="focus:outline-none"
+              onClick={() => handleAvatarClick(user)}
+            >
+              {avatar}
+            </button>
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-medium">{user.userFullName}</p>
-            {user.isEditing && <p className="text-xs text-muted-foreground">Currently editing</p>}
+            {user.isEditing && <p className="text-xs text-muted-foreground">Currently editing • Click to scroll</p>}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
