@@ -179,7 +179,7 @@ const RundownIndexContent = () => {
     const now = new Date();
     const timeDiff = (now.getTime() - lastSeen.getTime()) / 1000;
     const isActive = timeDiff < 120; // Active if seen within 2 minutes
-    const isEditing = !!user.hasUnsavedChanges;
+    const isEditing = !!(user.lastEditedItemId && user.lastEditedField);
     
     return isActive && isEditing;
   });
@@ -193,7 +193,7 @@ const RundownIndexContent = () => {
     .map(user => ({
       userId: user.userId,
       userFullName: user.userFullName || 'Unknown User',
-      isEditing: !!user.hasUnsavedChanges,
+      isEditing: !!(user.lastEditedItemId && user.lastEditedField),
       lastEditedItemId: user.lastEditedItemId,
       lastEditedField: user.lastEditedField,
     }));
