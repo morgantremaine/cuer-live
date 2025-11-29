@@ -55,6 +55,15 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   type: 'Type'
 };
 
+// Fields that should be hidden from history (auto-calculated side effects)
+const CALCULATED_FIELDS = [
+  'calculatedEndTime',
+  'calculatedBackTime', 
+  'calculatedStartTime',
+  'calculatedRowNumber',
+  'calculatedElapsedTime'
+];
+
 interface HistoryEntry {
   batch_id: string;
   user_id: string;
@@ -267,6 +276,9 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     // Skip the parent customFields object entirely
     if (field === 'customFields') return null;
     
+    // Filter out calculated fields - these are side effects of structural changes
+    if (CALCULATED_FIELDS.includes(field)) return null;
+    
     // Handle customFields.custom_xxx
     if (field.startsWith('customFields.')) {
       const customKey = field.replace('customFields.', '');
@@ -275,11 +287,11 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     
     // Handle rundown-level fields
     if (isRundownLevel || isRundownLevelField(field)) {
-      return RUNDOWN_FIELD_DISPLAY_NAMES[field] || field;
+      return RUNDOWN_FIELD_DISPLAY_NAMES[field] || null;  // Return null for unknown rundown fields
     }
     
-    // Handle built-in fields
-    return FIELD_DISPLAY_NAMES[field] || field;
+    // Handle built-in fields - return null for unknown fields instead of raw name
+    return FIELD_DISPLAY_NAMES[field] || null;
   };
 
   // Helper to safely render any value as a string
@@ -339,6 +351,7 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     const rundownLevelEdits = new Map<string, { first: any, last: any }>();
     let rowsAdded = 0;
     let rowsDeleted = 0;
+    let reorderCount = 0;
 
     // Sort details by created_at ascending to get correct old->new order
     const sortedDetails = [...entry.details].sort((a, b) => 
@@ -346,7 +359,9 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     );
 
     sortedDetails.forEach((op: any) => {
-      if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+      if (op.operation_type === 'reorder') {
+        reorderCount++;
+      } else if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
         const updates = Array.isArray(op.operation_data.fieldUpdates) 
           ? op.operation_data.fieldUpdates 
           : [];
@@ -387,6 +402,11 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
 
     // Build summary parts
     const parts: string[] = [];
+    
+    // Handle reorder operations first - they explain the cascading changes
+    if (reorderCount > 0) {
+      parts.push('Reordered rows');
+    }
     
     // Handle rundown-level edits
     if (rundownLevelEdits.size > 0) {
@@ -471,6 +491,7 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     const rundownLevelEdits = new Map<string, { first: any, last: any }>();
     const addedRows: any[] = [];
     const deletedRows: any[] = [];
+    const reorderOperations: any[] = [];
 
     // Sort details by created_at ascending to get correct old->new order
     const sortedDetails = [...details].sort((a, b) => 
@@ -478,7 +499,9 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     );
 
     sortedDetails.forEach((op: any) => {
-      if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+      if (op.operation_type === 'reorder') {
+        reorderOperations.push(op);
+      } else if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
         const updates = Array.isArray(op.operation_data.fieldUpdates) 
           ? op.operation_data.fieldUpdates 
           : [];
@@ -519,6 +542,16 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
 
     return (
       <div className="mt-3 space-y-3 text-sm">
+        {/* Show reorder operations */}
+        {reorderOperations.length > 0 && (
+          <div className="pl-4 border-l-2 border-yellow-500">
+            <div className="font-medium text-yellow-600">Reordered Rows</div>
+            <div className="ml-2 text-xs text-muted-foreground">
+              Changed row positions
+            </div>
+          </div>
+        )}
+        
         {/* Show rundown-level edits */}
         {rundownLevelEdits.size > 0 && (
           <div className="pl-4 border-l-2 border-purple-500">
