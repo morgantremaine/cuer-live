@@ -11,6 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 
 import { formatDistanceToNow, format } from 'date-fns';
 
+// Calculated fields to exclude from change detection
+const CALCULATED_FIELDS = [
+  'calculatedEndTime',
+  'calculatedBackTime', 
+  'calculatedStartTime',
+  'calculatedRowNumber',
+  'calculatedElapsedTime'
+];
+
 interface ActionLogEntry {
   id: string;
   timestamp: string;
@@ -66,6 +75,24 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
         throw revisionsError;
       }
 
+      // Also query rundown_operations for structural changes
+      const { data: operationsData } = await supabase
+        .from('rundown_operations')
+        .select('*')
+        .eq('rundown_id', rundownId)
+        .order('applied_at', { ascending: false })
+        .limit(100);
+
+      // Create a map of operations by timestamp (rounded to second) for matching
+      const operationsMap = new Map();
+      operationsData?.forEach(op => {
+        const timestamp = new Date(op.applied_at).toISOString().split('.')[0];
+        if (!operationsMap.has(timestamp)) {
+          operationsMap.set(timestamp, []);
+        }
+        operationsMap.get(timestamp).push(op);
+      });
+
       // Get unique user IDs
       const userIds = [...new Set(revisionsData?.map(r => r.created_by).filter(Boolean) || [])];
       
@@ -111,28 +138,55 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
           });
         }
 
-        // Analyze changes between revisions
-        if (previousRevision && revision.items && previousRevision.items) {
-          const changes = analyzeChanges(previousRevision.items, revision.items);
-          
-          changes.forEach((change, index) => {
-            logEntries.push({
-              id: `action-${revision.id}-${index}`,
-              timestamp: revision.created_at,
-              type: 'action',
-              action: change.action,
-              itemNumber: change.itemNumber,
-              textChanged: change.textChanged,
-              userName,
-              userEmail,
-              revision: {
-                id: revision.id,
-                revision_number: revision.revision_number,
-                revision_type: revision.revision_type,
-                action_description: revision.action_description
-              }
-            });
+        // Check for corresponding operations
+        const timestamp = new Date(revision.created_at).toISOString().split('.')[0];
+        const operations = operationsMap.get(timestamp) || [];
+        
+        // If we have operation data, use it for better descriptions
+        if (operations.length > 0) {
+          operations.forEach((op, index) => {
+            const description = getOperationDescription(op);
+            if (description) {
+              logEntries.push({
+                id: `action-${revision.id}-${index}`,
+                timestamp: revision.created_at,
+                type: 'action',
+                action: description,
+                userName,
+                userEmail,
+                revision: {
+                  id: revision.id,
+                  revision_number: revision.revision_number,
+                  revision_type: revision.revision_type,
+                  action_description: revision.action_description
+                }
+              });
+            }
           });
+        } else {
+          // Fallback: Analyze changes between revisions
+          if (previousRevision && revision.items && previousRevision.items) {
+            const changes = analyzeChanges(previousRevision.items, revision.items);
+            
+            changes.forEach((change, index) => {
+              logEntries.push({
+                id: `action-${revision.id}-${index}`,
+                timestamp: revision.created_at,
+                type: 'action',
+                action: change.action,
+                itemNumber: change.itemNumber,
+                textChanged: change.textChanged,
+                userName,
+                userEmail,
+                revision: {
+                  id: revision.id,
+                  revision_number: revision.revision_number,
+                  revision_type: revision.revision_type,
+                  action_description: revision.action_description
+                }
+              });
+            });
+          }
         }
       }
 
@@ -152,6 +206,39 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
     }
   };
 
+  const getOperationDescription = (operation: any): string | null => {
+    const opType = operation.operation_type;
+    const opData = operation.operation_data;
+
+    switch (opType) {
+      case 'reorder':
+        return 'Reordered rows';
+      
+      case 'add_row':
+        const addedCount = opData?.newItems?.length || 1;
+        return `Added ${addedCount} row${addedCount > 1 ? 's' : ''}`;
+      
+      case 'add_header':
+        return 'Added a new header';
+      
+      case 'delete_row':
+        const deletedCount = opData?.deletedIds?.length || 1;
+        return `Deleted ${deletedCount} row${deletedCount > 1 ? 's' : ''}`;
+      
+      case 'copy_rows':
+        return 'Copied rows';
+      
+      case 'move_rows':
+        return 'Moved rows';
+      
+      case 'toggle_lock':
+        return opData?.locked ? 'Locked row' : 'Unlocked row';
+      
+      default:
+        return null;
+    }
+  };
+
   const analyzeChanges = (oldItems: any[], newItems: any[]) => {
     const changes: Array<{
       action: string;
@@ -159,80 +246,75 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
       textChanged?: string;
     }> = [];
 
+    // Create maps by ID for proper comparison
+    const oldById = new Map(oldItems.map(item => [item.id, item]));
+    const newById = new Map(newItems.map(item => [item.id, item]));
+    
+    // Check if this is a reorder (same IDs, different positions)
+    const oldIds = oldItems.map(i => i.id);
+    const newIds = newItems.map(i => i.id);
+    
+    if (oldIds.length === newIds.length) {
+      const oldIdsSet = new Set(oldIds);
+      const newIdsSet = new Set(newIds);
+      const sameIds = oldIdsSet.size === newIdsSet.size && 
+                      [...oldIdsSet].every(id => newIdsSet.has(id));
+      
+      if (sameIds && JSON.stringify(oldIds) !== JSON.stringify(newIds)) {
+        return [{ action: 'Reordered rows' }];
+      }
+    }
+
     // Check for item count changes
     if (newItems.length > oldItems.length) {
-      const addedCount = newItems.length - oldItems.length;
-      for (let i = 0; i < addedCount; i++) {
-        const newItemIndex = oldItems.length + i;
-        const newItem = newItems[newItemIndex];
+      const addedItems = newItems.filter(item => !oldById.has(item.id));
+      addedItems.forEach(item => {
         changes.push({
           action: `Added new item`,
-          itemNumber: newItemIndex + 1,
-          textChanged: newItem?.name || 'Untitled'
+          textChanged: item?.name || 'Untitled'
         });
-      }
+      });
     } else if (newItems.length < oldItems.length) {
-      const deletedCount = oldItems.length - newItems.length;
+      const deletedItems = oldItems.filter(item => !newById.has(item.id));
+      const deletedCount = deletedItems.length;
       changes.push({
-        action: `Deleted ${deletedCount} item(s)`,
-        itemNumber: newItems.length + 1
+        action: `Deleted ${deletedCount} item(s)`
       });
     }
 
-    // Check for content changes in existing items
-    const maxLength = Math.min(oldItems.length, newItems.length);
-    for (let i = 0; i < maxLength; i++) {
-      const oldItem = oldItems[i];
-      const newItem = newItems[i];
-      
-      if (!oldItem || !newItem) continue;
+    // Check for content changes in existing items (by ID)
+    newItems.forEach((newItem) => {
+      const oldItem = oldById.get(newItem.id);
+      if (!oldItem) return;
 
-      // Check name changes
-      if (oldItem.name !== newItem.name) {
-        const oldText = oldItem.name || '';
-        const newText = newItem.name || '';
-        const textChanged = getTextDifference(oldText, newText);
-        changes.push({
-          action: `Updated item title`,
-          itemNumber: i + 1,
-          textChanged
-        });
-      }
+      // Check for meaningful field changes (skip calculated fields)
+      const fields = [
+        { key: 'name', label: 'item title' },
+        { key: 'script', label: 'script' },
+        { key: 'notes', label: 'notes' },
+        { key: 'talent', label: 'talent' }
+      ];
 
-      // Check script changes
-      if (oldItem.script !== newItem.script) {
-        const oldText = oldItem.script || '';
-        const newText = newItem.script || '';
-        const textChanged = getTextDifference(oldText, newText);
-        changes.push({
-          action: `Updated script`,
-          itemNumber: i + 1,
-          textChanged
-        });
-      }
-
-      // Check notes changes
-      if (oldItem.notes !== newItem.notes) {
-        const oldText = oldItem.notes || '';
-        const newText = newItem.notes || '';
-        const textChanged = getTextDifference(oldText, newText);
-        changes.push({
-          action: `Updated notes`,
-          itemNumber: i + 1,
-          textChanged
-        });
-      }
-
-      // Check talent changes
-      if (oldItem.talent !== newItem.talent) {
-        const textChanged = `"${oldItem.talent || ''}" → "${newItem.talent || ''}"`;
-        changes.push({
-          action: `Updated talent`,
-          itemNumber: i + 1,
-          textChanged
-        });
-      }
-    }
+      fields.forEach(field => {
+        if (oldItem[field.key] !== newItem[field.key]) {
+          if (field.key === 'talent') {
+            const textChanged = `"${oldItem[field.key] || ''}" → "${newItem[field.key] || ''}"`;
+            changes.push({
+              action: `Updated ${field.label}`,
+              textChanged
+            });
+          } else {
+            const oldText = oldItem[field.key] || '';
+            const newText = newItem[field.key] || '';
+            const textChanged = getTextDifference(oldText, newText);
+            changes.push({
+              action: `Updated ${field.label}`,
+              textChanged
+            });
+          }
+        }
+      });
+    });
 
     return changes;
   };
