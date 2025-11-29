@@ -333,6 +333,7 @@ export const RundownMOSDialog: React.FC<RundownMOSDialogProps> = ({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Loading MOS Settings</DialogTitle>
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
