@@ -52,7 +52,9 @@ const FIELD_DISPLAY_NAMES: Record<string, string> = {
   notes: 'Notes',
   color: 'Color',
   rowNumber: 'Row Number',
-  type: 'Type'
+  type: 'Type',
+  isFloating: 'Floating',
+  isFloated: 'Floating'
 };
 
 // Fields that should be hidden from history (auto-calculated side effects)
@@ -344,6 +346,16 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
       } catch {
         return value || '(empty)';
       }
+    }
+    
+    // Handle isFloating/isFloated boolean fields - show human-readable status
+    if ((fieldName === 'isFloating' || fieldName === 'isFloated') && typeof value === 'boolean') {
+      return value ? 'Floated' : 'Unfloated';
+    }
+    
+    // Also handle string representations of booleans for these fields
+    if ((fieldName === 'isFloating' || fieldName === 'isFloated') && typeof value === 'string') {
+      return value === 'true' ? 'Floated' : 'Unfloated';
     }
     
     if (value === null || value === undefined) return '(empty)';
