@@ -82,7 +82,7 @@ const PresenceAvatars = ({ users, onScrollToUser, maxVisible = 3 }: PresenceAvat
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="focus:outline-none"
+              className="focus:outline-none overflow-visible"
               onClick={() => handleAvatarClick(user)}
             >
               {avatar}
