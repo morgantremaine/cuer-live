@@ -63,7 +63,8 @@ const CALCULATED_FIELDS = [
   'calculatedBackTime', 
   'calculatedStartTime',
   'calculatedRowNumber',
-  'calculatedElapsedTime'
+  'calculatedElapsedTime',
+  'rowNumber'
 ];
 
 interface HistoryEntry {
