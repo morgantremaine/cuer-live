@@ -237,12 +237,43 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     // Don't show if only one operation
     if (entry.operation_count <= 1) return false;
     
+    // Check if there's a reorder with valid move metadata
+    const reorderWithMetadata = entry.details?.find((op: any) => {
+      if (op.operation_type !== 'reorder') return false;
+      const { movedItemNames, fromIndex, toIndex } = op.operation_data || {};
+      return movedItemNames?.length > 0 && fromIndex !== undefined && toIndex !== undefined;
+    });
+    
+    // If we have a reorder with metadata, only show details if there's OTHER meaningful content
+    if (reorderWithMetadata) {
+      const hasOtherContent = entry.details?.some((op: any) => {
+        // Check for add/delete rows
+        if (op.operation_type === 'add_row' || op.operation_type === 'delete_row') {
+          return true;
+        }
+        // Check for cell_edits with non-calculated fields
+        if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
+          return op.operation_data.fieldUpdates.some((u: any) => {
+            // Return true if this is a meaningful (non-calculated) field change
+            return !CALCULATED_FIELDS.includes(u.field);
+          });
+        }
+        return false;
+      });
+      
+      return hasOtherContent;
+    }
+    
+    // For non-reorder operations, use existing logic
     // Count unique field/item combinations to detect meaningful changes
     const uniqueChanges = new Set<string>();
     entry.details?.forEach((op: any) => {
       if (op.operation_type === 'cell_edit' && op.operation_data?.fieldUpdates) {
         op.operation_data.fieldUpdates.forEach((u: any) => {
-          uniqueChanges.add(`${u.itemId || 'rundown'}-${u.field}`);
+          // Only count non-calculated fields
+          if (!CALCULATED_FIELDS.includes(u.field)) {
+            uniqueChanges.add(`${u.itemId || 'rundown'}-${u.field}`);
+          }
         });
       } else if (op.operation_type === 'add_row' || op.operation_type === 'delete_row') {
         uniqueChanges.add(op.operation_type);
