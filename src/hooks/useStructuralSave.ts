@@ -16,6 +16,11 @@ interface StructuralOperationData {
   sequenceNumber?: number;
   lockedRowNumbers?: { [itemId: string]: string }; // For lock operations
   numberingLocked?: boolean; // For lock operations
+  // Move metadata for reorder operations
+  movedItemIds?: string[];      // IDs of items actually moved
+  fromIndex?: number;           // Original position (first item's index for multi-select)
+  toIndex?: number;             // New position (first item's index for multi-select)
+  movedItemNames?: string[];    // Item names for display
 }
 
 interface StructuralOperation {

@@ -468,10 +468,38 @@ export const useDragAndDrop = (
         const order = newItems.map(item => item.id);
         console.log('🏗️ Triggering structural operation for reorder (database persistence)');
         
-        // Call structural change handler with reorder operation
+        // Capture move metadata for history display
+        let movedItemNames: string[] = [];
+        let fromIndex = activeIndex;
+        let toIndex = overIndex;
+        
+        if (draggedIds.length > 1) {
+          // Multi-item move
+          const draggedItems = draggedIds
+            .map((id: string) => items.find(item => item.id === id))
+            .filter(Boolean) as RundownItem[];
+          movedItemNames = draggedItems.map(item => item.name || 'Untitled');
+          
+          // Find the actual destination index in the new array
+          if (dropTargetIndex !== null) {
+            toIndex = dropTargetIndex;
+          }
+        } else {
+          // Single item move
+          const draggedItem = items[activeIndex];
+          movedItemNames = [draggedItem?.name || 'Untitled'];
+        }
+        
+        // Call structural change handler with reorder operation and move metadata
         try {
           // Try to call as structural operation handler
-          (markStructuralChange as any)('reorder', { order });
+          (markStructuralChange as any)('reorder', { 
+            order,
+            movedItemIds: draggedIds,
+            fromIndex,
+            toIndex,
+            movedItemNames
+          });
         } catch (error) {
           // Fallback to just marking structural change
           markStructuralChange();

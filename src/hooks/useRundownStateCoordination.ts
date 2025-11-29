@@ -144,7 +144,13 @@ export const useRundownStateCoordination = () => {
       // Trigger structural operation for database persistence
       if (persistedState.markStructuralChange) {
         const order = newItems.map(item => item.id);
-        persistedState.markStructuralChange('reorder', { order });
+        persistedState.markStructuralChange('reorder', { 
+          order,
+          movedItemIds: [currentItems[index].id],
+          fromIndex: index,
+          toIndex: index - 1,
+          movedItemNames: [currentItems[index].name || 'Untitled']
+        });
         console.log('🏗️ Triggered structural operation for moveUp');
       }
     }
@@ -175,7 +181,13 @@ export const useRundownStateCoordination = () => {
       // Trigger structural operation for database persistence
       if (persistedState.markStructuralChange) {
         const order = newItems.map(item => item.id);
-        persistedState.markStructuralChange('reorder', { order });
+        persistedState.markStructuralChange('reorder', { 
+          order,
+          movedItemIds: [currentItems[index].id],
+          fromIndex: index,
+          toIndex: index + 1,
+          movedItemNames: [currentItems[index].name || 'Untitled']
+        });
         console.log('🏗️ Triggered structural operation for moveDown');
       }
     }
