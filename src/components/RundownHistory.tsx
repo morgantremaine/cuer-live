@@ -403,9 +403,21 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
     // Build summary parts
     const parts: string[] = [];
     
-    // Handle reorder operations first - they explain the cascading changes
+    // Handle reorder operations first - show specific move info
     if (reorderCount > 0) {
-      parts.push('Reordered rows');
+      // Extract move info from the first reorder operation
+      const reorderOp = sortedDetails.find(op => op.operation_type === 'reorder');
+      const { movedItemNames, fromIndex, toIndex } = reorderOp?.operation_data || {};
+      
+      if (movedItemNames?.length > 0 && fromIndex !== undefined && toIndex !== undefined) {
+        if (movedItemNames.length === 1) {
+          parts.push(`Moved "${movedItemNames[0]}" from row ${fromIndex + 1} to row ${toIndex + 1}`);
+        } else {
+          parts.push(`Moved ${movedItemNames.length} rows from row ${fromIndex + 1} to row ${toIndex + 1}`);
+        }
+      } else {
+        parts.push('Reordered rows');
+      }
     }
     
     // Handle rundown-level edits
@@ -542,13 +554,24 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
 
     return (
       <div className="mt-3 space-y-3 text-sm">
-        {/* Show reorder operations */}
+        {/* Show reorder operations with specific move details */}
         {reorderOperations.length > 0 && (
           <div className="pl-4 border-l-2 border-yellow-500">
-            <div className="font-medium text-yellow-600">Reordered Rows</div>
-            <div className="ml-2 text-xs text-muted-foreground">
-              Changed row positions
-            </div>
+            <div className="font-medium text-yellow-600">Move Details</div>
+            {reorderOperations.map((op, i) => {
+              const { movedItemNames, fromIndex, toIndex } = op.operation_data || {};
+              if (movedItemNames?.length > 0 && fromIndex !== undefined && toIndex !== undefined) {
+                return (
+                  <div key={i} className="ml-2 text-xs text-muted-foreground">
+                    {movedItemNames.length === 1 
+                      ? `Moved "${movedItemNames[0]}" from row ${fromIndex + 1} to row ${toIndex + 1}`
+                      : `Moved ${movedItemNames.length} items (${movedItemNames.slice(0, 3).join(', ')}${movedItemNames.length > 3 ? '...' : ''}) from row ${fromIndex + 1} to row ${toIndex + 1}`
+                    }
+                  </div>
+                );
+              }
+              return <div key={i} className="ml-2 text-xs text-muted-foreground">Changed row positions</div>;
+            })}
           </div>
         )}
         
