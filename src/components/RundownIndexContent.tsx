@@ -184,6 +184,28 @@ const RundownIndexContent = () => {
     return isActive && isEditing;
   });
 
+  // Create presence users array for avatar display (all active users, not just editing)
+  const presentUsers = otherUsers
+    .filter(user => {
+      const timeDiff = (Date.now() - new Date(user.lastSeen).getTime()) / 1000;
+      return timeDiff < 120; // Active within 2 minutes
+    })
+    .map(user => ({
+      userId: user.userId,
+      userFullName: user.userFullName || 'Unknown User',
+      isEditing: !!user.hasUnsavedChanges,
+      lastEditedItemId: user.lastEditedItemId,
+      lastEditedField: user.lastEditedField,
+    }));
+
+  // Handle scroll to user - scrolls to where a specific user is editing
+  const handleScrollToUser = useCallback((user: { userId: string; lastEditedItemId?: string }) => {
+    if (user.lastEditedItemId) {
+      console.log('📍 Scrolling to user location:', user);
+      handleScrollToEditor(user.lastEditedItemId);
+    }
+  }, [handleScrollToEditor]);
+
   // Handle scroll to active teammate - finds the first cell being edited by any teammate and scrolls to it
   const handleScrollToActiveTeammate = useCallback(() => {
     // Find active teammates with location data from presence
@@ -707,6 +729,8 @@ const RundownIndexContent = () => {
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         hasActiveTeammates={hasActiveTeammates}
         activeTeammateNames={activeTeammateNames}
+        presentUsers={presentUsers}
+        onScrollToUser={handleScrollToUser}
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
