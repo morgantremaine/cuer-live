@@ -114,6 +114,12 @@ serve(async (req) => {
     // Per-cell save system uses "last write wins" architecture
     // No doc_version checking - aligns with original per-cell design
 
+    // Normalize values for comparison (null, undefined, empty string → null)
+    const normalizeValue = (v: any): any => {
+      if (v === null || v === undefined || v === '') return null;
+      return v;
+    };
+
     // Apply field updates
     console.log('⚙️ Processing field updates:', {
       updates: fieldUpdates.map(u => ({
@@ -132,6 +138,7 @@ serve(async (req) => {
     let updatedExternalNotes = currentRundown.external_notes
     let updatedNumberingLocked = currentRundown.numbering_locked
     let updatedLockedRowNumbers = currentRundown.locked_row_numbers
+    let hasActualChanges = false;
     
     for (const update of fieldUpdates) {
       if (update.itemId) {
@@ -140,56 +147,101 @@ serve(async (req) => {
           // Handle custom fields with nested structure
           if (update.field.startsWith('customFields.')) {
             const customFieldKey = update.field.replace('customFields.', '')
-            updatedItems[itemIndex] = {
-              ...updatedItems[itemIndex],
-              customFields: {
-                ...(updatedItems[itemIndex].customFields || {}),
-                [customFieldKey]: update.value
+            const oldValue = updatedItems[itemIndex].customFields?.[customFieldKey];
+            if (normalizeValue(oldValue) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedItems[itemIndex] = {
+                ...updatedItems[itemIndex],
+                customFields: {
+                  ...(updatedItems[itemIndex].customFields || {}),
+                  [customFieldKey]: update.value
+                }
               }
             }
           } else {
             // Regular field update
-            updatedItems[itemIndex] = {
-              ...updatedItems[itemIndex],
-              [update.field]: update.value
+            const oldValue = updatedItems[itemIndex][update.field];
+            if (normalizeValue(oldValue) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedItems[itemIndex] = {
+                ...updatedItems[itemIndex],
+                [update.field]: update.value
+              }
             }
           }
         }
       } else {
         switch (update.field) {
           case 'title':
-            updatedTitle = update.value
+            if (normalizeValue(updatedTitle) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedTitle = update.value
+            }
             break
           case 'startTime':
-            updatedStartTime = update.value
+            if (normalizeValue(updatedStartTime) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedStartTime = update.value
+            }
             break
           case 'endTime':
-            updatedEndTime = update.value
+            if (normalizeValue(updatedEndTime) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedEndTime = update.value
+            }
             break
           case 'timezone':
-            updatedTimezone = update.value
+            if (normalizeValue(updatedTimezone) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedTimezone = update.value
+            }
             break
           case 'showDate':
             if (update.value) {
               const dateObj = typeof update.value === 'string' ? new Date(update.value) : update.value;
-              updatedShowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+              const newShowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+              if (normalizeValue(updatedShowDate) !== normalizeValue(newShowDate)) {
+                hasActualChanges = true;
+                updatedShowDate = newShowDate;
+              }
             } else {
-              updatedShowDate = null;
+              if (normalizeValue(updatedShowDate) !== null) {
+                hasActualChanges = true;
+                updatedShowDate = null;
+              }
             }
             break
           case 'externalNotes':
-            updatedExternalNotes = update.value
+            if (normalizeValue(updatedExternalNotes) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedExternalNotes = update.value
+            }
             break
           case 'numberingLocked':
-            updatedNumberingLocked = update.value
-            console.log('🔒 Updating numbering_locked:', update.value);
+            if (normalizeValue(updatedNumberingLocked) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedNumberingLocked = update.value
+              console.log('🔒 Updating numbering_locked:', update.value);
+            }
             break
           case 'lockedRowNumbers':
-            updatedLockedRowNumbers = update.value
-            console.log('🔒 Updating locked_row_numbers:', Object.keys(update.value || {}).length, 'items');
+            if (normalizeValue(updatedLockedRowNumbers) !== normalizeValue(update.value)) {
+              hasActualChanges = true;
+              updatedLockedRowNumbers = update.value
+              console.log('🔒 Updating locked_row_numbers:', Object.keys(update.value || {}).length, 'items');
+            }
             break
         }
       }
+    }
+
+    // Skip database update if nothing actually changed
+    if (!hasActualChanges) {
+      console.log('⏭️ No actual changes detected - skipping database update');
+      return new Response(
+        JSON.stringify({ success: true, noChanges: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const updateTimestamp = new Date().toISOString()
@@ -275,15 +327,24 @@ serve(async (req) => {
         })
       };
 
-      await supabaseClient.from('rundown_operations').insert({
-        rundown_id: rundownId,
-        user_id: user.id,
-        operation_type: 'cell_edit',
-        operation_data: operationData,
-        created_at: new Date().toISOString()
-      });
-      
-      console.log('📝 Logged cell edit operation to history');
+      // Filter out no-change updates before logging history
+      const actualChanges = operationData.fieldUpdates.filter(u => 
+        normalizeValue(u.oldValue) !== normalizeValue(u.newValue)
+      );
+
+      // Only insert history if there are actual changes
+      if (actualChanges.length > 0) {
+        await supabaseClient.from('rundown_operations').insert({
+          rundown_id: rundownId,
+          user_id: user.id,
+          operation_type: 'cell_edit',
+          operation_data: { fieldUpdates: actualChanges },
+          created_at: new Date().toISOString()
+        });
+        console.log('📝 Logged cell edit operation to history');
+      } else {
+        console.log('⏭️ Skipped history - no actual changes detected');
+      }
     } catch (historyError) {
       // Don't fail the save if history logging fails
       console.error('⚠️ Failed to log cell edit to history:', historyError);

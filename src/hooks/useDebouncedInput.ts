@@ -19,11 +19,13 @@ export const useDebouncedInput = (
   const cursorPositionRef = useRef<{ start: number; end: number } | null>(null);
   const isTypingRef = useRef(false);
   const elementRef = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null);
+  const baselineValueRef = useRef(initialValue);
 
   // Update local value when prop changes, but only if NOT actively typing
   // This prevents cursor jumps during user input
   useEffect(() => {
     if (!isTypingRef.current) {
+      baselineValueRef.current = initialValue;
       setLocalValue(initialValue);
     }
   }, [initialValue]);
@@ -36,6 +38,7 @@ export const useDebouncedInput = (
     
     timeoutRef.current = setTimeout(() => {
       onUpdate(value);
+      baselineValueRef.current = value;
     }, delay);
   }, [onUpdate, delay]);
 
@@ -62,7 +65,11 @@ export const useDebouncedInput = (
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    onUpdate(localValue);
+    // Only update if value has actually changed from baseline
+    if (localValue !== baselineValueRef.current) {
+      onUpdate(localValue);
+      baselineValueRef.current = localValue;
+    }
   }, [localValue, onUpdate]);
 
   // Restore cursor position after React reconciles the DOM
