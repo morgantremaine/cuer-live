@@ -1,7 +1,8 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import OptimizedVirtualRundownTable from './OptimizedVirtualRundownTable';
 import RundownTableHeader from './RundownTableHeader';
+import RowNumberColumn from './RowNumberColumn';
 import { useRundownMemoization } from '@/hooks/useRundownMemoization';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -313,9 +314,38 @@ const RundownContent = React.memo<RundownContentProps>(({
     };
   }, [resetDragState, draggedItemIndex, isDragging]);
 
-  // Calculate total table width to ensure proper sizing
+  // Refs for scroll synchronization
+  const frozenColumnRef = useRef<HTMLDivElement>(null);
+  const isSyncingScrollRef = useRef(false);
+
+  // Sync scroll between frozen column and main table
+  useEffect(() => {
+    const scrollAreaElement = scrollContainerRef.current;
+    if (!scrollAreaElement) return;
+    
+    // Find the actual scrollable div inside ScrollArea
+    const scrollViewport = scrollAreaElement.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement;
+    if (!scrollViewport) return;
+    
+    const handleScroll = () => {
+      if (isSyncingScrollRef.current) return;
+      
+      isSyncingScrollRef.current = true;
+      if (frozenColumnRef.current) {
+        frozenColumnRef.current.scrollTop = scrollViewport.scrollTop;
+      }
+      requestAnimationFrame(() => {
+        isSyncingScrollRef.current = false;
+      });
+    };
+    
+    scrollViewport.addEventListener('scroll', handleScroll);
+    return () => scrollViewport.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Calculate total table width (excluding row number column)
   const totalTableWidth = React.useMemo(() => {
-    let total = 64; // Row number column width
+    let total = 0; // Don't include row number column anymore
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
       const widthValue = parseFloat(width.replace('px', ''));
@@ -389,60 +419,89 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with Separate Header and Body */}
-      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef} data-rundown-table="true">
-        <div className="relative">
-          {/* Sticky Header - Outside of Transform */}
-          <div 
-            className="sticky top-0 z-20 bg-background"
-            style={{ 
-              width: `${totalTableWidth * zoomLevel}px`,
-              minWidth: `${totalTableWidth * zoomLevel}px`
-            }}
+      {/* Two-section layout: frozen column + scrollable content */}
+      <div className="flex h-full w-full print:hidden">
+        {/* Frozen Row Number Column */}
+        <div 
+          ref={frozenColumnRef}
+          className="overflow-y-auto overflow-x-hidden"
+          style={{ 
+            width: '64px',
+            flexShrink: 0,
+            height: '100%'
+          }}
+        >
+          <RowNumberColumn
+            items={visibleItems}
+            getRowNumber={getRowNumberFromMemo}
+            currentSegmentId={currentSegmentId}
+            selectedRows={selectedRows}
+            zoomLevel={zoomLevel}
+            onToggleCollapse={toggleHeaderCollapse}
+            isHeaderCollapsed={isHeaderCollapsed}
+            onToggleAllHeaders={handleToggleAllHeaders}
+          />
+        </div>
+
+        {/* Scrollable Main Content */}
+        <div className="flex-1 relative">
+          <ScrollArea 
+            className="h-full w-full bg-background" 
+            ref={scrollContainerRef}
+            data-rundown-table="true"
           >
-            <table 
-              className="border-collapse table-container" 
+            <div className="relative">
+            {/* Sticky Header */}
+            <div 
+              className="sticky top-0 z-20 bg-background"
               style={{ 
-                tableLayout: 'fixed', 
                 width: `${totalTableWidth * zoomLevel}px`,
-                minWidth: `${totalTableWidth * zoomLevel}px`,
-                margin: 0,
-                padding: 0,
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden',
-                willChange: 'transform'
+                minWidth: `${totalTableWidth * zoomLevel}px`
               }}
-              data-rundown-table="header"
             >
-              <RundownTableHeader 
-                visibleColumns={visibleColumns}
-                allColumns={allColumns}
-                getColumnWidth={(column) => `${parseFloat(getColumnWidth(column).replace('px', '')) * zoomLevel}px`}
-                updateColumnWidth={(columnId, width) => updateColumnWidth(columnId, width / zoomLevel)}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                items={items}
-                columnExpandState={columnExpandState}
-                onToggleColumnExpand={handleToggleColumnExpand}
-                onToggleAllHeaders={handleToggleAllHeaders}
-                isHeaderCollapsed={isHeaderCollapsed}
-                savedLayouts={savedLayouts}
-                onLoadLayout={onLoadLayout}
-                zoomLevel={zoomLevel}
-              />
-            </table>
-          </div>
-          
-          {/* Scaled Table Body */}
-          <div 
-            className="bg-background zoom-container" 
-            style={{ 
-              minWidth: `${totalTableWidth}px`,
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top left',
-              width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
-            }}
-          >
+              <table 
+                className="border-collapse table-container" 
+                style={{ 
+                  tableLayout: 'fixed', 
+                  width: `${totalTableWidth * zoomLevel}px`,
+                  minWidth: `${totalTableWidth * zoomLevel}px`,
+                  margin: 0,
+                  padding: 0,
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
+                  willChange: 'transform'
+                }}
+                data-rundown-table="header"
+              >
+                <RundownTableHeader 
+                  visibleColumns={visibleColumns}
+                  allColumns={allColumns}
+                  getColumnWidth={(column) => `${parseFloat(getColumnWidth(column).replace('px', '')) * zoomLevel}px`}
+                  updateColumnWidth={(columnId, width) => updateColumnWidth(columnId, width / zoomLevel)}
+                  onReorderColumns={onReorderColumns}
+                  onToggleColumnVisibility={onToggleColumnVisibility}
+                  items={items}
+                  columnExpandState={columnExpandState}
+                  onToggleColumnExpand={handleToggleColumnExpand}
+                  onToggleAllHeaders={handleToggleAllHeaders}
+                  isHeaderCollapsed={isHeaderCollapsed}
+                  savedLayouts={savedLayouts}
+                  onLoadLayout={onLoadLayout}
+                  zoomLevel={zoomLevel}
+                />
+              </table>
+            </div>
+            
+            {/* Scaled Table Body */}
+            <div 
+              className="bg-background zoom-container" 
+              style={{ 
+                minWidth: `${totalTableWidth}px`,
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top left',
+                width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+              }}
+            >
             <table
                   className="border-collapse table-container" 
                   style={{ 
@@ -579,11 +638,13 @@ const RundownContent = React.memo<RundownContentProps>(({
               userRole={userRole}
             />
                   )}
-                </table>
-          </div>
+                 </table>
+              </div>
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      </div>
     </div>
   );
 });

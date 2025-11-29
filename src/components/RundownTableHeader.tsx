@@ -223,39 +223,6 @@ const RundownTableHeader = ({
   return (
     <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20">
       <tr>
-        {/* Row number column - static, not draggable */}
-        <th 
-          className="p-0 text-center text-sm font-semibold text-white bg-blue-600"
-          style={{ 
-            width: `${64 * zoomLevel}px`, 
-            minWidth: `${64 * zoomLevel}px`,
-            maxWidth: `${64 * zoomLevel}px`,
-            borderRight: '1px solid hsl(var(--border))',
-            position: 'sticky',
-            left: 0,
-            zIndex: 30
-          }}
-        >
-          <div className="flex items-center justify-center w-full h-full">
-            {onToggleAllHeaders && isHeaderCollapsed && items.some(item => item.type === 'header') && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleAllHeaders();
-                }}
-                className="p-0.5 hover:bg-blue-500 rounded transition-colors"
-                title="Toggle all header groups"
-              >
-                {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
-                  <ChevronRight className="h-3 w-3 text-white" />
-                ) : (
-                  <ChevronDown className="h-3 w-3 text-white" />
-                )}
-              </button>
-            )}
-          </div>
-        </th>
-        
         {/* Draggable columns */}
         <DndContext 
           sensors={sensors}
