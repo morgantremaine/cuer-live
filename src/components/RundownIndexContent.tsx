@@ -528,8 +528,6 @@ const RundownIndexContent = () => {
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
-    // Track the edit location for presence broadcasting
-    setLastEditLocation({ itemId, field });
     const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
     handleCellClick(itemId, field, mockEvent);
   };
@@ -760,8 +758,14 @@ const RundownIndexContent = () => {
         onToggleLock={toggleLock}
         // Per-cell editor indicators
         getEditorForCell={getEditorForCell}
-        onCellFocus={(itemId, field) => handleCellEditStart(itemId, field, '')}
-        onCellBlur={(itemId, field) => handleCellEditComplete(itemId, field, '')}
+        onCellFocus={(itemId, field) => {
+          setLastEditLocation({ itemId, field });
+          handleCellEditStart(itemId, field, '');
+        }}
+        onCellBlur={(itemId, field) => {
+          setLastEditLocation(null);
+          handleCellEditComplete(itemId, field, '');
+        }}
         onScrollToEditor={handleScrollToEditor}
         onScrollToActiveTeammate={handleScrollToActiveTeammate}
         userRole={userRole}
