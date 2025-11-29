@@ -7,6 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+// Map camelCase field names to snake_case database columns
+const CAMEL_TO_SNAKE_FIELD_MAP: Record<string, string> = {
+  showDate: 'show_date',
+  startTime: 'start_time',
+  endTime: 'end_time',
+  externalNotes: 'external_notes',
+  numberingLocked: 'numbering_locked',
+  lockedRowNumbers: 'locked_row_numbers'
+}
+
 interface FieldUpdate {
   itemId?: string;
   field: string;
@@ -250,8 +260,9 @@ serve(async (req) => {
               }
             }
           } else {
-            // Rundown-level field
-            oldValue = currentRundown[u.field] || null;
+            // Rundown-level field - map camelCase to snake_case for DB lookup
+            const dbField = CAMEL_TO_SNAKE_FIELD_MAP[u.field] || u.field;
+            oldValue = currentRundown[dbField] || null;
           }
           
           return {
