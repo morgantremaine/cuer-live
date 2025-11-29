@@ -85,7 +85,32 @@ const HeaderRowContent = ({
 
   return (
     <>
-      {/* Dynamic columns only - row number is in frozen column */}
+      {/* Row number column - must match the header structure exactly */}
+      <td 
+        className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px]"
+        style={{ 
+          width: '64px',
+          minWidth: '64px', 
+          maxWidth: '64px',
+          backgroundColor: cellBackgroundColor,
+          borderRight: cellBackgroundColor ? 'none' : '1px solid hsl(var(--border))'
+        }}
+      >
+        <div className="flex items-center justify-center w-full h-full">
+          <button
+            onClick={handleToggleCollapse}
+            className="flex items-center justify-center p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+            title={isCollapsed ? 'Expand header' : 'Collapse header'}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+        </div>
+      </td>
+      {/* Dynamic columns */}
       {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
         const isLastColumn = columnIndex === columns.length - 1;
