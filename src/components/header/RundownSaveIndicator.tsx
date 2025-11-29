@@ -209,8 +209,8 @@ const RundownSaveIndicator = ({
 
   return (
     <div className="flex items-center gap-4 ml-2">
-      {saveStatusElement}
       {presenceElement}
+      {saveStatusElement}
     </div>
   );
 };
