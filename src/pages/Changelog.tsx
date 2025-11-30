@@ -6,6 +6,7 @@ import aiRundownSummaryImage from '@/assets/changelog/ai-rundown-summary-v122.pn
 import printColumnSelectionImage from '@/assets/changelog/print-column-selection-v123.png';
 import duplicateToTeamImage from '@/assets/changelog/duplicate-to-team-v124.png';
 import presenceAvatarsImage from '@/assets/changelog/presence-avatars-v125.png';
+import talentQuickInsertImage from '@/assets/changelog/talent-quick-insert-v126.png';
 import { SEO } from '@/components/SEO';
 
 const Changelog: React.FC = () => {
@@ -33,6 +34,42 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.2.6 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.2.6</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">⌨️ Talent Quick-Insert</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Keyboard Shortcuts for Talent:</strong> Set up talent presets for rapid insertion into your rundown using keyboard shortcuts:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>9 Preset Slots:</strong> Configure up to 9 talent presets with custom names and colors</li>
+                      <li><strong>Quick Insert:</strong> Press Alt/Option + 1-9 to instantly insert talent badges into any text field</li>
+                      <li><strong>Color-Coded Badges:</strong> Each talent can have a unique color for easy visual identification in the rundown</li>
+                      <li><strong>Access via Tools Menu:</strong> Find the Talent Quick-Insert option in the Tools dropdown menu</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src={talentQuickInsertImage}
+                        alt="Talent Quick-Insert dialog showing 9 preset slots with keyboard shortcuts Alt+1 through Alt+9"
+                        className="w-full max-w-2xl mx-auto rounded"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Set up talent presets with names and colors for quick keyboard insertion
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.2.5 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center mb-4">
