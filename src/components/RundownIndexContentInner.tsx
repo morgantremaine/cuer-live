@@ -29,11 +29,9 @@ export const RundownIndexContentInner: React.FC<RundownIndexContentInnerProps> =
 }) => {
   const { talentPresets } = useTalentPresets();
 
-  // Handle talent insertion with toast
+  // Handle talent insertion silently
   const handleInsertTalent = useCallback((talentName: string) => {
-    toast.success(`Inserted: ${talentName}`, {
-      duration: 1500,
-    });
+    // Silent insert - no toast notification
   }, []);
 
   // Add keyboard shortcuts including talent presets
