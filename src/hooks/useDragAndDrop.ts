@@ -565,7 +565,7 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (targetIndex !== undefined && draggedItemIndex !== null && isDragActiveRef.current) {
+    if (targetIndex !== undefined && draggedItemIndexRef.current !== null && isDragActiveRef.current) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
@@ -592,7 +592,7 @@ export const useDragAndDrop = (
         dropTargetIndexRef.current = insertIndex;
       }
     }
-  }, [draggedItemIndex, dropTargetIndex, items]);
+  }, [dropTargetIndex, items]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
