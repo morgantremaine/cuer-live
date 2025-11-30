@@ -60,6 +60,7 @@ export const useBlueprintRealtimeSync = ({
         notes: payload.new?.notes || '',
         cameraPlots: payload.new?.camera_plots || [],
         componentOrder: payload.new?.component_order || ['camera-plot', 'scratchpad'], // Removed 'crew-list'
+        talentPresets: payload.new?.talent_presets || [],
         // Flag this as a granular update
         isGranularUpdate: true,
         timestamp: updateTimestamp

@@ -1,7 +1,7 @@
-
 import { useCallback } from 'react';
 import { useBlueprintPersistence } from './useBlueprintPersistence';
 import { BlueprintList } from '@/types/blueprint';
+import { TalentPreset } from '@/types/talentPreset';
 import { logger } from '@/utils/logger';
 
 interface PartialSaveOptions {
@@ -10,6 +10,7 @@ interface PartialSaveOptions {
   notes?: string;
   cameraPlots?: any[];
   componentOrder?: string[];
+  talentPresets?: TalentPreset[];
 }
 
 export const useBlueprintPartialSave = (
@@ -52,12 +53,18 @@ export const useBlueprintPartialSave = (
     await savePartialBlueprint({ showDate });
   }, [savePartialBlueprint]);
 
+  const saveTalentPresetsOnly = useCallback(async (talentPresets: TalentPreset[]) => {
+    logger.blueprint('PARTIAL SAVE - Talent presets only:', { count: talentPresets.length });
+    await savePartialBlueprint({ talentPresets });
+  }, [savePartialBlueprint]);
+
   return {
     saveListsOnly,
     saveNotesOnly,
     saveCameraPlotsOnly,
     saveComponentOrderOnly,
     saveShowDateOnly,
+    saveTalentPresetsOnly,
     savePartialBlueprint
   };
 };

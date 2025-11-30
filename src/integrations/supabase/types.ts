@@ -169,6 +169,7 @@ export type Database = {
           rundown_id: string
           rundown_title: string
           show_date: string | null
+          talent_presets: Json | null
           team_id: string | null
           updated_at: string
           user_id: string
@@ -185,6 +186,7 @@ export type Database = {
           rundown_id: string
           rundown_title: string
           show_date?: string | null
+          talent_presets?: Json | null
           team_id?: string | null
           updated_at?: string
           user_id: string
@@ -201,6 +203,7 @@ export type Database = {
           rundown_id?: string
           rundown_title?: string
           show_date?: string | null
+          talent_presets?: Json | null
           team_id?: string | null
           updated_at?: string
           user_id?: string

@@ -7,6 +7,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import RundownHistory from '@/components/RundownHistory';
+import { TalentPresetsProvider, useTalentPresets } from '@/contexts/TalentPresetsContext';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
@@ -24,11 +25,12 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
+import { toast } from 'sonner';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
 
-const RundownIndexContent = () => {
+const RundownIndexContentInner = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   // Enable realtime connection notifications
@@ -420,7 +422,16 @@ const RundownIndexContent = () => {
     handleAddHeader
   } = interactions;
 
-  // Add keyboard shortcuts for copy/paste/add row and showcaller controls
+  // Add keyboard shortcuts for copy/paste/add row and showcaller controls  
+  const { talentPresets } = useTalentPresets();
+
+  // Handle talent insertion with toast
+  const handleInsertTalent = useCallback((talentName: string) => {
+    toast.success(`Inserted: ${talentName}`, {
+      duration: 1500,
+    });
+  }, []);
+
   useRundownKeyboardShortcuts({
     onCopy: handleCopySelectedRows,
     onPaste: handlePasteRows,
@@ -437,7 +448,9 @@ const RundownIndexContent = () => {
     canUndo: canUndo,
     onRedo: coreState.redo,
     canRedo: coreState.canRedo,
-    userRole: userRole
+    userRole: userRole,
+    talentPresets: talentPresets,
+    onInsertTalent: handleInsertTalent
   });
 
   const { 
@@ -809,6 +822,16 @@ const RundownIndexContent = () => {
         }}
       />
     </RealtimeConnectionProvider>
+  );
+};
+
+const RundownIndexContent = () => {
+  const { id } = useParams<{ id: string }>();
+  
+  return (
+    <TalentPresetsProvider rundownId={id || ''}>
+      <RundownIndexContentInner />
+    </TalentPresetsProvider>
   );
 };
 

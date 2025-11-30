@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { TalentPreset } from '@/types/talentPreset';
 
 interface UseRundownKeyboardShortcutsProps {
   onCopy: () => void;
@@ -17,6 +18,8 @@ interface UseRundownKeyboardShortcutsProps {
   onRedo: () => void;
   canRedo: boolean;
   userRole?: string | null;
+  talentPresets?: TalentPreset[];
+  onInsertTalent?: (talentName: string) => void;
 }
 
 export const useRundownKeyboardShortcuts = ({
@@ -35,7 +38,9 @@ export const useRundownKeyboardShortcuts = ({
   canUndo,
   onRedo,
   canRedo,
-  userRole
+  userRole,
+  talentPresets = [],
+  onInsertTalent
 }: UseRundownKeyboardShortcutsProps) => {
   useEffect(() => {
     const isEditableElement = (target: EventTarget | null): boolean => {
@@ -49,16 +54,54 @@ export const useRundownKeyboardShortcuts = ({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if user is typing in an editable element
-      if (isEditableElement(e.target)) {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      const isInEditableElement = isEditableElement(e.target);
+
+      // Talent preset shortcuts: Ctrl/Cmd + 1-9 (only in editable elements)
+      if (isCtrlOrCmd && isInEditableElement && onInsertTalent && talentPresets.length > 0) {
+        const key = e.key;
+        if (key >= '1' && key <= '9') {
+          const slot = parseInt(key, 10);
+          const preset = talentPresets.find(p => p.slot === slot);
+          
+          if (preset) {
+            e.preventDefault();
+            console.log(`🎭 Inserting talent preset ${slot}:`, preset.name);
+            
+            // Insert talent name at cursor position
+            const target = e.target as HTMLTextAreaElement | HTMLInputElement;
+            const start = target.selectionStart || 0;
+            const end = target.selectionEnd || 0;
+            const currentValue = target.value || '';
+            const newValue = currentValue.substring(0, start) + preset.name + currentValue.substring(end);
+            
+            // Update the value
+            target.value = newValue;
+            
+            // Trigger change event to update state
+            const changeEvent = new Event('input', { bubbles: true });
+            target.dispatchEvent(changeEvent);
+            
+            // Set cursor position after inserted text
+            const newCursorPos = start + preset.name.length;
+            target.setSelectionRange(newCursorPos, newCursorPos);
+            
+            // Call callback if provided
+            onInsertTalent(preset.name);
+            
+            return;
+          }
+        }
+      }
+
+      // Skip other shortcuts if user is typing in an editable element
+      if (isInEditableElement) {
         if (import.meta.env.DEV) {
           console.log('🚫 Keyboard shortcut skipped: User is typing in editable element');
         }
         return;
       }
-
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
 
       if (import.meta.env.DEV) {
         console.log('⌨️ Key pressed:', e.key, '| Ctrl/Cmd:', isCtrlOrCmd, '| Selected:', selectedRows.size, '| HasClipboard:', hasClipboardData);

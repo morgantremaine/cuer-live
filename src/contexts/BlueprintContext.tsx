@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useRef, ReactN
 import { BlueprintList } from '@/types/blueprint';
 import { CameraPlotScene } from '@/hooks/cameraPlot/core/useCameraPlotData';
 import { RundownItem } from '@/types/rundown';
+import { TalentPreset } from '@/types/talentPreset';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
 import { useBlueprintRealtimeSync } from '@/hooks/blueprint/useBlueprintRealtimeSync';
@@ -15,6 +16,7 @@ export interface BlueprintState {
   notes: string;
   cameraPlots: CameraPlotScene[];
   componentOrder: string[];
+  talentPresets: TalentPreset[];
   rundownStartTime?: string;
   isLoading: boolean;
   isInitialized: boolean;
@@ -35,6 +37,7 @@ export type BlueprintAction =
   | { type: 'UPDATE_NOTES'; payload: string }
   | { type: 'UPDATE_CAMERA_PLOTS'; payload: CameraPlotScene[] }
   | { type: 'UPDATE_COMPONENT_ORDER'; payload: string[] }
+  | { type: 'UPDATE_TALENT_PRESETS'; payload: TalentPreset[] }
   | { type: 'UPDATE_LIST_DISPLAY_OPTIONS'; payload: { listId: string; options: { showItemNumber?: boolean; showStartTime?: boolean } } }
   | { type: 'MERGE_REMOTE_STATE'; payload: Partial<BlueprintState> }
   | { type: 'RESET_STATE' };
@@ -45,7 +48,8 @@ const initialState: BlueprintState = {
   showDate: '',
   notes: '',
   cameraPlots: [],
-  componentOrder: ['camera-plot', 'scratchpad'], // Removed 'crew-list'
+  componentOrder: ['talent-presets', 'scratchpad'],
+  talentPresets: [],
   isLoading: false,
   isInitialized: false,
   isSaving: false,
@@ -87,6 +91,9 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
     case 'UPDATE_COMPONENT_ORDER':
       logger.blueprint('Updating component order in reducer:', action.payload);
       return { ...state, componentOrder: action.payload };
+    case 'UPDATE_TALENT_PRESETS':
+      logger.blueprint('Updating talent presets in reducer:', { count: action.payload.length });
+      return { ...state, talentPresets: action.payload };
     case 'UPDATE_LIST_DISPLAY_OPTIONS':
       logger.blueprint('Updating list display options:', action.payload);
       return {
@@ -144,6 +151,7 @@ interface BlueprintContextValue {
   updateNotes: (notes: string) => void;
   updateCameraPlots: (plots: CameraPlotScene[]) => void;
   updateComponentOrder: (order: string[]) => void;
+  updateTalentPresets: (presets: TalentPreset[]) => void;
   
   // Utility functions
   saveBlueprint: () => Promise<void>;
@@ -191,7 +199,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     saveNotesOnly,
     saveCameraPlotsOnly,
     saveComponentOrderOnly,
-    saveShowDateOnly
+    saveShowDateOnly,
+    saveTalentPresetsOnly
   } = useBlueprintPartialSave(
     rundownId,
     rundownTitle,
@@ -255,7 +264,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             showDate: blueprintData.show_date || '',
             notes: blueprintData.notes || '',
             cameraPlots: blueprintData.camera_plots || [],
-            componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'] // Removed 'crew-list'
+            componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'], // Removed 'crew-list'
+            talentPresets: blueprintData.talent_presets || []
           }});
           
           // Mark that we'll need to auto-refresh once rundown items are available
@@ -469,6 +479,14 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     debouncedSave();
   }, [createDebouncedSave, saveComponentOrderOnly]);
 
+  const updateTalentPresets = React.useCallback((presets: TalentPreset[]) => {
+    logger.blueprint('Context updateTalentPresets called with:', { count: presets.length });
+    dispatch({ type: 'UPDATE_TALENT_PRESETS', payload: presets });
+    
+    const debouncedSave = createDebouncedSave(() => saveTalentPresetsOnly(presets));
+    debouncedSave();
+  }, [createDebouncedSave, saveTalentPresetsOnly]);
+
   const saveBlueprint = React.useCallback(async () => {
     logger.blueprint('Manual save triggered - this will now be handled by partial saves automatically');
   }, []);
@@ -486,7 +504,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           showDate: blueprintData.show_date || '',
           notes: blueprintData.notes || '',
           cameraPlots: blueprintData.camera_plots || [],
-          componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'] // Removed 'crew-list'
+          componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'], // Removed 'crew-list'
+          talentPresets: blueprintData.talent_presets || []
         }});
       }
     } catch (error) {
@@ -519,6 +538,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     updateNotes,
     updateCameraPlots,
     updateComponentOrder,
+    updateTalentPresets,
     saveBlueprint,
     refreshBlueprint,
     autoRefreshLists
@@ -538,3 +558,6 @@ export const useBlueprintContext = () => {
   }
   return context;
 };
+
+// Alias for convenience
+export const useBlueprint = useBlueprintContext;
