@@ -293,25 +293,26 @@ const RundownContent = React.memo<RundownContentProps>(({
   // Add browser event coordination for drag reliability
   useEffect(() => {
     const handleVisibilityChange = () => {
+      // Only reset if document is hidden AND we've been hidden for a while
+      // Delay prevents false positives during drag operations
       if (document.hidden && resetDragState) {
-        resetDragState();
+        setTimeout(() => {
+          if (document.hidden && draggedItemIndex !== null) {
+            resetDragState();
+          }
+        }, 500);
       }
     };
 
-    const handleWindowBlur = () => {
-      if (resetDragState && (draggedItemIndex !== null || isDragging)) {
-        resetDragState();
-      }
-    };
+    // Removed: Window blur handler was causing drag operations to fail
+    // The 45-second timeout in useDragAndDrop.ts handles stuck states
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
     };
-  }, [resetDragState, draggedItemIndex, isDragging]);
+  }, [resetDragState, draggedItemIndex]);
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
