@@ -1,7 +1,7 @@
-
 import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BlueprintList } from '@/types/blueprint';
+import { TalentPreset } from '@/types/talentPreset';
 import { createContentSignature } from '@/utils/contentSignature';
 
 interface PartialBlueprintUpdate {
@@ -11,6 +11,7 @@ interface PartialBlueprintUpdate {
   crewData?: any[];
   cameraPlots?: any[];
   componentOrder?: string[];
+  talentPresets?: TalentPreset[];
 }
 
 export const useBlueprintPersistence = (
@@ -327,6 +328,10 @@ export const useBlueprintPersistence = (
       }
       if (partialUpdate.componentOrder !== undefined) {
         updateData.component_order = partialUpdate.componentOrder;
+      }
+      if (partialUpdate.talentPresets !== undefined) {
+        updateData.talent_presets = partialUpdate.talentPresets;
+        console.log('📋 PARTIAL SAVE - Updating talent_presets:', partialUpdate.talentPresets.length);
       }
 
       let data, error;
