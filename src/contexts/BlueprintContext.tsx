@@ -259,12 +259,32 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           }
           logger.blueprint('INITIALIZATION - Component order:', blueprintData.component_order);
           
+          // Normalize component order to ensure required components are present
+          const storedOrder = blueprintData.component_order || [];
+          const validComponents = ['talent-presets', 'scratchpad', 'camera-plot'];
+          const normalizedOrder = [...storedOrder];
+          
+          // Add talent-presets at the beginning if missing
+          if (!normalizedOrder.includes('talent-presets')) {
+            normalizedOrder.unshift('talent-presets');
+          }
+          
+          // Add scratchpad at the end if missing
+          if (!normalizedOrder.includes('scratchpad')) {
+            normalizedOrder.push('scratchpad');
+          }
+          
+          // Remove deprecated components (like 'crew-list')
+          const cleanedOrder = normalizedOrder.filter(c => validComponents.includes(c));
+          
+          logger.blueprint('INITIALIZATION - Normalized component order:', cleanedOrder);
+          
           dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
             lists: blueprintData.lists || [],
             showDate: blueprintData.show_date || '',
             notes: blueprintData.notes || '',
             cameraPlots: blueprintData.camera_plots || [],
-            componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'], // Removed 'crew-list'
+            componentOrder: cleanedOrder,
             talentPresets: blueprintData.talent_presets || []
           }});
           
