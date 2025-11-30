@@ -17,6 +17,7 @@ interface UseConsolidatedRealtimeRundownProps {
   lastSeenDocVersion?: number;
   isSharedView?: boolean;
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
+  hasPendingUpdates?: () => boolean;
 }
 
 // Simplified global subscription state
@@ -75,7 +76,8 @@ export const useConsolidatedRealtimeRundown = ({
   enabled = true,
   lastSeenDocVersion = 0,
   isSharedView = false,
-  blockUntilLocalEditRef
+  blockUntilLocalEditRef,
+  hasPendingUpdates
 }: UseConsolidatedRealtimeRundownProps) => {
   const { user, tokenReady } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
@@ -135,7 +137,14 @@ export const useConsolidatedRealtimeRundown = ({
     
     lastCatchupAttemptRef.current = now;
     
-    // CRITICAL: Check for pending failed structural operations FIRST
+    // CRITICAL: Check for pending updates from cell-level saves FIRST
+    // Block catch-up sync if there are pending changes to prevent data loss
+    if (hasPendingUpdates?.()) {
+      debugLogger.realtime('⚠️ Blocking catch-up sync - pending cell updates exist');
+      return false;
+    }
+    
+    // CRITICAL: Check for pending failed structural operations
     // Don't overwrite local state that contains unsaved changes
     if (!options?.skipFailedOpsCheck) {
       try {
@@ -354,16 +363,16 @@ export const useConsolidatedRealtimeRundown = ({
       if (!state) return;
       
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes
+      const STALE_THRESHOLD = 600000; // 10 minutes (safety net only)
       
       // Only catch up if:
       // 1. WebSocket is disconnected OR
-      // 2. WebSocket connected but no updates for 3+ minutes (rare edge case)
+      // 2. WebSocket connected but no updates for 10+ minutes (rare edge case)
       if (!state.isConnected) {
         console.log('🔄 WebSocket disconnected - performing catch-up sync');
         await performCatchupSync();
       } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        console.log('⚠️ WebSocket connected but no updates for 3m - checking for stale data');
+        debugLogger.realtime('WebSocket connected but no updates for 10m - checking for stale data');
         const hadUpdates = await performCatchupSync();
         if (!hadUpdates) {
           lastUpdateTimeRef.current = Date.now(); // Reset timer
