@@ -144,6 +144,25 @@ export const useConsolidatedRealtimeRundown = ({
       return false;
     }
     
+    // CRITICAL: Also check for failed cell saves in localStorage (from previous session)
+    // This closes the edge case where page reloads with pending failed cell saves
+    if (!options?.skipFailedOpsCheck) {
+      try {
+        const cellSavesKey = `rundown_failed_saves_${rundownId}`;
+        const storedFailedCellSaves = localStorage.getItem(cellSavesKey);
+        
+        if (storedFailedCellSaves) {
+          const failedCellSaves = JSON.parse(storedFailedCellSaves);
+          if (failedCellSaves.length > 0) {
+            console.warn(`⚠️ Blocking catch-up sync - ${failedCellSaves.length} failed cell saves pending from previous session`);
+            return false; // Block sync - let retry mechanism handle these first
+          }
+        }
+      } catch (error) {
+        console.error('Error checking failed cell saves:', error);
+      }
+    }
+    
     // CRITICAL: Check for pending failed structural operations
     // Don't overwrite local state that contains unsaved changes
     if (!options?.skipFailedOpsCheck) {
