@@ -36,6 +36,7 @@ export interface RundownContainerProps {
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onAddRow: () => void;
   onAddHeader: () => void;
   selectedCount: number;
