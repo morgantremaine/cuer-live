@@ -165,7 +165,7 @@ const HeaderRowContent = ({
                             cellRefs.current[`${item.id}-name`] = el;
                             // Auto-resize with buffer for cross-browser compatibility
                             const contentLength = headerName.length || 1;
-                            const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                            const bufferWidth = contentLength + 5; // Add buffer for PC browsers
                             el.style.width = `${bufferWidth}ch`;
                           }
                         }}
@@ -176,7 +176,7 @@ const HeaderRowContent = ({
                           debouncedHeaderName.onChange(e.target.value);
                           // Auto-resize on change with buffer
                           const contentLength = e.target.value.length || 1;
-                          const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                          const bufferWidth = contentLength + 5; // Add buffer for PC browsers
                           e.target.style.width = `${bufferWidth}ch`;
                           
                           // Send typing heartbeat (throttled to every 3 seconds)
@@ -224,7 +224,7 @@ const HeaderRowContent = ({
                           lineHeight: '1.5',
                           padding: 0,
                           margin: 0,
-                          width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
+                          width: `${Math.max(headerName.length + 5, 4)}ch`, // Add buffer
                           minWidth: '4ch'
                         }}
                         placeholder="Header Name"
