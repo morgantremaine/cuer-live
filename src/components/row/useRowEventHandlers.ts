@@ -65,9 +65,37 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Let the RundownContextMenu component handle context menu logic
-    // It already has proper editable text detection built-in
+    // Check if there's selected text at the moment of right-click
+    const selection = window.getSelection();
+    const hasTextSelection = selection && selection.toString().length > 0;
     
+    if (hasTextSelection) {
+      const target = e.target as HTMLElement;
+      
+      // Check if the click target or its ancestors are in an editable area
+      const isInEditableArea = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.contentEditable === 'true' ||
+        target.closest('input') !== null ||
+        target.closest('textarea') !== null ||
+        target.closest('[contenteditable="true"]') !== null;
+      
+      // Also check if the active element is an editable area
+      const activeElement = document.activeElement as HTMLElement;
+      const isActiveElementEditable = 
+        activeElement?.tagName === 'INPUT' || 
+        activeElement?.tagName === 'TEXTAREA' || 
+        activeElement?.contentEditable === 'true';
+      
+      // If text is selected in an editable area, let browser's native menu show
+      if (isInEditableArea || isActiveElementEditable) {
+        e.stopPropagation(); // Prevents ContextMenu from triggering
+        return; // Don't select the row, just let native menu appear
+      }
+    }
+    
+    // No text selection in editable area - proceed with app's context menu
     // Just ensure the row is selected if not already
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
