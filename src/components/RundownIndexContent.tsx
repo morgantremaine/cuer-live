@@ -425,11 +425,9 @@ const RundownIndexContentInner = () => {
   // Add keyboard shortcuts for copy/paste/add row and showcaller controls  
   const { talentPresets } = useTalentPresets();
 
-  // Handle talent insertion with toast
+  // Handle talent insertion silently
   const handleInsertTalent = useCallback((talentName: string) => {
-    toast.success(`Inserted: ${talentName}`, {
-      duration: 1500,
-    });
+    // Silent insert - user can see the text inserted directly
   }, []);
 
   useRundownKeyboardShortcuts({
