@@ -131,10 +131,14 @@ const RundownTableHeader = ({
     const badgeMatches = text.match(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g);
     
     if (!badgeMatches) {
-      // No badges, measure plain text
+      // No badges, measure plain text (keep original padding)
       measureElement.textContent = text;
       return measureElement.offsetWidth;
     }
+    
+    // Remove element padding when measuring badge text - we'll add badge padding explicitly
+    const originalPadding = measureElement.style.padding;
+    measureElement.style.padding = '0';
     
     // Extract badge contents and measure each badge with proper spacing
     let totalWidth = 0;
@@ -155,7 +159,11 @@ const RundownTableHeader = ({
       }
     });
     
-    return totalWidth;
+    // Restore original padding for other measurements
+    measureElement.style.padding = originalPadding;
+    
+    // Add container padding (px-3 = 12px each side = 24px) back for the cell
+    return totalWidth + 24;
   };
 
   // Auto-resize column to fit content
