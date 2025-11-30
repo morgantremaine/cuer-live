@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
+import { renderScriptWithBrackets } from '@/utils/scriptUtils';
 import { useDebouncedInput } from '@/hooks/useDebouncedInput';
 
 interface TextAreaCellProps {
@@ -10,6 +11,7 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
+  renderBrackets?: boolean; // Enable bracket/color rendering like script column
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -26,6 +28,7 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
+  renderBrackets = false,
   onUpdateValue,
   onCellClick,
   onKeyDown,
@@ -263,8 +266,19 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
   
+  // Check if text contains bracket formatting
+  const containsBrackets = (text: string): boolean => {
+    return /\[[^\[\]{}]+(?:\{[^}]+\})?\]/.test(text);
+  };
+  
   // Check if this cell contains URLs and should show clickable links when not focused
   const shouldShowClickableUrls = !isFocused && containsUrls(debouncedValue.value);
+  
+  // Check if this cell should show bracket rendering when not focused
+  const shouldShowBrackets = !isFocused && renderBrackets && containsBrackets(debouncedValue.value);
+  
+  // Determine if we should show any overlay
+  const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -291,6 +305,24 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           }}
         >
           {renderTextWithClickableUrls(debouncedValue.value)}
+        </div>
+      )}
+      
+      {/* Bracket-styled overlay when not focused */}
+      {shouldShowBrackets && (
+        <div
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          style={{ 
+            color: textColor || 'inherit',
+            lineHeight: '1.3',
+            textAlign: isDuration ? 'center' : 'left'
+          }}
+        >
+          {renderScriptWithBrackets(debouncedValue.value, { 
+            inlineDisplay: true, 
+            fontSize: 14,
+            showNullAsText: true 
+          })}
         </div>
       )}
       
@@ -321,10 +353,10 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-field-key={`${itemId}-${resolvedFieldKey}`}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
+        } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
-          color: shouldShowClickableUrls ? 'transparent' : (textColor || 'inherit'),
+          color: showOverlay ? 'transparent' : (textColor || 'inherit'),
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'

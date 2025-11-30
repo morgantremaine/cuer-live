@@ -158,8 +158,8 @@ const CellRenderer = ({
     );
   }
 
-  // Use ExpandableScriptCell for script, notes, and talent fields (both built-in columns)
-  if (column.key === 'script' || column.key === 'notes' || column.key === 'talent') {
+  // Use ExpandableScriptCell for script and notes fields (both built-in columns)
+  if (column.key === 'script' || column.key === 'notes') {
     const cellKey = `${item.id}-${column.key}`;
     const isCellExpanded = expandedCells?.has(cellKey);
     
@@ -171,7 +171,7 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
-        fieldType={column.key as 'script' | 'notes' | 'talent'}
+        fieldType={column.key as 'script' | 'notes'}
         isExpanded={isCellExpanded}
         onToggleExpanded={onToggleCellExpanded ? () => onToggleCellExpanded(item.id, column.key) : undefined}
         onUpdateValue={(newValue) => {
@@ -196,6 +196,7 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={isTimeField}
+      renderBrackets={column.key === 'talent'}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields

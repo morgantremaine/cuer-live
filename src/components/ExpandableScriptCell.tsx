@@ -11,7 +11,7 @@ interface ExpandableScriptCellProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   columnExpanded?: boolean;
-  fieldType?: 'script' | 'notes' | 'talent';
+  fieldType?: 'script' | 'notes';
   isExpanded?: boolean; // NEW: externally managed expanded state
   onToggleExpanded?: () => void; // NEW: toggle callback
   onUpdateValue: (value: string) => void;
@@ -426,7 +426,7 @@ const ExpandableScriptCell = ({
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
               data-field-key={`${itemId}-${fieldType}`}
-              placeholder={fieldType === 'notes' ? 'Add notes...' : fieldType === 'talent' ? 'Add talent...' : 'Add script...'}
+              placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
               className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
               }`}
@@ -454,7 +454,7 @@ const ExpandableScriptCell = ({
                 }}
               >
                 {debouncedValue.value ? (
-                  (fieldType === 'script' || fieldType === 'talent') ? (
+                  fieldType === 'script' ? (
                     renderScriptWithBrackets(debouncedValue.value, { 
                       inlineDisplay: true, 
                       fontSize: 14,
@@ -465,7 +465,7 @@ const ExpandableScriptCell = ({
                   )
                 ) : (
                   <span className="text-muted-foreground">
-                    {fieldType === 'notes' ? 'Add notes...' : fieldType === 'talent' ? 'Add talent...' : 'Add script...'}
+                    {fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
                   </span>
                 )}
               </div>
@@ -544,7 +544,7 @@ const ExpandableScriptCell = ({
                     WebkitBoxOrient: 'vertical'
                   }}
                 >
-                  {(fieldType === 'script' || fieldType === 'talent') ? (
+                  {fieldType === 'script' ? (
                     renderScriptWithBrackets(debouncedValue.value.replace(/]\s*\n\s*/g, '] '), { 
                       inlineDisplay: true, 
                       fontSize: 14,
