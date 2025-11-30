@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 interface TalentPresetSlotProps {
   slot: number;
@@ -118,6 +118,15 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
             </div>
           </PopoverContent>
         </Popover>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 shrink-0 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+          onClick={handleSave}
+          disabled={!editName.trim()}
+        >
+          <Check className="h-4 w-4" />
+        </Button>
       </div>
     );
   }
