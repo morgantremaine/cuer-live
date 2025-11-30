@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { X } from 'lucide-react';
 
 interface TalentPresetSlotProps {
@@ -27,6 +28,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(name || '');
   const [editColor, setEditColor] = useState(color || DEFAULT_COLORS[(slot - 1) % DEFAULT_COLORS.length]);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
   const modifierKey = isMac ? '⌥' : 'Alt+';
@@ -63,7 +65,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
 
   if (isEditing) {
     return (
-      <div className="h-12 border border-primary rounded-md flex items-center gap-2 px-3 bg-accent/5">
+      <div className="h-12 border border-primary rounded-md flex items-center gap-3 px-3 bg-accent/5">
         <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded shrink-0">{modifierKey}{slot}</kbd>
         <Input
           value={editName}
@@ -71,25 +73,37 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           placeholder="Talent name"
-          className="h-8 flex-1 text-sm"
+          className="h-8 flex-1 text-sm min-w-0"
           autoFocus
         />
-        <div className="flex gap-1">
-          {DEFAULT_COLORS.map((c) => (
+        <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
+          <PopoverTrigger asChild>
             <button
-              key={c}
               type="button"
-              className={`w-5 h-5 rounded-full transition-transform hover:scale-110 ${
-                editColor === c ? 'ring-2 ring-primary ring-offset-1' : ''
-              }`}
-              style={{ backgroundColor: c }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setEditColor(c);
-              }}
+              className="w-7 h-7 rounded-full shrink-0 border-2 border-border hover:scale-110 transition-transform"
+              style={{ backgroundColor: editColor }}
+              onMouseDown={(e) => e.preventDefault()}
             />
-          ))}
-        </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-3" align="end">
+            <div className="grid grid-cols-5 gap-2">
+              {DEFAULT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${
+                    editColor === c ? 'ring-2 ring-primary ring-offset-2' : ''
+                  }`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => {
+                    setEditColor(c);
+                    setShowColorPicker(false);
+                  }}
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     );
   }
