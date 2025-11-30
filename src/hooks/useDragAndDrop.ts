@@ -55,6 +55,8 @@ export const useDragAndDrop = (
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
   const dropTargetIndexRef = useRef<number | null>(null);
+  const draggedItemIndexRef = useRef<number | null>(null);
+  const dragInfoRef = useRef<DragInfo | null>(null);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -87,6 +89,8 @@ export const useDragAndDrop = (
     setIsDraggingMultiple(false);
     setDropTargetIndex(null);
     dropTargetIndexRef.current = null;
+    draggedItemIndexRef.current = null;
+    dragInfoRef.current = null;
     isDragActiveRef.current = false;
     
     // Clear any pending timeout
@@ -276,6 +280,15 @@ export const useDragAndDrop = (
       isHeaderGroup,
       originalIndex: activeIndex
     });
+
+    // SYNC refs for immediate access in handleDragEnd
+    draggedItemIndexRef.current = activeIndex;
+    dragInfoRef.current = {
+      draggedIds,
+      isHeaderGroup,
+      originalIndex: activeIndex
+    };
+
     setDragTimeout();
     isDragActiveRef.current = true;
     
@@ -608,22 +621,24 @@ export const useDragAndDrop = (
   }, [draggedItemIndex]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
-    // Read from REF for synchronous access to latest value
+    // Read from REFs for synchronous access to latest values
     const currentDropTarget = dropTargetIndexRef.current;
+    const currentDraggedIndex = draggedItemIndexRef.current;
+    const currentDragInfo = dragInfoRef.current;
     
     console.log('🎯 Legacy drag end called:', {
-      draggedItemIndex,
+      draggedItemIndex: currentDraggedIndex,
       dropTargetIndex: currentDropTarget,
       isDragActive: isDragActiveRef.current,
-      hasDragInfo: !!dragInfo
+      hasDragInfo: !!currentDragInfo
     });
     
     // If we have valid drop state, execute the drop
-    if (isDragActiveRef.current && draggedItemIndex !== null && currentDropTarget !== null && dragInfo) {
+    if (isDragActiveRef.current && currentDraggedIndex !== null && currentDropTarget !== null && currentDragInfo) {
       // Only process if the drop position is actually different
-      if (currentDropTarget !== draggedItemIndex && currentDropTarget !== draggedItemIndex + 1) {
+      if (currentDropTarget !== currentDraggedIndex && currentDropTarget !== currentDraggedIndex + 1) {
         console.log('🎯 Executing drop via dragend:', { 
-          from: draggedItemIndex, 
+          from: currentDraggedIndex, 
           to: currentDropTarget 
         });
         
@@ -631,9 +646,9 @@ export const useDragAndDrop = (
         const targetIndex = Math.min(currentDropTarget, items.length - 1);
         const targetItem = items[targetIndex];
         
-        if (targetItem && items[draggedItemIndex]) {
+        if (targetItem && items[currentDraggedIndex]) {
           handleDndKitDragEnd({
-            active: { id: items[draggedItemIndex].id },
+            active: { id: items[currentDraggedIndex].id },
             over: { id: targetItem.id }
           } as DragEndEvent);
           return; // handleDndKitDragEnd will call resetDragState in finally block
@@ -644,7 +659,7 @@ export const useDragAndDrop = (
     // No valid drop or same position - just reset
     console.log('🎯 No valid drop - resetting state');
     resetDragState();
-  }, [draggedItemIndex, dragInfo, items, handleDndKitDragEnd, resetDragState]);
+  }, [items, handleDndKitDragEnd, resetDragState]);
 
   // Create sortable items list for @dnd-kit
   const sortableItems = useMemo(() => 
