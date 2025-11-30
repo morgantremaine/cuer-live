@@ -54,6 +54,7 @@ export const useDragAndDrop = (
   // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
+  const dropHandledRef = useRef(false);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -122,6 +123,26 @@ export const useDragAndDrop = (
       }
     };
   }, []);
+
+  // Fallback state recovery - cleans up stuck states
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      // If drag state exists but no drag is actually happening, clean up
+      if (draggedItemIndex !== null && !document.querySelector('[draggable]:active')) {
+        console.log('🎯 Fallback cleanup: drag state exists but no active drag');
+        // Small delay to not interfere with normal drop
+        setTimeout(() => {
+          if (draggedItemIndex !== null) {
+            console.log('🎯 Executing fallback reset');
+            resetDragState();
+          }
+        }, 100);
+      }
+    };
+    
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [draggedItemIndex, resetDragState]);
 
   const renumberItems = useCallback((items: RundownItem[]) => {
     if (process.env.NODE_ENV === 'development') {
@@ -602,6 +623,9 @@ export const useDragAndDrop = (
       return;
     }
 
+    // Mark that drop is being handled
+    dropHandledRef.current = true;
+
     // Simulate @dnd-kit drop by finding the target item
     const targetItem = items[dropIndex];
     if (targetItem) {
@@ -616,8 +640,19 @@ export const useDragAndDrop = (
   }, [draggedItemIndex, items, handleDndKitDragEnd, resetDragState]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
-    console.log('🎯 Legacy drag end called');
-    resetDragState();
+    console.log('🎯 Legacy drag end called, dropHandled:', dropHandledRef.current);
+    
+    // Small delay to ensure drop event has time to process
+    setTimeout(() => {
+      if (!dropHandledRef.current) {
+        // Only reset if drop wasn't handled (drag was cancelled)
+        console.log('🎯 Drag cancelled - resetting state');
+        resetDragState();
+      } else {
+        console.log('🎯 Drop was handled - not resetting state');
+      }
+      dropHandledRef.current = false;
+    }, 50);
   }, [resetDragState]);
 
   // Create sortable items list for @dnd-kit
