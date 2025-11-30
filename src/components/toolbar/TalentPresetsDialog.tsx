@@ -55,7 +55,7 @@ export const TalentPresetsDialog: React.FC<TalentPresetsDialogProps> = ({
     if (!open || !rundownId) return;
 
     const channel = supabase
-      .channel(`talent-presets-${rundownId}`)
+      .channel(`talent-presets-dialog-${rundownId}`)
       .on(
         'postgres_changes',
         {
