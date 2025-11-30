@@ -273,42 +273,49 @@ export const useConsolidatedRealtimeRundown = ({
     const handleOnline = async () => {
       console.log('📶 Browser detected network online - waiting for Supabase reconnection...');
       
-      // Wait 1.5s for Supabase channels to reconnect
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Wait up to 15 seconds for Supabase to reconnect, checking every 500ms
+      let retries = 0;
+      const maxRetries = 30; // 30 * 500ms = 15 seconds
       
-      const state = globalSubscriptions.get(rundownId);
-      if (state?.isConnected) {
-        console.log('📶 Supabase connected - validating session...');
+      while (retries < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const state = globalSubscriptions.get(rundownId);
         
-        // CRITICAL: Validate session before processing offline data
-        const { authMonitor } = await import('@/services/AuthMonitor');
-        const isSessionValid = await authMonitor.isSessionValid();
-        
-        if (!isSessionValid) {
-          console.warn('🔐 Session expired - cannot process offline queue');
-          toast.error('Session expired. Please log in to sync your changes.', {
-            duration: 10000,
-            action: {
-              label: 'Refresh',
-              onClick: () => window.location.reload()
-            }
-          });
-          setIsConnected(false); // Keep disconnected state to prevent queue processing
+        if (state?.isConnected) {
+          console.log('📶 Supabase connected - validating session...');
+          
+          // CRITICAL: Validate session before processing offline data
+          const { authMonitor } = await import('@/services/AuthMonitor');
+          const isSessionValid = await authMonitor.isSessionValid();
+          
+          if (!isSessionValid) {
+            console.warn('🔐 Session expired - cannot process offline queue');
+            toast.error('Session expired. Please log in to sync your changes.', {
+              duration: 10000,
+              action: {
+                label: 'Refresh',
+                onClick: () => window.location.reload()
+              }
+            });
+            setIsConnected(false); // Keep disconnected state to prevent queue processing
+            return;
+          }
+          
+          console.log('📶 Session valid - performing catch-up sync');
+          
+          // FIRST: Fetch latest data from server (catch-up sync)
+          await performCatchupSync();
+          
+          // SECOND: Set connected to trigger offline queue processing
+          setIsConnected(true);
+          
+          console.log('✅ Reconnection complete: catch-up synced + offline queue will process');
           return;
         }
-        
-        console.log('📶 Session valid - performing catch-up sync');
-        
-        // FIRST: Fetch latest data from server (catch-up sync)
-        await performCatchupSync();
-        
-        // SECOND: Set connected to trigger offline queue processing
-        setIsConnected(true);
-        
-        console.log('✅ Reconnection complete: catch-up synced + offline queue will process');
-      } else {
-        console.log('⏳ Supabase not yet reconnected, will retry...');
+        retries++;
       }
+      
+      console.warn('⏳ Supabase still not connected after 15s - catch-up sync will run when connection is established');
     };
     
     const handleOffline = () => {
@@ -371,6 +378,16 @@ export const useConsolidatedRealtimeRundown = ({
     };
   }, [enabled, rundownId, performCatchupSync]);
 
+  // Trigger catch-up sync when connection is restored
+  const wasConnectedRef = useRef(isConnected);
+  useEffect(() => {
+    if (isConnected && !wasConnectedRef.current && rundownId) {
+      console.log('📡 Connection restored - triggering immediate catch-up sync');
+      performCatchupSync();
+    }
+    wasConnectedRef.current = isConnected;
+  }, [isConnected, performCatchupSync, rundownId]);
+
   // Simplified polling fallback - only catch up when genuinely needed
   useEffect(() => {
     if (!enabled || !rundownId) {
@@ -397,7 +414,7 @@ export const useConsolidatedRealtimeRundown = ({
           lastUpdateTimeRef.current = Date.now(); // Reset timer
         }
       }
-    }, 60000); // Check every 60 seconds (reduced from 30s for less noise)
+    }, 30000); // Check every 30 seconds for faster detection
     
     return () => clearInterval(checkInterval);
   }, [enabled, rundownId, isConnected, performCatchupSync]);
@@ -801,7 +818,26 @@ export const useConsolidatedRealtimeRundown = ({
             });
           }
           
-          await newChannel.subscribe();
+          await newChannel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              if (globalState) {
+                globalState.isConnected = true;
+                globalState.reconnecting = false;
+                globalState.reconnectAttempts = 0;
+              }
+              // Trigger catch-up sync after successful reconnection
+              console.log('📡 Force reconnection successful - triggering catch-up sync');
+              await performCatchupSync();
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              if (globalState) {
+                globalState.isConnected = false;
+                globalState.reconnecting = false;
+              }
+              // Trigger backoff retry
+              handleConsolidatedChannelReconnect(rundownId);
+            }
+          });
+          
           if (globalState) {
             globalState.subscription = newChannel;
           }
