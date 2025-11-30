@@ -358,7 +358,8 @@ export const useBlueprintPersistence = (
           notes: partialUpdate.notes || null,
           crew_data: partialUpdate.crewData || [],
           camera_plots: partialUpdate.cameraPlots || [],
-          component_order: partialUpdate.componentOrder || ['crew-list', 'camera-plot', 'scratchpad'],
+          component_order: partialUpdate.componentOrder || ['talent-presets', 'camera-plot', 'scratchpad'],
+          talent_presets: partialUpdate.talentPresets || [],
           updated_at: new Date().toISOString()
         };
 

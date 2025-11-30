@@ -78,11 +78,15 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
           {DEFAULT_COLORS.map((c) => (
             <button
               key={c}
+              type="button"
               className={`w-5 h-5 rounded-full transition-transform hover:scale-110 ${
                 editColor === c ? 'ring-2 ring-primary ring-offset-1' : ''
               }`}
               style={{ backgroundColor: c }}
-              onClick={() => setEditColor(c)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setEditColor(c);
+              }}
             />
           ))}
         </div>
