@@ -93,8 +93,9 @@ const TextAreaCell = ({
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content - strip brackets if renderBrackets is enabled for accurate height
-    const textToMeasure = renderBrackets 
+    // Set the content - strip brackets if renderBrackets is enabled AND not focused
+    // When focused, user sees raw text so we need to measure the raw text
+    const textToMeasure = (renderBrackets && !isFocused)
       ? stripBracketFormatting(debouncedValue.value)
       : debouncedValue.value;
     measurementDiv.textContent = textToMeasure || ' '; // Use space for empty content
@@ -129,7 +130,7 @@ const TextAreaCell = ({
       calculateHeight();
     }, 100); // 100ms debounce for height recalculation
     return () => clearTimeout(timer);
-  }, [debouncedValue.value]);
+  }, [debouncedValue.value, isFocused]);
 
   // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
