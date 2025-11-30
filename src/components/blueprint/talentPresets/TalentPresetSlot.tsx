@@ -27,6 +27,9 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(name || '');
   const [editColor, setEditColor] = useState(color || DEFAULT_COLORS[(slot - 1) % DEFAULT_COLORS.length]);
+  
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const modifierKey = isMac ? '⌥' : 'Alt+';
 
   const handleSave = () => {
     if (editName.trim()) {
@@ -51,7 +54,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
         onClick={() => setIsEditing(true)}
       >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded">{slot}</kbd>
+          <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded">{modifierKey}{slot}</kbd>
           <span className="text-xs">Click to add talent</span>
         </div>
       </div>
@@ -61,7 +64,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
   if (isEditing) {
     return (
       <div className="h-12 border border-primary rounded-md flex items-center gap-2 px-3 bg-accent/5">
-        <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded shrink-0">{slot}</kbd>
+        <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded shrink-0">{modifierKey}{slot}</kbd>
         <Input
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
@@ -92,7 +95,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
       className="group relative h-12 border border-border rounded-md flex items-center gap-2 px-3 hover:border-primary/50 transition-colors cursor-pointer"
       onClick={() => setIsEditing(true)}
     >
-      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded shrink-0">{slot}</kbd>
+      <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded shrink-0">{modifierKey}{slot}</kbd>
       <div 
         className="w-3 h-3 rounded-full shrink-0"
         style={{ backgroundColor: color }}

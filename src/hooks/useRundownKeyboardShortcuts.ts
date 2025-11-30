@@ -58,8 +58,8 @@ export const useRundownKeyboardShortcuts = ({
       const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
       const isInEditableElement = isEditableElement(e.target);
 
-      // Talent preset shortcuts: Ctrl/Cmd + 1-9 (only in editable elements)
-      if (isCtrlOrCmd && isInEditableElement && onInsertTalent && talentPresets.length > 0) {
+      // Talent preset shortcuts: Alt/Option + 1-9 (only in editable elements)
+      if (e.altKey && isInEditableElement && onInsertTalent && talentPresets.length > 0) {
         const key = e.key;
         if (key >= '1' && key <= '9') {
           const slot = parseInt(key, 10);
