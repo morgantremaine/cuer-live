@@ -215,13 +215,13 @@ const HeaderRowContent = ({
                         onClick={() => onCellClick(item.id, 'name')}
                         onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
                         data-field-key={`${item.id}-name`}
-                        className="bg-transparent border-none outline-none text-lg font-bold"
+                        className="bg-transparent border-none outline-none text-lg font-bold leading-relaxed"
                         style={{ 
                           color: textColor,
                           fontFamily: 'inherit',
                           fontSize: 'inherit',
                           fontWeight: 'inherit',
-                          lineHeight: 'inherit',
+                          lineHeight: '1.5',
                           padding: 0,
                           margin: 0,
                           width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
@@ -230,7 +230,7 @@ const HeaderRowContent = ({
                         placeholder="Header Name"
                       />
                       <span 
-                        className="text-base font-medium whitespace-nowrap ml-6" 
+                        className="text-base font-medium whitespace-nowrap ml-6 leading-relaxed" 
                         style={{ color: textColor }}
                       >
                         ({headerDuration})
