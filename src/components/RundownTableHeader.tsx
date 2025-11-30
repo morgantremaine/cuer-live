@@ -145,13 +145,13 @@ const RundownTableHeader = ({
       measureElement.textContent = content;
       const textWidth = measureElement.offsetWidth;
       
-      // Add badge padding (px-2 = 8px each side = 16px) and margin (mx-0.5 = 2px each side = 4px)
-      const badgeWidth = textWidth + 16 + 4;
+      // Add badge padding (px-1.5 = 6px each side = 12px), no margin since gap handles spacing
+      const badgeWidth = textWidth + 12;
       totalWidth += badgeWidth;
       
-      // Add gap between badges (gap-1 = 4px)
+      // Add gap between badges (gap-0.5 = 2px)
       if (index < badgeMatches.length - 1) {
-        totalWidth += 4;
+        totalWidth += 2;
       }
     });
     

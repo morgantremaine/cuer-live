@@ -311,7 +311,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-1 pointer-events-none z-10`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
