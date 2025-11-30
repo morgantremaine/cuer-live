@@ -128,7 +128,9 @@ export const useCellEditIntegration = ({
     saveCoordination: {
       handleStructuralOperation: coordination.handleStructuralOperation,
       retryFailedSaves: coordination.retryFailedSaves,
-      getFailedSavesCount: coordination.getFailedSavesCount
+      getFailedSavesCount: coordination.getFailedSavesCount,
+      // Expose hasPendingUpdates for realtime sync coordination
+      hasPendingUpdates: coordination.hasUnsavedChanges
     }
   };
 };

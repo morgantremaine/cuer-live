@@ -75,7 +75,7 @@ export const useSimplifiedRundownState = () => {
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
   // Simplified: No protection windows needed - last writer wins
-  const TYPING_DEBOUNCE_MS = 500; // Just for typing detection
+  const TYPING_DEBOUNCE_MS = 2000; // Extended to cover save debounce (1500ms) + buffer
   const CONFLICT_RESOLUTION_DELAY = 2000; // Keep for edge cases
   
   // Track pending structural changes to prevent overwrite during save
@@ -289,9 +289,14 @@ export const useSimplifiedRundownState = () => {
   const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
   const syncBeforeWriteRef = useRef(false);
   
+  // Ref for hasPendingUpdates function (populated later after cellEditIntegration is initialized)
+  const hasPendingUpdatesRef = useRef<(() => boolean) | undefined>(undefined);
+  
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
     blockUntilLocalEditRef,
+    // Pass hasPendingUpdates function via ref (populated after cellEditIntegration init)
+    hasPendingUpdates: () => hasPendingUpdatesRef.current?.() || false,
     onRundownUpdate: useCallback((updatedRundown) => {
       // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
@@ -766,6 +771,15 @@ export const useSimplifiedRundownState = () => {
     }
   });
   
+  // Populate hasPendingUpdates ref for realtime sync coordination
+  useEffect(() => {
+    if (perCellEnabled) {
+      hasPendingUpdatesRef.current = cellEditIntegration.saveCoordination.hasPendingUpdates;
+    } else {
+      hasPendingUpdatesRef.current = undefined;
+    }
+  }, [perCellEnabled, cellEditIntegration.saveCoordination.hasPendingUpdates]);
+  
   // Track state changes and notify per-cell save system
   const previousStateRef = useRef(state);
   const hasTrackedInitialLoad = useRef(false);
@@ -1035,7 +1049,7 @@ export const useSimplifiedRundownState = () => {
       lastChangeUserIdRef.current = currentUserId;
       
       if (isTypingField) {
-        // Debounce broadcasts for typing fields (300ms)
+        // Debounce broadcasts for typing fields (500ms) - reduced load on realtime
         cellBroadcast.broadcastCellUpdateDebounced(
           rundownId, 
           id, 
@@ -1043,7 +1057,7 @@ export const useSimplifiedRundownState = () => {
           value, 
           currentUserId, 
           getTabId(),
-          300 // 300ms debounce
+          500 // 500ms debounce
         );
       } else {
         // Immediate broadcast for non-typing fields (color, isFloating, duration)
