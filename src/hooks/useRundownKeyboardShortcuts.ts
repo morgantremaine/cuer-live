@@ -1,6 +1,29 @@
 import { useEffect } from 'react';
 import { TalentPreset } from '@/types/talentPreset';
 
+// Hex to color name mapping for talent preset formatting
+const HEX_TO_COLOR_NAME: Record<string, string> = {
+  '#ef4444': 'red',
+  '#f97316': 'orange',
+  '#f59e0b': 'amber',
+  '#eab308': 'yellow',
+  '#84cc16': 'lime',
+  '#22c55e': 'green',
+  '#10b981': 'emerald',
+  '#14b8a6': 'teal',
+  '#06b6d4': 'cyan',
+  '#3b82f6': 'blue',
+  '#6366f1': 'indigo',
+  '#8b5cf6': 'violet',
+  '#a855f7': 'purple',
+  '#ec4899': 'pink',
+  '#f43f5e': 'rose',
+};
+
+const getColorNameFromHex = (hex: string): string | null => {
+  return HEX_TO_COLOR_NAME[hex.toLowerCase()] || null;
+};
+
 interface UseRundownKeyboardShortcutsProps {
   onCopy: () => void;
   onPaste: (targetRowId?: string) => void;
@@ -67,28 +90,49 @@ export const useRundownKeyboardShortcuts = ({
           
           if (preset) {
             e.preventDefault();
-            console.log(`🎭 Inserting talent preset ${slot}:`, preset.name);
             
-            // Insert talent name at cursor position
+            // Format as [NAME {color}] for script column rendering
+            let insertText = preset.name;
+            if (preset.color) {
+              const colorName = getColorNameFromHex(preset.color);
+              if (colorName) {
+                insertText = `[${preset.name} {${colorName}}]`;
+              } else {
+                insertText = `[${preset.name}]`;
+              }
+            }
+            
+            console.log(`🎭 Inserting talent preset ${slot}:`, insertText);
+            
+            // Insert formatted text at cursor position
             const target = e.target as HTMLTextAreaElement | HTMLInputElement;
             const start = target.selectionStart || 0;
             const end = target.selectionEnd || 0;
             const currentValue = target.value || '';
-            const newValue = currentValue.substring(0, start) + preset.name + currentValue.substring(end);
+            const newValue = currentValue.substring(0, start) + insertText + currentValue.substring(end);
             
-            // Update the value
-            target.value = newValue;
+            // Use native setter for React-compatible state update
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+              target.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,
+              'value'
+            )?.set;
             
-            // Trigger change event to update state
-            const changeEvent = new Event('input', { bubbles: true });
-            target.dispatchEvent(changeEvent);
+            if (nativeInputValueSetter) {
+              nativeInputValueSetter.call(target, newValue);
+            }
+            
+            // Dispatch InputEvent to trigger React's onChange
+            const inputEvent = new InputEvent('input', { bubbles: true, cancelable: true });
+            target.dispatchEvent(inputEvent);
             
             // Set cursor position after inserted text
-            const newCursorPos = start + preset.name.length;
-            target.setSelectionRange(newCursorPos, newCursorPos);
+            const newCursorPos = start + insertText.length;
+            setTimeout(() => {
+              target.setSelectionRange(newCursorPos, newCursorPos);
+            }, 0);
             
-            // Call callback if provided
-            onInsertTalent(preset.name);
+            // Call callback with formatted text
+            onInsertTalent(insertText);
             
             return;
           }
