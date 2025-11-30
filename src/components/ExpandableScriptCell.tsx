@@ -169,8 +169,21 @@ const ExpandableScriptCell = ({
     
     // Reset height to auto to get accurate scrollHeight
     textareaRef.current.style.height = 'auto';
-    const scrollHeight = textareaRef.current.scrollHeight;
-    textareaRef.current.style.height = `${Math.max(scrollHeight, 24)}px`;
+    let requiredHeight = textareaRef.current.scrollHeight;
+    
+    // When overlay is showing (not focused), badges add extra height due to padding
+    // Each badge has py-0.5 (4px) + my-px (2px) = 6px extra per line with badges
+    if (showOverlay && debouncedValue.value) {
+      const badgeMatches = debouncedValue.value.match(/\[[^\[\]{}]+(?:\{[^}]+\})?\]/g);
+      if (badgeMatches && badgeMatches.length > 0) {
+        // Estimate lines containing badges by counting badge occurrences
+        // Add ~6px per badge to account for padding/margin
+        const badgeHeightAdjustment = badgeMatches.length * 6;
+        requiredHeight += badgeHeightAdjustment;
+      }
+    }
+    
+    textareaRef.current.style.height = `${Math.max(requiredHeight, 24)}px`;
   };
 
   // Debounced height recalculation - only after typing stops
@@ -180,7 +193,7 @@ const ExpandableScriptCell = ({
       adjustHeight();
     }, 100); // 100ms debounce
     return () => clearTimeout(heightCalcTimeoutRef.current);
-  }, [debouncedValue.value]);
+  }, [debouncedValue.value, showOverlay]);
 
   // Adjust height on mount and expansion
   useEffect(() => {
@@ -339,7 +352,7 @@ const ExpandableScriptCell = ({
   };
 
   return (
-    <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
+    <div ref={containerRef} className={`flex items-start space-x-1 w-full expandable-script-cell ${effectiveExpanded ? '' : 'overflow-hidden'}`}>
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -444,7 +457,7 @@ const ExpandableScriptCell = ({
             {/* Styled overlay with teleprompter styling */}
             {showOverlay && (
               <div 
-                className="absolute inset-0 px-1 py-1 text-sm pointer-events-none"
+                className="absolute top-0 left-0 right-0 px-1 py-1 text-sm pointer-events-none"
                 style={{ 
                   color: textColor || undefined,
                   minHeight: '24px',
