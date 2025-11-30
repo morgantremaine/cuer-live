@@ -410,6 +410,7 @@ const RundownIndexContent = () => {
     handleDragOver,
     handleDragLeave,
     handleDrop,
+    handleDragEnd,
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
@@ -635,6 +636,10 @@ const RundownIndexContent = () => {
     handleDrop(e, targetIndex);
   };
 
+  const handleDragEndWrapper = (e: React.DragEvent) => {
+    handleDragEnd(e);
+  };
+
   // Show loading spinner only for core data, let column layout settle smoothly
   if (showSkeleton) {
     return <RundownLoadingSkeleton />;
@@ -680,6 +685,7 @@ const RundownIndexContent = () => {
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
         onDrop={handleDropWrapper}
+        onDragEnd={handleDragEndWrapper}
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
