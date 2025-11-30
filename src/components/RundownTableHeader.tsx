@@ -125,6 +125,15 @@ const RundownTableHeader = ({
     setActiveColumn(null);
   };
 
+  // Helper to strip bracket formatting for width calculation
+  const stripBracketFormatting = (text: string): string => {
+    // Convert [text]{color} or [text] to just "text " (with small gap for badge padding)
+    return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, (_, content) => {
+      // Add padding to account for badge px-2 (8px each side = ~2 chars)
+      return content + '  ';
+    });
+  };
+
   // Auto-resize column to fit content
   const handleAutoResize = (column: Column) => {
     if (!items.length) return;
@@ -185,8 +194,14 @@ const RundownTableHeader = ({
           measureElement.style.fontFamily = 'inherit';
         }
         
+        // For talent column, strip bracket formatting to measure actual badge text
+        let measureText = textValue;
+        if (column.key === 'talent') {
+          measureText = stripBracketFormatting(textValue);
+        }
+        
         // Handle multi-line text by measuring each line and finding the longest
-        const lines = textValue.split('\n');
+        const lines = measureText.split('\n');
         let maxLineWidth = 0;
         
         // If there are no explicit line breaks (single line), measure the entire text
