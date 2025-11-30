@@ -125,13 +125,37 @@ const RundownTableHeader = ({
     setActiveColumn(null);
   };
 
-  // Helper to strip bracket formatting for width calculation
-  const stripBracketFormatting = (text: string): string => {
-    // Convert [text]{color} or [text] to just "text " (with small gap for badge padding)
-    return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, (_, content) => {
-      // Add padding to account for badge px-2 (8px each side = ~2 chars)
-      return content + '  ';
+  // Helper to measure badge widths for talent column
+  const measureBadgeWidth = (text: string, measureElement: HTMLDivElement): number => {
+    // Check if text contains bracket formatting
+    const badgeMatches = text.match(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g);
+    
+    if (!badgeMatches) {
+      // No badges, measure plain text
+      measureElement.textContent = text;
+      return measureElement.offsetWidth;
+    }
+    
+    // Extract badge contents and measure each badge with proper spacing
+    let totalWidth = 0;
+    
+    badgeMatches.forEach((badge, index) => {
+      // Extract just the text content from [text]{color} or [text]
+      const content = badge.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/, '$1');
+      measureElement.textContent = content;
+      const textWidth = measureElement.offsetWidth;
+      
+      // Add badge padding (px-2 = 8px each side = 16px) and margin (mx-0.5 = 2px each side = 4px)
+      const badgeWidth = textWidth + 16 + 4;
+      totalWidth += badgeWidth;
+      
+      // Add gap between badges (gap-1 = 4px)
+      if (index < badgeMatches.length - 1) {
+        totalWidth += 4;
+      }
     });
+    
+    return totalWidth;
   };
 
   // Auto-resize column to fit content
@@ -194,30 +218,30 @@ const RundownTableHeader = ({
           measureElement.style.fontFamily = 'inherit';
         }
         
-        // For talent column, strip bracket formatting to measure actual badge text
-        let measureText = textValue;
-        if (column.key === 'talent') {
-          measureText = stripBracketFormatting(textValue);
-        }
-        
         // Handle multi-line text by measuring each line and finding the longest
-        const lines = measureText.split('\n');
         let maxLineWidth = 0;
         
-        // If there are no explicit line breaks (single line), measure the entire text
-        // to prevent unnecessary wrapping during auto-resize
-        if (lines.length === 1) {
-          measureElement.style.whiteSpace = 'nowrap'; // Prevent wrapping for single line
-          measureElement.textContent = textValue;
-          maxLineWidth = measureElement.offsetWidth;
+        // Special handling for talent column with badge formatting
+        if (column.key === 'talent') {
+          maxLineWidth = measureBadgeWidth(textValue, measureElement);
         } else {
-          // For multi-line text with explicit line breaks, measure each line
-          measureElement.style.whiteSpace = 'nowrap'; // Prevent wrapping when measuring individual lines
-          lines.forEach(line => {
-            measureElement.textContent = line.trim();
-            const lineWidth = measureElement.offsetWidth;
-            maxLineWidth = Math.max(maxLineWidth, lineWidth);
-          });
+          const lines = textValue.split('\n');
+          
+          // If there are no explicit line breaks (single line), measure the entire text
+          // to prevent unnecessary wrapping during auto-resize
+          if (lines.length === 1) {
+            measureElement.style.whiteSpace = 'nowrap'; // Prevent wrapping for single line
+            measureElement.textContent = textValue;
+            maxLineWidth = measureElement.offsetWidth;
+          } else {
+            // For multi-line text with explicit line breaks, measure each line
+            measureElement.style.whiteSpace = 'nowrap'; // Prevent wrapping when measuring individual lines
+            lines.forEach(line => {
+              measureElement.textContent = line.trim();
+              const lineWidth = measureElement.offsetWidth;
+              maxLineWidth = Math.max(maxLineWidth, lineWidth);
+            });
+          }
         }
         
         // Cap the width to prevent excessively wide columns, but allow more space for longer text
