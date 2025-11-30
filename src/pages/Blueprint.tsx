@@ -13,7 +13,6 @@ import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
-import { TalentPresetsCard } from '@/components/blueprint/TalentPresetsCard';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import RundownSummary from '@/components/blueprint/RundownSummary';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
@@ -266,7 +265,7 @@ const BlueprintContent = () => {
     return <BlueprintLoadingSkeleton />;
   }
 
-  // Create component mapping for rendering in the correct order (removed crew-list)
+  // Create component mapping for rendering in the correct order (removed crew-list and talent-presets)
   const componentMap = {
     // Temporarily disabled camera plot
     // 'camera-plot': (
@@ -292,11 +291,6 @@ const BlueprintContent = () => {
     //     />
     //   </div>
     // ),
-    'talent-presets': (
-      <div key="talent-presets">
-        <TalentPresetsCard />
-      </div>
-    ),
     'scratchpad': (
       <div key="scratchpad">
         <BlueprintScratchpad

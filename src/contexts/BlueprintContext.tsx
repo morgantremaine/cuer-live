@@ -48,7 +48,7 @@ const initialState: BlueprintState = {
   showDate: '',
   notes: '',
   cameraPlots: [],
-  componentOrder: ['talent-presets', 'scratchpad'],
+  componentOrder: ['scratchpad'],
   talentPresets: [],
   isLoading: false,
   isInitialized: false,
@@ -261,20 +261,15 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           
           // Normalize component order to ensure required components are present
           const storedOrder = blueprintData.component_order || [];
-          const validComponents = ['talent-presets', 'scratchpad', 'camera-plot'];
+          const validComponents = ['scratchpad', 'camera-plot'];
           const normalizedOrder = [...storedOrder];
-          
-          // Add talent-presets at the beginning if missing
-          if (!normalizedOrder.includes('talent-presets')) {
-            normalizedOrder.unshift('talent-presets');
-          }
           
           // Add scratchpad at the end if missing
           if (!normalizedOrder.includes('scratchpad')) {
             normalizedOrder.push('scratchpad');
           }
           
-          // Remove deprecated components (like 'crew-list')
+          // Remove deprecated components (like 'crew-list' and 'talent-presets')
           const cleanedOrder = normalizedOrder.filter(c => validComponents.includes(c));
           
           logger.blueprint('INITIALIZATION - Normalized component order:', cleanedOrder);
