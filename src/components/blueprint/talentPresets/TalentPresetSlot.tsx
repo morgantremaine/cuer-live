@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -33,7 +33,16 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
   const modifierKey = isMac ? '⌥' : 'Alt+';
 
+  // Reset local state when props change (e.g., when slot is cleared)
+  useEffect(() => {
+    setEditName(name || '');
+    setEditColor(color || DEFAULT_COLORS[(slot - 1) % DEFAULT_COLORS.length]);
+  }, [name, color, slot]);
+
   const handleSave = () => {
+    // Don't save if color picker is open - user is still editing
+    if (showColorPicker) return;
+    
     if (editName.trim()) {
       onUpdate(editName.trim(), editColor);
       setIsEditing(false);
@@ -53,7 +62,12 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
     return (
       <div 
         className="group relative h-12 border border-dashed border-border rounded-md flex items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-accent/5 transition-colors"
-        onClick={() => setIsEditing(true)}
+        onClick={() => {
+          // Reset to fresh state when adding new
+          setEditName('');
+          setEditColor(DEFAULT_COLORS[(slot - 1) % DEFAULT_COLORS.length]);
+          setIsEditing(true);
+        }}
       >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded">{modifierKey}{slot}</kbd>
