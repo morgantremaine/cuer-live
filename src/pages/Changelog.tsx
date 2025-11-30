@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import aiRundownSummaryImage from '@/assets/changelog/ai-rundown-summary-v122.png';
 import printColumnSelectionImage from '@/assets/changelog/print-column-selection-v123.png';
 import duplicateToTeamImage from '@/assets/changelog/duplicate-to-team-v124.png';
+import presenceAvatarsImage from '@/assets/changelog/presence-avatars-v125.png';
 import { SEO } from '@/components/SEO';
 
 const Changelog: React.FC = () => {
@@ -32,6 +33,42 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.2.5 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.2.5</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">👥 Presence Avatars</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Real-Time Collaboration Indicators:</strong> See who's currently viewing and editing your rundown with new presence avatars displayed in the header:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>User Avatars:</strong> Colorful avatars show all users currently in the rundown</li>
+                      <li><strong>Editing Indicators:</strong> A pencil icon appears when a user is actively editing a cell</li>
+                      <li><strong>Click to Navigate:</strong> Click on an editing user's avatar to scroll directly to the cell they're working on</li>
+                      <li><strong>Color-Coded:</strong> Each user gets a consistent color across their avatar and cell highlights</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src={presenceAvatarsImage}
+                        alt="Presence avatars showing user initials with editing indicator"
+                        className="w-full max-w-2xl mx-auto rounded"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        User presence avatar with editing indicator in the rundown header
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.2.4 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center mb-4">
