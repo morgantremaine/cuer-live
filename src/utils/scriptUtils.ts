@@ -117,7 +117,7 @@ export const renderScriptWithBrackets = (
       parts.push(
         React.createElement('span', {
           key: `${cacheKey}-bracket-${partIndex++}`,
-          className: `py-0.5 px-2 ${inlineDisplay ? 'inline' : 'inline-block'} rounded mx-1 ${getFontWeight()}`,
+          className: `py-0.5 px-2 inline-flex rounded mx-0.5 my-0.5 ${getFontWeight()}`,
           style: { 
             backgroundColor,
             color: textColor,
