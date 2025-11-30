@@ -54,7 +54,6 @@ export const useDragAndDrop = (
   // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
-  const dropHandledRef = useRef(false);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -123,26 +122,6 @@ export const useDragAndDrop = (
       }
     };
   }, []);
-
-  // Fallback state recovery - cleans up stuck states
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      // If drag state exists but no drag is actually happening, clean up
-      if (draggedItemIndex !== null && !document.querySelector('[draggable]:active')) {
-        console.log('🎯 Fallback cleanup: drag state exists but no active drag');
-        // Small delay to not interfere with normal drop
-        setTimeout(() => {
-          if (draggedItemIndex !== null) {
-            console.log('🎯 Executing fallback reset');
-            resetDragState();
-          }
-        }, 100);
-      }
-    };
-    
-    window.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [draggedItemIndex, resetDragState]);
 
   const renumberItems = useCallback((items: RundownItem[]) => {
     if (process.env.NODE_ENV === 'development') {
@@ -615,45 +594,50 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🎯 Legacy drop called:', { dropIndex, draggedItemIndex, isDragActive: isDragActiveRef.current });
+    console.log('🎯 Legacy drop called:', { dropIndex, draggedItemIndex });
     
-    if (!isDragActiveRef.current || draggedItemIndex === null) {
-      console.log('🎯 Legacy drop ignored - no active drag');
-      resetDragState();
-      return;
+    // Update dropTargetIndex to the exact drop position
+    // The actual drop execution will happen in handleDragEnd
+    if (draggedItemIndex !== null) {
+      setDropTargetIndex(dropIndex);
     }
-
-    // Mark that drop is being handled
-    dropHandledRef.current = true;
-
-    // Simulate @dnd-kit drop by finding the target item
-    const targetItem = items[dropIndex];
-    if (targetItem) {
-      console.log('🎯 Legacy drop simulating dnd-kit drop to:', targetItem.id);
-      handleDndKitDragEnd({
-        active: { id: items[draggedItemIndex].id },
-        over: { id: targetItem.id }
-      } as any);
-    } else {
-      console.error('🚨 Legacy drop error: Target item not found at index:', dropIndex);
-    }
-  }, [draggedItemIndex, items, handleDndKitDragEnd, resetDragState]);
+  }, [draggedItemIndex]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
-    console.log('🎯 Legacy drag end called, dropHandled:', dropHandledRef.current);
+    console.log('🎯 Legacy drag end called:', {
+      draggedItemIndex,
+      dropTargetIndex,
+      isDragActive: isDragActiveRef.current,
+      hasDragInfo: !!dragInfo
+    });
     
-    // Small delay to ensure drop event has time to process
-    setTimeout(() => {
-      if (!dropHandledRef.current) {
-        // Only reset if drop wasn't handled (drag was cancelled)
-        console.log('🎯 Drag cancelled - resetting state');
-        resetDragState();
-      } else {
-        console.log('🎯 Drop was handled - not resetting state');
+    // If we have valid drop state, execute the drop
+    if (isDragActiveRef.current && draggedItemIndex !== null && dropTargetIndex !== null && dragInfo) {
+      // Only process if the drop position is actually different
+      if (dropTargetIndex !== draggedItemIndex && dropTargetIndex !== draggedItemIndex + 1) {
+        console.log('🎯 Executing drop via dragend:', { 
+          from: draggedItemIndex, 
+          to: dropTargetIndex 
+        });
+        
+        // Find a valid target item for the dnd-kit handler
+        const targetIndex = Math.min(dropTargetIndex, items.length - 1);
+        const targetItem = items[targetIndex];
+        
+        if (targetItem && items[draggedItemIndex]) {
+          handleDndKitDragEnd({
+            active: { id: items[draggedItemIndex].id },
+            over: { id: targetItem.id }
+          } as DragEndEvent);
+          return; // handleDndKitDragEnd will call resetDragState in finally block
+        }
       }
-      dropHandledRef.current = false;
-    }, 50);
-  }, [resetDragState]);
+    }
+    
+    // No valid drop or same position - just reset
+    console.log('🎯 No valid drop - resetting state');
+    resetDragState();
+  }, [draggedItemIndex, dropTargetIndex, dragInfo, items, handleDndKitDragEnd, resetDragState]);
 
   // Create sortable items list for @dnd-kit
   const sortableItems = useMemo(() => 
