@@ -60,6 +60,12 @@ const TextAreaCell = ({
     };
   }, []);
 
+  // Helper to strip bracket formatting for height measurement
+  const stripBracketFormatting = (text: string): string => {
+    // Replace [content]{color} or [content] with just content plus spacing
+    return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
+  };
+
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
     if (!textareaRef.current || !measurementRef.current) return;
@@ -87,8 +93,11 @@ const TextAreaCell = ({
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content
-    measurementDiv.textContent = debouncedValue.value || ' '; // Use space for empty content
+    // Set the content - strip brackets if renderBrackets is enabled for accurate height
+    const textToMeasure = renderBrackets 
+      ? stripBracketFormatting(debouncedValue.value)
+      : debouncedValue.value;
+    measurementDiv.textContent = textToMeasure || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
