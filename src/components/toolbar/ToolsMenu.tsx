@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History, Radio } from 'lucide-react';
+import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History, Radio, Keyboard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -16,6 +16,7 @@ import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { RundownMOSDialog } from '@/components/integrations/RundownMOSDialog';
+import { TalentPresetsDialog } from './TalentPresetsDialog';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
@@ -42,6 +43,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   const { subscription_tier, access_type } = useSubscription();
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [showMOSDialog, setShowMOSDialog] = useState(false);
+  const [showTalentPresetsDialog, setShowTalentPresetsDialog] = useState(false);
   const historyButtonRef = useRef<HTMLDivElement>(null);
 
   // Check if user is on free tier
@@ -243,6 +245,11 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
               </DropdownMenuItem>
             </>
           )}
+
+          <DropdownMenuItem onClick={() => setShowTalentPresetsDialog(true)}>
+            <Keyboard className="h-4 w-4 mr-2" />
+            Talent Quick-Insert
+          </DropdownMenuItem>
           
           
           <DropdownMenuItem onClick={handleOpenHistory}>
@@ -302,6 +309,14 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           rundownId={rundownId}
           teamId={teamId}
           userEmail={user?.email}
+        />
+      )}
+
+      {rundownId && (
+        <TalentPresetsDialog
+          open={showTalentPresetsDialog}
+          onOpenChange={setShowTalentPresetsDialog}
+          rundownId={rundownId}
         />
       )}
     </>
