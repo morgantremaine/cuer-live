@@ -42,7 +42,7 @@ export const TalentPresetsCard = () => {
               Talent Quick-Insert
             </CardTitle>
             <CardDescription className="mt-1.5">
-              Set up talent presets for quick insertion in the rundown with Ctrl + 1-9
+              Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac)
             </CardDescription>
           </div>
         </div>
