@@ -346,7 +346,7 @@ export const getItemMetadata = (
 
   return {
     rowNumber: (matchedItem as any)?.calculatedRowNumber || matchedItem?.rowNumber || null,
-    startTime: matchedItem?.startTime || null
+    startTime: (matchedItem as any)?.calculatedStartTime || matchedItem?.startTime || null
   };
 };
 
