@@ -50,14 +50,14 @@ const Changelog: React.FC = () => {
                     </p>
                     <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
                       <li><strong>9 Preset Slots:</strong> Configure up to 9 talent presets with custom names and colors</li>
-                      <li><strong>Quick Insert:</strong> Press Ctrl + 1-9 to instantly insert talent badges into any text field</li>
+                      <li><strong>Quick Insert:</strong> Press Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac) to instantly insert talent badges into any text field</li>
                       <li><strong>Color-Coded Badges:</strong> Each talent can have a unique color for easy visual identification in the rundown</li>
                       <li><strong>Access via Tools Menu:</strong> Find the Talent Quick-Insert option in the Tools dropdown menu</li>
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
                         src={talentQuickInsertImage}
-                        alt="Talent Quick-Insert dialog showing 9 preset slots with keyboard shortcuts Ctrl+1 through Ctrl+9"
+                        alt="Talent Quick-Insert dialog showing 9 preset slots with keyboard shortcuts Alt+1-9 (Windows) or Ctrl+1-9 (Mac)"
                         className="w-full max-w-2xl mx-auto rounded"
                       />
                       <p className="text-xs text-gray-500 text-center mt-2">
