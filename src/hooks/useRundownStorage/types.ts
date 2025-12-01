@@ -21,6 +21,8 @@ export interface SavedRundown {
   team_id?: string
   visibility?: string
   folder_id?: string | null
+  numbering_locked?: boolean
+  locked_row_numbers?: { [itemId: string]: string } | null
   teams?: {
     id: string
     name: string
