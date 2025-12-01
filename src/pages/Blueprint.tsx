@@ -409,7 +409,9 @@ const Blueprint = () => {
   // MUST be called before any conditional returns (React hooks rule)
   const itemsWithTiming = calculateItemsWithTiming(
     rundown?.items || [],
-    rundown?.start_time || '09:00:00'
+    rundown?.start_time || '09:00:00',
+    rundown?.numbering_locked || false,
+    (rundown?.locked_row_numbers as { [itemId: string]: string }) || {}
   );
 
   const handleSignOut = async () => {
