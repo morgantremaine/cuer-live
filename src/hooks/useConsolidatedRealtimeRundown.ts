@@ -239,10 +239,11 @@ export const useConsolidatedRealtimeRundown = ({
           }
           
           // FIXED: Only show toast for actual missed updates from OTHER users/tabs
-          if (missedUpdates > 0) {
+          // AND only after initial load is complete (not when first opening the rundown)
+          if (missedUpdates > 0 && !isInitialLoadRef.current) {
             toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} from other users`);
           } else if (serverDoc > knownDocVersion) {
-            console.log(`✅ Caught up with ${serverDoc - knownDocVersion} own operation(s) - no toast needed`);
+            console.log(`✅ Caught up with ${serverDoc - knownDocVersion} operation(s) - no toast needed`);
           }
           return true; // Updates were found and applied
         } else {
@@ -378,10 +379,11 @@ export const useConsolidatedRealtimeRundown = ({
     };
   }, [enabled, rundownId, performCatchupSync]);
 
-  // Trigger catch-up sync when connection is restored
+  // Trigger catch-up sync when connection is restored (NOT on initial load)
   const wasConnectedRef = useRef(isConnected);
   useEffect(() => {
-    if (isConnected && !wasConnectedRef.current && rundownId) {
+    // FIXED: Skip during initial load - initial data already fetched in subscribe callback
+    if (isConnected && !wasConnectedRef.current && rundownId && !isInitialLoadRef.current) {
       console.log('📡 Connection restored - triggering immediate catch-up sync');
       performCatchupSync();
     }
