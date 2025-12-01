@@ -81,10 +81,10 @@ export const useRundownKeyboardShortcuts = ({
       const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
       const isInEditableElement = isEditableElement(e.target);
 
-      // Talent preset shortcuts: Alt + 1-9 on Windows, Ctrl + 1-9 on Mac (only in editable elements)
-      // Mac uses Ctrl because Option + numbers produces special characters
+      // Talent preset shortcuts: Alt + 1-9 on Windows, Cmd + Shift + 1-9 on Mac (only in editable elements)
+      // Mac uses Cmd + Shift because Option + numbers produces special characters and Ctrl is rarely used
       // Windows uses Alt because Ctrl + numbers switches browser tabs
-      const talentModifierActive = isMac ? (e.ctrlKey && !e.metaKey) : e.altKey;
+      const talentModifierActive = isMac ? (e.metaKey && e.shiftKey) : e.altKey;
       if (talentModifierActive && isInEditableElement && onInsertTalent && talentPresets.length > 0) {
         const key = e.key;
         if (key >= '1' && key <= '9') {
