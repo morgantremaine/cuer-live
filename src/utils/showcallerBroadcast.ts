@@ -109,9 +109,14 @@ class ShowcallerBroadcastManager {
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
-          setTimeout(() => {
+          // Store timeout so we can clear it on success
+          const existingTimeout = this.reconnectTimeouts.get(rundownId);
+          if (existingTimeout) clearTimeout(existingTimeout);
+          const timeout = setTimeout(() => {
+            this.reconnectTimeouts.delete(rundownId);
             this.forceReconnect(rundownId);
           }, delay);
+          this.reconnectTimeouts.set(rundownId, timeout);
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
           this.reconnecting.delete(rundownId);
@@ -140,9 +145,14 @@ class ShowcallerBroadcastManager {
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
-          setTimeout(() => {
+          // Store timeout so we can clear it on success
+          const existingTimeout = this.reconnectTimeouts.get(rundownId);
+          if (existingTimeout) clearTimeout(existingTimeout);
+          const timeout = setTimeout(() => {
+            this.reconnectTimeouts.delete(rundownId);
             this.forceReconnect(rundownId);
           }, delay);
+          this.reconnectTimeouts.set(rundownId, timeout);
         } else if (status === 'TIMED_OUT') {
           console.warn('📺 ⚠️ Showcaller broadcast channel timed out:', rundownId);
           this.reconnecting.delete(rundownId);
@@ -171,16 +181,29 @@ class ShowcallerBroadcastManager {
           const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
           console.log(`📺 Scheduling reconnection in ${delay}ms (attempt ${attempts + 1})`);
           
-          setTimeout(() => {
+          // Store timeout so we can clear it on success
+          const existingTimeout = this.reconnectTimeouts.get(rundownId);
+          if (existingTimeout) clearTimeout(existingTimeout);
+          const timeout = setTimeout(() => {
+            this.reconnectTimeouts.delete(rundownId);
             this.forceReconnect(rundownId);
           }, delay);
+          this.reconnectTimeouts.set(rundownId, timeout);
         } else if (status === 'SUBSCRIBED') {
           // Reset reconnect attempts, failures, and clear guard flag on successful connection
           this.reconnectAttempts.delete(rundownId);
           this.consecutiveFailures.delete(rundownId);
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
-          this.lastReconnectTimes.delete(rundownId); // Clear debounce on success
+          // CRITICAL: Don't clear lastReconnectTimes - let debounce window expire naturally
+          // This prevents orphan timeouts from firing immediately after success
+          
+          // Clear any pending scheduled reconnection timeouts
+          const pendingTimeout = this.reconnectTimeouts.get(rundownId);
+          if (pendingTimeout) {
+            clearTimeout(pendingTimeout);
+            this.reconnectTimeouts.delete(rundownId);
+          }
         }
       });
 
