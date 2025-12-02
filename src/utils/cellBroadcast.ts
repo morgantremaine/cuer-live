@@ -44,6 +44,7 @@ export class CellBroadcastManager {
   private reconnectGuardTimeouts = new Map<string, NodeJS.Timeout>();
   private reconnectStartTimes = new Map<string, number>();
   private consecutiveFailures = new Map<string, number>(); // Track consecutive failures
+  private lastReconnectTimes = new Map<string, number>(); // Debounce reconnection attempts
   
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
@@ -51,6 +52,7 @@ export class CellBroadcastManager {
   private readonly TYPING_DEBOUNCE_MS = 300; // 300ms debounce for typing
   private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
   private readonly MAX_FAILURES_BEFORE_RELOAD = 5; // Force reload after 5 consecutive failures
+  private readonly MIN_RECONNECT_INTERVAL_MS = 5000; // 5 second minimum between reconnection attempts
   
   // Health monitoring
   private connectionStatus = new Map<string, string>();
@@ -70,6 +72,7 @@ export class CellBroadcastManager {
         // Clear all reconnecting flags to allow immediate reconnection
         this.reconnecting.clear();
         this.reconnectStartTimes.clear();
+        this.lastReconnectTimes.clear(); // Allow immediate reconnection after network restore
         // Clear guard timeouts
         this.reconnectGuardTimeouts.forEach(timeout => clearTimeout(timeout));
         this.reconnectGuardTimeouts.clear();
@@ -144,6 +147,7 @@ export class CellBroadcastManager {
         this.reconnectAttempts.delete(rundownId);
         this.consecutiveFailures.delete(rundownId);
         this.reconnecting.delete(rundownId);
+        this.lastReconnectTimes.delete(rundownId); // Clear debounce on success
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel error:', key, status, {
@@ -397,6 +401,15 @@ export class CellBroadcastManager {
   // Force reconnection (called by RealtimeReconnectionCoordinator)
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
+    
+    // Debounce: prevent rapid reconnection attempts
+    const now = Date.now();
+    const lastReconnect = this.lastReconnectTimes.get(rundownId) || 0;
+    if (now - lastReconnect < this.MIN_RECONNECT_INTERVAL_MS) {
+      console.log(`⏭️ Skipping cell reconnect - too soon (${Math.round((now - lastReconnect)/1000)}s since last)`);
+      return;
+    }
+    this.lastReconnectTimes.set(rundownId, now);
     
     // Check current connection status
     const currentStatus = this.connectionStatus.get(rundownId);

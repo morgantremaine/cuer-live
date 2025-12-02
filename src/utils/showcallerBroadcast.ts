@@ -27,7 +27,9 @@ class ShowcallerBroadcastManager {
   private reconnectGuardTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private reconnectStartTimes: Map<string, number> = new Map();
   private consecutiveFailures: Map<string, number> = new Map(); // Track consecutive failures
+  private lastReconnectTimes: Map<string, number> = new Map(); // Debounce reconnection attempts
   private readonly RECONNECT_TIMEOUT_MS = 10000; // 10 second timeout for faster recovery after sleep
+  private readonly MIN_RECONNECT_INTERVAL_MS = 5000; // 5 second minimum between reconnection attempts
   private readonly MAX_FAILURES_BEFORE_RELOAD = 5; // Force reload after 5 consecutive failures
 
   constructor() {
@@ -37,6 +39,7 @@ class ShowcallerBroadcastManager {
       // Clear all reconnecting flags to allow immediate reconnection
       this.reconnecting.clear();
       this.reconnectStartTimes.clear();
+      this.lastReconnectTimes.clear(); // Allow immediate reconnection after network restore
       // Clear guard timeouts
       this.reconnectGuardTimeouts.forEach(timeout => clearTimeout(timeout));
       this.reconnectGuardTimeouts.clear();
@@ -177,6 +180,7 @@ class ShowcallerBroadcastManager {
           this.consecutiveFailures.delete(rundownId);
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
+          this.lastReconnectTimes.delete(rundownId); // Clear debounce on success
         }
       });
 
@@ -189,6 +193,15 @@ class ShowcallerBroadcastManager {
   // Force reconnection (called by RealtimeReconnectionCoordinator)
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
+    
+    // Debounce: prevent rapid reconnection attempts
+    const now = Date.now();
+    const lastReconnect = this.lastReconnectTimes.get(rundownId) || 0;
+    if (now - lastReconnect < this.MIN_RECONNECT_INTERVAL_MS) {
+      console.log(`⏭️ Skipping showcaller reconnect - too soon (${Math.round((now - lastReconnect)/1000)}s since last)`);
+      return;
+    }
+    this.lastReconnectTimes.set(rundownId, now);
     
     // Check auth first before attempting reconnection
     const { data: { session }, error } = await supabase.auth.getSession();
