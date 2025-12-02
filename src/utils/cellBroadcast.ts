@@ -147,7 +147,15 @@ export class CellBroadcastManager {
         this.reconnectAttempts.delete(rundownId);
         this.consecutiveFailures.delete(rundownId);
         this.reconnecting.delete(rundownId);
-        this.lastReconnectTimes.delete(rundownId); // Clear debounce on success
+        // CRITICAL: Don't clear lastReconnectTimes - let debounce window expire naturally
+        // This prevents orphan timeouts from firing immediately after success
+        
+        // Clear any pending scheduled reconnection timeouts
+        const pendingTimeout = this.reconnectTimeouts.get(rundownId);
+        if (pendingTimeout) {
+          clearTimeout(pendingTimeout);
+          this.reconnectTimeouts.delete(rundownId);
+        }
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel error:', key, status, {
@@ -189,9 +197,14 @@ export class CellBroadcastManager {
         const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
         console.log(`🔌 Scheduling cell reconnection in ${delay}ms (attempt ${attempts + 1})`);
         
-        setTimeout(() => {
+        // Store timeout so we can clear it on success
+        const existingTimeout = this.reconnectTimeouts.get(rundownId);
+        if (existingTimeout) clearTimeout(existingTimeout);
+        const timeout = setTimeout(() => {
+          this.reconnectTimeouts.delete(rundownId);
           this.forceReconnect(rundownId);
         }, delay);
+        this.reconnectTimeouts.set(rundownId, timeout);
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
