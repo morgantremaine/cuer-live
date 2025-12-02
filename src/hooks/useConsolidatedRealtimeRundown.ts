@@ -35,21 +35,37 @@ const globalSubscriptions = new Map<string, {
   offlineSince?: number;
   reconnectAttempts?: number;
   reconnectTimeout?: NodeJS.Timeout;
+  guardTimeout?: NodeJS.Timeout; // Track guard timeout to clear on success
   reconnectHandler?: () => Promise<void>;
   reconnecting?: boolean; // Guard against reconnection storms
   reconnectingStartedAt?: number; // Track when reconnection started
+  lastReconnectTime?: number; // Debounce rapid reconnections
 }>();
 
-// Reconnection helper with exponential backoff
+// Minimum interval between reconnection attempts (prevents storm)
+const MIN_RECONNECT_INTERVAL = 5000; // 5 seconds
+
+// Reconnection helper with exponential backoff and debouncing
 const handleConsolidatedChannelReconnect = (rundownId: string) => {
   const state = globalSubscriptions.get(rundownId);
   if (!state) return;
 
+  // CRITICAL: Debounce rapid reconnection attempts
+  const now = Date.now();
+  const timeSinceLastReconnect = now - (state.lastReconnectTime || 0);
+  if (timeSinceLastReconnect < MIN_RECONNECT_INTERVAL) {
+    console.log(`⏭️ Skipping reconnection - too soon (${Math.round(timeSinceLastReconnect/1000)}s since last)`);
+    return;
+  }
+
   // Set guard flag immediately to prevent feedback loop
   state.reconnecting = true;
+  state.lastReconnectTime = now;
 
+  // Clear any existing reconnect timeout
   if (state.reconnectTimeout) {
     clearTimeout(state.reconnectTimeout);
+    state.reconnectTimeout = undefined;
   }
 
   const attempts = state.reconnectAttempts || 0;
@@ -682,10 +698,18 @@ export const useConsolidatedRealtimeRundown = ({
 
         if (status === 'SUBSCRIBED') {
           state.isConnected = true;
-          // Clear guard flag and reset attempts on successful connection
+          // CRITICAL: Clear ALL pending timeouts and flags on success
           state.reconnecting = false;
           state.reconnectingStartedAt = undefined;
           state.reconnectAttempts = 0;
+          if (state.reconnectTimeout) {
+            clearTimeout(state.reconnectTimeout);
+            state.reconnectTimeout = undefined;
+          }
+          if (state.guardTimeout) {
+            clearTimeout(state.guardTimeout);
+            state.guardTimeout = undefined;
+          }
           
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
@@ -770,16 +794,29 @@ export const useConsolidatedRealtimeRundown = ({
       reconnectHandler = async () => {
         console.log('📡 🔄 Force reconnect requested for consolidated channel:', rundownId);
         
-        // Set guard flag to prevent feedback loop
+        // CRITICAL: Debounce rapid reconnection attempts
         if (globalState) {
+          const now = Date.now();
+          const timeSinceLastReconnect = now - (globalState.lastReconnectTime || 0);
+          if (timeSinceLastReconnect < MIN_RECONNECT_INTERVAL) {
+            console.log(`⏭️ Skipping force reconnect - too soon (${Math.round(timeSinceLastReconnect/1000)}s since last)`);
+            return;
+          }
+          globalState.lastReconnectTime = now;
           globalState.reconnecting = true;
           
+          // Clear existing guard timeout before setting new one
+          if (globalState.guardTimeout) {
+            clearTimeout(globalState.guardTimeout);
+          }
+          
           // CRITICAL: Auto-clear flag after 30 seconds if reconnection doesn't complete
-          setTimeout(() => {
+          globalState.guardTimeout = setTimeout(() => {
             if (globalState && globalState.reconnecting) {
               console.warn('⏰ Reconnection guard timeout - force clearing flag');
               globalState.reconnecting = false;
               globalState.reconnectingStartedAt = undefined;
+              globalState.guardTimeout = undefined;
             }
           }, 30000); // 30 second timeout
         }
@@ -826,6 +863,15 @@ export const useConsolidatedRealtimeRundown = ({
                 globalState.isConnected = true;
                 globalState.reconnecting = false;
                 globalState.reconnectAttempts = 0;
+                // CRITICAL: Clear ALL pending timeouts on success
+                if (globalState.reconnectTimeout) {
+                  clearTimeout(globalState.reconnectTimeout);
+                  globalState.reconnectTimeout = undefined;
+                }
+                if (globalState.guardTimeout) {
+                  clearTimeout(globalState.guardTimeout);
+                  globalState.guardTimeout = undefined;
+                }
               }
               // Trigger catch-up sync after successful reconnection
               console.log('📡 Force reconnection successful - triggering catch-up sync');
@@ -919,9 +965,12 @@ export const useConsolidatedRealtimeRundown = ({
           totalCallbacks
         });
         
-        // Clear any pending reconnect timeouts
+        // Clear any pending timeouts
         if (state.reconnectTimeout) {
           clearTimeout(state.reconnectTimeout);
+        }
+        if (state.guardTimeout) {
+          clearTimeout(state.guardTimeout);
         }
         
         // Unregister from reconnection coordinator
