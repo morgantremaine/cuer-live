@@ -88,6 +88,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clean up invalid tokens when user signs in
       if (session?.user && event === 'SIGNED_IN') {
         clearInvalidTokens()
+        
+        // Safety net: ensure profile exists for this user (handles cases where trigger failed)
+        setTimeout(async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', session.user.id)
+              .single()
+            
+            if (!profile) {
+              logger.debug('Profile missing for user, creating safety net profile...')
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || ''
+                })
+              
+              if (insertError && !insertError.message.includes('duplicate')) {
+                logger.error('Failed to create safety net profile:', insertError)
+              } else {
+                logger.debug('Safety net profile created successfully')
+              }
+            }
+          } catch (err) {
+            // Silently handle - this is a safety net, not critical path
+            logger.debug('Profile safety net check failed:', err)
+          }
+        }, 0)
       }
     })
 
