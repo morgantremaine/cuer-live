@@ -187,11 +187,34 @@ const RundownIndexContentInner = () => {
   });
 
   // Create presence users array for avatar display (all active users, not just editing)
+  // Deduplicate by userId - if same user has multiple tabs, show only one avatar
+  // Prefer the entry that is actively editing, or the most recently seen
   const presentUsers = otherUsers
     .filter(user => {
       const timeDiff = (Date.now() - new Date(user.lastSeen).getTime()) / 1000;
       return timeDiff < 120; // Active within 2 minutes
     })
+    .reduce((acc, user) => {
+      const existingIndex = acc.findIndex(u => u.userId === user.userId);
+      
+      if (existingIndex === -1) {
+        acc.push(user);
+      } else {
+        const existing = acc[existingIndex];
+        const existingIsEditing = !!(existing.lastEditedItemId && existing.lastEditedField);
+        const currentIsEditing = !!(user.lastEditedItemId && user.lastEditedField);
+        
+        // Prefer editing state, or more recent lastSeen
+        if (currentIsEditing && !existingIsEditing) {
+          acc[existingIndex] = user;
+        } else if (!existingIsEditing && !currentIsEditing) {
+          if (new Date(user.lastSeen) > new Date(existing.lastSeen)) {
+            acc[existingIndex] = user;
+          }
+        }
+      }
+      return acc;
+    }, [] as typeof otherUsers)
     .map(user => ({
       userId: user.userId,
       userFullName: user.userFullName || 'Unknown User',
