@@ -68,9 +68,9 @@ serve(async (req) => {
 
     console.log('Current user:', user.id);
 
-    // Verify user is admin of the team
+    // Verify user is admin or manager of the team
     const { data: adminCheck, error: adminError } = await supabase.rpc(
-      'is_team_admin_simple',
+      'is_team_admin_or_manager',
       { user_uuid: user.id, team_uuid: teamId }
     );
 
