@@ -87,7 +87,7 @@ export const useRundownKeyboardShortcuts = ({
       const talentModifierActive = isMac ? e.ctrlKey : e.altKey;
       if (talentModifierActive && isInEditableElement && onInsertTalent && talentPresets.length > 0) {
         const key = e.key;
-        if (key >= '1' && key <= '9') {
+        if ((key >= '0' && key <= '9')) {
           const slot = parseInt(key, 10);
           const preset = talentPresets.find(p => p.slot === slot);
           
