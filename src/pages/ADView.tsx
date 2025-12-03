@@ -235,14 +235,21 @@ const ADView = () => {
 
   // Dynamically generate available columns based on rundown data
   const availableColumns = useMemo(() => {
+    // Helper to get column name from rundown's stored columns (includes user renames)
+    const getColumnName = (key: string, defaultName: string) => {
+      const rundownColumns = rundownData?.columns as Array<{ key: string; name: string }> | undefined;
+      const savedCol = rundownColumns?.find(c => c.key === key);
+      return savedCol?.name || defaultName;
+    };
+
     const columns = [
-      { key: 'talent', name: 'Talent' },
-      { key: 'script', name: 'Script' },
-      { key: 'gfx', name: 'GFX' },
-      { key: 'video', name: 'Video' },
-      { key: 'images', name: 'Images' },
-      { key: 'notes', name: 'Notes' },
-      { key: 'duration', name: 'Duration' }
+      { key: 'talent', name: getColumnName('talent', 'Talent') },
+      { key: 'script', name: getColumnName('script', 'Script') },
+      { key: 'gfx', name: getColumnName('gfx', 'GFX') },
+      { key: 'video', name: getColumnName('video', 'Video') },
+      { key: 'images', name: getColumnName('images', 'Images') },
+      { key: 'notes', name: getColumnName('notes', 'Notes') },
+      { key: 'duration', name: getColumnName('duration', 'Duration') }
     ];
 
     // Add custom columns from team_custom_columns
@@ -286,7 +293,7 @@ const ADView = () => {
     }
 
     return columns;
-  }, [teamColumns, rundownData?.items]);
+  }, [teamColumns, rundownData?.items, rundownData?.columns]);
 
   // Filter out header items for timing-based navigation
   const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];

@@ -15,6 +15,7 @@ import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 interface CSVImportDialogProps {
   onImport: (result: CSVImportResult, layoutColumns: Column[]) => void;
   children: React.ReactNode;
+  userColumnNames?: Record<string, string>; // Map of column key to user-renamed name
 }
 
 interface ColumnMapping {
@@ -42,7 +43,12 @@ const DEFAULT_RUNDOWN_COLUMNS = [
   { key: 'notes', name: 'Notes' }
 ];
 
-const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
+const CSVImportDialog = ({ onImport, children, userColumnNames }: CSVImportDialogProps) => {
+  // Helper to get display name (user-renamed or default)
+  const getColumnDisplayName = (key: string) => {
+    if (userColumnNames?.[key]) return userColumnNames[key];
+    return DEFAULT_RUNDOWN_COLUMNS.find(c => c.key === key)?.name || key;
+  };
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<'upload' | 'layout' | 'mapping'>('upload');
   const [file, setFile] = useState<File | null>(null);
@@ -150,7 +156,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
     const defaultColumns: Column[] = DEFAULT_RUNDOWN_COLUMNS.map((col, index) => ({
       id: col.key,
       key: col.key,
-      name: col.name,
+      name: getColumnDisplayName(col.key), // Use user-renamed name if available
       width: '150px',
       isCustom: false,
       isEditable: true,

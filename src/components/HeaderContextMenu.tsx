@@ -33,6 +33,7 @@ interface HeaderContextMenuProps {
   onToggleColumnVisibility: (columnId: string, insertIndex?: number) => void;
   savedLayouts?: LayoutData[];
   onLoadLayout?: (columns: Column[]) => void;
+  userColumns?: Column[]; // User's column preferences with renamed names
 }
 
 const HeaderContextMenu = ({ 
@@ -43,26 +44,33 @@ const HeaderContextMenu = ({
   columnIndex,
   onToggleColumnVisibility,
   savedLayouts = [],
-  onLoadLayout
+  onLoadLayout,
+  userColumns
 }: HeaderContextMenuProps) => {
   const { teamColumns } = useTeamCustomColumns();
 
   // Get all possible columns (built-in + team custom + any existing custom)
   const allPossibleColumns = useMemo(() => {
-    // Default built-in columns
+    // Helper to get renamed name from user preferences
+    const getUserColumnName = (key: string, defaultName: string) => {
+      const userCol = userColumns?.find(c => c.key === key);
+      return userCol?.name || defaultName;
+    };
+
+    // Default built-in columns with user-renamed names
     const defaultColumns: Column[] = [
-      { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-      { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-      { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-      { id: 'backTime', name: 'Back', key: 'backTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-      { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+      { id: 'name', name: getUserColumnName('name', 'Segment Name'), key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'talent', name: getUserColumnName('talent', 'Talent'), key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'script', name: getUserColumnName('script', 'Script'), key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'gfx', name: getUserColumnName('gfx', 'GFX'), key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'video', name: getUserColumnName('video', 'Video'), key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'images', name: getUserColumnName('images', 'Images'), key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'duration', name: getUserColumnName('duration', 'Duration'), key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'startTime', name: getUserColumnName('startTime', 'Start'), key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'endTime', name: getUserColumnName('endTime', 'End'), key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+      { id: 'elapsedTime', name: getUserColumnName('elapsedTime', 'Elapsed'), key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+      { id: 'backTime', name: getUserColumnName('backTime', 'Back'), key: 'backTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+      { id: 'notes', name: getUserColumnName('notes', 'Notes'), key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
     ];
 
     // Add team custom columns
@@ -91,7 +99,7 @@ const HeaderContextMenu = ({
     });
 
     return allPossible;
-  }, [teamColumns, allColumns]);
+  }, [teamColumns, allColumns, userColumns]);
 
   // Get columns that are not currently visible in the layout
   const hiddenColumns = useMemo(() => {
