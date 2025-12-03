@@ -803,7 +803,7 @@ const ADView = () => {
                       <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">00</div>
                     </div>
                     <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">Measurement Row</div>
+                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-bold text-zinc-300">Measurement Row</div>
                       {selectedColumns.map(columnKey => {
                         const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                         return (
@@ -829,7 +829,7 @@ const ADView = () => {
                       <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
                     </div>
                     <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-semibold text-zinc-300">{prev1Info.name}</div>
+                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-bold text-zinc-300">{prev1Info.name}</div>
                       {renderColumnData(prev1Info.columnData)}
                     </div>
                   </div>
@@ -897,7 +897,7 @@ const ADView = () => {
                         }`}>{nextInfo.rowNumber}</div>
                       </div>
                       <div className="flex-1">
-                        <div className={`font-semibold ${
+                        <div className={`font-bold ${
                           index === 0 ? 'text-[clamp(1.1rem,1.6vw,2.2rem)] text-zinc-300' : 
                           'text-[clamp(1rem,1.4vw,2rem)] text-zinc-400'
                         }`}>{nextInfo.name}</div>
