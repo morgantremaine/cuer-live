@@ -273,14 +273,15 @@ const ADView = () => {
       });
 
       // Add custom field columns
-      customFieldKeys.forEach(key => {
-        if (!columns.find(c => c.key === key)) {
-          columns.push({
-            key: key,
-            name: key.charAt(0).toUpperCase() + key.slice(1)
-          });
-        }
-      });
+    customFieldKeys.forEach(key => {
+      if (!columns.find(c => c.key === key)) {
+        const columnDef = rundownData?.columns?.find((c: any) => c.key === key);
+        columns.push({
+          key: key,
+          name: columnDef?.name || key.charAt(0).toUpperCase() + key.slice(1)
+        });
+      }
+    });
     }
 
     return columns;
