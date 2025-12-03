@@ -62,6 +62,9 @@ export class CellBroadcastManager {
   private healthyThreshold = 0.8; // 80% success rate required
   private healthCheckInterval = 30000; // 30 seconds
   
+  // Broadcast timing tracking for teleprompter health monitoring
+  private lastBroadcastReceivedAt = new Map<string, number>();
+  
   constructor() {
     debugLogger.realtime('CellBroadcast initialized (simplified for single sessions)');
     
@@ -100,6 +103,9 @@ export class CellBroadcastManager {
         if (!update || update.rundownId !== rundownId) {
           return;
         }
+        
+        // Track broadcast receipt time for health monitoring
+        this.lastBroadcastReceivedAt.set(rundownId, Date.now());
         
         // Each subscriber handles its own echo prevention via isOwnUpdate()
         // This allows multiple subscribers (main rundown + teleprompter) to work correctly
@@ -562,6 +568,18 @@ export class CellBroadcastManager {
     return this.connectionStatus.get(rundownId) === 'SUBSCRIBED';
   }
   
+  // Get last broadcast received time for health monitoring
+  getLastBroadcastTime(rundownId: string): number {
+    return this.lastBroadcastReceivedAt.get(rundownId) || 0;
+  }
+  
+  // Check if channel is stale (connected but no recent broadcasts)
+  isChannelStale(rundownId: string, maxAgeMs: number): boolean {
+    const lastBroadcast = this.lastBroadcastReceivedAt.get(rundownId);
+    if (!lastBroadcast) return false; // Never received a broadcast, can't determine staleness
+    return Date.now() - lastBroadcast > maxAgeMs;
+  }
+  
   /**
    * Clear reconnecting state and timeouts for a rundown
    */
@@ -620,6 +638,7 @@ export class CellBroadcastManager {
     this.broadcastSuccessCount.delete(rundownId);
     this.broadcastFailureCount.delete(rundownId);
     this.lastHealthCheck.delete(rundownId);
+    this.lastBroadcastReceivedAt.delete(rundownId);
     
     this.cleanupChannel(rundownId);
   }

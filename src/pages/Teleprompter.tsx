@@ -10,6 +10,8 @@ import TeleprompterControls from '@/components/teleprompter/TeleprompterControls
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
 import TeleprompterSidebar from '@/components/teleprompter/TeleprompterSidebar';
+import TeleprompterConnectionWarning from '@/components/teleprompter/TeleprompterConnectionWarning';
+import { useTeleprompterConnectionHealth } from '@/hooks/useTeleprompterConnectionHealth';
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { cellBroadcast } from '@/utils/cellBroadcast';
@@ -123,124 +125,6 @@ const Teleprompter = () => {
 
   // Simplified: No tab-based refresh needed with single sessions
   // Data freshness maintained through realtime updates only
-
-  // Set up cell broadcast for instant collaboration (per-tab, not per-user)
-  useEffect(() => {
-    if (!rundownId) return;
-    
-    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Only process cell value updates, not focus events
-      if ('isFocused' in update) return;
-      if (!('value' in update)) return;
-      
-      // Skip own updates using tab ID for correct echo prevention
-      const currentTabId = getTabId();
-      if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
-        return;
-      }
-
-      // Handle structural events for instant collaboration (add/remove/reorder/copy)
-      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder' || update.field === 'items:copy') {
-        setRundownData(prev => {
-          if (!prev) return prev;
-
-          if (update.field === 'items:add') {
-            const payload = update.value || {};
-            const item = payload.item;
-            const index = Math.max(0, Math.min(payload.index ?? prev.items.length, prev.items.length));
-            if (item && !prev.items.find(i => i.id === item.id)) {
-              const newItems = [...prev.items];
-              newItems.splice(index, 0, item);
-              return { ...prev, items: newItems };
-            }
-            return prev;
-          }
-
-          if (update.field === 'items:remove') {
-            const id = update.value?.id as string;
-            if (id) {
-              const newItems = prev.items.filter(i => i.id !== id);
-              if (newItems.length !== prev.items.length) {
-                return { ...prev, items: newItems };
-              }
-            }
-            return prev;
-          }
-
-          if (update.field === 'items:reorder') {
-            const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
-            if (order.length > 0) {
-              const indexMap = new Map(order.map((id, idx) => [id, idx]));
-              const reordered = [...prev.items].sort((a, b) => {
-                const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
-                const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
-                return ai - bi;
-              });
-              return { ...prev, items: reordered };
-            }
-            return prev;
-          }
-
-          if (update.field === 'items:copy') {
-            const payload = update.value || {};
-            const items = payload.items || [];
-            const index = Math.max(0, Math.min(payload.index ?? prev.items.length, prev.items.length));
-            
-            if (items.length > 0) {
-              // Filter out duplicates (in case item already exists)
-              const newItemsToAdd = items.filter((item: RundownItem) => 
-                !prev.items.find(i => i.id === item.id)
-              );
-              
-              if (newItemsToAdd.length > 0) {
-                const newItems = [...prev.items];
-                newItems.splice(index, 0, ...newItemsToAdd);
-                
-                // Recalculate timing and row numbers using the shared calculation function
-                const itemsWithCalculations = calculateItemsWithTiming(
-                  newItems,
-                  (prev as any).startTime || '09:00:00',
-                  (prev as any).numberingLocked || false,
-                  (prev as any).lockedRowNumbers || {}
-                );
-                
-                return { 
-                  ...prev, 
-                  items: itemsWithCalculations 
-                };
-              }
-            }
-            return prev;
-          }
-
-          return prev;
-        });
-        return;
-      }
-
-      // Handle script and name field updates for teleprompter
-      if (update.itemId && (update.field === 'script' || update.field === 'name')) {
-        // Check if actively editing this field
-        const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
-        if (isActivelyEditing) {
-          return;
-        }
-
-        setRundownData(prev => {
-          if (!prev) return prev;
-          const updatedItems = prev.items.map(item =>
-            item.id === update.itemId ? { ...item, [update.field]: update.value } : item
-          );
-          return { ...prev, items: updatedItems };
-        });
-      } else if (!update.itemId) {
-        // Rundown-level updates (title changes, etc.)
-        setRundownData(prev => (prev ? { ...prev, [update.field]: update.value } : prev));
-      }
-    }, getTabId());
-
-    return unsubscribe;
-  }, [rundownId, user?.id]);
 
   // Enhanced save system with realtime collaboration
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
@@ -370,6 +254,178 @@ const Teleprompter = () => {
 
     setLoading(false);
   };
+
+  // Silent refresh for connection health recovery (no loading state)
+  const silentRefreshData = async () => {
+    if (!rundownId) return;
+    
+    try {
+      const { data, error: queryError } = await supabase
+        .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
+
+      if (!queryError && data) {
+        const refreshedData = {
+          title: data.title || 'Untitled Rundown',
+          items: data.items || [],
+          startTime: data.startTime || '00:00:00'
+        };
+        
+        // Calculate timing and row numbers
+        const itemsWithCalculations = calculateItemsWithTiming(
+          refreshedData.items,
+          refreshedData.startTime,
+          data.numbering_locked,
+          data.locked_row_numbers
+        );
+        
+        refreshedData.items = itemsWithCalculations;
+        
+        // Only update if content actually changed (preserve scroll position)
+        setRundownData(prev => {
+          if (!prev) return refreshedData;
+          const prevItemsJson = JSON.stringify(prev.items.map(i => ({ id: i.id, script: i.script, name: i.name })));
+          const newItemsJson = JSON.stringify(refreshedData.items.map((i: any) => ({ id: i.id, script: i.script, name: i.name })));
+          if (prevItemsJson !== newItemsJson) {
+            console.log('📺 Teleprompter: Silent refresh detected content changes');
+            return refreshedData;
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error('📺 Teleprompter: Silent refresh failed:', error);
+    }
+  };
+
+  // Connection health monitoring for bulletproof teleprompter
+  const { showConnectionWarning, markBroadcastReceived } = useTeleprompterConnectionHealth({
+    rundownId: rundownId || '',
+    enabled: !!rundownId,
+    onSilentRefresh: silentRefreshData,
+    staleThresholdMs: 60000, // 60 seconds
+    healthCheckIntervalMs: 30000 // 30 seconds
+  });
+
+  // Set up cell broadcast for instant collaboration (per-tab, not per-user)
+  useEffect(() => {
+    if (!rundownId) return;
+    
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      // Only process cell value updates, not focus events
+      if ('isFocused' in update) return;
+      if (!('value' in update)) return;
+      
+      // Skip own updates using tab ID for correct echo prevention
+      const currentTabId = getTabId();
+      if (cellBroadcast.isOwnUpdate(update, currentTabId)) {
+        return;
+      }
+      
+      // Mark that we received a broadcast (for health monitoring)
+      markBroadcastReceived();
+
+      // Handle structural events for instant collaboration (add/remove/reorder/copy)
+      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder' || update.field === 'items:copy') {
+        setRundownData(prev => {
+          if (!prev) return prev;
+
+          if (update.field === 'items:add') {
+            const payload = update.value || {};
+            const item = payload.item;
+            const index = Math.max(0, Math.min(payload.index ?? prev.items.length, prev.items.length));
+            if (item && !prev.items.find(i => i.id === item.id)) {
+              const newItems = [...prev.items];
+              newItems.splice(index, 0, item);
+              return { ...prev, items: newItems };
+            }
+            return prev;
+          }
+
+          if (update.field === 'items:remove') {
+            const id = update.value?.id as string;
+            if (id) {
+              const newItems = prev.items.filter(i => i.id !== id);
+              if (newItems.length !== prev.items.length) {
+                return { ...prev, items: newItems };
+              }
+            }
+            return prev;
+          }
+
+          if (update.field === 'items:reorder') {
+            const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
+            if (order.length > 0) {
+              const indexMap = new Map(order.map((id, idx) => [id, idx]));
+              const reordered = [...prev.items].sort((a, b) => {
+                const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                return ai - bi;
+              });
+              return { ...prev, items: reordered };
+            }
+            return prev;
+          }
+
+          if (update.field === 'items:copy') {
+            const payload = update.value || {};
+            const items = payload.items || [];
+            const index = Math.max(0, Math.min(payload.index ?? prev.items.length, prev.items.length));
+            
+            if (items.length > 0) {
+              // Filter out duplicates (in case item already exists)
+              const newItemsToAdd = items.filter((item: RundownItem) => 
+                !prev.items.find(i => i.id === item.id)
+              );
+              
+              if (newItemsToAdd.length > 0) {
+                const newItems = [...prev.items];
+                newItems.splice(index, 0, ...newItemsToAdd);
+                
+                // Recalculate timing and row numbers using the shared calculation function
+                const itemsWithCalculations = calculateItemsWithTiming(
+                  newItems,
+                  (prev as any).startTime || '09:00:00',
+                  (prev as any).numberingLocked || false,
+                  (prev as any).lockedRowNumbers || {}
+                );
+                
+                return { 
+                  ...prev, 
+                  items: itemsWithCalculations 
+                };
+              }
+            }
+            return prev;
+          }
+
+          return prev;
+        });
+        return;
+      }
+
+      // Handle script and name field updates for teleprompter
+      if (update.itemId && (update.field === 'script' || update.field === 'name')) {
+        // Check if actively editing this field
+        const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
+        if (isActivelyEditing) {
+          return;
+        }
+
+        setRundownData(prev => {
+          if (!prev) return prev;
+          const updatedItems = prev.items.map(item =>
+            item.id === update.itemId ? { ...item, [update.field]: update.value } : item
+          );
+          return { ...prev, items: updatedItems };
+        });
+      } else if (!update.itemId) {
+        // Rundown-level updates (title changes, etc.)
+        setRundownData(prev => (prev ? { ...prev, [update.field]: update.value } : prev));
+      }
+    }, getTabId());
+
+    return unsubscribe;
+  }, [rundownId, user?.id, markBroadcastReceived]);
 
   // Enhanced script update with instant cell broadcast (per-tab, not per-user)
   const updateScriptContent = async (itemId: string, newScript: string) => {
@@ -517,6 +573,12 @@ const Teleprompter = () => {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Connection warning for fullscreen mode */}
+      <TeleprompterConnectionWarning 
+        show={showConnectionWarning} 
+        isFullscreen={isFullscreen} 
+      />
+      
       {/* Read-only banner for non-authenticated users */}
       {!user && (
         <div className="bg-blue-600 text-white text-center py-2 text-sm">
