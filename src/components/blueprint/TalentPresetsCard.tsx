@@ -49,7 +49,7 @@ export const TalentPresetsCard = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((slot) => {
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((slot) => {
             const preset = getPresetForSlot(slot);
             return (
             <TalentPresetSlot
