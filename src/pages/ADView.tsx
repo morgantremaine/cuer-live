@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useADViewConnectionHealth } from '@/hooks/useADViewConnectionHealth';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Clock, Plus, X, EyeOff, Eye, Play, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,6 +34,8 @@ const ADView = () => {
     forceRefresh,
     setOnPollSuccess
   } = useSharedRundownState();
+  
+  const { teamColumns } = useTeamCustomColumns();
   
   // Silent refresh function for health monitoring
   const silentRefresh = useCallback(async () => {
@@ -242,17 +245,15 @@ const ADView = () => {
       { key: 'duration', name: 'Duration' }
     ];
 
-    // Add custom columns from rundown data - prioritize the columns definition
-    if (rundownData?.columns) {
-      rundownData.columns.forEach(col => {
-        if (col.isCustom && !columns.find(c => c.key === col.key)) {
-          columns.push({
-            key: col.key,
-            name: col.name
-          });
-        }
-      });
-    }
+    // Add custom columns from team_custom_columns
+    teamColumns.forEach(tc => {
+      if (!columns.find(c => c.key === tc.column_key)) {
+        columns.push({
+          key: tc.column_key,
+          name: tc.column_name
+        });
+      }
+    });
 
     // Extract custom fields from the customFields objects in rundown items
     if (rundownData?.items && rundownData.items.length > 0) {
@@ -272,20 +273,20 @@ const ADView = () => {
         }
       });
 
-      // Add custom field columns
-    customFieldKeys.forEach(key => {
-      if (!columns.find(c => c.key === key)) {
-        const columnDef = rundownData?.columns?.find((c: any) => c.key === key);
-        columns.push({
-          key: key,
-          name: columnDef?.name || key.charAt(0).toUpperCase() + key.slice(1)
-        });
-      }
-    });
+      // Add custom field columns (lookup name from teamColumns)
+      customFieldKeys.forEach(key => {
+        if (!columns.find(c => c.key === key)) {
+          const columnDef = teamColumns.find(tc => tc.column_key === key);
+          columns.push({
+            key: key,
+            name: columnDef?.column_name || key.charAt(0).toUpperCase() + key.slice(1)
+          });
+        }
+      });
     }
 
     return columns;
-  }, [rundownData?.columns, rundownData?.items]);
+  }, [teamColumns, rundownData?.items]);
 
   // Filter out header items for timing-based navigation
   const timedItems = rundownData?.items?.filter(item => item.type !== 'header') || [];
