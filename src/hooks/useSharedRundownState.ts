@@ -56,6 +56,9 @@ export const useSharedRundownState = () => {
     };
   }, []);
 
+  // Ref for tracking poll success (for health monitoring)
+  const onPollSuccessRef = useRef<(() => void) | null>(null);
+
   // Normalized data loading function using RPC - ensures consistent data format
   const loadRundownData = useCallback(async (forceReload = false) => {
     if (!rundownId || isLoadingRef.current || !mountedRef.current) {
@@ -107,6 +110,9 @@ export const useSharedRundownState = () => {
         setRundownData(normalizedRundownData);
         lastDocVersion.current = normalizedRundownData.docVersion;
         setError(null);
+        
+        // Notify health monitor of successful poll
+        onPollSuccessRef.current?.();
       } else {
         setError('Rundown not found or not public');
         setRundownData(null);
@@ -189,6 +195,9 @@ export const useSharedRundownState = () => {
             setRundownData(normalizedRundownData);
             lastDocVersion.current = normalizedRundownData.docVersion;
           }
+          
+          // Notify health monitor of successful poll (even if no version change)
+          onPollSuccessRef.current?.();
         }
       } catch (error) {
         if (!mountedRef.current) return;
@@ -323,12 +332,24 @@ export const useSharedRundownState = () => {
 
   // Use rundown data directly (no live state merging needed with polling)
 
+  // Force refresh function for health monitoring
+  const forceRefresh = useCallback(async () => {
+    await loadRundownData(true);
+  }, [loadRundownData]);
+
+  // Set poll success callback for health monitoring
+  const setOnPollSuccess = useCallback((callback: () => void) => {
+    onPollSuccessRef.current = callback;
+  }, []);
+
   return {
     rundownData,
     currentTime,
     currentSegmentId,
     loading,
     error,
-    timeRemaining
+    timeRemaining,
+    forceRefresh,
+    setOnPollSuccess
   };
 };
