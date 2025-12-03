@@ -126,7 +126,7 @@ export const TalentPresetsDialog: React.FC<TalentPresetsDialogProps> = ({
             Talent Quick-Insert
           </DialogTitle>
           <DialogDescription className="mt-1.5">
-            Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Cmd + Shift + 1-9 (Mac)
+            Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac)
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
