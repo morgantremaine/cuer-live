@@ -44,18 +44,11 @@ export const getAvailableColumns = (
     { key: 'script', defaultName: 'Script' }
   ];
   
+  // Always include standard columns (even without data), using renamed names if available
   standardFields.forEach(field => {
-    const hasField = items.some(item => 
-      !isHeaderItem(item) && item[field.key as keyof RundownItem] && 
-      String(item[field.key as keyof RundownItem]).trim() !== ''
-    );
-    
-    if (hasField) {
-      logger.blueprint('Found standard field:', field.key);
-      // Use renamed name from user preferences if available, otherwise use default
-      const displayName = columnNameMap.get(field.key) || field.defaultName;
-      columns.push({ name: displayName, value: field.key });
-    }
+    const displayName = columnNameMap.get(field.key) || field.defaultName;
+    columns.push({ name: displayName, value: field.key });
+    logger.blueprint('Added standard field:', { key: field.key, displayName });
   });
   
   // Check for custom fields in the data
