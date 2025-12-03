@@ -36,37 +36,43 @@ export const useADViewConnectionHealth = ({
   const lastBroadcastTimeRef = useRef<number>(Date.now());
   const isTabVisibleRef = useRef<boolean>(!document.hidden);
   
-  // Mark that we received a successful poll
+  // Mark that we received a successful poll (no stale closure - checks state inside setState)
   const markPollReceived = useCallback(() => {
     lastPollTimeRef.current = Date.now();
     
-    // If we had a warning showing, clear it since we're receiving data again
-    if (state.showConnectionWarning) {
-      console.log('📺 AD View: Poll received - clearing warning');
-      setState(prev => ({
-        ...prev,
-        showConnectionWarning: false,
-        consecutiveFailures: 0,
-        lastSuccessfulRecovery: Date.now()
-      }));
-    }
-  }, [state.showConnectionWarning]);
+    // Clear warning if showing - use functional update to avoid stale closure
+    setState(prev => {
+      if (prev.showConnectionWarning) {
+        console.log('📺 AD View: Poll received - clearing warning');
+        return {
+          ...prev,
+          showConnectionWarning: false,
+          consecutiveFailures: 0,
+          lastSuccessfulRecovery: Date.now()
+        };
+      }
+      return prev;
+    });
+  }, []);
 
-  // Mark that we received a showcaller broadcast
+  // Mark that we received a showcaller broadcast (no stale closure)
   const markBroadcastReceived = useCallback(() => {
     lastBroadcastTimeRef.current = Date.now();
     
-    // If we had a warning showing, clear it since we're receiving broadcasts again
-    if (state.showConnectionWarning) {
-      console.log('📺 AD View: Broadcast received - clearing warning');
-      setState(prev => ({
-        ...prev,
-        showConnectionWarning: false,
-        consecutiveFailures: 0,
-        lastSuccessfulRecovery: Date.now()
-      }));
-    }
-  }, [state.showConnectionWarning]);
+    // Clear warning if showing - use functional update to avoid stale closure
+    setState(prev => {
+      if (prev.showConnectionWarning) {
+        console.log('📺 AD View: Broadcast received - clearing warning');
+        return {
+          ...prev,
+          showConnectionWarning: false,
+          consecutiveFailures: 0,
+          lastSuccessfulRecovery: Date.now()
+        };
+      }
+      return prev;
+    });
+  }, []);
 
   // Attempt silent recovery
   const attemptSilentRecovery = useCallback(async () => {
@@ -146,12 +152,9 @@ export const useADViewConnectionHealth = ({
     }
   }, [rundownId, onSilentRefresh]);
 
-  // Health check function
+  // Health check function - runs regardless of tab visibility for AD View
+  // AD View is designed to run unattended on secondary monitors for extended periods
   const performHealthCheck = useCallback(async () => {
-    // Skip health check if tab is hidden - no point recovering if user isn't looking
-    if (!isTabVisibleRef.current) {
-      return;
-    }
     
     // Check if showcaller broadcast channel is connected
     const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
@@ -200,7 +203,7 @@ export const useADViewConnectionHealth = ({
     };
   }, [enabled, performHealthCheck]);
 
-  // Network online event handler
+  // Network online/offline event handlers
   useEffect(() => {
     if (!enabled) return;
     
@@ -225,10 +228,21 @@ export const useADViewConnectionHealth = ({
       }, 1000);
     };
     
+    const handleOffline = () => {
+      console.warn('📺 AD View: Network offline detected');
+      // Show warning immediately when offline detected
+      setState(prev => ({
+        ...prev,
+        showConnectionWarning: true
+      }));
+    };
+    
     window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     
     return () => {
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, [enabled, performHealthCheck]);
 

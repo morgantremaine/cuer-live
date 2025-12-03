@@ -150,7 +150,8 @@ export const useSharedRundownState = () => {
     }
 
     const pollData = async () => {
-      if (!mountedRef.current || !isTabVisible.current || isLoadingRef.current) return;
+      // AD View needs to poll regardless of tab visibility since it runs on secondary monitors
+      if (!mountedRef.current || isLoadingRef.current) return;
 
       try {
         const { data, error: queryError } = await supabase
