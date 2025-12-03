@@ -327,50 +327,18 @@ const ADView = () => {
     const currentSegmentIndex = rundownData.items.findIndex(item => item.id === currentSegmentId);
     
     if (currentSegmentIndex === -1) {
-      return { letter: '', name: '' };
+      return { name: '' };
     }
 
     // Look backwards from the current segment to find the most recent header
     for (let i = currentSegmentIndex; i >= 0; i--) {
       const item = rundownData.items[i];
       if (item.type === 'header') {
-        // Extract header letter and name
-        const headerText = item.name || '';
-        
-        // The header structure should be like "A - TOP OF SHOW" where A is the letter
-        // But we need to look at the actual rundown structure to find the header letter
-        // Let's check if this header has a single letter prefix followed by content
-        
-        // First, try to find if there's a clear A, B, C pattern in the header name
-        const singleLetterMatch = headerText.match(/^([A-Z])\s*[-–]\s*(.+)$/);
-        if (singleLetterMatch) {
-          return {
-            letter: singleLetterMatch[1],
-            name: singleLetterMatch[2].trim()
-          };
-        }
-        
-        // If the header text is just content like "TOP OF SHOW", we need to determine 
-        // the header letter based on its position in the rundown
-        // Count how many headers come before this one to determine A, B, C, etc.
-        let headerCount = 0;
-        for (let j = 0; j < i; j++) {
-          if (rundownData.items[j].type === 'header') {
-            headerCount++;
-          }
-        }
-        
-        // Convert header count to letter (0 = A, 1 = B, etc.)
-        const headerLetter = String.fromCharCode(65 + headerCount); // 65 is ASCII for 'A'
-        
-        return {
-          letter: headerLetter,
-          name: headerText
-        };
+        return { name: item.name || '' };
       }
     }
 
-    return { letter: '', name: '' };
+    return { name: '' };
   };
 
   const currentHeaderInfo = getCurrentHeaderInfo();
@@ -757,15 +725,10 @@ const ADView = () => {
             {/* Center - Current Header Banner and Segments Display */}
             <div className="col-span-6 flex flex-col space-y-[0.5vh]">
               {/* Current Header Section Banner */}
-              {currentHeaderInfo.letter && (
+              {currentHeaderInfo.name && (
                 <div className="bg-gray-700 border border-zinc-600 rounded-lg px-[1vw] py-[0.3vh]">
-                  <div className="flex items-center space-x-[0.8vw]">
-                    <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-bold text-white">
-                      {currentHeaderInfo.letter}
-                    </div>
-                    <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-200">
-                      {currentHeaderInfo.name}
-                    </div>
+                  <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-200">
+                    {currentHeaderInfo.name}
                   </div>
                 </div>
               )}
