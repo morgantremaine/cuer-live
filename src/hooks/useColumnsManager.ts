@@ -9,22 +9,23 @@ export interface Column {
   width: string;
   isCustom: boolean;
   isEditable: boolean;
-  isVisible?: boolean;
+  isVisible: boolean;
+  isRenamable?: boolean;
 }
 
 const getDefaultColumns = (): Column[] => [
-  { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
-  { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-  { id: 'backTime', name: 'Back', key: 'backTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
-  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+  { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true, isRenamable: true },
+  { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true, isRenamable: true },
+  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true, isRenamable: true },
+  { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true, isRenamable: true },
+  { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true, isRenamable: true },
+  { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: false, isRenamable: false },
+  { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true, isRenamable: false },
+  { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true, isRenamable: false },
+  { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true, isRenamable: false },
+  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true, isRenamable: false },
+  { id: 'backTime', name: 'Back', key: 'backTime', width: '120px', isCustom: false, isEditable: false, isVisible: true, isRenamable: false },
+  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true, isRenamable: false }
 ];
 
 export const useColumnsManager = (markAsChanged?: () => void) => {
@@ -242,7 +243,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
           return {
             ...savedCol,
             isCustom: false, // Ensure built-in columns remain marked as built-in
-            isEditable: defaultCol.isEditable // Preserve editability from defaults
+            isEditable: defaultCol.isEditable, // Preserve editability from defaults
+            isRenamable: defaultCol.isRenamable // Preserve renamability from defaults
           };
         } else {
           // Column was NOT in the saved layout - hide it

@@ -12,6 +12,7 @@ export interface BaseColumn {
   sortable?: boolean;
   type?: 'text' | 'textarea' | 'time' | 'custom';
   isEditable: boolean; // Made required for compatibility with existing system
+  isRenamable?: boolean; // Whether built-in columns can be renamed by users
 }
 
 export interface StandardColumn extends BaseColumn {
