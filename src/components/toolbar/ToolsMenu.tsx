@@ -248,7 +248,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
 
           <DropdownMenuItem onClick={() => setShowTalentPresetsDialog(true)}>
             <Keyboard className="h-4 w-4 mr-2" />
-            Talent Quick-Insert
+            Quick-Insert
           </DropdownMenuItem>
           
           
