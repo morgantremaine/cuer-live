@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import { Clock, Plus, X, EyeOff, Eye } from 'lucide-react';
+import { Clock, Plus, X, EyeOff, Eye, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -446,12 +446,20 @@ const ADView = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   })();
 
-  // Get segment display info with row numbers and additional column data (removed color)
+  // Helper to check if a color should be applied (skip white/no color)
+  const hasCustomColor = (color: string | null | undefined) => {
+    if (!color) return false;
+    const normalized = color.toLowerCase();
+    return normalized !== '#ffffff' && normalized !== '#fff' && normalized !== 'white';
+  };
+
+  // Get segment display info with row numbers, color, and additional column data
   const getSegmentInfo = (segment: any) => {
     if (!segment || !rundownData?.items) return { 
       name: '--', 
       rowNumber: '', 
-      columnData: {} 
+      columnData: {},
+      color: null as string | null
     };
     
     // Find the original index in the full items array (including headers)
@@ -473,16 +481,16 @@ const ADView = () => {
       columnData[columnKey] = value;
     });
     
-    return { name, rowNumber, columnData };
+    return { name, rowNumber, columnData, color: segment.color || null };
   };
 
   // Get info for all segments
-  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {} };
-  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {} };
+  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {}, color: null };
+  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {}, color: null };
   
   // Dynamic next segment info based on calculated maximum
   const nextSegmentInfos = nextSegments.map(segment => 
-    segment ? getSegmentInfo(segment) : { name: '--', rowNumber: '', columnData: {} }
+    segment ? getSegmentInfo(segment) : { name: '--', rowNumber: '', columnData: {}, color: null }
   );
 
   // Add a column to display
@@ -786,7 +794,12 @@ const ADView = () => {
                 </div>
 
                 {/* Previous Segment 1 */}
-                <div className="bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] opacity-60">
+                <div 
+                  className="border border-zinc-600 rounded-lg p-[0.3vw] opacity-60"
+                  style={{
+                    backgroundColor: hasCustomColor(prev1Info.color) ? prev1Info.color : 'rgb(17, 24, 39)'
+                  }}
+                >
                   <div className="flex items-center space-x-[1vw]">
                     <div className="w-[4vw] text-center">
                       <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
@@ -799,26 +812,39 @@ const ADView = () => {
                   </div>
                 </div>
 
-                {/* Current Segment */}
-                <div className="bg-green-900 border-2 border-green-600 rounded-lg p-[0.5vw] shadow-lg">
-                  <div className="flex items-center space-x-[1vw]">
-                    <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-300 font-bold">LIVE</div>
-                      <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-green-100">{currInfo.rowNumber}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-green-100 mb-[0.3vh]">{currInfo.name}</div>
-                      <div className="mt-[0.3vh]">
-                        {selectedColumns.map(columnKey => {
-                          const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
-                          const value = currInfo.columnData[columnKey] || '--';
-                          
-                          return (
-                            <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-green-200 mt-[0.2vh]">
-                              <span className="font-semibold">{columnName}:</span> {value}
-                            </div>
-                          );
-                        })}
+                {/* Current Segment with Arrow Indicator */}
+                <div className="flex items-center gap-[0.5vw]">
+                  {/* Arrow indicator */}
+                  <div className="flex-shrink-0">
+                    <Play className="w-[2.5vw] h-[2.5vw] text-green-400 fill-green-400" />
+                  </div>
+                  
+                  {/* Current segment card */}
+                  <div 
+                    className="flex-1 border-2 border-white rounded-lg p-[0.5vw] shadow-lg"
+                    style={{
+                      backgroundColor: hasCustomColor(currInfo.color) ? currInfo.color : 'rgb(17, 24, 39)'
+                    }}
+                  >
+                    <div className="flex items-center space-x-[1vw]">
+                      <div className="w-[4vw] text-center">
+                        <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-400 font-bold">LIVE</div>
+                        <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-white">{currInfo.rowNumber}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-white mb-[0.3vh]">{currInfo.name}</div>
+                        <div className="mt-[0.3vh]">
+                          {selectedColumns.map(columnKey => {
+                            const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
+                            const value = currInfo.columnData[columnKey] || '--';
+                            
+                            return (
+                              <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-zinc-200 mt-[0.2vh]">
+                                <span className="font-semibold">{columnName}:</span> {value}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -826,11 +852,17 @@ const ADView = () => {
 
                 {/* Dynamic Next Segments */}
                 {nextSegmentInfos.map((nextInfo, index) => (
-                  <div key={index} className={`bg-gray-900 border border-zinc-600 rounded-lg p-[0.3vw] ${
-                    index === 0 ? 'opacity-80' : 
-                    index === 1 ? 'opacity-60' : 
-                    'opacity-40'
-                  }`}>
+                  <div 
+                    key={index} 
+                    className={`border border-zinc-600 rounded-lg p-[0.3vw] ${
+                      index === 0 ? 'opacity-80' : 
+                      index === 1 ? 'opacity-60' : 
+                      'opacity-40'
+                    }`}
+                    style={{
+                      backgroundColor: hasCustomColor(nextInfo.color) ? nextInfo.color : 'rgb(17, 24, 39)'
+                    }}
+                  >
                     <div className="flex items-center space-x-[1vw]">
                       <div className="w-[4vw] text-center">
                         <div className={`text-[clamp(0.7rem,0.9vw,1.2rem)] font-semibold ${
