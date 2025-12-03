@@ -816,7 +816,7 @@ const ADView = () => {
                 <div className="flex items-center gap-[0.5vw]">
                   {/* Arrow indicator */}
                   <div className="flex-shrink-0">
-                    <Play className="w-[2.5vw] h-[2.5vw] text-green-400 fill-green-400" />
+                    <Play className="w-[2.5vw] h-[2.5vw] text-blue-400 fill-blue-400" />
                   </div>
                   
                   {/* Current segment card */}
