@@ -535,7 +535,7 @@ const Teleprompter = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="dark min-h-screen bg-black flex items-center justify-center">
         <div className="text-white text-xl">Loading teleprompter...</div>
       </div>
     );
@@ -543,7 +543,7 @@ const Teleprompter = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="dark min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="text-white text-xl mb-2">Error loading teleprompter</div>
           <div className="text-gray-400 text-sm">{error}</div>
@@ -554,7 +554,7 @@ const Teleprompter = () => {
 
   if (!rundownData) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="dark min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="text-white text-xl mb-2">Rundown not found</div>
           <div className="text-gray-400 text-sm">
@@ -572,7 +572,7 @@ const Teleprompter = () => {
   })).filter(shouldIncludeInTeleprompter) || [];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
+    <div className="dark min-h-screen bg-black text-white overflow-hidden">
       {/* Connection warning for fullscreen mode */}
       <TeleprompterConnectionWarning 
         show={showConnectionWarning} 
