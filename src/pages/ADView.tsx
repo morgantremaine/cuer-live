@@ -1,8 +1,10 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import { Clock, Plus, X, EyeOff, Eye, Play } from 'lucide-react';
+import { useADViewConnectionHealth } from '@/hooks/useADViewConnectionHealth';
+import { Clock, Plus, X, EyeOff, Eye, Play, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -18,7 +20,57 @@ import {
 } from '@/components/ui/select';
 
 const ADView = () => {
-  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id || '';
+  
+  const { 
+    rundownData, 
+    currentTime, 
+    currentSegmentId, 
+    loading, 
+    error, 
+    timeRemaining,
+    forceRefresh,
+    setOnPollSuccess
+  } = useSharedRundownState();
+  
+  // Silent refresh function for health monitoring
+  const silentRefresh = useCallback(async () => {
+    if (forceRefresh) {
+      await forceRefresh();
+    }
+  }, [forceRefresh]);
+  
+  // Connection health monitoring with auto-refresh capability
+  const {
+    showConnectionWarning,
+    consecutiveFailures,
+    markPollReceived,
+    markBroadcastReceived
+  } = useADViewConnectionHealth({
+    rundownId,
+    enabled: !!rundownId && !loading,
+    onSilentRefresh: silentRefresh,
+    staleThresholdMs: 60000, // 60 seconds
+    healthCheckIntervalMs: 30000 // 30 seconds
+  });
+  
+  // Register poll success callback
+  useEffect(() => {
+    if (setOnPollSuccess) {
+      setOnPollSuccess(markPollReceived);
+    }
+  }, [setOnPollSuccess, markPollReceived]);
+  
+  // Track showcaller state changes as "broadcasts received"
+  const prevShowcallerStateRef = useRef(rundownData?.showcallerState);
+  useEffect(() => {
+    if (rundownData?.showcallerState && 
+        rundownData.showcallerState !== prevShowcallerStateRef.current) {
+      markBroadcastReceived();
+      prevShowcallerStateRef.current = rundownData.showcallerState;
+    }
+  }, [rundownData?.showcallerState, markBroadcastReceived]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showScript, setShowScript] = useState(true);
@@ -626,7 +678,15 @@ const ADView = () => {
 
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
-      <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden">
+      <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden relative">
+        {/* Connection Warning - unobtrusive corner warning */}
+        {showConnectionWarning && (
+          <div className="absolute bottom-4 left-4 z-50 bg-yellow-900/90 border border-yellow-600 rounded-lg px-3 py-2 flex items-center gap-2 text-yellow-200 text-sm">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <span>Connection issue - refresh when possible ({consecutiveFailures}/5)</span>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="bg-gray-900 border-b border-zinc-700 px-[1vw] py-[0.5vh]">
           <div className="grid grid-cols-[1fr_3fr_1fr] gap-[1.5vw] items-center">
