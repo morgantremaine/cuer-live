@@ -16,6 +16,7 @@ interface Column {
   isVisible?: boolean;
   isTeamColumn?: boolean;
   createdBy?: string;
+  isRenamable?: boolean;
 }
 
 interface ColumnListProps {
@@ -211,7 +212,7 @@ const ColumnList = ({
               </div>
 
               <div className="flex items-center space-x-1">
-                {column.isCustom && onRenameColumn && editingColumnId !== column.id && (
+                {(column.isCustom || column.isRenamable) && onRenameColumn && editingColumnId !== column.id && (
                   <Button
                     variant="ghost"
                     size="sm"

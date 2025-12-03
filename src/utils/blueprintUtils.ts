@@ -8,11 +8,25 @@ export interface AvailableColumn {
   value: string;
 }
 
-export const getAvailableColumns = (items: RundownItem[], availableCustomColumns?: { key: string; name: string }[]): AvailableColumn[] => {
+// Column name mappings from user preferences (for renamed built-in columns)
+export interface ColumnNameMapping {
+  key: string;
+  name: string;
+}
+
+export const getAvailableColumns = (
+  items: RundownItem[], 
+  availableCustomColumns?: { key: string; name: string }[],
+  columnNameMappings?: ColumnNameMapping[]
+): AvailableColumn[] => {
   logger.blueprint('getAvailableColumns called with items:', { count: items.length });
   logger.blueprint('Available custom columns passed:', availableCustomColumns);
+  logger.blueprint('Column name mappings:', columnNameMappings);
   
   const columns: AvailableColumn[] = [];
+  
+  // Create a lookup map for renamed column names
+  const columnNameMap = new Map(columnNameMappings?.map(c => [c.key, c.name]) || []);
   
   // Check for headers (segments)
   const hasHeaders = items.some(item => isHeaderItem(item));
@@ -22,12 +36,12 @@ export const getAvailableColumns = (items: RundownItem[], availableCustomColumns
     columns.push({ name: 'Headers', value: 'headers' });
   }
   
-  // Standard fields to check
+  // Standard fields to check - use renamed names if available
   const standardFields = [
-    { key: 'talent', name: 'Talent' },
-    { key: 'gfx', name: 'Graphics' },
-    { key: 'video', name: 'Video' },
-    { key: 'script', name: 'Script' }
+    { key: 'talent', defaultName: 'Talent' },
+    { key: 'gfx', defaultName: 'Graphics' },
+    { key: 'video', defaultName: 'Video' },
+    { key: 'script', defaultName: 'Script' }
   ];
   
   standardFields.forEach(field => {
@@ -38,7 +52,9 @@ export const getAvailableColumns = (items: RundownItem[], availableCustomColumns
     
     if (hasField) {
       logger.blueprint('Found standard field:', field.key);
-      columns.push({ name: field.name, value: field.key });
+      // Use renamed name from user preferences if available, otherwise use default
+      const displayName = columnNameMap.get(field.key) || field.defaultName;
+      columns.push({ name: displayName, value: field.key });
     }
   });
   

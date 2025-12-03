@@ -16,7 +16,8 @@ import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import RundownSummary from '@/components/blueprint/RundownSummary';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
-import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
+import { getAvailableColumns, generateListFromColumn, ColumnNameMapping } from '@/utils/blueprintUtils';
+import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { logger } from '@/utils/logger';
 
 const BlueprintLoadingSkeleton = () => (
@@ -56,6 +57,7 @@ const BlueprintContent = () => {
   const { user, signOut } = useAuth();
   const { savedRundowns, loading } = useRundownStorage();
   const { teamColumns } = useTeamCustomColumns();
+  const { columns: userColumns } = useUserColumnPreferences(id || null);
   
   // Find the rundown - but only search if we have data loaded
   const rundown = React.useMemo(() => {
@@ -87,8 +89,14 @@ const BlueprintContent = () => {
       name: tc.column_name
     }));
     
-    return getAvailableColumns(state.rundownItems, customColumnsForBlueprint);
-  }, [state.rundownItems, teamColumns]);
+    // Create column name mappings from user preferences (for renamed built-in columns)
+    const columnNameMappings: ColumnNameMapping[] = userColumns.map(col => ({
+      key: col.key,
+      name: col.name
+    }));
+    
+    return getAvailableColumns(state.rundownItems, customColumnsForBlueprint, columnNameMappings);
+  }, [state.rundownItems, teamColumns, userColumns]);
 
   // Add new list
   const addNewList = React.useCallback((name: string, sourceColumn: string) => {
