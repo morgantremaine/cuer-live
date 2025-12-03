@@ -41,6 +41,7 @@ export const useUserPresence = ({
   const sessionIdRef = useRef<string>(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const joinedAtRef = useRef<string>(new Date().toISOString());
   const lastSeenUpdateRef = useRef<NodeJS.Timeout>();
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
   const hasUnsavedRef = useRef<boolean>(!!hasUnsavedChanges);
 
   // Channel name - global presence or rundown-specific
@@ -127,6 +128,27 @@ export const useUserPresence = ({
         // Track this user's presence
         const trackStatus = await channel.track(userPresence);
         
+        // Set up heartbeat to maintain presence even when tab is backgrounded
+        // 45 seconds keeps us well within the 2-minute staleness filter
+        if (heartbeatIntervalRef.current) {
+          clearInterval(heartbeatIntervalRef.current);
+        }
+        heartbeatIntervalRef.current = setInterval(() => {
+          if (channelRef.current && !hasSessionConflict) {
+            channelRef.current.track({
+              userId: user.id,
+              sessionId: sessionIdRef.current,
+              joinedAt: joinedAtRef.current,
+              lastSeen: new Date().toISOString(),
+              rundownId,
+              hasUnsavedChanges: hasUnsavedRef.current,
+              userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
+              lastEditedItemId,
+              lastEditedField,
+            });
+          }
+        }, 45000);
+        
       } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
         setIsConnected(false);
       }
@@ -137,6 +159,10 @@ export const useUserPresence = ({
     return () => {
       if (lastSeenUpdateRef.current) {
         clearTimeout(lastSeenUpdateRef.current);
+      }
+      
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
       }
       
       if (channelRef.current) {
