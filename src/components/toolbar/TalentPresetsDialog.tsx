@@ -123,10 +123,10 @@ export const TalentPresetsDialog: React.FC<TalentPresetsDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Keyboard className="h-5 w-5" />
-            Talent Quick-Insert
+            Quick-Insert
           </DialogTitle>
           <DialogDescription className="mt-1.5">
-            Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac)
+            Set up presets for quick insertion while typing. Use Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac). Choose talent mode for formatted [Name] badges with color, or text mode for plain text.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
