@@ -91,11 +91,11 @@ export const TalentPresetsDialog: React.FC<TalentPresetsDialogProps> = ({
     }
   };
 
-  const handleUpdateSlot = (slot: number, name: string, color?: string) => {
+  const handleUpdateSlot = (slot: number, name: string, color?: string, type?: 'talent' | 'text') => {
     const updated = [...talentPresets];
     const existingIndex = updated.findIndex(p => p.slot === slot);
     
-    const preset: TalentPreset = { slot, name, color };
+    const preset: TalentPreset = { slot, name, color, type: type || 'talent' };
     
     if (existingIndex >= 0) {
       updated[existingIndex] = preset;
@@ -138,7 +138,8 @@ export const TalentPresetsDialog: React.FC<TalentPresetsDialogProps> = ({
                 slot={slot}
                 name={preset?.name}
                 color={preset?.color}
-                onUpdate={(name, color) => handleUpdateSlot(slot, name, color)}
+                type={preset?.type}
+                onUpdate={(name, color, type) => handleUpdateSlot(slot, name, color, type)}
                 onClear={() => handleClearSlot(slot)}
               />
             );

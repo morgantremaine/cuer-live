@@ -8,11 +8,11 @@ export const TalentPresetsCard = () => {
   const { state, updateTalentPresets } = useBlueprint();
   const { talentPresets } = state;
 
-  const handleUpdateSlot = (slot: number, name: string, color?: string) => {
+  const handleUpdateSlot = (slot: number, name: string, color?: string, type?: 'talent' | 'text') => {
     const updated = [...talentPresets];
     const existingIndex = updated.findIndex(p => p.slot === slot);
     
-    const preset: TalentPreset = { slot, name, color };
+    const preset: TalentPreset = { slot, name, color, type: type || 'talent' };
     
     if (existingIndex >= 0) {
       updated[existingIndex] = preset;
@@ -42,7 +42,7 @@ export const TalentPresetsCard = () => {
               Talent Quick-Insert
             </CardTitle>
             <CardDescription className="mt-1.5">
-              Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Cmd + Shift + 1-9 (Mac)
+              Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac)
             </CardDescription>
           </div>
         </div>
@@ -52,14 +52,15 @@ export const TalentPresetsCard = () => {
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((slot) => {
             const preset = getPresetForSlot(slot);
             return (
-              <TalentPresetSlot
-                key={slot}
-                slot={slot}
-                name={preset?.name}
-                color={preset?.color}
-                onUpdate={(name, color) => handleUpdateSlot(slot, name, color)}
-                onClear={() => handleClearSlot(slot)}
-              />
+            <TalentPresetSlot
+              key={slot}
+              slot={slot}
+              name={preset?.name}
+              color={preset?.color}
+              type={preset?.type}
+              onUpdate={(name, color, type) => handleUpdateSlot(slot, name, color, type)}
+              onClear={() => handleClearSlot(slot)}
+            />
             );
           })}
         </div>
