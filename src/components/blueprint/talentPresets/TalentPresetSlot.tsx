@@ -31,7 +31,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
   const [showColorPicker, setShowColorPicker] = useState(false);
   
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-  const modifierKey = isMac ? '⌘⇧' : 'Alt+';
+  const modifierKey = isMac ? '⌃' : 'Alt+';
 
   // Reset local state when props change (e.g., when slot is cleared)
   useEffect(() => {
