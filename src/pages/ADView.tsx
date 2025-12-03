@@ -787,7 +787,7 @@ const ADView = () => {
               {/* Current Header Section Banner */}
               {currentHeaderInfo.name && (
                 <div className="bg-gray-700 border border-zinc-600 rounded-lg px-[1vw] py-[0.3vh]">
-                  <div className="text-[clamp(1rem,1.4vw,2rem)] font-medium text-zinc-200">
+                  <div className="text-[clamp(1rem,1.4vw,2rem)] font-bold text-white">
                     {currentHeaderInfo.name}
                   </div>
                 </div>
