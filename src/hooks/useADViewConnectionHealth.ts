@@ -34,6 +34,7 @@ export const useADViewConnectionHealth = ({
   const healthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPollTimeRef = useRef<number>(Date.now());
   const lastBroadcastTimeRef = useRef<number>(Date.now());
+  const isTabVisibleRef = useRef<boolean>(!document.hidden);
   
   // Mark that we received a successful poll
   const markPollReceived = useCallback(() => {
@@ -133,10 +134,11 @@ export const useADViewConnectionHealth = ({
           return prev;
         }
         
+        // Fixed: consistent threshold >= 3 (was >= 2)
         return {
           ...prev,
           consecutiveFailures: newFailures,
-          showConnectionWarning: newFailures >= 2
+          showConnectionWarning: newFailures >= 3
         };
       });
     } finally {
@@ -144,35 +146,95 @@ export const useADViewConnectionHealth = ({
     }
   }, [rundownId, onSilentRefresh]);
 
-  // Health check effect
-  useEffect(() => {
-    if (!enabled || !rundownId) return;
+  // Health check function
+  const performHealthCheck = useCallback(async () => {
+    // Skip health check if tab is hidden - no point recovering if user isn't looking
+    if (!isTabVisibleRef.current) {
+      return;
+    }
     
-    const performHealthCheck = async () => {
-      // Check if showcaller broadcast channel is connected
-      const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
+    // Check if showcaller broadcast channel is connected
+    const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
+    
+    // Check timing of last poll and broadcast
+    const timeSinceLastPoll = Date.now() - lastPollTimeRef.current;
+    const timeSinceLastBroadcast = Date.now() - lastBroadcastTimeRef.current;
+    
+    // Consider stale if BOTH poll and broadcast haven't been received recently
+    // (Poll is the main data source, broadcast is for real-time showcaller updates)
+    const isPollStale = timeSinceLastPoll > staleThresholdMs;
+    const isBroadcastStale = timeSinceLastBroadcast > staleThresholdMs;
+    
+    // Only consider stale if poll is stale AND either broadcast is stale or channel is disconnected
+    const isStale = isPollStale && (isBroadcastStale || !isChannelConnected);
+    
+    if (isStale) {
+      console.warn(`📺 AD View health check: Connection stale (poll: ${Math.round(timeSinceLastPoll/1000)}s, broadcast: ${Math.round(timeSinceLastBroadcast/1000)}s)`);
+      await attemptSilentRecovery();
+    } else if (!isChannelConnected && timeSinceLastBroadcast > staleThresholdMs / 2) {
+      // Channel disconnected and no recent broadcasts - proactively try to reconnect
+      console.warn('📺 AD View health check: Showcaller channel disconnected, attempting reconnect');
+      showcallerBroadcast.forceReconnect(rundownId);
+    }
+  }, [rundownId, staleThresholdMs, attemptSilentRecovery]);
+
+  // Tab visibility change handler
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const handleVisibilityChange = () => {
+      const wasHidden = !isTabVisibleRef.current;
+      isTabVisibleRef.current = !document.hidden;
       
-      // Check timing of last poll and broadcast
-      const timeSinceLastPoll = Date.now() - lastPollTimeRef.current;
-      const timeSinceLastBroadcast = Date.now() - lastBroadcastTimeRef.current;
-      
-      // Consider stale if BOTH poll and broadcast haven't been received recently
-      // (Poll is the main data source, broadcast is for real-time showcaller updates)
-      const isPollStale = timeSinceLastPoll > staleThresholdMs;
-      const isBroadcastStale = timeSinceLastBroadcast > staleThresholdMs;
-      
-      // Only consider stale if poll is stale AND either broadcast is stale or channel is disconnected
-      const isStale = isPollStale && (isBroadcastStale || !isChannelConnected);
-      
-      if (isStale) {
-        console.warn(`📺 AD View health check: Connection stale (poll: ${Math.round(timeSinceLastPoll/1000)}s, broadcast: ${Math.round(timeSinceLastBroadcast/1000)}s)`);
-        await attemptSilentRecovery();
-      } else if (!isChannelConnected && timeSinceLastBroadcast > staleThresholdMs / 2) {
-        // Channel disconnected and no recent broadcasts - proactively try to reconnect
-        console.warn('📺 AD View health check: Showcaller channel disconnected, attempting reconnect');
-        showcallerBroadcast.forceReconnect(rundownId);
+      // If tab just became visible, run immediate health check
+      if (wasHidden && isTabVisibleRef.current) {
+        console.log('📺 AD View: Tab became visible, running health check');
+        performHealthCheck();
       }
     };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [enabled, performHealthCheck]);
+
+  // Network online event handler
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const handleOnline = () => {
+      console.log('📺 AD View: Network online - resetting recovery state');
+      
+      // Reset timestamps to prevent false positive staleness detection
+      lastPollTimeRef.current = Date.now();
+      lastBroadcastTimeRef.current = Date.now();
+      
+      // Clear recovery state
+      isRecoveringRef.current = false;
+      setState({
+        showConnectionWarning: false,
+        consecutiveFailures: 0,
+        lastSuccessfulRecovery: null
+      });
+      
+      // Trigger immediate health check after short delay for network to stabilize
+      setTimeout(() => {
+        performHealthCheck();
+      }, 1000);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [enabled, performHealthCheck]);
+
+  // Health check interval effect
+  useEffect(() => {
+    if (!enabled || !rundownId) return;
     
     // Run initial check after short delay
     const initialTimeout = setTimeout(performHealthCheck, 5000);
@@ -186,7 +248,7 @@ export const useADViewConnectionHealth = ({
         clearInterval(healthCheckIntervalRef.current);
       }
     };
-  }, [enabled, rundownId, staleThresholdMs, healthCheckIntervalMs, attemptSilentRecovery]);
+  }, [enabled, rundownId, healthCheckIntervalMs, performHealthCheck]);
 
   return {
     showConnectionWarning: state.showConnectionWarning,
