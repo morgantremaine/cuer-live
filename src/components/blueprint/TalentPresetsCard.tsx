@@ -39,10 +39,10 @@ export const TalentPresetsCard = () => {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Keyboard className="h-5 w-5" />
-              Talent Quick-Insert
+              Quick-Insert
             </CardTitle>
             <CardDescription className="mt-1.5">
-              Set up talent presets for quick insertion in the rundown with Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac)
+              Set up presets for quick insertion while typing. Use Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac). Choose talent mode for formatted [Name] badges with color, or text mode for plain text.
             </CardDescription>
           </div>
         </div>
