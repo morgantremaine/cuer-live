@@ -861,6 +861,8 @@ export const useConsolidatedRealtimeRundown = ({
               globalState.reconnecting = false;
               globalState.reconnectingStartedAt = undefined;
               globalState.guardTimeout = undefined;
+              // Report timeout as a failure to unified health tracking
+              unifiedConnectionHealth.trackFailure(rundownId);
             }
           }, 30000); // 30 second timeout
         }

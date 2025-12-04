@@ -382,7 +382,7 @@ const RundownHeader = ({
       icon = <WifiOff className="h-4 w-4 text-red-500" />;
       tooltip = "No internet connection";
     }
-    // PRIORITY 2: Reconnecting state (from coordinator)
+    // PRIORITY 2: Reconnecting state (from reconnection logic)
     else if (isReconnecting) {
       icon = <LoaderCircle className="h-4 w-4 text-yellow-500 animate-spin" />;
       tooltip = "Reconnecting...";
