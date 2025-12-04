@@ -655,6 +655,21 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       return formatTime(value);
     }
     
+    // Apply bracket styling for talent, gfx, video, and custom columns
+    const shouldRenderBrackets = 
+      column.key === 'talent' || 
+      column.key === 'gfx' || 
+      column.key === 'video' || 
+      column.isCustom;
+
+    if (shouldRenderBrackets) {
+      return renderScriptWithBrackets(value, { 
+        inlineDisplay: true, 
+        fontSize: 14, 
+        showNullAsText: false 
+      });
+    }
+
     // For all other text content, render with clickable URLs
     return renderTextWithClickableUrls(value);
   };
