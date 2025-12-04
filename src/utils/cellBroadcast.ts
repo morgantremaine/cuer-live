@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
 // Simplified message payload for single sessions
@@ -181,6 +182,9 @@ export class CellBroadcastManager {
         const consecutiveFailures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
         this.consecutiveFailures.set(rundownId, consecutiveFailures);
         console.log(`🔌 Consecutive failures: ${consecutiveFailures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+        
+        // Track in unified health service
+        unifiedConnectionHealth.trackFailure(rundownId);
         
         if (consecutiveFailures >= this.MAX_FAILURES_BEFORE_RELOAD) {
           console.error('🚨 Cell: Too many consecutive failures - forcing page reload');
