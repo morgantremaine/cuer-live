@@ -33,6 +33,9 @@ const Teleprompter = () => {
     items: RundownItem[];
     doc_version?: number;
     updated_at?: string;
+    startTime?: string;
+    numberingLocked?: boolean;
+    lockedRowNumbers?: Record<string, string>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,7 +218,11 @@ const Teleprompter = () => {
         
         loadedData.items = itemsWithCalculations;
         
-        setRundownData(loadedData);
+        setRundownData({
+          ...loadedData,
+          numberingLocked: data.numbering_locked,
+          lockedRowNumbers: data.locked_row_numbers
+        });
         setError(null);
         
         // Initialize doc version tracking
@@ -318,7 +325,16 @@ const Teleprompter = () => {
             if (item && !prev.items.find(i => i.id === item.id)) {
               const newItems = [...prev.items];
               newItems.splice(index, 0, item);
-              return { ...prev, items: newItems };
+              
+              // Recalculate timing and row numbers
+              const itemsWithCalculations = calculateItemsWithTiming(
+                newItems,
+                prev.startTime || '09:00:00',
+                prev.numberingLocked || false,
+                prev.lockedRowNumbers || {}
+              );
+              
+              return { ...prev, items: itemsWithCalculations };
             }
             return prev;
           }
@@ -328,7 +344,14 @@ const Teleprompter = () => {
             if (id) {
               const newItems = prev.items.filter(i => i.id !== id);
               if (newItems.length !== prev.items.length) {
-                return { ...prev, items: newItems };
+                // Recalculate timing and row numbers
+                const itemsWithCalculations = calculateItemsWithTiming(
+                  newItems,
+                  prev.startTime || '09:00:00',
+                  prev.numberingLocked || false,
+                  prev.lockedRowNumbers || {}
+                );
+                return { ...prev, items: itemsWithCalculations };
               }
             }
             return prev;
@@ -343,7 +366,16 @@ const Teleprompter = () => {
                 const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                 return ai - bi;
               });
-              return { ...prev, items: reordered };
+              
+              // Recalculate timing and row numbers
+              const itemsWithCalculations = calculateItemsWithTiming(
+                reordered,
+                prev.startTime || '09:00:00',
+                prev.numberingLocked || false,
+                prev.lockedRowNumbers || {}
+              );
+              
+              return { ...prev, items: itemsWithCalculations };
             }
             return prev;
           }
@@ -366,9 +398,9 @@ const Teleprompter = () => {
                 // Recalculate timing and row numbers using the shared calculation function
                 const itemsWithCalculations = calculateItemsWithTiming(
                   newItems,
-                  (prev as any).startTime || '09:00:00',
-                  (prev as any).numberingLocked || false,
-                  (prev as any).lockedRowNumbers || {}
+                  prev.startTime || '09:00:00',
+                  prev.numberingLocked || false,
+                  prev.lockedRowNumbers || {}
                 );
                 
                 return { 
