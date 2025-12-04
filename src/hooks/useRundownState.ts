@@ -514,40 +514,24 @@ export const useRundownState = (
       }
     },
     
+    // NOTE: Structural operations (add, delete, reorder) do NOT broadcast here.
+    // Broadcasting is handled by the structural save system (useStructuralSave.ts)
+    // AFTER database confirmation to prevent stale data race conditions.
+    
     addItem: (item: RundownItem, insertIndex?: number) => {
       dispatch({ type: 'ADD_ITEM', payload: { item, insertIndex } });
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
     },
     
     deleteItem: (id: string) => {
       dispatch({ type: 'DELETE_ITEM', payload: id });
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
     },
     
     deleteMultipleItems: (ids: string[]) => {
       dispatch({ type: 'DELETE_MULTIPLE_ITEMS', payload: ids });
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
     },
     
     reorderItems: (fromIndex: number, toIndex: number, count?: number) => {
       dispatch({ type: 'REORDER_ITEMS', payload: { fromIndex, toIndex, count } });
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
     },
     
     setColumns: (columns: Column[]) => dispatch({ type: 'SET_COLUMNS', payload: columns }),
