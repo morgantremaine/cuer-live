@@ -23,7 +23,7 @@ export const TalentPresetsProvider = ({ rundownId, children }: TalentPresetsProv
         .from('blueprints')
         .select('talent_presets')
         .eq('rundown_id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (blueprint?.talent_presets) {
         setTalentPresets(blueprint.talent_presets as TalentPreset[]);
