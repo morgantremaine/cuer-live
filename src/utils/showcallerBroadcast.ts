@@ -215,8 +215,11 @@ class ShowcallerBroadcastManager {
             this.reconnectTimeouts.delete(rundownId);
           }
           
-          // Notify unified health service of recovery - don't reset here as
-          // consolidated channel handles the reset when ALL channels are healthy
+          // Check if ALL channels are now healthy and reset global failure count
+          if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
+            console.log('📺 All channels healthy - resetting global failure count');
+            unifiedConnectionHealth.resetFailures(rundownId);
+          }
         }
       });
 

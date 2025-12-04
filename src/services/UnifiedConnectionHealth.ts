@@ -1,8 +1,6 @@
 // Unified Connection Health Service
 // Tracks health of ALL realtime channels and provides unified status
 
-import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
-import { cellBroadcast } from '@/utils/cellBroadcast';
 import { toast } from 'sonner';
 
 export interface ChannelHealth {
@@ -14,20 +12,16 @@ export interface ChannelHealth {
   consecutiveGlobalFailures: number;
 }
 
-interface GlobalSubscriptionState {
-  isConnected: boolean;
-}
-
 class UnifiedConnectionHealthService {
   private consolidatedStates = new Map<string, boolean>();
   private globalFailureCount = new Map<string, number>();
-  private lastDegradedWarningTime = new Map<string, number>();
+  private lastFailureTime = new Map<string, number>(); // Debounce failures
   private connectionWarningCallbacks = new Map<string, Set<(health: ChannelHealth) => void>>();
   private stabilizationTimers = new Map<string, NodeJS.Timeout>();
   
-  private readonly DEGRADED_WARNING_COOLDOWN_MS = 30000; // 30 seconds between warnings
-  private readonly GLOBAL_FAILURE_THRESHOLD = 10; // After 10 combined failures across channels
-  private readonly STABILIZATION_WAIT_MS = 3000; // Wait 3 seconds for channels to stabilize
+  private readonly FAILURE_DEBOUNCE_MS = 3000; // Count multiple failures within 3s as one event
+  private readonly GLOBAL_FAILURE_THRESHOLD = 15; // After 15 combined failures across channels
+  private readonly STABILIZATION_WAIT_MS = 5000; // Wait 5 seconds for channels to stabilize
 
   // Update consolidated channel status (called from useConsolidatedRealtimeRundown)
   setConsolidatedStatus(rundownId: string, isConnected: boolean): void {
@@ -38,8 +32,20 @@ class UnifiedConnectionHealthService {
   // Get health status for all channels
   getHealth(rundownId: string): ChannelHealth {
     const consolidated = this.consolidatedStates.get(rundownId) ?? false;
-    const showcaller = showcallerBroadcast.isChannelConnected(rundownId);
-    const cell = cellBroadcast.isChannelConnected(rundownId);
+    
+    // Dynamically check showcaller and cell channels
+    let showcaller = false;
+    let cell = false;
+    
+    try {
+      // Import dynamically to avoid circular dependency issues
+      const { showcallerBroadcast } = require('@/utils/showcallerBroadcast');
+      const { cellBroadcast } = require('@/utils/cellBroadcast');
+      showcaller = showcallerBroadcast.isChannelConnected(rundownId);
+      cell = cellBroadcast.isChannelConnected(rundownId);
+    } catch (e) {
+      // Silently fail if imports not ready yet
+    }
     
     const allHealthy = consolidated && showcaller && cell;
     const anyDegraded = (consolidated || showcaller || cell) && !allHealthy;
@@ -102,7 +108,18 @@ class UnifiedConnectionHealthService {
   }
 
   // Track global failure (called when any channel fails)
+  // DEBOUNCED: Multiple failures within FAILURE_DEBOUNCE_MS count as one event
   trackFailure(rundownId: string): void {
+    const now = Date.now();
+    const lastFailure = this.lastFailureTime.get(rundownId) || 0;
+    
+    // Debounce: if another failure came within 3 seconds, don't increment
+    if (now - lastFailure < this.FAILURE_DEBOUNCE_MS) {
+      console.log('🔴 Failure debounced - within 3s window');
+      return;
+    }
+    
+    this.lastFailureTime.set(rundownId, now);
     const count = (this.globalFailureCount.get(rundownId) || 0) + 1;
     this.globalFailureCount.set(rundownId, count);
     
@@ -123,9 +140,16 @@ class UnifiedConnectionHealthService {
     }
   }
 
-  // Reset failure count (called on successful recovery)
+  // Reset failure count (called on successful recovery of ALL channels)
   resetFailures(rundownId: string): void {
+    const hadFailures = (this.globalFailureCount.get(rundownId) || 0) > 0;
     this.globalFailureCount.set(rundownId, 0);
+    this.lastFailureTime.delete(rundownId);
+    
+    if (hadFailures) {
+      console.log('✅ Global failure count reset - all channels recovered');
+    }
+    
     this.checkAndNotify(rundownId);
   }
 
@@ -167,7 +191,7 @@ class UnifiedConnectionHealthService {
   cleanup(rundownId: string): void {
     this.consolidatedStates.delete(rundownId);
     this.globalFailureCount.delete(rundownId);
-    this.lastDegradedWarningTime.delete(rundownId);
+    this.lastFailureTime.delete(rundownId);
     this.connectionWarningCallbacks.delete(rundownId);
     
     const timer = this.stabilizationTimers.get(rundownId);
