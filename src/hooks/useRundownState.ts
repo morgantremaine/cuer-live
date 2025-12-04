@@ -585,20 +585,13 @@ export const useRundownState = (
     
     toggleLock: (calculatedItems?: any[]) => {
       dispatch({ type: 'TOGGLE_LOCK', payload: calculatedItems ? { calculatedItems } : undefined });
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
+      // NOTE: Lock state broadcasts are handled by structural save system (useStructuralSave.ts)
+      // via 'toggle_lock' operation after database confirmation
     },
     
     setLockedRowNumbers: (lockedRowNumbers: { [itemId: string]: string }) => {
       dispatch({ type: 'SET_LOCKED_ROW_NUMBERS', payload: lockedRowNumbers });
-      if (rundownId) {
-        setTimeout(() => {
-          broadcastLiveUpdate('live_state', { items: state.items });
-        }, 0);
-      }
+      // NOTE: Lock state broadcasts are handled by structural save system (useStructuralSave.ts)
     },
     
     loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState }),
