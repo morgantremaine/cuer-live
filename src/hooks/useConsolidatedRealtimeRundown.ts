@@ -747,6 +747,12 @@ export const useConsolidatedRealtimeRundown = ({
           // Update unified health service - consolidated is now connected
           unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
           
+          // Check if ALL channels are now healthy and reset global failure count
+          if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
+            console.log('📡 All channels healthy - resetting global failure count');
+            unifiedConnectionHealth.resetFailures(rundownId);
+          }
+          
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
             // Don't show processing indicator during initial load
@@ -924,6 +930,12 @@ export const useConsolidatedRealtimeRundown = ({
               }
               // Update unified health service
               unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
+              
+              // Check if ALL channels are now healthy and reset global failure count
+              if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
+                console.log('📡 All channels healthy - resetting global failure count');
+                unifiedConnectionHealth.resetFailures(rundownId);
+              }
               console.log('📡 Force reconnection successful - catch-up sync handled by wasConnectedRef effect');
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
               if (globalState) {
@@ -1026,17 +1038,10 @@ export const useConsolidatedRealtimeRundown = ({
         const subscription = state.subscription;
         globalSubscriptions.delete(rundownId);
         
-        // Safe async cleanup - guard against recursive calls during global reconnection
+        // Safe async cleanup
         setTimeout(() => {
           try {
-            // Check if we're in a global WebSocket reconnection
-            const isGlobalReconnecting = (globalThis as any)._isGlobalReconnecting;
-            
-            if (isGlobalReconnecting) {
-              console.log('📡 Skipping channel removal during global WebSocket reconnection');
-            } else {
-              supabase.removeChannel(subscription);
-            }
+            supabase.removeChannel(subscription);
           } catch (error) {
             console.warn('📡 Error during consolidated cleanup:', error);
           }
