@@ -893,7 +893,7 @@ export const useConsolidatedRealtimeRundown = ({
           }
           
           await newChannel.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
+              if (status === 'SUBSCRIBED') {
               if (globalState) {
                 globalState.isConnected = true;
                 globalState.reconnecting = false;
@@ -908,9 +908,9 @@ export const useConsolidatedRealtimeRundown = ({
                   globalState.guardTimeout = undefined;
                 }
               }
-              // Trigger catch-up sync after successful reconnection
-              console.log('📡 Force reconnection successful - triggering catch-up sync');
-              await performCatchupSync();
+              // Update unified health service
+              unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
+              console.log('📡 Force reconnection successful - catch-up sync handled by wasConnectedRef effect');
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
               if (globalState) {
                 globalState.isConnected = false;
@@ -1010,6 +1010,9 @@ export const useConsolidatedRealtimeRundown = ({
         
         // Unregister from reconnection coordinator
         realtimeReconnectionCoordinator.unregister(`consolidated-${rundownId}`);
+        
+        // CRITICAL: Cleanup unified health service
+        unifiedConnectionHealth.cleanup(rundownId);
         
         // Prevent recursive cleanup
         const subscription = state.subscription;

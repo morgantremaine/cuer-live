@@ -163,6 +163,12 @@ export class CellBroadcastManager {
           clearTimeout(pendingTimeout);
           this.reconnectTimeouts.delete(rundownId);
         }
+        
+        // Check if ALL channels are now healthy and reset global failure count
+        if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
+          console.log('🔌 All channels healthy - resetting global failure count');
+          unifiedConnectionHealth.resetFailures(rundownId);
+        }
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel error:', key, status, {
