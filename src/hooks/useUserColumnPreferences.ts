@@ -161,6 +161,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     return orderedColumns;
   }, [teamColumns]);
 
+  // Refs for stable subscription access (prevents subscription teardown on state changes)
+  const columnsRef = useRef(columns);
+  const columnNameOverridesRef = useRef(columnNameOverrides);
+  const mergeColumnsWithTeamColumnsRef = useRef(mergeColumnsWithTeamColumns);
+
   // Auto-save any column changes - but NOT during initial load
   const saveColumnPreferences = useCallback(async (columnsToSave: Column[]) => {
     if (!user?.id || !rundownId) {
@@ -514,7 +519,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
   }, [isLoading, teamColumnsLoading, teamColumns.length, hasInitialLoad, columnNameOverrides]);
 
+  // Keep refs updated for stable subscription access
+  useEffect(() => {
+    columnsRef.current = columns;
+    columnNameOverridesRef.current = columnNameOverrides;
+    mergeColumnsWithTeamColumnsRef.current = mergeColumnsWithTeamColumns;
+  }, [columns, columnNameOverrides, mergeColumnsWithTeamColumns]);
+
   // Subscribe to rundowns.columns changes for real-time column name updates (built-in columns)
+  // Uses refs to access current values without causing subscription teardown
   useEffect(() => {
     if (!rundownId) return;
 
@@ -532,12 +545,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           const newColumns = payload.new?.columns as Record<string, any> | undefined;
           if (newColumns?.columnNameOverrides) {
             const newOverrides = newColumns.columnNameOverrides as Record<string, string>;
-            // Only update if overrides actually changed
-            if (JSON.stringify(newOverrides) !== JSON.stringify(columnNameOverrides)) {
+            // Only update if overrides actually changed (compare against ref for current value)
+            if (JSON.stringify(newOverrides) !== JSON.stringify(columnNameOverridesRef.current)) {
               console.log('📊 Received column name update from other user:', newOverrides);
               setColumnNameOverrides(newOverrides);
-              // Re-merge columns with new overrides
-              const merged = mergeColumnsWithTeamColumns(columns, newOverrides);
+              // Re-merge columns with new overrides using refs
+              const merged = mergeColumnsWithTeamColumnsRef.current(columnsRef.current, newOverrides);
               setColumns(merged);
             }
           }
@@ -548,7 +561,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [rundownId, columnNameOverrides, columns, mergeColumnsWithTeamColumns]);
+  }, [rundownId]); // Only rundownId - stable dependency!
 
   // Cleanup timeouts and pending saves on unmount
   useEffect(() => {
