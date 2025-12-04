@@ -5,6 +5,7 @@ import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useADViewConnectionHealth } from '@/hooks/useADViewConnectionHealth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
+import { useClockFormat } from '@/contexts/ClockFormatContext';
 import { Clock, Plus, X, EyeOff, Eye, Play, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,6 +37,7 @@ const ADView = () => {
   } = useSharedRundownState();
   
   const { teamColumns } = useTeamCustomColumns();
+  const { clockFormat } = useClockFormat();
   
   // Silent refresh function for health monitoring
   const silentRefresh = useCallback(async () => {
@@ -736,7 +738,12 @@ const ADView = () => {
               <div className="text-center min-w-[20vw]">
                 <div className="text-[clamp(0.9rem,1.1vw,1.6rem)] text-zinc-400 font-semibold">TIME OF DAY</div>
                 <div className="text-[clamp(1.3rem,2.9vw,4.5rem)] font-mono font-bold text-blue-400">
-                  {currentTime.toLocaleTimeString('en-GB', { hour12: false })}
+                  {currentTime.toLocaleTimeString(clockFormat === '12' ? 'en-US' : 'en-GB', { 
+                    hour12: clockFormat === '12',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit'
+                  })}
                 </div>
               </div>
             </div>
