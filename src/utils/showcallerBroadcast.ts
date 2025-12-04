@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
 export interface ShowcallerBroadcastState {
@@ -91,6 +92,9 @@ class ShowcallerBroadcastManager {
           this.consecutiveFailures.set(rundownId, failures);
           console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
           
+          // Track in unified health service
+          unifiedConnectionHealth.trackFailure(rundownId);
+          
           if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
             console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
             toast.error("Connection could not be restored", {
@@ -127,6 +131,9 @@ class ShowcallerBroadcastManager {
           this.consecutiveFailures.set(rundownId, failures);
           console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
           
+          // Track in unified health service
+          unifiedConnectionHealth.trackFailure(rundownId);
+          
           if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
             console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
             toast.error("Connection could not be restored", {
@@ -162,6 +169,9 @@ class ShowcallerBroadcastManager {
           const failures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
           this.consecutiveFailures.set(rundownId, failures);
           console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+          
+          // Track in unified health service
+          unifiedConnectionHealth.trackFailure(rundownId);
           
           if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
             console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
@@ -204,6 +214,9 @@ class ShowcallerBroadcastManager {
             clearTimeout(pendingTimeout);
             this.reconnectTimeouts.delete(rundownId);
           }
+          
+          // Notify unified health service of recovery - don't reset here as
+          // consolidated channel handles the reset when ALL channels are healthy
         }
       });
 

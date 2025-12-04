@@ -6,6 +6,7 @@ import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
 interface UseConsolidatedRealtimeRundownProps {
@@ -396,12 +397,36 @@ export const useConsolidatedRealtimeRundown = ({
   }, [enabled, rundownId, performCatchupSync]);
 
   // Trigger catch-up sync when connection is restored (NOT on initial load)
+  // CRITICAL FIX: Wait for all channels to stabilize before catch-up sync
   const wasConnectedRef = useRef(isConnected);
   useEffect(() => {
     // FIXED: Skip during initial load - initial data already fetched in subscribe callback
     if (isConnected && !wasConnectedRef.current && rundownId && !isInitialLoadRef.current) {
-      console.log('📡 Connection restored - triggering immediate catch-up sync');
-      performCatchupSync();
+      console.log('📡 Connection restored - waiting for channel stabilization before catch-up sync...');
+      
+      // Update unified health service
+      unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
+      
+      // Wait for all channels to stabilize before syncing
+      const performStabilizedSync = async () => {
+        const stabilized = await unifiedConnectionHealth.waitForStabilization(rundownId, 5000);
+        
+        if (stabilized) {
+          console.log('✅ All channels healthy - performing catch-up sync');
+          unifiedConnectionHealth.resetFailures(rundownId);
+        } else {
+          console.warn('⚠️ Some channels still unhealthy after stabilization wait - performing catch-up sync anyway');
+        }
+        
+        // Always perform catch-up sync, but we've given channels time to reconnect
+        await performCatchupSync();
+      };
+      
+      performStabilizedSync();
+    } else if (!isConnected && wasConnectedRef.current && rundownId) {
+      // Connection lost
+      unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
+      unifiedConnectionHealth.trackFailure(rundownId);
     }
     wasConnectedRef.current = isConnected;
   }, [isConnected, performCatchupSync, rundownId]);
@@ -711,6 +736,9 @@ export const useConsolidatedRealtimeRundown = ({
             state.guardTimeout = undefined;
           }
           
+          // Update unified health service - consolidated is now connected
+          unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
+          
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
             // Don't show processing indicator during initial load
@@ -765,12 +793,19 @@ export const useConsolidatedRealtimeRundown = ({
           state.reconnecting = false; // CRITICAL: Clear flag on error
           console.error('❌ Consolidated realtime connection failed:', status);
           
+          // Track failure in unified health service
+          unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
+          unifiedConnectionHealth.trackFailure(rundownId);
+          
           // Direct reconnection with exponential backoff
           handleConsolidatedChannelReconnect(rundownId);
         } else if (status === 'CLOSED') {
           state.isConnected = false;
           state.reconnecting = false; // CRITICAL: Clear flag on close
           console.log('🔌 Consolidated realtime connection closed');
+          
+          // Track in unified health service
+          unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
         }
       });
 
