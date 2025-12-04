@@ -385,9 +385,9 @@ const Teleprompter = () => {
         return;
       }
 
-      // Handle script and name field updates for teleprompter
-      if (update.itemId && (update.field === 'script' || update.field === 'name')) {
-        // Check if actively editing this field
+      // Handle script, name, and isFloating field updates for teleprompter
+      if (update.itemId && (update.field === 'script' || update.field === 'name' || update.field === 'isFloating')) {
+        // Check if actively editing this field (not applicable to isFloating)
         const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
         if (isActivelyEditing) {
           return;
@@ -395,9 +395,16 @@ const Teleprompter = () => {
 
         setRundownData(prev => {
           if (!prev) return prev;
-          const updatedItems = prev.items.map(item =>
-            item.id === update.itemId ? { ...item, [update.field]: update.value } : item
-          );
+          const updatedItems = prev.items.map(item => {
+            if (item.id === update.itemId) {
+              // Handle isFloating boolean conversion (broadcast sends 'true'/'false' strings)
+              if (update.field === 'isFloating') {
+                return { ...item, isFloating: update.value === 'true' };
+              }
+              return { ...item, [update.field]: update.value };
+            }
+            return item;
+          });
           return { ...prev, items: updatedItems };
         });
       } else if (!update.itemId) {
