@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
-import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
@@ -397,13 +396,6 @@ export class CellBroadcastManager {
 
     // Ensure channel is created and subscribed
     this.ensureChannel(rundownId);
-    
-    // Register with reconnection coordinator
-    realtimeReconnectionCoordinator.register(
-      `cell-${rundownId}`,
-      'cell',
-      () => this.forceReconnect(rundownId)
-    );
 
     return () => {
       const set = this.callbacks.get(rundownId);
@@ -411,8 +403,6 @@ export class CellBroadcastManager {
         set.delete(callback);
         if (set.size === 0) {
           this.callbacks.delete(rundownId);
-          // Unregister from coordinator
-          realtimeReconnectionCoordinator.unregister(`cell-${rundownId}`);
           this.cleanupChannel(rundownId);
         }
       }

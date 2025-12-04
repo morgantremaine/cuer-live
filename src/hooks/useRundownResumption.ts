@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
-import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
 /**
  * Fetches the latest rundown data from the server
@@ -32,7 +31,7 @@ const globalListenerManager = new Map<string, {
   listeners: Set<string>;
   pendingCheck: NodeJS.Timeout | null;
   lastCheck: number;
-  recentSaves: Set<string>; // Track recent save timestamps
+  recentSaves: Set<string>;
   cleanup?: () => void;
 }>();
 
@@ -42,7 +41,6 @@ export const registerRecentSave = (rundownId: string, timestamp: string) => {
   if (manager) {
     const normalizedTimestamp = normalizeTimestamp(timestamp);
     manager.recentSaves.add(normalizedTimestamp);
-    // Clean up old saves after 10 seconds
     setTimeout(() => {
       manager.recentSaves.delete(normalizedTimestamp);
     }, 10000);
@@ -58,8 +56,8 @@ interface UseRundownResumptionProps {
 }
 
 /**
- * Hook to handle rundown data resumption after disconnections or focus events
- * Detects when the tab becomes visible or gains focus and checks for updates
+ * Hook to handle rundown data resumption after disconnections or focus events.
+ * Simplified version - relies on UnifiedConnectionHealth for reconnection management.
  */
 export const useRundownResumption = ({
   rundownId,
@@ -70,21 +68,8 @@ export const useRundownResumption = ({
 }: UseRundownResumptionProps) => {
   const { toast } = useToast();
   const hookIdRef = useRef(`hook-${Math.random().toString(36).substr(2, 9)}`);
-  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
   
-  // Create content signature for comparison
-  const createContentSignature = useCallback((data: any) => {
-    if (!data || !data.items) return '';
-    return JSON.stringify(data.items.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      duration: item.duration,
-      type: item.type,
-      order: item.order
-    })));
-  }, []);
-
-  // Non-blocking check for updates with event source tracking
+  // Non-blocking check for updates
   const performCheck = useCallback(async (eventSource: string) => {
     if (!rundownId || !enabled || !lastKnownTimestamp) {
       return;
@@ -93,23 +78,19 @@ export const useRundownResumption = ({
     const manager = globalListenerManager.get(rundownId);
     if (!manager) return;
 
-    // Clear any pending check and set a new one
     if (manager.pendingCheck) {
       clearTimeout(manager.pendingCheck);
     }
 
-    // Reduced debounce to 1 second for faster response, but check is non-blocking
     manager.pendingCheck = setTimeout(async () => {
       const now = Date.now();
       
-      // Avoid rapid checks (reduced to 2 seconds)
       if (now - manager.lastCheck < 2000) {
         return;
       }
 
       manager.lastCheck = now;
       
-      // Perform check in background without blocking UI
       (async () => {
         try {
           const latestData = await fetchLatestRundownData(rundownId);
@@ -118,9 +99,7 @@ export const useRundownResumption = ({
             const normalizedLatest = normalizeTimestamp(latestData.updated_at);
             const normalizedKnown = normalizeTimestamp(lastKnownTimestamp);
             
-            // Check if this is a recent save we made
             if (manager.recentSaves.has(normalizedLatest)) {
-              // Update our known timestamp to this value
               if (updateLastKnownTimestamp) {
                 updateLastKnownTimestamp(normalizedLatest);
               }
@@ -128,12 +107,9 @@ export const useRundownResumption = ({
             }
             
             if (normalizedLatest !== normalizedKnown) {
-              console.log('🔄 Stale data detected - fetching latest data (no reload)');
-              
-              // Just fetch and apply the latest data through the connection
+              console.log('🔄 Stale data detected - fetching latest data');
               onDataRefresh(latestData);
               
-              // Update our known timestamp
               if (updateLastKnownTimestamp) {
                 updateLastKnownTimestamp(normalizedLatest);
               }
@@ -145,16 +121,15 @@ export const useRundownResumption = ({
       })();
       
       manager.pendingCheck = null;
-    }, 1000); // 1 second debounce - UI remains responsive immediately
-  }, [rundownId, enabled, lastKnownTimestamp, onDataRefresh, toast, updateLastKnownTimestamp, createContentSignature]);
+    }, 1000);
+  }, [rundownId, enabled, lastKnownTimestamp, onDataRefresh, updateLastKnownTimestamp]);
 
-  // Global listener management and event handling
+  // Global listener management
   useEffect(() => {
     if (!rundownId || !enabled) return;
 
     const hookId = hookIdRef.current;
     
-    // Initialize or get existing manager for this rundown
     if (!globalListenerManager.has(rundownId)) {
       globalListenerManager.set(rundownId, {
         listeners: new Set(),
@@ -167,7 +142,6 @@ export const useRundownResumption = ({
     const manager = globalListenerManager.get(rundownId)!;
     manager.listeners.add(hookId);
 
-    // Only set up listeners if this is the first hook for this rundown
     const isFirstListener = manager.listeners.size === 1;
 
     if (isFirstListener) {
@@ -189,39 +163,16 @@ export const useRundownResumption = ({
       window.addEventListener('focus', handleFocus);
       window.addEventListener('online', handleOnline);
 
-      // Initialize watchdog for this rundown if not already done
-      if (!watchdogRef.current) {
-        watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'resumption-handler', {
-          onStaleData: (latestData) => {
-            console.log('🔄 Resumption watchdog detected stale data');
-            onDataRefresh(latestData);
-            if (updateLastKnownTimestamp && latestData.updated_at) {
-              updateLastKnownTimestamp(latestData.updated_at);
-            }
-          }
-        });
-        watchdogRef.current.start();
-      }
-
-      // Store cleanup function in manager
       manager.cleanup = () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('focus', handleFocus);
         window.removeEventListener('online', handleOnline);
-        
-        // Clean up watchdog
-        if (watchdogRef.current) {
-          watchdogRef.current.stop();
-          RealtimeWatchdog.cleanup(rundownId, 'resumption-handler');
-          watchdogRef.current = null;
-        }
       };
     }
 
     return () => {
       manager.listeners.delete(hookId);
       
-      // If this was the last listener for this rundown, clean up
       if (manager.listeners.size === 0) {
         if (manager.cleanup) manager.cleanup();
         if (manager.pendingCheck) clearTimeout(manager.pendingCheck);

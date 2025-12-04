@@ -5,7 +5,6 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
-import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
@@ -942,12 +941,6 @@ export const useConsolidatedRealtimeRundown = ({
       
       // Store handler in state for reconnection
       globalState.reconnectHandler = reconnectHandler;
-      
-      realtimeReconnectionCoordinator.register(
-        `consolidated-${rundownId}`,
-        'consolidated',
-        reconnectHandler
-      );
     } else {
       // Existing subscription - reset reconnect attempts on successful status change
       if (globalState.isConnected) {
@@ -1020,9 +1013,6 @@ export const useConsolidatedRealtimeRundown = ({
         if (state.guardTimeout) {
           clearTimeout(state.guardTimeout);
         }
-        
-        // Unregister from reconnection coordinator
-        realtimeReconnectionCoordinator.unregister(`consolidated-${rundownId}`);
         
         // CRITICAL: Cleanup unified health service
         unifiedConnectionHealth.cleanup(rundownId);
