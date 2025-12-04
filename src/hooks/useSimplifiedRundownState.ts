@@ -579,7 +579,7 @@ export const useSimplifiedRundownState = () => {
                     const newItems = [...stateRef.current.items];
                     newItems.splice(index, 0, ...newItemsToAdd);
                     actionsRef.current.loadState({ items: newItems });
-                    console.log('📋 Applied batch add broadcast:', { addedCount: newItemsToAdd.length, index });
+                    console.log('📡 [DEBUG] items:add (batch) broadcast RECEIVED from remote user - applying add', { addedCount: newItemsToAdd.length, index });
                   }
                 }
               } else {
@@ -590,7 +590,7 @@ export const useSimplifiedRundownState = () => {
                   const newItems = [...stateRef.current.items];
                   newItems.splice(index, 0, item);
                   actionsRef.current.loadState({ items: newItems });
-                  console.log('📋 Applied single add broadcast:', { index });
+                  console.log('📡 [DEBUG] items:add (single) broadcast RECEIVED from remote user - applying add', { index });
                 }
               }
               break;
@@ -611,7 +611,7 @@ export const useSimplifiedRundownState = () => {
                   const newItems = [...stateRef.current.items];
                   newItems.splice(index, 0, ...newItemsToAdd);
                   actionsRef.current.loadState({ items: newItems });
-                  console.log('📋 Applied copy broadcast:', { copiedCount: newItemsToAdd.length, index });
+                  console.log('📡 [DEBUG] items:copy broadcast RECEIVED from remote user - applying copy', { copiedCount: newItemsToAdd.length, index });
                 }
               }
               break;
@@ -621,6 +621,7 @@ export const useSimplifiedRundownState = () => {
               if (id) {
                 const newItems = stateRef.current.items.filter(i => i.id !== id);
                 if (newItems.length !== stateRef.current.items.length) {
+                  console.log('📡 [DEBUG] items:remove broadcast RECEIVED from remote user - applying delete', { id });
                   actionsRef.current.loadState({ items: newItems });
                 }
               }
@@ -631,7 +632,7 @@ export const useSimplifiedRundownState = () => {
               if (ids && Array.isArray(ids) && ids.length > 0) {
                 const newItems = stateRef.current.items.filter(i => !ids.includes(i.id));
                 if (newItems.length !== stateRef.current.items.length) {
-                  console.log('📱 Multi-delete broadcast applied', { deletedCount: stateRef.current.items.length - newItems.length, idsCount: ids.length });
+                  console.log('📡 [DEBUG] items:remove-multiple broadcast RECEIVED from remote user - applying multi-delete', { deletedCount: stateRef.current.items.length - newItems.length, idsCount: ids.length });
                   actionsRef.current.loadState({ items: newItems });
                 }
               }
@@ -640,7 +641,7 @@ export const useSimplifiedRundownState = () => {
             case 'lock_state': {
               const { numberingLocked, lockedRowNumbers } = update.value || {};
               if (numberingLocked !== undefined) {
-                console.log('🔒 Lock state broadcast received:', {
+                console.log('📡 [DEBUG] lock_state broadcast RECEIVED from remote user - applying lock state', {
                   numberingLocked,
                   lockedRowNumbersCount: Object.keys(lockedRowNumbers || {}).length
                 });

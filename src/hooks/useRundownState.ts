@@ -519,18 +519,22 @@ export const useRundownState = (
     // AFTER database confirmation to prevent stale data race conditions.
     
     addItem: (item: RundownItem, insertIndex?: number) => {
+      console.log('🔧 [DEBUG] addItem dispatched locally - NO broadcast here (handled by useStructuralSave)');
       dispatch({ type: 'ADD_ITEM', payload: { item, insertIndex } });
     },
     
     deleteItem: (id: string) => {
+      console.log('🔧 [DEBUG] deleteItem dispatched locally - NO broadcast here (handled by useStructuralSave)');
       dispatch({ type: 'DELETE_ITEM', payload: id });
     },
     
     deleteMultipleItems: (ids: string[]) => {
+      console.log('🔧 [DEBUG] deleteMultipleItems dispatched locally - NO broadcast here (handled by useStructuralSave)');
       dispatch({ type: 'DELETE_MULTIPLE_ITEMS', payload: ids });
     },
     
     reorderItems: (fromIndex: number, toIndex: number, count?: number) => {
+      console.log('🔧 [DEBUG] reorderItems dispatched locally - NO broadcast here (handled by useStructuralSave)');
       dispatch({ type: 'REORDER_ITEMS', payload: { fromIndex, toIndex, count } });
     },
     
@@ -584,12 +588,14 @@ export const useRundownState = (
     setDocVersion: (version: number) => dispatch({ type: 'SET_DOC_VERSION', payload: version }),
     
     toggleLock: (calculatedItems?: any[]) => {
+      console.log('🔧 [DEBUG] toggleLock dispatched locally - NO broadcast here (handled by useStructuralSave)');
       dispatch({ type: 'TOGGLE_LOCK', payload: calculatedItems ? { calculatedItems } : undefined });
       // NOTE: Lock state broadcasts are handled by structural save system (useStructuralSave.ts)
       // via 'toggle_lock' operation after database confirmation
     },
     
     setLockedRowNumbers: (lockedRowNumbers: { [itemId: string]: string }) => {
+      console.log('🔧 [DEBUG] setLockedRowNumbers dispatched locally - NO broadcast here (handled by useStructuralSave)');
       dispatch({ type: 'SET_LOCKED_ROW_NUMBERS', payload: lockedRowNumbers });
       // NOTE: Lock state broadcasts are handled by structural save system (useStructuralSave.ts)
     },
