@@ -414,12 +414,21 @@ export const useConsolidatedRealtimeRundown = ({
         if (stabilized) {
           console.log('✅ All channels healthy - performing catch-up sync');
           unifiedConnectionHealth.resetFailures(rundownId);
+          await performCatchupSync();
         } else {
-          console.warn('⚠️ Some channels still unhealthy after stabilization wait - performing catch-up sync anyway');
+          console.warn('⚠️ Some channels still unhealthy - deferring catch-up sync for 10 seconds');
+          // Schedule retry after 10 more seconds
+          setTimeout(async () => {
+            const nowStabilized = unifiedConnectionHealth.areAllChannelsHealthy(rundownId);
+            if (nowStabilized) {
+              console.log('✅ Delayed check: All channels now healthy - performing catch-up sync');
+              unifiedConnectionHealth.resetFailures(rundownId);
+            } else {
+              console.warn('⚠️ Delayed check: Still unhealthy - performing catch-up sync anyway');
+            }
+            await performCatchupSync();
+          }, 10000);
         }
-        
-        // Always perform catch-up sync, but we've given channels time to reconnect
-        await performCatchupSync();
       };
       
       performStabilizedSync();
@@ -916,6 +925,9 @@ export const useConsolidatedRealtimeRundown = ({
                 globalState.isConnected = false;
                 globalState.reconnecting = false;
               }
+              // Update unified health service with failure
+              unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
+              unifiedConnectionHealth.trackFailure(rundownId);
               // Trigger backoff retry
               handleConsolidatedChannelReconnect(rundownId);
             }

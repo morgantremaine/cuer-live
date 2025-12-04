@@ -141,6 +141,10 @@ export class CellBroadcastManager {
     channel.subscribe(async (status: string) => {
       this.connectionStatus.set(rundownId, status);
       
+      // Update unified health service with current status
+      const isConnected = status === 'SUBSCRIBED';
+      unifiedConnectionHealth.setCellStatus(rundownId, isConnected);
+      
       // Guard: Skip if already reconnecting to prevent feedback loop
       if (this.reconnecting.get(rundownId) && status !== 'SUBSCRIBED') {
         console.log('⏭️ Skipping cell reconnect - already reconnecting:', rundownId);
@@ -184,25 +188,13 @@ export class CellBroadcastManager {
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
         
-        // Track consecutive failures
+        // Track consecutive failures (for local exponential backoff)
         const consecutiveFailures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
         this.consecutiveFailures.set(rundownId, consecutiveFailures);
-        console.log(`🔌 Consecutive failures: ${consecutiveFailures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+        console.log(`🔌 Consecutive failures: ${consecutiveFailures}`);
         
-        // Track in unified health service
+        // Track in unified health service (it handles global threshold and page reload)
         unifiedConnectionHealth.trackFailure(rundownId);
-        
-        if (consecutiveFailures >= this.MAX_FAILURES_BEFORE_RELOAD) {
-          console.error('🚨 Cell: Too many consecutive failures - forcing page reload');
-          toast.error("Connection could not be restored", {
-            description: "Refreshing page in 3 seconds to recover...",
-            duration: 3000,
-          });
-          setTimeout(() => {
-            window.location.reload();
-          }, 3000);
-          return;
-        }
         
         // Report to coordinator instead of handling reconnection directly
         console.log('🔌 Cell channel issue reported - coordinator will handle reconnection');

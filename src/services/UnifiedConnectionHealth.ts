@@ -29,23 +29,25 @@ class UnifiedConnectionHealthService {
     this.checkAndNotify(rundownId);
   }
 
+  // Direct status setters for showcaller and cell (avoids circular imports)
+  private showcallerStates = new Map<string, boolean>();
+  private cellStates = new Map<string, boolean>();
+
+  setShowcallerStatus(rundownId: string, isConnected: boolean): void {
+    this.showcallerStates.set(rundownId, isConnected);
+    this.checkAndNotify(rundownId);
+  }
+
+  setCellStatus(rundownId: string, isConnected: boolean): void {
+    this.cellStates.set(rundownId, isConnected);
+    this.checkAndNotify(rundownId);
+  }
+
   // Get health status for all channels
   getHealth(rundownId: string): ChannelHealth {
     const consolidated = this.consolidatedStates.get(rundownId) ?? false;
-    
-    // Dynamically check showcaller and cell channels
-    let showcaller = false;
-    let cell = false;
-    
-    try {
-      // Import dynamically to avoid circular dependency issues
-      const { showcallerBroadcast } = require('@/utils/showcallerBroadcast');
-      const { cellBroadcast } = require('@/utils/cellBroadcast');
-      showcaller = showcallerBroadcast.isChannelConnected(rundownId);
-      cell = cellBroadcast.isChannelConnected(rundownId);
-    } catch (e) {
-      // Silently fail if imports not ready yet
-    }
+    const showcaller = this.showcallerStates.get(rundownId) ?? false;
+    const cell = this.cellStates.get(rundownId) ?? false;
     
     const allHealthy = consolidated && showcaller && cell;
     const anyDegraded = (consolidated || showcaller || cell) && !allHealthy;
@@ -190,6 +192,8 @@ class UnifiedConnectionHealthService {
   // Cleanup for a rundown
   cleanup(rundownId: string): void {
     this.consolidatedStates.delete(rundownId);
+    this.showcallerStates.delete(rundownId);
+    this.cellStates.delete(rundownId);
     this.globalFailureCount.delete(rundownId);
     this.lastFailureTime.delete(rundownId);
     this.connectionWarningCallbacks.delete(rundownId);
