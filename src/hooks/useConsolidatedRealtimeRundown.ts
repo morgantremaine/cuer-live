@@ -814,7 +814,10 @@ export const useConsolidatedRealtimeRundown = ({
           
           // Track in unified health service
           unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
-          unifiedConnectionHealth.trackFailure(rundownId); // CRITICAL: Track failure for CLOSED status
+          unifiedConnectionHealth.trackFailure(rundownId);
+          
+          // Direct reconnection with exponential backoff (consistent with CHANNEL_ERROR handling)
+          handleConsolidatedChannelReconnect(rundownId);
         }
       });
 

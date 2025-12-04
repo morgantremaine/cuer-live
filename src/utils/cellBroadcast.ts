@@ -43,7 +43,6 @@ export class CellBroadcastManager {
   private reconnecting = new Map<string, boolean>(); // Guard against reconnection storms
   private reconnectGuardTimeouts = new Map<string, NodeJS.Timeout>();
   private reconnectStartTimes = new Map<string, number>();
-  private consecutiveFailures = new Map<string, number>(); // Track consecutive failures
   private lastReconnectTimes = new Map<string, number>(); // Debounce reconnection attempts
   
   // Debouncing for typing fields
@@ -51,7 +50,6 @@ export class CellBroadcastManager {
   private pendingBroadcasts = new Map<string, CellUpdate>();
   private readonly TYPING_DEBOUNCE_MS = 300; // 300ms debounce for typing
   private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
-  private readonly MAX_FAILURES_BEFORE_RELOAD = 5; // Force reload after 5 consecutive failures
   private readonly MIN_RECONNECT_INTERVAL_MS = 5000; // 5 second minimum between reconnection attempts
   
   // Health monitoring
@@ -152,10 +150,9 @@ export class CellBroadcastManager {
       
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
-        // Reset failure count, consecutive failures, and clear guard flag on successful connection
+        // Reset failure count and clear guard flag on successful connection
         this.broadcastFailureCount.set(rundownId, 0);
         this.reconnectAttempts.delete(rundownId);
-        this.consecutiveFailures.delete(rundownId);
         this.reconnecting.delete(rundownId);
         // CRITICAL: Don't clear lastReconnectTimes - let debounce window expire naturally
         // This prevents orphan timeouts from firing immediately after success
@@ -186,11 +183,6 @@ export class CellBroadcastManager {
         // Track connection failures for health monitoring
         const failures = this.broadcastFailureCount.get(rundownId) || 0;
         this.broadcastFailureCount.set(rundownId, failures + 1);
-        
-        // Track consecutive failures (for local exponential backoff)
-        const consecutiveFailures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
-        this.consecutiveFailures.set(rundownId, consecutiveFailures);
-        console.log(`🔌 Consecutive failures: ${consecutiveFailures}`);
         
         // Track in unified health service (it handles global threshold and page reload)
         unifiedConnectionHealth.trackFailure(rundownId);
