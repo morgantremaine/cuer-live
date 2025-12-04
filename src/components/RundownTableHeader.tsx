@@ -358,6 +358,7 @@ const RundownTableHeader = ({
                        onToggleColumnVisibility={onToggleColumnVisibility}
                        savedLayouts={savedLayouts}
                        onLoadLayout={onLoadLayout}
+                       userColumns={allColumns}
                      >
                        {headerContent}
                      </HeaderContextMenu>
