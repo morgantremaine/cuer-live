@@ -64,6 +64,10 @@ class ShowcallerBroadcastManager {
       .subscribe(async (status) => {
         this.connectionStatus.set(rundownId, status);
         
+        // Update unified health service with current status
+        const isConnected = status === 'SUBSCRIBED';
+        unifiedConnectionHealth.setShowcallerStatus(rundownId, isConnected);
+        
         // Guard: Skip if already reconnecting to prevent feedback loop
         if (this.reconnecting.get(rundownId) && status !== 'SUBSCRIBED') {
           const startTime = this.reconnectStartTimes.get(rundownId);
@@ -87,25 +91,13 @@ class ShowcallerBroadcastManager {
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
           
-          // Track consecutive failures
+          // Track consecutive failures (for local exponential backoff)
           const failures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
           this.consecutiveFailures.set(rundownId, failures);
-          console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+          console.log(`📺 Consecutive failures: ${failures}`);
           
-          // Track in unified health service
+          // Track in unified health service (it handles global threshold and page reload)
           unifiedConnectionHealth.trackFailure(rundownId);
-          
-          if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
-            console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
-            toast.error("Connection could not be restored", {
-              description: "Refreshing page in 3 seconds to recover...",
-              duration: 3000,
-            });
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-            return;
-          }
           
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
@@ -165,25 +157,13 @@ class ShowcallerBroadcastManager {
           this.reconnecting.delete(rundownId);
           this.reconnectStartTimes.delete(rundownId);
           
-          // Track consecutive failures
+          // Track consecutive failures (for local exponential backoff)
           const failures = (this.consecutiveFailures.get(rundownId) || 0) + 1;
           this.consecutiveFailures.set(rundownId, failures);
-          console.log(`📺 Consecutive failures: ${failures}/${this.MAX_FAILURES_BEFORE_RELOAD}`);
+          console.log(`📺 Consecutive failures: ${failures}`);
           
-          // Track in unified health service
+          // Track in unified health service (it handles global threshold and page reload)
           unifiedConnectionHealth.trackFailure(rundownId);
-          
-          if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
-            console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
-            toast.error("Connection could not be restored", {
-              description: "Refreshing page in 3 seconds to recover...",
-              duration: 3000,
-            });
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-            return;
-          }
           
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
