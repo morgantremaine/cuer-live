@@ -108,12 +108,17 @@ const Teleprompter = () => {
       // Always accept remote updates to ensure real-time sync
       if (updatedRundown) {
         console.log('📥 Teleprompter receiving real-time update from team');
-        setRundownData({
+        setRundownData(prev => ({
+          // Preserve existing timing/numbering fields that aren't in the consolidated update
+          startTime: prev?.startTime,
+          numberingLocked: prev?.numberingLocked,
+          lockedRowNumbers: prev?.lockedRowNumbers,
+          // Apply the update
           title: updatedRundown.title || 'Untitled Rundown',
           items: updatedRundown.items || [],
-          doc_version: updatedRundown.doc_version, // Include doc_version for optimistic concurrency
+          doc_version: updatedRundown.doc_version,
           updated_at: updatedRundown.updated_at
-        });
+        }));
         
         // Update doc version tracking
         if (updatedRundown.doc_version) {
@@ -256,15 +261,17 @@ const Teleprompter = () => {
         const refreshedData = {
           title: data.title || 'Untitled Rundown',
           items: data.items || [],
-          startTime: data.startTime || '00:00:00'
+          startTime: data.startTime || '00:00:00',
+          numberingLocked: data.numbering_locked,
+          lockedRowNumbers: data.locked_row_numbers
         };
         
         // Calculate timing and row numbers
         const itemsWithCalculations = calculateItemsWithTiming(
           refreshedData.items,
           refreshedData.startTime,
-          data.numbering_locked,
-          data.locked_row_numbers
+          refreshedData.numberingLocked,
+          refreshedData.lockedRowNumbers
         );
         
         refreshedData.items = itemsWithCalculations;
