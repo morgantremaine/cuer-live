@@ -18,13 +18,19 @@ class UnifiedConnectionHealthService {
   private lastFailureTime = new Map<string, number>(); // Debounce failures
   private connectionWarningCallbacks = new Map<string, Set<(health: ChannelHealth) => void>>();
   private stabilizationTimers = new Map<string, NodeJS.Timeout>();
+  private startupTimes = new Map<string, number>(); // Track when rundown first initializes
   
   private readonly FAILURE_DEBOUNCE_MS = 3000; // Count multiple failures within 3s as one event
   private readonly GLOBAL_FAILURE_THRESHOLD = 15; // After 15 combined failures across channels
   private readonly STABILIZATION_WAIT_MS = 5000; // Wait 5 seconds for channels to stabilize
+  private readonly STARTUP_GRACE_MS = 5000; // Don't show degraded warnings during initial connection
 
   // Update consolidated channel status (called from useConsolidatedRealtimeRundown)
   setConsolidatedStatus(rundownId: string, isConnected: boolean): void {
+    // Track startup time on first status update
+    if (!this.startupTimes.has(rundownId)) {
+      this.startupTimes.set(rundownId, Date.now());
+    }
     this.consolidatedStates.set(rundownId, isConnected);
     this.checkAndNotify(rundownId);
   }
@@ -34,11 +40,19 @@ class UnifiedConnectionHealthService {
   private cellStates = new Map<string, boolean>();
 
   setShowcallerStatus(rundownId: string, isConnected: boolean): void {
+    // Track startup time on first status update
+    if (!this.startupTimes.has(rundownId)) {
+      this.startupTimes.set(rundownId, Date.now());
+    }
     this.showcallerStates.set(rundownId, isConnected);
     this.checkAndNotify(rundownId);
   }
 
   setCellStatus(rundownId: string, isConnected: boolean): void {
+    // Track startup time on first status update
+    if (!this.startupTimes.has(rundownId)) {
+      this.startupTimes.set(rundownId, Date.now());
+    }
     this.cellStates.set(rundownId, isConnected);
     this.checkAndNotify(rundownId);
   }
@@ -50,7 +64,11 @@ class UnifiedConnectionHealthService {
     const cell = this.cellStates.get(rundownId) ?? false;
     
     const allHealthy = consolidated && showcaller && cell;
-    const anyDegraded = (consolidated || showcaller || cell) && !allHealthy;
+    
+    // Don't show degraded warnings during initial startup grace period
+    const startupTime = this.startupTimes.get(rundownId);
+    const isInStartupGrace = startupTime && (Date.now() - startupTime < this.STARTUP_GRACE_MS);
+    const anyDegraded = isInStartupGrace ? false : (consolidated || showcaller || cell) && !allHealthy;
     
     return {
       consolidated,
@@ -197,6 +215,7 @@ class UnifiedConnectionHealthService {
     this.globalFailureCount.delete(rundownId);
     this.lastFailureTime.delete(rundownId);
     this.connectionWarningCallbacks.delete(rundownId);
+    this.startupTimes.delete(rundownId); // Clean up startup tracking
     
     const timer = this.stabilizationTimers.get(rundownId);
     if (timer) {

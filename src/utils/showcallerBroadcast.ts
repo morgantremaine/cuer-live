@@ -126,17 +126,8 @@ class ShowcallerBroadcastManager {
           // Track in unified health service
           unifiedConnectionHealth.trackFailure(rundownId);
           
-          if (failures >= this.MAX_FAILURES_BEFORE_RELOAD) {
-            console.error('🚨 Showcaller: Too many consecutive failures - forcing page reload');
-            toast.error("Connection could not be restored", {
-              description: "Refreshing page in 3 seconds to recover...",
-              duration: 3000,
-            });
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-            return;
-          }
+          // Let UnifiedConnectionHealth handle page reload at global threshold
+          // Removed local page reload logic to prevent duplicate reloads
           
           // Trigger reconnection with exponential backoff
           const attempts = this.reconnectAttempts.get(rundownId) || 0;
