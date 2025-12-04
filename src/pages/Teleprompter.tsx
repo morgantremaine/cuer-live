@@ -17,7 +17,6 @@ import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
-import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 import { printRundownScript } from '@/utils/scriptPrint';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
@@ -39,7 +38,6 @@ const Teleprompter = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastSeenDocVersion, setLastSeenDocVersion] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
 
@@ -117,7 +115,6 @@ const Teleprompter = () => {
         // Update doc version tracking
         if (updatedRundown.doc_version) {
           setLastSeenDocVersion(updatedRundown.doc_version);
-          watchdogRef.current?.updateLastSeen(updatedRundown.doc_version, updatedRundown.updated_at);
         }
       }
     }
@@ -226,22 +223,7 @@ const Teleprompter = () => {
           setLastSeenDocVersion(data.doc_version);
         }
         
-        // Initialize watchdog for reliable sync
-        if (user?.id) {
-          watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, user.id, {
-            onStaleData: (latestData) => {
-              console.log('🔄 Teleprompter watchdog detected stale data, refreshing');
-              setRundownData({
-                title: latestData.title || 'Untitled Rundown',
-                items: latestData.items || []
-              });
-              if (latestData.doc_version) {
-                setLastSeenDocVersion(latestData.doc_version);
-              }
-            }
-          });
-          watchdogRef.current.start();
-        }
+        // Watchdog removed - relying on useConsolidatedRealtimeRundown for reliable sync
       } else {
         setError('Rundown not found');
         setRundownData(null);
@@ -488,17 +470,9 @@ const Teleprompter = () => {
     }
   };
 
-  // Initial load with cleanup
+  // Initial load
   useEffect(() => {
     loadRundownData();
-    
-    return () => {
-      if (watchdogRef.current && user?.id) {
-        watchdogRef.current.stop();
-        RealtimeWatchdog.cleanup(rundownId || '', user.id);
-        watchdogRef.current = null;
-      }
-    };
   }, [rundownId, user?.id]);
 
   // Remove polling - now using realtime updates for instant synchronization

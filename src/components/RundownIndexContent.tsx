@@ -24,7 +24,7 @@ import { useMOSIntegration } from '@/hooks/useMOSIntegration';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { supabase } from '@/integrations/supabase/client';
-import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { toast } from 'sonner';
 // Import timing test to run calculations check
@@ -33,9 +33,6 @@ import '@/utils/timingValidationTest';
 
 const RundownIndexContentInner = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
-  
-  // Enable realtime connection notifications
-  useRealtimeNotifications();
   
   // Get team data and user for MOS integration setup
   const { team, userRole } = useTeam();
@@ -111,6 +108,9 @@ const RundownIndexContentInner = () => {
     toggleLock
   } = coreState;
 
+  // Enable realtime connection notifications (after rundownId is available)
+  useRealtimeNotifications(rundownId);
+
   const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
 
@@ -162,19 +162,19 @@ const RundownIndexContentInner = () => {
     lastEditedField: lastEditLocation?.field,
   });
 
-  // Track reconnection status
+  // Track reconnection status using unified health service
   const [isReconnecting, setIsReconnecting] = useState(false);
   
   useEffect(() => {
-    const checkReconnecting = () => {
-      setIsReconnecting(realtimeReconnectionCoordinator.isCurrentlyReconnecting());
-    };
+    if (!rundownId) return;
     
-    // Poll for reconnection status every 100ms
-    const interval = setInterval(checkReconnecting, 100);
+    // Subscribe to unified health updates
+    const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, (health) => {
+      setIsReconnecting(health.anyDegraded);
+    });
     
-    return () => clearInterval(interval);
-  }, []);
+    return unsubscribe;
+  }, [rundownId]);
   
   // Show teammate editing when any teammate is active and has unsaved changes
   const activeTeammates = otherUsers.filter(user => {

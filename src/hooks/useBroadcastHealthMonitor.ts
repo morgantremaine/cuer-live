@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { cellBroadcast } from '@/utils/cellBroadcast';
-import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
+import { useEffect, useState } from 'react';
+import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 
 interface BroadcastHealthStatus {
   isHealthy: boolean;
@@ -24,28 +23,30 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
   useEffect(() => {
     if (!enabled || !rundownId) return;
 
-    const checkHealth = () => {
-      const metrics = cellBroadcast.getHealthMetrics(rundownId);
-      const coordinatorStatus = realtimeReconnectionCoordinator.getStatus();
-      
-      // Check if coordinator is currently reconnecting
-      const isReconnecting = coordinatorStatus.isReconnecting;
-      
+    // Subscribe to unified health updates
+    const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, (health) => {
       setHealthStatus({
-        isHealthy: metrics.isHealthy,
-        isConnected: metrics.isConnected,
-        successRate: metrics.successRate,
-        totalAttempts: metrics.total,
+        isHealthy: health.allHealthy,
+        isConnected: health.consolidated && health.showcaller && health.cell,
+        successRate: health.allHealthy ? 1 : 0.5,
+        totalAttempts: health.consecutiveGlobalFailures,
         lastChecked: Date.now(),
-        isReconnecting
+        isReconnecting: health.anyDegraded
       });
-    };
+    });
 
-    // Initial check only - removed periodic interval to reduce timer overhead
-    checkHealth();
+    // Initial check
+    const health = unifiedConnectionHealth.getHealth(rundownId);
+    setHealthStatus({
+      isHealthy: health.allHealthy,
+      isConnected: health.consolidated && health.showcaller && health.cell,
+      successRate: health.allHealthy ? 1 : 0.5,
+      totalAttempts: health.consecutiveGlobalFailures,
+      lastChecked: Date.now(),
+      isReconnecting: health.anyDegraded
+    });
 
-    // Cleanup (no interval to clear)
-    return () => {};
+    return unsubscribe;
   }, [rundownId, enabled]);
 
   return healthStatus;
