@@ -129,7 +129,7 @@ export const TalentPresetsDialog: React.FC<TalentPresetsDialogProps> = ({
             Set up presets for quick insertion while typing. Use Alt + 1-9 (Windows) or Ctrl + 1-9 (Mac). Choose talent mode for formatted [Name] badges with color, or text mode for plain text.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((slot) => {
             const preset = getPresetForSlot(slot);
             return (
