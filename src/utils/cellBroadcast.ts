@@ -195,13 +195,10 @@ export class CellBroadcastManager {
         // Track in unified health service (it handles global threshold and page reload)
         unifiedConnectionHealth.trackFailure(rundownId);
         
-        // Report to coordinator instead of handling reconnection directly
-        console.log('🔌 Cell channel issue reported - coordinator will handle reconnection');
-        
         // Trigger reconnection with exponential backoff
         const attempts = this.reconnectAttempts.get(rundownId) || 0;
         this.reconnectAttempts.set(rundownId, attempts + 1);
-        const delay = Math.min(2000 * Math.pow(1.5, attempts), 10000);
+        const delay = Math.min(2000 * Math.pow(1.5, attempts), 30000); // Max 30s (consistent with other channels)
         console.log(`🔌 Scheduling cell reconnection in ${delay}ms (attempt ${attempts + 1})`);
         
         // Store timeout so we can clear it on success
@@ -221,7 +218,7 @@ export class CellBroadcastManager {
     return channel;
   }
 
-  // Removed handleChannelReconnect - coordinator now handles all reconnection logic
+  // Channel handles its own reconnection with exponential backoff
 
   async broadcastCellFocus(
     rundownId: string,
@@ -409,7 +406,7 @@ export class CellBroadcastManager {
     };
   }
   
-  // Force reconnection (called by RealtimeReconnectionCoordinator)
+  // Force reconnection with debounce
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
     
