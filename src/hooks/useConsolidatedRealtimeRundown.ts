@@ -223,7 +223,7 @@ export const useConsolidatedRealtimeRundown = ({
       
       const { data, error } = await supabase
         .from('rundowns')
-        .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state, tab_id')
+        .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state, tab_id, numbering_locked, locked_row_numbers')
         .eq('id', rundownId)
         .single();
         
