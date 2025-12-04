@@ -194,7 +194,7 @@ export const useStructuralSave = (
           ownUpdateTracker.track(data.updatedAt, context);
         }
         
-        console.log('✅ [DEBUG] Structural operation SAVED to database:', operation.operationType);
+        
 
         // PHASE 2: BROADCAST AFTER SUCCESS (prevents ghost data)
         // Only broadcast once we know the save succeeded
@@ -204,11 +204,6 @@ export const useStructuralSave = (
           const broadcastField = mapOperationToBroadcastField(operation.operationType);
           const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
           
-          console.log('📡 [DEBUG] Broadcasting structural operation AFTER successful save:', {
-            operationType: operation.operationType,
-            broadcastField,
-            payload
-          });
           
           cellBroadcast.broadcastCellUpdate(
             rundownId,
