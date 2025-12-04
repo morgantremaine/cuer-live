@@ -99,6 +99,48 @@ export const useTeamCustomColumns = () => {
     }
   }, [team?.id, user]);
 
+  // Rename a team custom column (team-wide)
+  const renameTeamColumn = useCallback(async (columnKey: string, newName: string) => {
+    if (!team?.id || !user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('team_custom_columns')
+        .update({ column_name: newName, updated_at: new Date().toISOString() })
+        .eq('team_id', team.id)
+        .eq('column_key', columnKey);
+
+      if (error) {
+        console.error('Error renaming team custom column:', error);
+        return false;
+      }
+
+      // Also update all saved column layouts to use the new name
+      const { error: layoutError } = await supabase
+        .rpc('update_column_layouts_on_team_column_rename', {
+          team_uuid: team.id,
+          old_column_key: columnKey,
+          new_column_name: newName
+        });
+
+      if (layoutError) {
+        console.warn('Could not update saved layouts with new column name:', layoutError);
+        // Don't fail the rename if layout update fails
+      }
+
+      // Update local state immediately (realtime will also handle this)
+      setTeamColumns(prev => prev.map(col => 
+        col.column_key === columnKey ? { ...col, column_name: newName } : col
+      ));
+      
+      console.log('📊 Team column renamed:', columnKey, '->', newName);
+      return true;
+    } catch (error) {
+      console.error('Failed to rename team custom column:', error);
+      return false;
+    }
+  }, [team?.id, user]);
+
   // Delete a team custom column
   const deleteTeamColumn = useCallback(async (columnKey: string) => {
     if (!team?.id || !user) return false;
@@ -159,6 +201,23 @@ export const useTeamCustomColumns = () => {
       .on(
         'postgres_changes',
         {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'team_custom_columns',
+          filter: `team_id=eq.${team.id}`
+        },
+        (payload) => {
+          console.log('Team custom column updated (renamed):', payload);
+          setTeamColumns(prev => prev.map(col => 
+            col.id === (payload.new as TeamCustomColumn).id 
+              ? payload.new as TeamCustomColumn 
+              : col
+          ));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'DELETE',
           schema: 'public',
           table: 'team_custom_columns',
@@ -185,6 +244,7 @@ export const useTeamCustomColumns = () => {
     teamColumns,
     loading,
     addTeamColumn,
+    renameTeamColumn,
     deleteTeamColumn,
     reloadTeamColumns: loadTeamColumns
   };

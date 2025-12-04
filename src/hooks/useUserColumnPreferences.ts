@@ -59,7 +59,7 @@ const normalizeColumns = (cols: any[]): Column[] => {
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
   const { team } = useTeam();
-  const { teamColumns, loading: teamColumnsLoading, addTeamColumn } = useTeamCustomColumns();
+  const { teamColumns, loading: teamColumnsLoading, addTeamColumn, renameTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,9 +67,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const currentSavePromiseRef = useRef<Promise<void> | null>(null);
   const hasLoadedRef = useRef(false); // Prevent multiple initial loads
+  
+  // Shared column name overrides from rundowns.columns (for built-in renamable columns)
+  const [columnNameOverrides, setColumnNameOverrides] = useState<Record<string, string>>({});
 
-  // Merge columns with team columns to ensure completeness - OPTIMIZED with Maps
-  const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
+  // Merge columns with team columns and apply shared name overrides
+  const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], overrides: Record<string, string> = {}) => {
     // Build a map of user's existing column preferences - O(n)
     const userColumnMap = new Map<string, Column>();
     userColumns.forEach(col => {
@@ -80,9 +83,13 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     const teamColumnMap = new Map(teamColumns.map(tc => [tc.column_key, tc]));
 
     // Start from defaults, but hide any defaults NOT present in the user's layout
+    // Also apply shared name overrides for built-in renamable columns
     const allAvailableColumns: Column[] = defaultColumns.map(dc => {
       const userPref = userColumnMap.get(dc.key);
-      return userPref ? dc : { ...dc, isVisible: false };
+      // Apply shared name override if exists (for built-in renamable columns)
+      const sharedName = overrides[dc.key];
+      const name = sharedName || dc.name;
+      return userPref ? { ...dc, name } : { ...dc, name, isVisible: false };
     });
     
     // Add ALL team columns to the available set - O(n)
@@ -93,7 +100,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           ...existingUserPref,
           isTeamColumn: true,
           createdBy: teamCol.created_by,
-          name: teamCol.column_name
+          name: teamCol.column_name // Team column names come from team_custom_columns
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       } else {
         allAvailableColumns.push({
@@ -131,9 +138,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     userColumns.forEach(userCol => {
       const matchingCol = availableColumnMap.get(userCol.key);
       if (matchingCol && !usedKeys.has(userCol.key)) {
+        // Use shared name for built-in columns, team name for custom columns
+        const finalName = matchingCol.isCustom 
+          ? matchingCol.name  // Team custom column names come from team_custom_columns
+          : (overrides[userCol.key] || matchingCol.name);  // Built-in use overrides
         orderedColumns.push({
           ...(matchingCol as Column),
-          ...(userCol as Column)
+          ...(userCol as Column),
+          name: finalName
         } as Column);
         usedKeys.add(userCol.key);
       }
@@ -211,7 +223,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   // Load user's column preferences for this rundown (waits for team columns to be ready)
   const loadColumnPreferences = useCallback(async () => {
     if (!user?.id || !rundownId) {
-      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, columnNameOverrides);
       setColumns(mergedDefaults);
       setIsLoading(false);
       debugLogger.preferences('No user/rundown - using defaults');
@@ -227,14 +239,32 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('user_column_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('rundown_id', rundownId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Load both user preferences and shared column name overrides in parallel
+      const [userPrefsResult, rundownResult] = await Promise.all([
+        supabase
+          .from('user_column_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('rundown_id', rundownId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('rundowns')
+          .select('columns')
+          .eq('id', rundownId)
+          .single()
+      ]);
+
+      const { data, error } = userPrefsResult;
+      
+      // Extract shared column name overrides from rundown
+      let overrides: Record<string, string> = {};
+      if (rundownResult.data?.columns && typeof rundownResult.data.columns === 'object') {
+        const rundownColumns = rundownResult.data.columns as Record<string, any>;
+        overrides = rundownColumns.columnNameOverrides || {};
+        setColumnNameOverrides(overrides);
+      }
 
       // Check if we have saved user preferences
       if (!error && data?.column_layout) {
@@ -267,7 +297,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           });
         }
         
-        const mergedColumns = mergeColumnsWithTeamColumns(normalized);
+        const mergedColumns = mergeColumnsWithTeamColumns(normalized, overrides);
         setColumns(mergedColumns);
         debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
@@ -323,13 +353,13 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           }
         }
         
-        const mergedDefaults = mergeColumnsWithTeamColumns(initialColumns);
+        const mergedDefaults = mergeColumnsWithTeamColumns(initialColumns, overrides);
         setColumns(mergedDefaults);
         debugLogger.preferences('No saved preferences - using defaults/team default');
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
-      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, columnNameOverrides);
       setColumns(mergedDefaults);
     } finally {
       // CRITICAL: Set flag BEFORE clearing loading to prevent race condition
@@ -362,11 +392,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     }
 
-    const merged = mergeColumnsWithTeamColumns(newColumns);
+    const merged = mergeColumnsWithTeamColumns(newColumns, columnNameOverrides);
     setColumns(merged);
     console.log('📊 Columns updated via updateColumns - auto-saving');
     saveColumnPreferences(merged);
-  }, [columns, saveColumnPreferences, addTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns, isLoading, hasInitialLoad]);
+  }, [columns, saveColumnPreferences, addTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns, isLoading, hasInitialLoad, columnNameOverrides]);
 
   // Update column width and auto-save
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
@@ -441,10 +471,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const previewLayout = useCallback((layoutColumns: Column[]) => {
     if (isLoading) return;
     
-    const mergedLayout = mergeColumnsWithTeamColumns(layoutColumns);
+    const mergedLayout = mergeColumnsWithTeamColumns(layoutColumns, columnNameOverrides);
     setColumns(mergedLayout);
     // Don't save - this is just a preview
-  }, [isLoading, mergeColumnsWithTeamColumns]);
+  }, [isLoading, mergeColumnsWithTeamColumns, columnNameOverrides]);
 
   // Load preferences when rundown changes - but only once per rundown
   useEffect(() => {
@@ -476,13 +506,49 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     
     // Merge and update only if the result actually changes
     const currentColumnKeys = columns.map(c => c.key).sort().join(',');
-    const newMerged = mergeColumnsWithTeamColumns(columns);
+    const newMerged = mergeColumnsWithTeamColumns(columns, columnNameOverrides);
     const newColumnKeys = newMerged.map(c => c.key).sort().join(',');
     
     if (currentColumnKeys !== newColumnKeys) {
       setColumns(newMerged);
     }
-  }, [isLoading, teamColumnsLoading, teamColumns.length, hasInitialLoad]);
+  }, [isLoading, teamColumnsLoading, teamColumns.length, hasInitialLoad, columnNameOverrides]);
+
+  // Subscribe to rundowns.columns changes for real-time column name updates (built-in columns)
+  useEffect(() => {
+    if (!rundownId) return;
+
+    const channel = supabase
+      .channel(`rundown-columns-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns',
+          filter: `id=eq.${rundownId}`
+        },
+        (payload) => {
+          const newColumns = payload.new?.columns as Record<string, any> | undefined;
+          if (newColumns?.columnNameOverrides) {
+            const newOverrides = newColumns.columnNameOverrides as Record<string, string>;
+            // Only update if overrides actually changed
+            if (JSON.stringify(newOverrides) !== JSON.stringify(columnNameOverrides)) {
+              console.log('📊 Received column name update from other user:', newOverrides);
+              setColumnNameOverrides(newOverrides);
+              // Re-merge columns with new overrides
+              const merged = mergeColumnsWithTeamColumns(columns, newOverrides);
+              setColumns(merged);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [rundownId, columnNameOverrides, columns, mergeColumnsWithTeamColumns]);
 
   // Cleanup timeouts and pending saves on unmount
   useEffect(() => {
@@ -508,6 +574,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     isLoading,
     isSaving,
     hasInitialLoad,
-    reloadPreferences: loadColumnPreferences
+    reloadPreferences: loadColumnPreferences,
+    renameTeamColumn // Expose team-wide column rename
   };
 };
