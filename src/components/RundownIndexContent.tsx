@@ -22,6 +22,7 @@ import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useMOSIntegration } from '@/hooks/useMOSIntegration';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { supabase } from '@/integrations/supabase/client';
 import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -271,7 +272,8 @@ const RundownIndexContentInner = () => {
   // Track layout stabilization to prevent flashing
   const [isLayoutStabilized, setIsLayoutStabilized] = useState(false);
   
-  // Removed redundant useTeamCustomColumns - useUserColumnPreferences handles team columns internally
+  // Get team custom columns rename function for team-wide column renames
+  const { renameTeamColumn } = useTeamCustomColumns();
 
   // Prevent skeleton from reappearing after first reveal - but keep it lightweight
   const [hasRevealed, setHasRevealed] = useState(false);
@@ -355,15 +357,73 @@ const RundownIndexContentInner = () => {
     setColumns(filtered); // Auto-save
   }, [userColumns, setColumns, team?.id]);
 
-  const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
+  const handleRenameColumnWrapper = useCallback(async (columnId: string, newName: string) => {
+    const columnToRename = userColumns.find(col => col.id === columnId);
+    if (!columnToRename) {
+      console.error('Column not found:', columnId);
+      return;
+    }
+
+    // For custom/team columns, update the team_custom_columns table (team-wide)
+    if (columnToRename.isCustom || (columnToRename as any).isTeamColumn) {
+      const success = await renameTeamColumn(columnToRename.key, newName);
+      if (!success) {
+        toast.error('Failed to rename column');
+        return;
+      }
+      console.log('📊 Team column renamed team-wide:', columnToRename.key, '->', newName);
+    } else if (columnToRename.isRenamable) {
+      // For built-in renamable columns, save to rundowns.columns (shared)
+      if (rundownId) {
+        try {
+          // Get current rundown columns or create structure
+          const { data: rundownData } = await supabase
+            .from('rundowns')
+            .select('columns')
+            .eq('id', rundownId)
+            .single();
+          
+          const currentColumns = rundownData?.columns || {};
+          const columnNameOverrides = currentColumns.columnNameOverrides || {};
+          
+          // Store the name override for this column key
+          const updatedColumns = {
+            ...currentColumns,
+            columnNameOverrides: {
+              ...columnNameOverrides,
+              [columnToRename.key]: newName
+            }
+          };
+          
+          const { error } = await supabase
+            .from('rundowns')
+            .update({ columns: updatedColumns })
+            .eq('id', rundownId);
+          
+          if (error) {
+            console.error('Error saving column name to rundown:', error);
+            toast.error('Failed to rename column');
+            return;
+          }
+          
+          console.log('📊 Built-in column renamed (rundown-wide):', columnToRename.key, '->', newName);
+        } catch (error) {
+          console.error('Failed to save column name:', error);
+          toast.error('Failed to rename column');
+          return;
+        }
+      }
+    }
+
+    // Update local state for immediate UI feedback
     const updated = userColumns.map(col => {
       if (col.id === columnId) {
         return { ...col, name: newName };
       }
       return col;
     });
-    setColumns(updated); // Auto-save
-  }, [userColumns, setColumns]);
+    setColumns(updated); // Auto-save to user preferences
+  }, [userColumns, setColumns, renameTeamColumn, rundownId]);
 
   const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
     const target = userColumns.find(col => col.id === columnId);
