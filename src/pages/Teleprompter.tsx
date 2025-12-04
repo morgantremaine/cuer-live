@@ -110,8 +110,9 @@ const Teleprompter = () => {
         console.log('📥 Teleprompter receiving real-time update from team');
         setRundownData(prev => {
           const startTime = prev?.startTime || '09:00:00';
-          const numberingLocked = prev?.numberingLocked || false;
-          const lockedRowNumbers = prev?.lockedRowNumbers || {};
+          // Use new lock values from consolidated update if present, otherwise fall back to previous
+          const numberingLocked = updatedRundown.numbering_locked ?? prev?.numberingLocked ?? false;
+          const lockedRowNumbers = updatedRundown.locked_row_numbers ?? prev?.lockedRowNumbers ?? {};
           
           // Recalculate timing and row numbers for received items
           const itemsWithCalculations = calculateItemsWithTiming(
@@ -332,8 +333,8 @@ const Teleprompter = () => {
       // Mark that we received a broadcast (for health monitoring)
       markBroadcastReceived();
 
-      // Handle structural events for instant collaboration (add/remove/reorder/copy)
-      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder' || update.field === 'items:copy') {
+      // Handle structural events for instant collaboration (add/remove/reorder/copy/lock_state)
+      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:remove-multiple' || update.field === 'items:reorder' || update.field === 'items:copy' || update.field === 'lock_state') {
         setRundownData(prev => {
           if (!prev) return prev;
 
@@ -364,6 +365,23 @@ const Teleprompter = () => {
               const newItems = prev.items.filter(i => i.id !== id);
               if (newItems.length !== prev.items.length) {
                 // Recalculate timing and row numbers
+                const itemsWithCalculations = calculateItemsWithTiming(
+                  newItems,
+                  prev.startTime || '09:00:00',
+                  prev.numberingLocked || false,
+                  prev.lockedRowNumbers || {}
+                );
+                return { ...prev, items: itemsWithCalculations };
+              }
+            }
+            return prev;
+          }
+
+          if (update.field === 'items:remove-multiple') {
+            const ids = update.value?.ids as string[];
+            if (ids && Array.isArray(ids) && ids.length > 0) {
+              const newItems = prev.items.filter(i => !ids.includes(i.id));
+              if (newItems.length !== prev.items.length) {
                 const itemsWithCalculations = calculateItemsWithTiming(
                   newItems,
                   prev.startTime || '09:00:00',
@@ -429,6 +447,23 @@ const Teleprompter = () => {
               }
             }
             return prev;
+          }
+
+          if (update.field === 'lock_state') {
+            const { numberingLocked, lockedRowNumbers } = update.value || {};
+            // Recalculate items with new lock settings
+            const itemsWithCalculations = calculateItemsWithTiming(
+              prev.items,
+              prev.startTime || '09:00:00',
+              numberingLocked ?? prev.numberingLocked ?? false,
+              lockedRowNumbers ?? prev.lockedRowNumbers ?? {}
+            );
+            return { 
+              ...prev, 
+              items: itemsWithCalculations,
+              numberingLocked: numberingLocked ?? prev.numberingLocked,
+              lockedRowNumbers: lockedRowNumbers ?? prev.lockedRowNumbers
+            };
           }
 
           return prev;
