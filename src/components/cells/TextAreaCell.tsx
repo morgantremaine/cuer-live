@@ -291,7 +291,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
@@ -321,7 +321,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
+          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-start gap-0.5 pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
