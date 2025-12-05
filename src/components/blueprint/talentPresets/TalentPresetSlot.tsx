@@ -13,6 +13,7 @@ interface TalentPresetSlotProps {
 }
 
 const DEFAULT_COLORS = [
+  '#ffffff', // white (default badge style)
   '#ef4444', // red
   '#f97316', // orange
   '#f59e0b', // amber
@@ -132,7 +133,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
                   type="button"
                   className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${
                     editColor === c ? 'ring-2 ring-primary ring-offset-2' : ''
-                  }`}
+                  } ${c === '#ffffff' ? 'border border-border' : ''}`}
                   style={{ backgroundColor: c }}
                   onClick={() => {
                     setEditColor(c);
