@@ -873,9 +873,16 @@ export const useTeam = (options: UseTeamOptions = {}) => {
     const currentKey = `${user.id}-${activeTeamId}`;
     
     // MINIMAL MODE: Only load current team + role (for rundown pages)
-    if (minimalMode && activeTeamId) {
-      loadCurrentTeamOnly(activeTeamId);
-      return;
+    // CRITICAL: Never fall through to slow loadTeamData() path when minimalMode is true
+    if (minimalMode) {
+      if (activeTeamId) {
+        loadCurrentTeamOnly(activeTeamId);
+      } else {
+        // In minimal mode without activeTeamId, just set loading to false
+        // and wait for activeTeamId to become available via useEffect dependency
+        setIsLoading(false);
+      }
+      return; // Always return in minimalMode, never fall through to loadTeamData
     }
     
     // If data is already loaded, restore from cache and load related data
