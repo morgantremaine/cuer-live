@@ -256,8 +256,10 @@ export const useCellLevelSave = (
       if (data?.success) {
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         
-        const context = rundownId ? `realtime-${rundownId}` : undefined;
-        ownUpdateTracker.track(data.updatedAt, context);
+        if (data.updatedAt) {
+          const context = rundownId ? `realtime-${rundownId}` : undefined;
+          ownUpdateTracker.track(data.updatedAt, context);
+        }
         
         // Increment completion counter for reliable UI updates
         saveCompletionCountRef.current += 1;

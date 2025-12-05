@@ -5,7 +5,7 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import RundownHistory from '@/components/RundownHistory';
 import { TalentPresetsProvider, useTalentPresets } from '@/contexts/TalentPresetsContext';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -883,6 +883,9 @@ const RundownIndexContentInner = () => {
       {rundownId && (
         <Sheet open={showHistory} onOpenChange={setShowHistory}>
           <SheetContent side="right" className="w-[500px] p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Rundown History</SheetTitle>
+            </SheetHeader>
             <RundownHistory rundownId={rundownId} />
           </SheetContent>
         </Sheet>

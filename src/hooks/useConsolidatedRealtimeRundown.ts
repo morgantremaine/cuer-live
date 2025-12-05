@@ -1078,7 +1078,7 @@ export const useConsolidatedRealtimeRundown = ({
   // SIMPLIFIED: No longer track timestamps, rely only on tab_id
   // Legacy compatibility function - now directly uses centralized tracker
   const trackOwnUpdateFunc = useCallback((timestamp: string) => {
-    if (rundownId) {
+    if (rundownId && timestamp) {
       const context = `realtime-${rundownId}`;
       ownUpdateTracker.track(normalizeTimestamp(timestamp), context);
       console.log('🏷️ Tracked own update via centralized tracker:', timestamp);
