@@ -71,6 +71,7 @@ const globalSubscriptions = new Map<string, {
   reconnecting?: boolean; // Guard against reconnection storms
   reconnectingStartedAt?: number; // Track when reconnection started
   lastReconnectTime?: number; // Debounce rapid reconnections
+  cleaningUp?: boolean; // Prevent reconnection during intentional cleanup
 }>();
 
 // Minimum interval between reconnection attempts (prevents storm)
@@ -850,6 +851,12 @@ export const useConsolidatedRealtimeRundown = ({
             }, 2000);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // Skip reconnection if intentionally cleaning up (navigation away)
+          if (state.cleaningUp) {
+            console.log('📡 Ignoring consolidated channel status during cleanup:', rundownId, status);
+            return;
+          }
+          
           state.isConnected = false;
           state.reconnecting = false; // CRITICAL: Clear flag on error
           console.error('❌ Consolidated realtime connection failed:', status);
@@ -861,6 +868,12 @@ export const useConsolidatedRealtimeRundown = ({
           // Direct reconnection with exponential backoff
           handleConsolidatedChannelReconnect(rundownId);
         } else if (status === 'CLOSED') {
+          // Skip reconnection if intentionally cleaning up (navigation away)
+          if (state.cleaningUp) {
+            console.log('📡 Ignoring consolidated channel status during cleanup:', rundownId, status);
+            return;
+          }
+          
           state.isConnected = false;
           state.reconnecting = false; // CRITICAL: Clear flag on close
           console.log('🔌 Consolidated realtime connection closed');
@@ -1065,6 +1078,9 @@ export const useConsolidatedRealtimeRundown = ({
 
       // Clean up subscription if no more references AND no active callbacks
       if (state.refCount <= 0 && totalCallbacks === 0) {
+        // CRITICAL: Mark as cleaning up BEFORE any cleanup to prevent status callback from scheduling reconnection
+        state.cleaningUp = true;
+        
         console.log('📡 Closing consolidated realtime subscription for', rundownId, {
           refCount: state.refCount,
           totalCallbacks
@@ -1092,7 +1108,7 @@ export const useConsolidatedRealtimeRundown = ({
           } catch (error) {
             console.warn('📡 Error during consolidated cleanup:', error);
           }
-        }, 0);
+        }, 100);
       } else if (state.refCount <= 0 && totalCallbacks > 0) {
         // FIXED: Correct refCount if callbacks still exist but refCount is 0
         console.warn('⚠️ refCount mismatch detected - correcting', {
