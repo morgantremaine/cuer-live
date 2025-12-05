@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useSingleRundown } from '@/hooks/useSingleRundown';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
@@ -51,19 +51,12 @@ const BlueprintLoadingSkeleton = () => (
   </div>
 );
 
-const BlueprintContent = () => {
+const BlueprintContent = ({ rundown }: { rundown: NonNullable<ReturnType<typeof useSingleRundown>['rundown']> }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading } = useRundownStorage();
   const { teamColumns } = useTeamCustomColumns();
   const { columns: userColumns } = useUserColumnPreferences(id || null);
-  
-  // Find the rundown - but only search if we have data loaded
-  const rundown = React.useMemo(() => {
-    if (loading || !savedRundowns.length) return null;
-    return savedRundowns.find(r => r.id === id) || undefined;
-  }, [savedRundowns, id, loading]);
   
   // Use BlueprintContext directly - single source of truth
   const {
@@ -241,37 +234,7 @@ const BlueprintContent = () => {
     navigate('/dashboard');
   };
 
-  // Show loading skeleton while data is being loaded
-  if (loading) {
-    return <BlueprintLoadingSkeleton />;
-  }
-
-  // If data has loaded but rundown is not found, show error
-  if (!loading && rundown === undefined) {
-    return (
-      <div className="min-h-screen bg-gray-900">
-        <DashboardHeader 
-          userEmail={user?.email} 
-          onSignOut={handleSignOut} 
-          showBackButton={true}
-          onBack={handleBack}
-        />
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
-            <Button onClick={() => navigate('/dashboard')}>
-              Return to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading skeleton if rundown data is still null (being loaded)
-  if (!rundown) {
-    return <BlueprintLoadingSkeleton />;
-  }
+  // rundown is guaranteed to be non-null when BlueprintContent is rendered
 
   // Create component mapping for rendering in the correct order (removed crew-list and talent-presets)
   const componentMap = {
@@ -403,15 +366,9 @@ const BlueprintContent = () => {
 
 const Blueprint = () => {
   const { id } = useParams<{ id: string }>();
-  const { savedRundowns, loading } = useRundownStorage();
+  const { rundown, loading, error } = useSingleRundown(id);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  
-  // Find the rundown - but only search if we have data loaded
-  const rundown = React.useMemo(() => {
-    if (loading || !savedRundowns.length) return null;
-    return savedRundowns.find(r => r.id === id) || undefined;
-  }, [savedRundowns, id, loading]);
 
   // Calculate timing for items before passing to blueprint
   // MUST be called before any conditional returns (React hooks rule)
@@ -475,7 +432,7 @@ const Blueprint = () => {
       rundownItems={itemsWithTiming}
       rundownStartTime={rundown.start_time}
     >
-      <BlueprintContent />
+      <BlueprintContent rundown={rundown} />
     </BlueprintProvider>
   );
 };
