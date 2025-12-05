@@ -115,7 +115,7 @@ const RundownHistory = ({ rundownId }: RundownHistoryProps) => {
         }
         
         // Build custom column name mapping from rundown columns
-        if (data.columns) {
+        if (Array.isArray(data.columns)) {
           const columnMapping: Record<string, string> = {};
           data.columns.forEach((col: any) => {
             if (col.isCustom && col.key) {
