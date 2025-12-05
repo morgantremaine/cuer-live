@@ -21,7 +21,6 @@ export const useActiveCellEditors = (
   activeUserCount: number = 1
 ) => {
   const [activeEditors, setActiveEditors] = useState<Map<string, ActiveEditor>>(new Map());
-  const pendingUpdatesRef = useRef<Map<string, { editor: ActiveEditor | null; isFocused: boolean }>>(new Map());
   const batchProcessorRegistered = useRef(false);
 
   // Update batcher and cellBroadcast with user count for adaptive throttling

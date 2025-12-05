@@ -1047,14 +1047,14 @@ export const useSimplifiedRundownState = () => {
       
       if (isTypingField) {
         // Debounce broadcasts for typing fields (500ms) - reduced load on realtime
+        // Uses adaptive debouncing based on active user count
         cellBroadcast.broadcastCellUpdateDebounced(
           rundownId, 
           id, 
           field, 
           value, 
           currentUserId, 
-          getTabId(),
-          500 // 500ms debounce
+          getTabId()
         );
       } else {
         // Immediate broadcast for non-typing fields (color, isFloating, duration)
