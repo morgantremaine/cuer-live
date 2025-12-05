@@ -27,7 +27,7 @@ const retryRpc = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => 
 
 export const useTeamCustomColumns = () => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team } = useTeam({ minimalMode: true });
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
   const [loading, setLoading] = useState(true);
 
