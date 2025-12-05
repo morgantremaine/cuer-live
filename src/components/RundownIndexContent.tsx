@@ -36,7 +36,8 @@ const RundownIndexContentInner = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   // Get team data and user for MOS integration setup
-  const { team, userRole } = useTeam();
+  // Use minimal mode - only loads current team + role, skips team members/invitations
+  const { team, userRole } = useTeam({ minimalMode: true });
   const { user } = useAuth();
   
   const {
