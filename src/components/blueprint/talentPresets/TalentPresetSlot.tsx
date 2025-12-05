@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { X, Check } from 'lucide-react';
+import { X, Check, Ban } from 'lucide-react';
 
 interface TalentPresetSlotProps {
   slot: number;
@@ -98,15 +98,15 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
           <PopoverTrigger asChild>
             <button
               type="button"
-              className={`w-7 h-7 rounded-full shrink-0 border-2 hover:scale-110 transition-transform ${
-                editColor ? 'border-border' : 'border-dashed border-muted-foreground/50 bg-background'
+              className={`w-7 h-7 rounded-full shrink-0 border-2 hover:scale-110 transition-transform flex items-center justify-center ${
+                editColor ? 'border-border' : 'border-muted-foreground/40 bg-background'
               }`}
               style={editColor ? { backgroundColor: editColor } : undefined}
               onMouseDown={(e) => e.preventDefault()}
               title={editColor ? 'Change color (styled badge)' : 'Add color (plain text)'}
             >
               {!editColor && (
-                <span className="text-[10px] text-muted-foreground font-medium">Aa</span>
+                <Ban className="h-4 w-4 text-muted-foreground/60" />
               )}
             </button>
           </PopoverTrigger>
@@ -115,7 +115,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
               {/* No color option */}
               <button
                 type="button"
-                className={`w-6 h-6 rounded-full transition-transform hover:scale-110 border-2 border-dashed flex items-center justify-center ${
+                className={`w-6 h-6 rounded-full transition-transform hover:scale-110 border-2 flex items-center justify-center ${
                   !editColor ? 'ring-2 ring-primary ring-offset-2 border-primary' : 'border-muted-foreground/40'
                 }`}
                 onClick={() => {
@@ -124,7 +124,7 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
                 }}
                 title="No color (plain text)"
               >
-                <span className="text-[9px] text-muted-foreground font-medium">Aa</span>
+                <Ban className="h-3.5 w-3.5 text-muted-foreground/60" />
               </button>
               {DEFAULT_COLORS.map((c) => (
                 <button
@@ -164,14 +164,14 @@ export const TalentPresetSlot = ({ slot, name, color, onUpdate, onClear }: Talen
     >
       <kbd className="px-1.5 py-0.5 text-xs font-mono bg-muted rounded shrink-0">{modifierKey}{slot}</kbd>
       
-      {/* Display indicator - colored dot or plain text indicator */}
+      {/* Display indicator - colored dot or no-color icon */}
       {color ? (
         <div 
           className="w-3 h-3 rounded-full shrink-0"
           style={{ backgroundColor: color }}
         />
       ) : (
-        <span className="text-xs text-muted-foreground font-medium shrink-0">Aa</span>
+        <Ban className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
       )}
       
       <span className="text-sm font-medium flex-1 truncate">{name}</span>
