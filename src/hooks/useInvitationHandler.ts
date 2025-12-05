@@ -1,15 +1,11 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
-import { useTeam } from './useTeam';
-import { useRundownStorage } from './useRundownStorage';
 import { useToast } from './use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export const useInvitationHandler = () => {
   const { user } = useAuth();
-  const { loadTeamData } = useTeam();
-  const { loadRundowns } = useRundownStorage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,9 +42,9 @@ export const useInvitationHandler = () => {
 
       const pendingToken = localStorage.getItem('pendingInvitationToken');
       if (!pendingToken || pendingToken === 'undefined') {
-        console.log('No pending invitation token found, loading team data');
-        processedUserRef.current = user.id; // Mark as processed
-        await loadTeamData();
+        console.log('No pending invitation token found');
+        processedUserRef.current = user.id;
+        // Let useTeam.ts handle team loading - don't call loadTeamData() here
         return;
       }
 
@@ -76,8 +72,7 @@ export const useInvitationHandler = () => {
           });
         }
         
-        // Load team data if no valid invitation
-        await loadTeamData();
+        // useTeam.ts handles team loading - no need to call loadTeamData() here
       } catch (error) {
         console.error('Error processing pending invitation:', error);
         
@@ -90,8 +85,7 @@ export const useInvitationHandler = () => {
           variant: 'destructive',
         });
         
-        // Still load team data
-        await loadTeamData();
+        // useTeam.ts handles team loading - no need to call loadTeamData() here
       } finally {
         isProcessingRef.current = false;
       }
@@ -102,7 +96,7 @@ export const useInvitationHandler = () => {
     return () => {
       clearTimeout(timer);
     };
-  }, [user?.id, loadTeamData, toast, navigate, location.pathname]);
+  }, [user?.id, toast, navigate, location.pathname]);
 
   // Reset processing flag when user changes
   useEffect(() => {
