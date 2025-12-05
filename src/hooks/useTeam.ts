@@ -21,6 +21,28 @@ const TEAM_DATA_STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
 // This persists through activeTeamId changes during initialization cascade
 const globalInitialLoadInProgress = new Map<string, boolean>();
 
+// =========== DIAGNOSTIC LOGGING ===========
+let globalHookInstanceCounter = 0;
+const activeHookInstances = new Map<number, { mountTime: number; componentStack: string }>();
+
+const getComponentStack = (): string => {
+  try {
+    const stack = new Error().stack || '';
+    // Parse stack to find component names (lines containing .tsx or component-like patterns)
+    const lines = stack.split('\n').slice(2, 8); // Skip Error and getComponentStack lines
+    return lines
+      .map(line => {
+        const match = line.match(/at\s+(\w+)\s+/) || line.match(/\/([A-Z][a-zA-Z]+)\./);
+        return match ? match[1] : null;
+      })
+      .filter(Boolean)
+      .join(' → ');
+  } catch {
+    return 'unknown';
+  }
+};
+// ==========================================
+
 export interface Team {
   id: string;
   name: string;
@@ -63,6 +85,30 @@ export interface OrganizationMember {
 }
 
 export const useTeam = () => {
+  // =========== DIAGNOSTIC: Track hook instance ===========
+  const instanceIdRef = useRef<number | null>(null);
+  if (instanceIdRef.current === null) {
+    instanceIdRef.current = ++globalHookInstanceCounter;
+    const componentStack = getComponentStack();
+    activeHookInstances.set(instanceIdRef.current, { 
+      mountTime: Date.now(), 
+      componentStack 
+    });
+    console.log(`🔵 [useTeam #${instanceIdRef.current}] MOUNTED | Total instances: ${activeHookInstances.size} | Stack: ${componentStack}`);
+  }
+  
+  // Track unmount
+  useEffect(() => {
+    const id = instanceIdRef.current;
+    return () => {
+      if (id !== null) {
+        activeHookInstances.delete(id);
+        console.log(`🔴 [useTeam #${id}] UNMOUNTED | Remaining instances: ${activeHookInstances.size}`);
+      }
+    };
+  }, []);
+  // ======================================================
+
   const { user } = useAuth();
   const { activeTeamId, setActiveTeam } = useActiveTeam();
   const navigate = useNavigate();
@@ -845,7 +891,14 @@ export const useTeam = () => {
 
   // Load team data when user or activeTeamId changes
   useEffect(() => {
+    const instanceId = instanceIdRef.current;
+    
+    // =========== DIAGNOSTIC: Log every useEffect trigger ===========
+    console.log(`🟡 [useTeam #${instanceId}] EFFECT TRIGGERED | user.id: ${user?.id?.slice(0, 8)}... | activeTeamId: ${activeTeamId?.slice(0, 8)}... | globalInitialLoad: ${globalInitialLoadInProgress.get(user?.id || '')} | loadingStates: ${globalLoadingStates.size}`);
+    // ===============================================================
+    
     if (!user?.id) {
+      console.log(`⚪ [useTeam #${instanceId}] No user - clearing state`);
       setTeam(null);
       setAllUserTeams([]);
       setIsLoading(false);
@@ -857,7 +910,7 @@ export const useTeam = () => {
     // When loadTeamData() calls setActiveTeam(), the activeTeamId change re-triggers this effect
     // Skip the second load if we're already loading for this user (keyed by userId only)
     if (globalInitialLoadInProgress.get(user.id)) {
-      console.log('⏳ Skipping duplicate team load - already loading for this user');
+      console.log(`⏳ [useTeam #${instanceId}] Skipping duplicate team load - already loading for this user`);
       return;
     }
     
@@ -866,6 +919,7 @@ export const useTeam = () => {
     // Always load team data - don't use cache optimization that skips loading
     // The cache was causing delays for multi-team accounts by not restoring allUserTeams, teamMembers, etc.
     if (!globalLoadingStates.get(currentKey)) {
+      console.log(`🟢 [useTeam #${instanceId}] STARTING LOAD | key: ${currentKey.slice(0, 16)}...`);
       globalInitialLoadInProgress.set(user.id, true);
       loadedUserRef.current = currentKey;
       setIsLoading(true);
