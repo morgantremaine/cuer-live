@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUniversalTimer } from './useUniversalTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useTeamId } from './useTeamId';
+import { useTeamContext } from '@/contexts/TeamContext';
 import { useSubscription } from './useSubscription';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { SavedRundown } from './useRundownStorage/types';
@@ -10,7 +10,8 @@ import { RundownOperations } from './useRundownStorage/operations';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
-  const { teamId } = useTeamId();
+  const { team, isLoading: teamLoading } = useTeamContext();
+  const teamId = team?.id || null;
   const { subscription_tier, access_type } = useSubscription();
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ export const useRundownStorage = () => {
 
   // Debounced load function - with better stability checks
   const debouncedLoadRundowns = useCallback(async () => {
-    if (!user || isLoadingRef.current) {
+    if (!user || isLoadingRef.current || teamLoading) {
       return;
     }
 
@@ -88,18 +89,18 @@ export const useRundownStorage = () => {
         isLoadingRef.current = false;
       }
     }, debounceDelay);
-  }, [user, teamId, savedRundowns.length, setManagedTimeout, clearTimer]);
+  }, [user, teamId, teamLoading, savedRundowns.length, setManagedTimeout, clearTimer]);
 
   // Load rundowns when user or team changes
   useEffect(() => {
-    if (user && teamId) {
+    if (user && teamId && !teamLoading) {
       const currentKey = `${user.id}-${teamId}`;
       const lastKey = `${lastLoadedUserRef.current}-${lastLoadedTeamRef.current}`;
       if (currentKey !== lastKey) {
         debouncedLoadRundowns();
       }
     }
-  }, [user, teamId, debouncedLoadRundowns]);
+  }, [user, teamId, teamLoading, debouncedLoadRundowns]);
 
   // Handle focus/visibility changes to refresh rundown data silently
   useEffect(() => {
