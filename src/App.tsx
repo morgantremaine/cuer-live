@@ -212,22 +212,22 @@ const App = () => (
   <ErrorBoundary fallbackTitle="Application Error">
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <TeamProvider>
-            <ClockFormatProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <CustomCookieConsent />
-                <BrowserRouter>
-                  <TawkToGlobalManager />
-                  <AppUpdateNotification />
-                  <AppRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
-            </ClockFormatProvider>
-          </TeamProvider>
-        </AuthProvider>
+      <AuthProvider>
+        <ClockFormatProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <CustomCookieConsent />
+            <BrowserRouter>
+              <TeamProvider>
+                <TawkToGlobalManager />
+                <AppUpdateNotification />
+                <AppRoutes />
+              </TeamProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ClockFormatProvider>
+      </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
