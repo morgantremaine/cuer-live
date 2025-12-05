@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useTeam } from './useTeam';
+import { useTeamContext } from '@/contexts/TeamContext';
 
 export interface TeamCustomColumn {
   id: string;
@@ -27,7 +27,7 @@ const retryRpc = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => 
 
 export const useTeamCustomColumns = () => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team } = useTeamContext();
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
   const [loading, setLoading] = useState(true);
 
