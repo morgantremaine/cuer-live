@@ -24,6 +24,7 @@ class ShowcallerBroadcastManager {
   private reconnectAttempts: Map<string, number> = new Map();
   private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private lastReconnectTimes: Map<string, number> = new Map();
+  private cleaningUp: Map<string, boolean> = new Map(); // Prevent reconnection during intentional cleanup
   private readonly MIN_RECONNECT_INTERVAL_MS = 5000;
   private sessionExpired = false;
 
@@ -77,6 +78,12 @@ class ShowcallerBroadcastManager {
         unifiedConnectionHealth.setShowcallerStatus(rundownId, isConnected);
         
         if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+          // Skip reconnection if intentionally cleaning up (navigation away)
+          if (this.cleaningUp.get(rundownId)) {
+            console.log('📺 Ignoring channel status during cleanup:', rundownId, status);
+            return;
+          }
+          
           console.warn('📺 Showcaller channel issue:', rundownId, status);
           
           // Track failure in unified health (handles global threshold)
@@ -216,6 +223,9 @@ class ShowcallerBroadcastManager {
 
   // Cleanup channel and callbacks
   cleanup(rundownId: string): void {
+    // CRITICAL: Mark as cleaning up BEFORE any cleanup to prevent status callback from scheduling reconnection
+    this.cleaningUp.set(rundownId, true);
+    
     const timeout = this.reconnectTimeouts.get(rundownId);
     if (timeout) {
       clearTimeout(timeout);
@@ -239,7 +249,12 @@ class ShowcallerBroadcastManager {
         } catch (error) {
           console.warn('📺 Error during channel cleanup:', error);
         }
-      }, 0);
+        // Clear cleanup flag after channel is fully removed
+        this.cleaningUp.delete(rundownId);
+      }, 100);
+    } else {
+      // Clear cleanup flag if no channel to remove
+      this.cleaningUp.delete(rundownId);
     }
   }
 

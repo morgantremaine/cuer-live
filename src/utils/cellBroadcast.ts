@@ -45,6 +45,7 @@ export class CellBroadcastManager {
   private reconnectGuardTimeouts = new Map<string, NodeJS.Timeout>();
   private reconnectStartTimes = new Map<string, number>();
   private lastReconnectTimes = new Map<string, number>(); // Debounce reconnection attempts
+  private cleaningUp = new Map<string, boolean>(); // Prevent reconnection during intentional cleanup
   
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
@@ -200,6 +201,12 @@ export class CellBroadcastManager {
           unifiedConnectionHealth.resetFailures(rundownId);
         }
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        // Skip reconnection if intentionally cleaning up (navigation away)
+        if (this.cleaningUp.get(rundownId)) {
+          console.log('🔌 Ignoring cell channel status during cleanup:', rundownId, status);
+          return;
+        }
+        
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel error:', key, status, {
           navigator_online: navigator.onLine,
@@ -538,6 +545,9 @@ export class CellBroadcastManager {
   }
 
   private cleanupChannel(rundownId: string): void {
+    // CRITICAL: Mark as cleaning up BEFORE any cleanup to prevent status callback from scheduling reconnection
+    this.cleaningUp.set(rundownId, true);
+    
     // Clear reconnect attempts and timeouts
     this.reconnectAttempts.delete(rundownId);
     const timeout = this.reconnectTimeouts.get(rundownId);
@@ -562,7 +572,12 @@ export class CellBroadcastManager {
         } catch (error) {
           console.warn('🧹 Error during cell channel cleanup:', error);
         }
-      }, 0);
+        // Clear cleanup flag after channel is fully removed
+        this.cleaningUp.delete(rundownId);
+      }, 100);
+    } else {
+      // Clear cleanup flag if no channel to remove
+      this.cleaningUp.delete(rundownId);
     }
   }
 
