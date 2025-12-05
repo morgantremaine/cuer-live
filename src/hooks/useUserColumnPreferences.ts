@@ -481,7 +481,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Don't save - this is just a preview
   }, [isLoading, mergeColumnsWithTeamColumns, columnNameOverrides]);
 
-  // Load preferences when rundown changes - but only once per rundown
+  // Load preferences when rundown changes or when loadColumnPreferences becomes ready
   useEffect(() => {
     // Reset the loaded flag when rundown changes
     hasLoadedRef.current = false;
@@ -490,7 +490,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       hasLoadedRef.current = true;
       loadColumnPreferences();
     }
-  }, [rundownId, user?.id]);
+  }, [rundownId, user?.id, loadColumnPreferences]);
 
   // Update columns when team columns change - wait until all loading is done
   useEffect(() => {
