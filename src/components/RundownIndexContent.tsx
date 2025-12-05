@@ -23,6 +23,7 @@ import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useMOSIntegration } from '@/hooks/useMOSIntegration';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
+import { useMemoryPressureMonitor } from '@/hooks/useMemoryPressureMonitor';
 import { supabase } from '@/integrations/supabase/client';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -119,9 +120,6 @@ const RundownIndexContentInner = () => {
 
   // Cell editor setup ready
 
-  // Set up per-cell active editor tracking
-  const { getEditorForCell, getAllActiveEditors } = useActiveCellEditors(rundownId);
-
   // Set up cell edit integration for broadcasting focus states
   const { handleCellEditStart, handleCellEditComplete } = useCellEditIntegration({
     rundownId,
@@ -161,6 +159,17 @@ const RundownIndexContentInner = () => {
     lastEditedItemId: lastEditLocation?.itemId,
     lastEditedField: lastEditLocation?.field,
   });
+
+  // Calculate active user count for adaptive batching (self + others)
+  const activeUserCount = otherUsers.length + 1;
+
+  // Set up memory pressure monitoring for adaptive batching
+  useMemoryPressureMonitor({
+    enabled: true,
+  });
+
+  // Set up per-cell active editor tracking with user count for adaptive batching
+  const { getEditorForCell, getAllActiveEditors } = useActiveCellEditors(rundownId, activeUserCount);
 
   // Track reconnection status using unified health service
   const [isReconnecting, setIsReconnecting] = useState(false);

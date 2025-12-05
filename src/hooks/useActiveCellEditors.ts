@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { getTabId } from '@/utils/tabUtils';
+import { broadcastBatcher } from '@/utils/broadcastBatcher';
 
 interface ActiveEditor {
   userId: string;
@@ -9,18 +10,62 @@ interface ActiveEditor {
 }
 
 const STALE_TIMEOUT = 10000; // 10 seconds - safety net for disconnects/crashes
+const CLEANUP_INTERVAL = 2000; // Check every 2 seconds instead of 1
 
 /**
  * Hook to track which users are actively editing which cells
- * Displays visual indicators showing real-time cell focus states
+ * Uses batched updates to reduce memory pressure with many concurrent users
  */
-export const useActiveCellEditors = (rundownId: string | null) => {
+export const useActiveCellEditors = (
+  rundownId: string | null,
+  activeUserCount: number = 1
+) => {
   const [activeEditors, setActiveEditors] = useState<Map<string, ActiveEditor>>(new Map());
+  const pendingUpdatesRef = useRef<Map<string, { editor: ActiveEditor | null; isFocused: boolean }>>(new Map());
+  const batchProcessorRegistered = useRef(false);
+
+  // Update batcher and cellBroadcast with user count for adaptive throttling
+  useEffect(() => {
+    broadcastBatcher.setActiveUserCount(activeUserCount);
+    cellBroadcast.setActiveUserCount(activeUserCount);
+  }, [activeUserCount]);
 
   useEffect(() => {
     if (!rundownId) return;
 
     const currentTabId = getTabId();
+
+    // Register batch processor once
+    if (!batchProcessorRegistered.current) {
+      broadcastBatcher.registerProcessor('focus', (updates) => {
+        // Process all queued focus updates in a single state update
+        setActiveEditors((prev) => {
+          const next = new Map(prev);
+          let changed = false;
+
+          for (const update of updates) {
+            const { key, data } = update;
+            
+            if (data.isFocused && data.editor) {
+              const existing = next.get(key);
+              // Only update if newer or not existing
+              if (!existing || data.editor.timestamp > existing.timestamp) {
+                next.set(key, data.editor);
+                changed = true;
+              }
+            } else {
+              if (next.has(key)) {
+                next.delete(key);
+                changed = true;
+              }
+            }
+          }
+
+          return changed ? next : prev;
+        });
+      });
+      batchProcessorRegistered.current = true;
+    }
 
     // Subscribe to cell focus broadcasts
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(
@@ -35,28 +80,20 @@ export const useActiveCellEditors = (rundownId: string | null) => {
         // Filter out own updates
         if (isOwnUpdate) return;
 
-        setActiveEditors((prev) => {
-          const next = new Map(prev);
-
-          if (update.isFocused) {
-            // Add/update active editor
-            next.set(cellKey, {
-              userId: update.userId,
-              userName: update.userName,
-              timestamp: update.timestamp
-            });
-          } else {
-            // Remove editor on blur
-            next.delete(cellKey);
-          }
-
-          return next;
+        // Queue update for batched processing
+        broadcastBatcher.queue('focus', cellKey, {
+          isFocused: update.isFocused,
+          editor: update.isFocused ? {
+            userId: update.userId,
+            userName: update.userName,
+            timestamp: update.timestamp
+          } : null
         });
       },
       currentTabId
     );
 
-    // Cleanup stale editors periodically
+    // Cleanup stale editors periodically (less frequently)
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       setActiveEditors((prev) => {
@@ -72,7 +109,7 @@ export const useActiveCellEditors = (rundownId: string | null) => {
 
         return changed ? next : prev;
       });
-    }, 1000); // Check every second
+    }, CLEANUP_INTERVAL);
 
     return () => {
       unsubscribe();
@@ -106,6 +143,7 @@ export const useActiveCellEditors = (rundownId: string | null) => {
 
   return {
     getEditorForCell,
-    getAllActiveEditors
+    getAllActiveEditors,
+    activeEditorCount: activeEditors.size
   };
 };
