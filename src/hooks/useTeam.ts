@@ -839,41 +839,12 @@ export const useTeam = () => {
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
-    // If data is already loaded, restore from cache
-    if (globalLoadedKeys.get(currentKey)) {
-      const cachedTeam = globalTeamCache.get(currentKey);
-      const cachedRole = globalRoleCache.get(currentKey);
-      
-      if (cachedTeam && cachedRole) {
-        setTeam(cachedTeam);
-        setUserRole(cachedRole);
-        setError(null);
-        
-        // Check if data is still fresh - skip refetches if within threshold
-        const lastLoadTime = globalLastLoadTime.get(currentKey) || 0;
-        const isDataFresh = Date.now() - lastLoadTime < TEAM_DATA_STALE_THRESHOLD;
-        
-        if (!isDataFresh) {
-          // Data is stale, refresh related data
-          loadAllUserTeams();
-          loadTeamMembers(cachedTeam.id);
-          if (cachedRole === 'admin' || cachedRole === 'manager') {
-            loadPendingInvitations(cachedTeam.id);
-          }
-          globalLastLoadTime.set(currentKey, Date.now());
-        }
-      }
-      setIsLoading(false);
-      return;
-    }
-    
-    // Check global state - only load if not already loaded/loading
+    // Always load team data - don't use cache optimization that skips loading
+    // The cache was causing delays for multi-team accounts by not restoring allUserTeams, teamMembers, etc.
     if (!globalLoadingStates.get(currentKey)) {
-      // Set the ref IMMEDIATELY to prevent race conditions
       loadedUserRef.current = currentKey;
       setIsLoading(true);
       
-      // If loading fails, clear global state so it can be retried
       loadTeamData().catch(() => {
         loadedUserRef.current = null;
         globalLoadedKeys.delete(currentKey);
