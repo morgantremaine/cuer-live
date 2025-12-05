@@ -61,19 +61,22 @@ export const useRundownStorage = () => {
       setLoading(true);
 
       try {
+        // PHASE 1 FIX: Exclude 'items' from dashboard query to reduce memory
+        // Items are loaded on-demand when opening a specific rundown
         const { data, error } = await supabase
           .from('rundowns')
-          .select('*')
+          .select('id, title, created_at, updated_at, folder_id, archived, show_date, timezone, start_time, end_time, user_id, last_updated_by, team_id, visibility, columns, icon, numbering_locked, locked_row_numbers, external_notes')
           .eq('team_id', teamId)
           .order('updated_at', { ascending: false });
 
-        console.log('🔍 useRundownStorage - Loading rundowns for teamId:', teamId, 'Found:', data?.length, 'rundowns');
+        console.log('🔍 useRundownStorage - Loading rundowns for teamId:', teamId, 'Found:', data?.length, 'rundowns (items excluded)');
 
         if (error) throw error;
 
+        // Map rundowns with empty items array - items will be loaded on-demand
         const rundowns = (data || []).map(rundown => ({
           ...rundown,
-          items: Array.isArray(rundown.items) ? rundown.items : []
+          items: [] // Items not loaded on dashboard - memory optimization
         }));
 
         setSavedRundowns(rundowns);
@@ -290,8 +293,21 @@ export const useRundownStorage = () => {
   const duplicateRundown = useCallback(async (originalRundown: SavedRundown) => {
     if (!user || !teamId) throw new Error('User not authenticated or no team');
 
+    // Fetch items on-demand if not already loaded (dashboard optimization)
+    let itemsToUse = originalRundown.items;
+    if (!itemsToUse || itemsToUse.length === 0) {
+      const { data: fullRundown, error: fetchError } = await supabase
+        .from('rundowns')
+        .select('items')
+        .eq('id', originalRundown.id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      itemsToUse = Array.isArray(fullRundown?.items) ? fullRundown.items : [];
+    }
+
     const duplicatedTitle = `${originalRundown.title} (Copy)`;
-    const duplicatedItems = originalRundown.items.map(item => ({
+    const duplicatedItems = itemsToUse.map((item: any) => ({
       ...item,
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }));
@@ -343,10 +359,10 @@ export const useRundownStorage = () => {
       }
     }
 
-    // Add to local state
+    // Add to local state (items not needed in dashboard view)
     const newRundown = {
       ...data,
-      items: Array.isArray(data.items) ? data.items : []
+      items: [] // Dashboard doesn't need items
     };
     setSavedRundowns(prev => [newRundown, ...prev]);
 
@@ -362,15 +378,30 @@ export const useRundownStorage = () => {
     if (!user) return false;
 
     try {
-      // Fetch the full rundown
+      // Fetch the full rundown with items (dashboard doesn't load items)
       const rundown = savedRundowns.find(r => r.id === rundownId);
       if (!rundown) {
         throw new Error('Rundown not found');
       }
 
+      // Fetch items on-demand since dashboard doesn't load them
+      const { data: fullRundown, error: fetchError } = await supabase
+        .from('rundowns')
+        .select('items')
+        .eq('id', rundownId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+
+      // Merge items with the rundown data
+      const rundownWithItems = {
+        ...rundown,
+        items: Array.isArray(fullRundown?.items) ? fullRundown.items : []
+      };
+
       // Duplicate to target team using operations
       const operations = new RundownOperations(user, saveRundown, setSavedRundowns);
-      await operations.duplicateRundownToTeam(rundown, targetTeamId, targetTeamName);
+      await operations.duplicateRundownToTeam(rundownWithItems, targetTeamId, targetTeamName);
 
       return true;
     } catch (error) {

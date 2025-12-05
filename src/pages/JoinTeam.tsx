@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
+import { useTeamContext } from '@/contexts/TeamContext';
 import { useActiveTeam } from '@/hooks/useActiveTeam';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -35,7 +35,7 @@ const JoinTeam = () => {
   const [profileError, setProfileError] = useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { user, signUp, signIn } = useAuth();
-  const { acceptInvitation } = useTeam();
+  const { acceptInvitation } = useTeamContext();
   const { setActiveTeam } = useActiveTeam();
   const { toast } = useToast();
 

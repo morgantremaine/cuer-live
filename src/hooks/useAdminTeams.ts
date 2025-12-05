@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { useTeam } from './useTeam';
+import { useTeamContext } from '@/contexts/TeamContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AdminTeam {
@@ -10,7 +10,7 @@ interface AdminTeam {
 
 export const useAdminTeams = () => {
   const { user } = useAuth();
-  const { team: currentTeam } = useTeam();
+  const { team: currentTeam } = useTeamContext();
   const [adminTeams, setAdminTeams] = useState<AdminTeam[]>([]);
   const [loading, setLoading] = useState(false);
 

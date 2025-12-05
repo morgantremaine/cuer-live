@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
+import { useTeamContext } from '@/contexts/TeamContext';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Column } from '../types/columns';
 import { debugLogger } from '@/utils/debugLogger';
@@ -58,7 +58,7 @@ const normalizeColumns = (cols: any[]): Column[] => {
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team } = useTeamContext();
   const { teamColumns, loading: teamColumnsLoading, addTeamColumn, renameTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);

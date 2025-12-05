@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-r
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ClockFormatProvider } from "@/contexts/ClockFormatContext";
+import { TeamProvider } from "@/contexts/TeamContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
 import { useEffect } from "react";
@@ -212,18 +213,20 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <ClockFormatProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <CustomCookieConsent />
-              <BrowserRouter>
-                <TawkToGlobalManager />
-                <AppUpdateNotification />
-                <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </ClockFormatProvider>
+          <TeamProvider>
+            <ClockFormatProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <CustomCookieConsent />
+                <BrowserRouter>
+                  <TawkToGlobalManager />
+                  <AppUpdateNotification />
+                  <AppRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </ClockFormatProvider>
+          </TeamProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
