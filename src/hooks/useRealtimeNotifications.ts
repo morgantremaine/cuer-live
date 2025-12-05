@@ -5,11 +5,15 @@ import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 /**
  * Hook that monitors realtime connection health and displays toast notifications
  * for connection status changes. Uses UnifiedConnectionHealth as single source of truth.
+ * 
+ * Only shows "Connection Restored" after recovering from a genuine failure,
+ * not during initial channel setup on navigation.
  */
 export const useRealtimeNotifications = (rundownId?: string) => {
   const { toast } = useToast();
-  const lastStatusRef = useRef<string>('healthy');
+  const lastStatusRef = useRef<string>('unknown');
   const toastIdRef = useRef<string | null>(null);
+  const hasHadStableConnectionRef = useRef<boolean>(false);
 
   const updateStatus = useCallback((health: { allHealthy: boolean; anyDegraded: boolean }) => {
     const currentStatus = health.allHealthy ? 'healthy' : 
@@ -23,18 +27,27 @@ export const useRealtimeNotifications = (rundownId?: string) => {
       }
 
       if (currentStatus === 'degraded') {
-        toastIdRef.current = toast({
-          title: "⚠️ Connection Issue",
-          description: "Some channels are reconnecting...",
-          duration: Infinity,
-        }).id;
-      } else if (currentStatus === 'healthy' && lastStatusRef.current !== 'healthy') {
-        toast({
-          title: "Connection Restored",
-          description: "✓ Real-time updates are working",
-          variant: "default",
-          duration: 3000,
-        });
+        // Only show degraded warning if we've had a stable connection before
+        if (hasHadStableConnectionRef.current) {
+          toastIdRef.current = toast({
+            title: "⚠️ Connection Issue",
+            description: "Some channels are reconnecting...",
+            duration: Infinity,
+          }).id;
+        }
+      } else if (currentStatus === 'healthy') {
+        if (!hasHadStableConnectionRef.current) {
+          // First time reaching healthy - mark as stable, no notification
+          hasHadStableConnectionRef.current = true;
+        } else if (lastStatusRef.current === 'degraded') {
+          // Only show "restored" if recovering from actual degraded state
+          toast({
+            title: "Connection Restored",
+            description: "✓ Real-time updates are working",
+            variant: "default",
+            duration: 3000,
+          });
+        }
       }
 
       lastStatusRef.current = currentStatus;
@@ -44,12 +57,12 @@ export const useRealtimeNotifications = (rundownId?: string) => {
   useEffect(() => {
     if (!rundownId) return;
 
+    // Reset flags on new rundown (fresh navigation)
+    hasHadStableConnectionRef.current = false;
+    lastStatusRef.current = 'unknown';
+
     // Subscribe to unified health updates
     const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, updateStatus);
-
-    // Initial check
-    const health = unifiedConnectionHealth.getHealth(rundownId);
-    updateStatus(health);
 
     return () => {
       unsubscribe();
