@@ -286,18 +286,15 @@ export const useTeam = () => {
 
     // Check global loading state - deduplicate concurrent requests
     if (globalLoadingStates.get(loadKey)) {
-      // Another instance is already loading this exact team
       const existingPromise = globalLoadPromises.get(loadKey);
       if (existingPromise) {
         try {
-          // Wait for existing promise with timeout
           await Promise.race([
             existingPromise,
             new Promise((_, reject) => setTimeout(() => reject(new Error('Load timeout')), 10000))
           ]);
         } catch (error) {
           console.error('Existing promise timeout or error:', error);
-          // Clear the hung state so we can retry
           globalLoadingStates.delete(loadKey);
           globalLoadPromises.delete(loadKey);
         }
@@ -309,116 +306,160 @@ export const useTeam = () => {
     globalLoadingStates.set(loadKey, true);
     isLoadingRef.current = true;
 
-    // Create a promise for this load operation with timeout
     const loadPromise = (async () => {
       try {
-        // Wrap entire load operation with 10 second timeout
         await Promise.race([
           (async () => {
-            // Load all user teams first
-            const userTeams = await loadAllUserTeams();
+            // Check for pending invitation first
+            const pendingToken = localStorage.getItem('pendingInvitationToken');
+            
+            // If no active team yet, we need to determine one
+            let targetTeamId = currentActiveTeamId;
+            
+            if (!targetTeamId) {
+              // Quick check for user's teams to find one
+              const { data: membershipData } = await supabase
+                .from('team_members')
+                .select('team_id')
+                .eq('user_id', user.id)
+                .limit(1)
+                .single();
+              
+              if (membershipData?.team_id) {
+                targetTeamId = membershipData.team_id;
+                setActiveTeam(targetTeamId);
+              } else if (pendingToken && pendingToken !== 'undefined') {
+                // User has pending invitation, don't create team
+                debugLogger.team('No membership found but have pending token, skipping team creation');
+                setError(null);
+                setTeam(null);
+                setUserRole(null);
+                setIsLoading(false);
+                isLoadingRef.current = false;
+                globalLoadingStates.delete(loadKey);
+                return;
+              } else {
+                // Create personal team
+                const { data: newTeamData, error: createError } = await supabase.rpc(
+                  'get_or_create_user_team',
+                  { user_uuid: user.id }
+                );
 
-      let targetTeamId = currentActiveTeamId;
+                if (createError) {
+                  console.error('Error creating team:', createError);
+                  setError('Failed to set up team');
+                  setIsLoading(false);
+                  isLoadingRef.current = false;
+                  globalLoadingStates.delete(loadKey);
+                  return;
+                } else if (newTeamData) {
+                  targetTeamId = newTeamData;
+                  setActiveTeam(targetTeamId);
+                }
+              }
+            }
 
-      // Check if user has pending invitation FIRST
-      const pendingToken = localStorage.getItem('pendingInvitationToken');
-      
-      if (pendingToken && pendingToken !== 'undefined' && userTeams.length === 0) {
-        debugLogger.team('No membership found but have pending token, skipping team creation');
-        console.log('User has pending invitation token, waiting for invitation processing on JoinTeam page');
-        
-        // Don't create a personal team if there's a pending invitation
-        setError(null);
-        setTeam(null);
-        setUserRole(null);
-        setIsLoading(false);
-        isLoadingRef.current = false;
-        globalLoadingStates.delete(loadKey);
-        return;
-      }
-
-        // Use activeTeamId if it's valid for this user, otherwise use first available team
-        if (currentActiveTeamId && userTeams.find(t => t.id === currentActiveTeamId)) {
-          targetTeamId = currentActiveTeamId;
-        } else if (userTeams.length > 0) {
-          // Use the most recent team as fallback
-          targetTeamId = userTeams[0].id;
-          setActiveTeam(targetTeamId);
-        } else {
-          // User has no team memberships - create a personal team
-          const { data: newTeamData, error: createError } = await supabase.rpc(
-            'get_or_create_user_team',
-            { user_uuid: user.id }
-          );
-
-          if (createError) {
-            console.error('Error creating team:', createError);
-            setError('Failed to set up team');
-            setIsLoading(false);
-            isLoadingRef.current = false;
-            globalLoadingStates.delete(loadKey);
-            return;
-          } else if (newTeamData) {
-            // Retry loading team data
-            setTimeout(() => {
-              globalLoadedKeys.delete(loadKey);
-              globalLoadingStates.delete(loadKey);
+            if (!targetTeamId) {
+              setError('Failed to load team data');
+              setTeam(null);
+              setUserRole(null);
+              setIsLoading(false);
               isLoadingRef.current = false;
-              loadTeamData();
-            }, 1000);
-            return;
-          }
-          setError('Failed to load team data');
-          setTeam(null);
-          setUserRole(null);
-          setIsLoading(false);
-          isLoadingRef.current = false;
-          globalLoadingStates.delete(loadKey);
-          return;
-        }
+              globalLoadingStates.delete(loadKey);
+              return;
+            }
 
-        // Load the specific team data
-        const { data: teamData, error: teamError } = await supabase
-          .from('teams')
-          .select('*')
-          .eq('id', targetTeamId)
-          .single();
+            // *** OPTIMIZED: Single RPC call gets everything ***
+            const { data: contextData, error: contextError } = await supabase.rpc(
+              'get_full_team_context',
+              { user_uuid: user.id, team_uuid: targetTeamId }
+            );
 
-        if (teamError) {
-          console.error('Error fetching team:', teamError);
-          throw teamError;
-        }
+            if (contextError) {
+              console.error('Error fetching team context:', contextError);
+              throw contextError;
+            }
 
-        // Get user's role in this team
-        const targetTeam = userTeams.find(t => t.id === targetTeamId);
-        const role = targetTeam?.role || 'member';
+            if (contextData?.error) {
+              // User not a member of this team - find one they are a member of
+              const { data: membershipData } = await supabase
+                .from('team_members')
+                .select('team_id')
+                .eq('user_id', user.id)
+                .limit(1)
+                .single();
+              
+              if (membershipData?.team_id) {
+                setActiveTeam(membershipData.team_id);
+                globalLoadingStates.delete(loadKey);
+                return;
+              }
+              throw new Error(contextData.error);
+            }
 
-        setTeam(teamData);
-        setUserRole(role);
-        
-        // Cache the team data and role for future hook instances
-        globalTeamCache.set(loadKey, teamData);
-        globalRoleCache.set(loadKey, role);
-        
-        // Only set as active team if it's different from current
-        if (currentActiveTeamId !== targetTeamId) {
-          setActiveTeam(targetTeamId);
-        }
-        
-        setError(null);
-
-            // Load additional data after setting main team state
-            loadTeamMembers(targetTeamId);
+            // Parse and set all state from single response
+            const teamData = contextData.team;
+            const role = contextData.userRole as 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter';
+            
+            setTeam(teamData);
+            setUserRole(role);
+            
+            // Set all user teams
+            const userTeams: UserTeam[] = (contextData.allUserTeams || []).map((t: any) => ({
+              id: t.team_id,
+              name: t.team_name,
+              role: t.role,
+              joined_at: t.joined_at
+            }));
+            setAllUserTeams(userTeams);
+            
+            // Set team members with profiles
+            const members: TeamMember[] = (contextData.teamMembers || []).map((m: any) => ({
+              id: m.id,
+              user_id: m.user_id,
+              role: m.role,
+              joined_at: m.joined_at,
+              profiles: m.email ? {
+                email: m.email,
+                full_name: m.full_name,
+                profile_picture_url: m.profile_picture_url
+              } : undefined
+            }));
+            setTeamMembers(members);
+            
+            // Set pending invitations (only if admin/manager)
             if (role === 'admin' || role === 'manager') {
-              loadPendingInvitations(targetTeamId);
+              const invitations: PendingInvitation[] = (contextData.pendingInvitations || []).map((i: any) => ({
+                id: i.id,
+                email: i.email,
+                role: i.role,
+                created_at: i.created_at
+              }));
+              setPendingInvitations(invitations);
             }
             
+            // Set organization members if applicable
+            if (contextData.organizationMembers?.length > 0) {
+              setOrganizationMembers(contextData.organizationMembers);
+            }
+            
+            // Cache the team data and role
+            globalTeamCache.set(loadKey, teamData);
+            globalRoleCache.set(loadKey, role);
+            
+            if (currentActiveTeamId !== targetTeamId) {
+              setActiveTeam(targetTeamId);
+            }
+            
+            setError(null);
+            
             const loadTime = Date.now() - loadStartTime;
-            if (loadTime > 5000) {
-              console.warn(`⚠️ Team load took ${loadTime}ms - consider optimization`);
+            if (loadTime > 2000) {
+              console.warn(`⚠️ Team load took ${loadTime}ms`);
+            } else {
+              console.log(`✅ Team load completed in ${loadTime}ms`);
             }
           })(),
-          // 10 second timeout
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Team load timeout after 10 seconds')), 10000)
           )
@@ -439,14 +480,13 @@ export const useTeam = () => {
       }
     })();
 
-    // Store the promise for request deduplication
     globalLoadPromises.set(loadKey, loadPromise);
     try {
       await loadPromise;
     } finally {
       globalLoadPromises.delete(loadKey);
     }
-  }, [user, activeTeamId, setActiveTeam, loadAllUserTeams]);
+  }, [user, activeTeamId, setActiveTeam]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
     if (teamId === activeTeamId && teamId === team?.id) {
