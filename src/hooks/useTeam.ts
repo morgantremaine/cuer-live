@@ -490,7 +490,7 @@ export const useTeam = () => {
     } finally {
       globalLoadPromises.delete(loadKey);
     }
-  }, [user, activeTeamId, setActiveTeam]);
+  }, [user?.id, activeTeamId, setActiveTeam]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
     if (teamId === activeTeamId && teamId === team?.id) {

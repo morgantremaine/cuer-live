@@ -102,7 +102,7 @@ export const useInvitationHandler = () => {
     return () => {
       clearTimeout(timer);
     };
-  }, [user, loadTeamData, toast, navigate, location.pathname]);
+  }, [user?.id, loadTeamData, toast, navigate, location.pathname]);
 
   // Reset processing flag when user changes
   useEffect(() => {
