@@ -96,23 +96,34 @@ export const useActiveCellEditors = (
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       setActiveEditors((prev) => {
-        const next = new Map(prev);
-        let changed = false;
+        // First check if any cleanup is actually needed (avoid creating Map unnecessarily)
+        let hasStale = false;
+        for (const [, editor] of prev.entries()) {
+          if (now - editor.timestamp > STALE_TIMEOUT) {
+            hasStale = true;
+            break;
+          }
+        }
+        
+        // Only create new Map if there are stale entries to remove
+        if (!hasStale) return prev;
 
+        const next = new Map(prev);
         for (const [cellKey, editor] of next.entries()) {
           if (now - editor.timestamp > STALE_TIMEOUT) {
             next.delete(cellKey);
-            changed = true;
           }
         }
 
-        return changed ? next : prev;
+        return next;
       });
     }, CLEANUP_INTERVAL);
 
     return () => {
       unsubscribe();
       clearInterval(cleanupInterval);
+      // Clean up batcher processor to prevent memory leaks from stale closures
+      broadcastBatcher.unregisterProcessor('focus');
     };
   }, [rundownId]);
 
