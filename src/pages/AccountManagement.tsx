@@ -14,7 +14,7 @@ import { SubscriptionStatus } from '@/components/subscription/SubscriptionStatus
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans'
 import { IntegrationsSettings } from '@/components/integrations/IntegrationsSettings'
 import { useSubscription } from '@/hooks/useSubscription'
-import { useTeamContext } from '@/contexts/TeamContext'
+import { useTeam } from '@/hooks/useTeam'
 import { supabase } from '@/integrations/supabase/client'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { ChevronDown, ChevronRight } from 'lucide-react'
@@ -34,7 +34,7 @@ const AccountManagement = () => {
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false)
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { subscribed, access_type, openCustomerPortal } = useSubscription()
-  const { team, allUserTeams, userRole, switchToTeam, isLoading: isLoadingTeam, error: teamError, loadTeamData } = useTeamContext()
+  const { team, allUserTeams, userRole, switchToTeam, isLoading: isLoadingTeam, error: teamError, loadTeamData } = useTeam()
   const { toast } = useToast()
   const navigate = useNavigate()
 

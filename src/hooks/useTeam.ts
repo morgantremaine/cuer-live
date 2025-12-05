@@ -14,12 +14,6 @@ const globalRealtimeChannels = new Map<string, any>();
 // Global cache for team data and roles to share across hook instances
 const globalTeamCache = new Map<string, Team>();
 const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter'>();
-// Track last successful load time to prevent unnecessary refetches on tab switch
-const globalLastLoadTime = new Map<string, number>();
-const TEAM_DATA_STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
-// Global initial load guard - keyed by userId only (not activeTeamId)
-// This persists through activeTeamId changes during initialization cascade
-const globalInitialLoadInProgress = new Map<string, boolean>();
 
 export interface Team {
   id: string;
@@ -80,9 +74,6 @@ export const useTeam = () => {
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
-  
-  // Note: Using global globalInitialLoadInProgress map instead of instance-level ref
-  // to prevent double-load during activeTeamId initialization cascade
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -486,7 +477,6 @@ export const useTeam = () => {
         isLoadingRef.current = false;
         globalLoadingStates.delete(loadKey);
         globalLoadedKeys.set(loadKey, true);
-        globalLastLoadTime.set(loadKey, Date.now());
       }
     })();
 
@@ -496,7 +486,7 @@ export const useTeam = () => {
     } finally {
       globalLoadPromises.delete(loadKey);
     }
-  }, [user?.id, activeTeamId, setActiveTeam]);
+  }, [user, activeTeamId, setActiveTeam]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
     if (teamId === activeTeamId && teamId === team?.id) {
@@ -515,22 +505,13 @@ export const useTeam = () => {
     globalRoleCache.delete(oldLoadKey);
     globalRoleCache.delete(newLoadKey);
     
-    // Reset the initial loading flag to allow this explicit team switch
-    // Set it to true immediately so the useEffect doesn't also trigger a load
-    globalInitialLoadInProgress.set(user?.id || '', true);
-    
     // Update the active team state and force reload
     setActiveTeam(teamId);
     setIsLoading(true);
     isLoadingRef.current = false;
     loadedUserRef.current = null;
     
-    loadTeamData().finally(() => {
-      // Small delay to ensure React has processed all state updates
-      setTimeout(() => {
-        globalInitialLoadInProgress.delete(user?.id || '');
-      }, 100);
-    });
+    loadTeamData();
   }, [team?.id, activeTeamId, setActiveTeam, loadTeamData, user?.id]);
 
   const inviteTeamMember = async (email: string, role: 'member' | 'manager' | 'showcaller' | 'teleprompter' = 'member') => {
@@ -849,38 +830,46 @@ export const useTeam = () => {
       setTeam(null);
       setAllUserTeams([]);
       setIsLoading(false);
-      globalInitialLoadInProgress.delete(user?.id || '');
-      return;
-    }
-    
-    // Prevent double-load during activeTeamId initialization cascade
-    // When loadTeamData() calls setActiveTeam(), the activeTeamId change re-triggers this effect
-    // Skip the second load if we're already loading for this user (keyed by userId only)
-    if (globalInitialLoadInProgress.get(user.id)) {
       return;
     }
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
-    // Always load team data - don't use cache optimization that skips loading
-    // The cache was causing delays for multi-team accounts by not restoring allUserTeams, teamMembers, etc.
+    // If data is already loaded, restore from cache and load related data
+    if (globalLoadedKeys.get(currentKey)) {
+      const cachedTeam = globalTeamCache.get(currentKey);
+      const cachedRole = globalRoleCache.get(currentKey);
+      
+      if (cachedTeam && cachedRole) {
+        setTeam(cachedTeam);
+        setUserRole(cachedRole);
+        setError(null);
+        
+        // Load all user teams for the dropdown
+        loadAllUserTeams();
+        
+        // Load team members and invitations for this cached team
+        loadTeamMembers(cachedTeam.id);
+        if (cachedRole === 'admin' || cachedRole === 'manager') {
+          loadPendingInvitations(cachedTeam.id);
+        }
+      }
+      setIsLoading(false);
+      return;
+    }
+    
+    // Check global state - only load if not already loaded/loading
     if (!globalLoadingStates.get(currentKey)) {
-      globalInitialLoadInProgress.set(user.id, true);
+      // Set the ref IMMEDIATELY to prevent race conditions
       loadedUserRef.current = currentKey;
       setIsLoading(true);
       
-      loadTeamData()
-        .finally(() => {
-          // Small delay to ensure React has processed all state updates
-          setTimeout(() => {
-            globalInitialLoadInProgress.delete(user.id);
-          }, 100);
-        })
-        .catch(() => {
-          loadedUserRef.current = null;
-          globalLoadedKeys.delete(currentKey);
-          globalLoadingStates.delete(currentKey);
-        });
+      // If loading fails, clear global state so it can be retried
+      loadTeamData().catch(() => {
+        loadedUserRef.current = null;
+        globalLoadedKeys.delete(currentKey);
+        globalLoadingStates.delete(currentKey);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeTeamId]);

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { useTeamContext } from '@/contexts/TeamContext';
+import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield, UserX, HelpCircle } from 'lucide-react';
@@ -66,7 +66,6 @@ const TeamManagement = () => {
   const [roleChangeDialog, setRoleChangeDialog] = useState<{ memberId: string; memberName: string; newRole: 'member' | 'manager' | 'showcaller' | 'teleprompter' } | null>(null);
   const [isChangingRole, setIsChangingRole] = useState(false);
   
-  const teamContext = useTeamContext();
   const {
     team,
     teamMembers,
@@ -77,6 +76,7 @@ const TeamManagement = () => {
     error,
     inviteTeamMember,
     removeTeamMemberWithTransfer,
+    getTransferPreview,
     revokeInvitation,
     updateTeamName,
     updateMemberRole,
@@ -84,9 +84,7 @@ const TeamManagement = () => {
     loadOrganizationMembers,
     addOrgMemberToTeam,
     allUserTeams
-  } = teamContext;
-  // getTransferPreview is accessed via teamContext if needed
-  const getTransferPreview = (teamContext as any).getTransferPreview;
+  } = useTeam();
   
   const { max_team_members, subscription_tier, loading: subscriptionLoading } = useSubscription();
   const { toast } = useToast();

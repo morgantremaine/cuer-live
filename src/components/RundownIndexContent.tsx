@@ -13,7 +13,7 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
-import { useTeamContext } from '@/contexts/TeamContext';
+import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
@@ -36,7 +36,7 @@ const RundownIndexContentInner = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   // Get team data and user for MOS integration setup
-  const { team, userRole } = useTeamContext();
+  const { team, userRole } = useTeam();
   const { user } = useAuth();
   
   const {

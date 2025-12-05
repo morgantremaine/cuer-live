@@ -153,11 +153,6 @@ export const useConsolidatedRealtimeRundown = ({
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastCatchupAttemptRef = useRef<number>(0);
   const MIN_CATCHUP_INTERVAL = 15000; // 15 seconds minimum between catch-ups
-  
-  // Mount-time-based grace period to prevent false "Connection restored" during initial load
-  // This handles cases where effect dependencies (like tokenReady) cause re-runs during auth initialization
-  const mountTimeRef = useRef<number>(Date.now());
-  const INITIAL_LOAD_GRACE_PERIOD = 10000; // 10 seconds
 
   // Quick version check - lightweight pre-check before full sync
   const performQuickVersionCheck = useCallback(async (): Promise<{ needsSync: boolean; serverVersion?: number }> => {
@@ -452,12 +447,8 @@ export const useConsolidatedRealtimeRundown = ({
   // CRITICAL FIX: Wait for all channels to stabilize before catch-up sync
   const wasConnectedRef = useRef(isConnected);
   useEffect(() => {
-    // Check if we're still within the initial load grace period
-    // This prevents false "Connection restored" triggers during auth/team initialization cascade
-    const isWithinInitialLoadPeriod = Date.now() - mountTimeRef.current < INITIAL_LOAD_GRACE_PERIOD;
-    
     // FIXED: Skip during initial load - initial data already fetched in subscribe callback
-    if (isConnected && !wasConnectedRef.current && rundownId && !isInitialLoadRef.current && !isWithinInitialLoadPeriod) {
+    if (isConnected && !wasConnectedRef.current && rundownId && !isInitialLoadRef.current) {
       console.log('📡 Connection restored - waiting for channel stabilization before catch-up sync...');
       
       // Update unified health service

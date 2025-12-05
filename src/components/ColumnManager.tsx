@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
-import { useTeamContext } from '@/contexts/TeamContext';
+import { useTeam } from '@/hooks/useTeam';
 import LayoutManager from './ColumnManager/LayoutManager';
 import ColumnEditor from './ColumnManager/ColumnEditor';
 import ColumnList from './ColumnManager/ColumnList';
@@ -64,7 +64,7 @@ const ColumnManager = ({
     setDefaultLayout
   } = operations;
 
-  const { userRole } = useTeamContext();
+  const { userRole } = useTeam();
   const isTeamAdmin = userRole === 'admin';
 
   const [position, setPosition] = useState({ x: 100, y: 100 });

@@ -15,7 +15,7 @@ import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
-import { useTeamContext } from '@/contexts/TeamContext';
+import { useTeam } from '@/hooks/useTeam';
 import { useRundownLimits } from '@/hooks/useRundownLimits';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
@@ -42,7 +42,7 @@ import {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading, error: teamError, loadTeamData, createNewTeam } = useTeamContext();
+  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading, error: teamError, loadTeamData, createNewTeam } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, duplicateRundownToTeam, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();

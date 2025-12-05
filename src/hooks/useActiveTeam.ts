@@ -34,12 +34,9 @@ export const useActiveTeam = () => {
     const userKey = `${ACTIVE_TEAM_KEY}-${user.id}`;
     const storedTeamId = localStorage.getItem(userKey);
     
-    // Only update state if values actually changed to prevent unnecessary re-renders
-    setState(prev => {
-      if (prev.activeTeamId === storedTeamId && !prev.loading) {
-        return prev; // Return same reference to prevent re-render
-      }
-      return { activeTeamId: storedTeamId, loading: false };
+    setState({
+      activeTeamId: storedTeamId,
+      loading: false
     });
 
     // Listen for storage changes to sync across tabs and instances
@@ -55,7 +52,7 @@ export const useActiveTeam = () => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user?.id]);
+  }, [user]);
 
   const setActiveTeam = useCallback((teamId: string | null) => {
     console.log('🔄 useActiveTeam - setActiveTeam called:', { teamId, user: user?.id });

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeamContext } from '@/contexts/TeamContext';
+import { useTeam } from '@/hooks/useTeam';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Column } from '../types/columns';
 import { debugLogger } from '@/utils/debugLogger';
@@ -58,7 +58,7 @@ const normalizeColumns = (cols: any[]): Column[] => {
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
-  const { team } = useTeamContext();
+  const { team } = useTeam();
   const { teamColumns, loading: teamColumnsLoading, addTeamColumn, renameTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
@@ -481,7 +481,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Don't save - this is just a preview
   }, [isLoading, mergeColumnsWithTeamColumns, columnNameOverrides]);
 
-  // Load preferences when rundown changes or when loadColumnPreferences becomes ready
+  // Load preferences when rundown changes - but only once per rundown
   useEffect(() => {
     // Reset the loaded flag when rundown changes
     hasLoadedRef.current = false;
@@ -490,7 +490,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       hasLoadedRef.current = true;
       loadColumnPreferences();
     }
-  }, [rundownId, user?.id, loadColumnPreferences]);
+  }, [rundownId, user?.id]);
 
   // Update columns when team columns change - wait until all loading is done
   useEffect(() => {
