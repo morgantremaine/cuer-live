@@ -265,6 +265,9 @@ serve(async (req) => {
           );
       }
 
+      // Calculate new doc_version to trigger SharedRundown polling updates
+      const newDocVersion = (rundown.doc_version || 0) + 1;
+
       // Update the rundown with the new items and lock state
       const { data: updatedRundown, error: updateError } = await supabase
         .from('rundowns')
@@ -274,7 +277,8 @@ serve(async (req) => {
           numbering_locked: updatedNumberingLocked,
           updated_at: new Date().toISOString(),
           last_updated_by: user.id, // Use authenticated user
-          tab_id: operation.tabId || null
+          tab_id: operation.tabId || null,
+          doc_version: newDocVersion
         })
         .eq('id', operation.rundownId)
         .select()
