@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useTeam } from './useTeam';
@@ -12,32 +12,50 @@ export interface TeamCustomColumn {
   created_at: string;
 }
 
-// Helper to retry RPC calls with exponential backoff
-const retryRpc = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => {
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (i === maxRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)));
-    }
-  }
-  throw new Error('Max retries exceeded');
-};
+// Constants for retry protection
+const LOAD_COOLDOWN_MS = 5000; // Minimum 5 seconds between load attempts
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 export const useTeamCustomColumns = () => {
   const { user } = useAuth();
   const { team } = useTeam();
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  
+  // Refs for retry protection
+  const lastLoadAttemptRef = useRef<number>(0);
+  const consecutiveFailuresRef = useRef<number>(0);
+  const currentTeamIdRef = useRef<string | null>(null);
 
-  // Load team custom columns
-  const loadTeamColumns = useCallback(async () => {
+  // Load team custom columns with retry protection
+  const loadTeamColumns = useCallback(async (forceRetry = false) => {
     if (!team?.id || !user) {
       setTeamColumns([]);
       setLoading(false);
+      setLoadError(false);
       return;
     }
+
+    // Reset failure count if team changed
+    if (currentTeamIdRef.current !== team.id) {
+      currentTeamIdRef.current = team.id;
+      consecutiveFailuresRef.current = 0;
+    }
+
+    // Check cooldown (unless force retry)
+    const now = Date.now();
+    if (!forceRetry && now - lastLoadAttemptRef.current < LOAD_COOLDOWN_MS) {
+      return;
+    }
+
+    // Check max failures (unless force retry)
+    if (!forceRetry && consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+      console.warn(`Team custom columns: stopped retrying after ${MAX_CONSECUTIVE_FAILURES} failures`);
+      return;
+    }
+
+    lastLoadAttemptRef.current = now;
 
     try {
       // Ensure we have a valid session before making the call
@@ -49,25 +67,37 @@ export const useTeamCustomColumns = () => {
         return;
       }
 
-      const { data, error } = await retryRpc(async () => 
-        await supabase.rpc('get_team_custom_columns', {
-          team_uuid: team.id
-        })
-      );
+      const { data, error } = await supabase.rpc('get_team_custom_columns', {
+        team_uuid: team.id
+      });
 
       if (error) {
         console.error('Error loading team custom columns:', error);
+        consecutiveFailuresRef.current++;
+        setLoadError(true);
         setTeamColumns([]);
       } else {
+        consecutiveFailuresRef.current = 0;
+        setLoadError(false);
         setTeamColumns(data || []);
       }
     } catch (error) {
       console.error('Failed to load team custom columns:', error);
+      consecutiveFailuresRef.current++;
+      setLoadError(true);
       setTeamColumns([]);
     } finally {
       setLoading(false);
     }
   }, [team?.id, user]);
+
+  // Manual retry function for user-triggered retries
+  const retryLoad = useCallback(() => {
+    consecutiveFailuresRef.current = 0;
+    setLoadError(false);
+    setLoading(true);
+    loadTeamColumns(true);
+  }, [loadTeamColumns]);
 
   // Add a new team custom column
   const addTeamColumn = useCallback(async (columnKey: string, columnName: string) => {
@@ -243,9 +273,11 @@ export const useTeamCustomColumns = () => {
   return {
     teamColumns,
     loading,
+    loadError,
     addTeamColumn,
     renameTeamColumn,
     deleteTeamColumn,
-    reloadTeamColumns: loadTeamColumns
+    reloadTeamColumns: loadTeamColumns,
+    retryLoad
   };
 };
