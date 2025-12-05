@@ -273,20 +273,31 @@ export const useStructuralSave = (
       pendingOperationsRef.current.push(operation);
       onUnsavedChanges?.();
 
-      // Debounce save operations
+      // Clear any existing debounce timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
-      // Intelligent debounce based on lock state
-      // Longer delay for locked rows to batch multiple operations and reduce lock contention
-      const debounceDelay = operationData.numberingLocked ? 1500 : 500;
+      // Immediate save for add operations to prevent ghost rows on quick navigation
+      const immediateOperations = ['add_row', 'add_header'];
+      const shouldSaveImmediately = immediateOperations.includes(operationType);
 
-      saveTimeoutRef.current = setTimeout(() => {
+      if (shouldSaveImmediately) {
+        // Save immediately - prevents ghost rows that disappear on refresh
         saveStructuralOperations().catch(error => {
           console.error('Structural save error:', error);
         });
-      }, debounceDelay);
+      } else {
+        // Debounce other operations (delete, move, reorder, toggle_lock)
+        // Longer delay for locked rows to batch multiple operations and reduce lock contention
+        const debounceDelay = operationData.numberingLocked ? 1500 : 500;
+
+        saveTimeoutRef.current = setTimeout(() => {
+          saveStructuralOperations().catch(error => {
+            console.error('Structural save error:', error);
+          });
+        }, debounceDelay);
+      }
     },
     [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
