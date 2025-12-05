@@ -1,6 +1,5 @@
 export interface TalentPreset {
-  slot: number; // 1-9
+  slot: number; // 0-9
   name: string;
-  color?: string; // Optional color for visual identification
-  type?: 'talent' | 'text'; // 'talent' formats as [NAME {color}], 'text' inserts plain text
+  color?: string; // Optional color - if set, formats as [NAME {color}], if not set, plain text
 }

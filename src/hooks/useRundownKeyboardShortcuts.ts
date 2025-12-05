@@ -94,9 +94,9 @@ export const useRundownKeyboardShortcuts = ({
           if (preset) {
             e.preventDefault();
             
-            // Check preset type - 'text' inserts plain text, 'talent' formats as [NAME {color}]
+            // If color is set, format as [NAME {color}], otherwise plain text
             let insertText = preset.name;
-            if (preset.type !== 'text' && preset.color) {
+            if (preset.color) {
               const colorName = getColorNameFromHex(preset.color);
               if (colorName) {
                 insertText = `[${preset.name} {${colorName}}]`;
