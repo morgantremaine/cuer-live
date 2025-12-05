@@ -77,6 +77,11 @@ export const useTeam = () => {
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
+  
+  // Mount-level loading flag to prevent double-load during activeTeamId initialization cascade
+  // When loadTeamData() calls setActiveTeam(), it changes activeTeamId which re-triggers the useEffect
+  // This flag prevents that cascade from starting a second load
+  const isInitialLoadingRef = useRef(false);
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -509,13 +514,19 @@ export const useTeam = () => {
     globalRoleCache.delete(oldLoadKey);
     globalRoleCache.delete(newLoadKey);
     
+    // Reset the initial loading flag to allow this explicit team switch
+    // Set it to true immediately so the useEffect doesn't also trigger a load
+    isInitialLoadingRef.current = true;
+    
     // Update the active team state and force reload
     setActiveTeam(teamId);
     setIsLoading(true);
     isLoadingRef.current = false;
     loadedUserRef.current = null;
     
-    loadTeamData();
+    loadTeamData().finally(() => {
+      isInitialLoadingRef.current = false;
+    });
   }, [team?.id, activeTeamId, setActiveTeam, loadTeamData, user?.id]);
 
   const inviteTeamMember = async (email: string, role: 'member' | 'manager' | 'showcaller' | 'teleprompter' = 'member') => {
@@ -834,6 +845,15 @@ export const useTeam = () => {
       setTeam(null);
       setAllUserTeams([]);
       setIsLoading(false);
+      isInitialLoadingRef.current = false;
+      return;
+    }
+    
+    // Prevent double-load during activeTeamId initialization cascade
+    // When loadTeamData() calls setActiveTeam(), the activeTeamId change re-triggers this effect
+    // Skip the second load if we're already loading for this user
+    if (isInitialLoadingRef.current) {
+      console.log('⏳ Skipping duplicate team load - already loading for this user');
       return;
     }
     
@@ -842,14 +862,19 @@ export const useTeam = () => {
     // Always load team data - don't use cache optimization that skips loading
     // The cache was causing delays for multi-team accounts by not restoring allUserTeams, teamMembers, etc.
     if (!globalLoadingStates.get(currentKey)) {
+      isInitialLoadingRef.current = true;
       loadedUserRef.current = currentKey;
       setIsLoading(true);
       
-      loadTeamData().catch(() => {
-        loadedUserRef.current = null;
-        globalLoadedKeys.delete(currentKey);
-        globalLoadingStates.delete(currentKey);
-      });
+      loadTeamData()
+        .finally(() => {
+          isInitialLoadingRef.current = false;
+        })
+        .catch(() => {
+          loadedUserRef.current = null;
+          globalLoadedKeys.delete(currentKey);
+          globalLoadingStates.delete(currentKey);
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeTeamId]);
