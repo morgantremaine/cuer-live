@@ -95,6 +95,25 @@ class BroadcastBatcher {
   }
 
   /**
+   * Unregister a processor and clear its queue
+   * Call this on component unmount to prevent memory leaks from stale closures
+   */
+  unregisterProcessor(type: UpdateType): void {
+    this.processors.delete(type);
+    // Clear any pending timer
+    const timer = this.batchTimers.get(type);
+    if (timer) {
+      clearTimeout(timer);
+      this.batchTimers.delete(type);
+    }
+    // Clear the queue
+    const queue = this.queues.get(type);
+    if (queue) {
+      queue.clear();
+    }
+  }
+
+  /**
    * Queue an update for batched processing
    * Updates with the same key are coalesced (only latest kept)
    */
