@@ -1446,10 +1446,6 @@ export type Database = {
           user_name: string
         }[]
       }
-      get_full_team_context: {
-        Args: { team_uuid: string; user_uuid: string }
-        Returns: Json
-      }
       get_invitation_details_safe: {
         Args: { invitation_token: string }
         Returns: Json
