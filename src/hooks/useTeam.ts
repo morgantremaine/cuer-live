@@ -56,6 +56,10 @@ export interface OrganizationMember {
   teams_list: string[];
 }
 
+// Constants for retry protection
+const LOAD_COOLDOWN_MS = 3000; // Minimum 3 seconds between load attempts
+const MAX_CONSECUTIVE_FAILURES = 3;
+
 export const useTeam = () => {
   const { user } = useAuth();
   const { activeTeamId, setActiveTeam } = useActiveTeam();
@@ -74,6 +78,11 @@ export const useTeam = () => {
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
+  
+  // Refs for retry protection
+  const lastLoadAttemptRef = useRef<number>(0);
+  const consecutiveFailuresRef = useRef<number>(0);
+  const lastLoadKeyRef = useRef<string | null>(null);
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -275,7 +284,7 @@ export const useTeam = () => {
     }
   }, [team?.id, user?.id, loadTeamMembers]);
 
-  const loadTeamData = useCallback(async () => {
+  const loadTeamData = useCallback(async (forceRetry = false) => {
     const currentActiveTeamId = activeTeamId;
     const loadKey = `${user?.id}-${currentActiveTeamId}`;
     
@@ -283,6 +292,27 @@ export const useTeam = () => {
       setIsLoading(false);
       return;
     }
+
+    // Reset failure count if load key changed
+    if (lastLoadKeyRef.current !== loadKey) {
+      lastLoadKeyRef.current = loadKey;
+      consecutiveFailuresRef.current = 0;
+    }
+
+    // Check cooldown (unless force retry)
+    const now = Date.now();
+    if (!forceRetry && now - lastLoadAttemptRef.current < LOAD_COOLDOWN_MS) {
+      console.log('⏭️ Skipping team load - cooldown active');
+      return;
+    }
+
+    // Check max failures (unless force retry)
+    if (!forceRetry && consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+      console.warn(`Team load: stopped retrying after ${MAX_CONSECUTIVE_FAILURES} failures`);
+      return;
+    }
+
+    lastLoadAttemptRef.current = now;
 
     // Check global loading state - deduplicate concurrent requests
     if (globalLoadingStates.get(loadKey)) {
@@ -443,9 +473,11 @@ export const useTeam = () => {
               setOrganizationMembers(contextData.organizationMembers);
             }
             
-            // Cache the team data and role
+            // Cache the team data and role - ONLY mark as loaded on SUCCESS
             globalTeamCache.set(loadKey, teamData);
             globalRoleCache.set(loadKey, role);
+            globalLoadedKeys.set(loadKey, true);
+            consecutiveFailuresRef.current = 0; // Reset on success
             
             if (currentActiveTeamId !== targetTeamId) {
               setActiveTeam(targetTeamId);
@@ -466,6 +498,13 @@ export const useTeam = () => {
         ]);
       } catch (error) {
         console.error('Failed to load team data:', error);
+        consecutiveFailuresRef.current++;
+        
+        // Clear any corrupted cache state on error
+        globalLoadedKeys.delete(loadKey);
+        globalTeamCache.delete(loadKey);
+        globalRoleCache.delete(loadKey);
+        
         const errorMessage = error instanceof Error && error.message.includes('timeout') 
           ? 'Loading timed out. Please check your connection and try again.'
           : 'Failed to load team data';
@@ -476,7 +515,7 @@ export const useTeam = () => {
         setIsLoading(false);
         isLoadingRef.current = false;
         globalLoadingStates.delete(loadKey);
-        globalLoadedKeys.set(loadKey, true);
+        // NOTE: globalLoadedKeys is now set in success path only, not here
       }
     })();
 
@@ -853,9 +892,17 @@ export const useTeam = () => {
         if (cachedRole === 'admin' || cachedRole === 'manager') {
           loadPendingInvitations(cachedTeam.id);
         }
+        setIsLoading(false);
+        return;
+      } else {
+        // Cache is corrupted - marked as loaded but no data
+        // Clear corrupted state and trigger reload
+        console.warn('Cache miss detected - clearing corrupted cache and reloading');
+        globalLoadedKeys.delete(currentKey);
+        globalTeamCache.delete(currentKey);
+        globalRoleCache.delete(currentKey);
+        // Fall through to load below
       }
-      setIsLoading(false);
-      return;
     }
     
     // Check global state - only load if not already loaded/loading
