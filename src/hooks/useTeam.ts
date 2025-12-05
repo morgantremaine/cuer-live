@@ -17,6 +17,9 @@ const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager' | 'showca
 // Track last successful load time to prevent unnecessary refetches on tab switch
 const globalLastLoadTime = new Map<string, number>();
 const TEAM_DATA_STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+// Global initial load guard - keyed by userId only (not activeTeamId)
+// This persists through activeTeamId changes during initialization cascade
+const globalInitialLoadInProgress = new Map<string, boolean>();
 
 export interface Team {
   id: string;
@@ -78,10 +81,8 @@ export const useTeam = () => {
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
   
-  // Mount-level loading flag to prevent double-load during activeTeamId initialization cascade
-  // When loadTeamData() calls setActiveTeam(), it changes activeTeamId which re-triggers the useEffect
-  // This flag prevents that cascade from starting a second load
-  const isInitialLoadingRef = useRef(false);
+  // Note: Using global globalInitialLoadInProgress map instead of instance-level ref
+  // to prevent double-load during activeTeamId initialization cascade
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -516,7 +517,7 @@ export const useTeam = () => {
     
     // Reset the initial loading flag to allow this explicit team switch
     // Set it to true immediately so the useEffect doesn't also trigger a load
-    isInitialLoadingRef.current = true;
+    globalInitialLoadInProgress.set(user?.id || '', true);
     
     // Update the active team state and force reload
     setActiveTeam(teamId);
@@ -525,7 +526,10 @@ export const useTeam = () => {
     loadedUserRef.current = null;
     
     loadTeamData().finally(() => {
-      isInitialLoadingRef.current = false;
+      // Small delay to ensure React has processed all state updates
+      setTimeout(() => {
+        globalInitialLoadInProgress.delete(user?.id || '');
+      }, 100);
     });
   }, [team?.id, activeTeamId, setActiveTeam, loadTeamData, user?.id]);
 
@@ -845,14 +849,14 @@ export const useTeam = () => {
       setTeam(null);
       setAllUserTeams([]);
       setIsLoading(false);
-      isInitialLoadingRef.current = false;
+      globalInitialLoadInProgress.delete(user?.id || '');
       return;
     }
     
     // Prevent double-load during activeTeamId initialization cascade
     // When loadTeamData() calls setActiveTeam(), the activeTeamId change re-triggers this effect
-    // Skip the second load if we're already loading for this user
-    if (isInitialLoadingRef.current) {
+    // Skip the second load if we're already loading for this user (keyed by userId only)
+    if (globalInitialLoadInProgress.get(user.id)) {
       console.log('⏳ Skipping duplicate team load - already loading for this user');
       return;
     }
@@ -862,13 +866,16 @@ export const useTeam = () => {
     // Always load team data - don't use cache optimization that skips loading
     // The cache was causing delays for multi-team accounts by not restoring allUserTeams, teamMembers, etc.
     if (!globalLoadingStates.get(currentKey)) {
-      isInitialLoadingRef.current = true;
+      globalInitialLoadInProgress.set(user.id, true);
       loadedUserRef.current = currentKey;
       setIsLoading(true);
       
       loadTeamData()
         .finally(() => {
-          isInitialLoadingRef.current = false;
+          // Small delay to ensure React has processed all state updates
+          setTimeout(() => {
+            globalInitialLoadInProgress.delete(user.id);
+          }, 100);
         })
         .catch(() => {
           loadedUserRef.current = null;
