@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { authMonitor } from '@/services/AuthMonitor';
 import { toast } from 'sonner';
 
 // Simplified message payload for single sessions
@@ -68,6 +69,9 @@ export class CellBroadcastManager {
   // Broadcast timing tracking for teleprompter health monitoring
   private lastBroadcastReceivedAt = new Map<string, number>();
   
+  // Auth state tracking
+  private sessionExpired = false;
+  
   constructor() {
     debugLogger.realtime('CellBroadcast initialized (simplified for single sessions)');
     
@@ -82,6 +86,27 @@ export class CellBroadcastManager {
         // Clear guard timeouts
         this.reconnectGuardTimeouts.forEach(timeout => clearTimeout(timeout));
         this.reconnectGuardTimeouts.clear();
+      });
+
+      // CRITICAL: Listen for auth state changes to stop reconnection on session expiry
+      authMonitor.registerListener('cell-broadcast', (session) => {
+        if (!session) {
+          console.log('🔐 CellBroadcast: Session expired - stopping all reconnection attempts');
+          this.sessionExpired = true;
+          // Clear all pending reconnection timeouts
+          this.reconnectTimeouts.forEach((timeout, rundownId) => {
+            clearTimeout(timeout);
+            console.log(`🔐 Cleared cell reconnect timeout for: ${rundownId}`);
+          });
+          this.reconnectTimeouts.clear();
+          this.reconnectAttempts.clear();
+          this.reconnecting.clear();
+          this.reconnectGuardTimeouts.forEach(timeout => clearTimeout(timeout));
+          this.reconnectGuardTimeouts.clear();
+        } else {
+          console.log('🔐 CellBroadcast: Session restored - allowing reconnection');
+          this.sessionExpired = false;
+        }
       });
     }
   }
@@ -426,6 +451,12 @@ export class CellBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
     
+    // CRITICAL: Check if session expired - don't attempt reconnection with invalid auth
+    if (this.sessionExpired) {
+      console.log('🔐 CellBroadcast: Skipping reconnect - session expired');
+      return;
+    }
+    
     // Debounce: prevent rapid reconnection attempts
     const now = Date.now();
     const lastReconnect = this.lastReconnectTimes.get(rundownId) || 0;
@@ -478,11 +509,12 @@ export class CellBroadcastManager {
       this.reconnectGuardTimeouts.set(rundownId, guardTimeout);
     }
     
-    // Check auth first
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) {
-      console.warn('📱 ⚠️ Cannot reconnect cell channel - invalid auth session');
-      this.reconnecting.delete(rundownId); // Clear flag on auth failure
+    // Validate auth session before reconnecting
+    const isSessionValid = await authMonitor.isSessionValid();
+    if (!isSessionValid) {
+      console.log('🔐 CellBroadcast: Skipping reconnect - auth session invalid');
+      this.sessionExpired = true;
+      this.reconnecting.delete(rundownId);
       return;
     }
     
