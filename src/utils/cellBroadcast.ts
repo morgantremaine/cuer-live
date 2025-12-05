@@ -48,9 +48,14 @@ export class CellBroadcastManager {
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
   private pendingBroadcasts = new Map<string, CellUpdate>();
-  private readonly TYPING_DEBOUNCE_MS = 300; // 300ms debounce for typing
+  private readonly BASE_TYPING_DEBOUNCE_MS = 300; // 300ms base debounce for typing
   private readonly RECONNECT_TIMEOUT_MS = 15000; // 15 second timeout for stuck reconnections
   private readonly MIN_RECONNECT_INTERVAL_MS = 5000; // 5 second minimum between reconnection attempts
+  
+  // Adaptive batching based on user count
+  private activeUserCount = 1;
+  private readonly DEBOUNCE_PER_USER_MS = 50; // Add 50ms per user
+  private readonly MAX_TYPING_DEBOUNCE_MS = 1000; // Cap at 1 second
   
   // Health monitoring
   private connectionStatus = new Map<string, string>();
@@ -289,7 +294,7 @@ export class CellBroadcastManager {
     }
   }
 
-  // Debounced broadcast for typing fields
+  // Debounced broadcast for typing fields with adaptive timing
   broadcastCellUpdateDebounced(
     rundownId: string,
     itemId: string | null,
@@ -297,8 +302,10 @@ export class CellBroadcastManager {
     value: any,
     userId: string,
     tabId: string,
-    debounceMs: number = this.TYPING_DEBOUNCE_MS
+    debounceMs?: number
   ) {
+    // Calculate adaptive debounce based on user count
+    const adaptiveDebounce = debounceMs ?? this.getAdaptiveDebounceMs();
     const key = `${rundownId}-${itemId}-${field}`;
     
     // Clear existing debounce timer for this field
@@ -318,7 +325,7 @@ export class CellBroadcastManager {
       timestamp: Date.now()
     });
     
-    debugLogger.realtime('Debouncing cell update:', { key, debounceMs });
+    debugLogger.realtime('Debouncing cell update:', { key, debounceMs: adaptiveDebounce, userCount: this.activeUserCount });
     
     // Schedule the broadcast
     const timer = setTimeout(() => {
@@ -335,9 +342,26 @@ export class CellBroadcastManager {
         this.pendingBroadcasts.delete(key);
         this.debouncedBroadcasts.delete(key);
       }
-    }, debounceMs);
+    }, adaptiveDebounce);
     
     this.debouncedBroadcasts.set(key, timer);
+  }
+  
+  // Calculate adaptive debounce based on user count
+  private getAdaptiveDebounceMs(): number {
+    const calculated = this.BASE_TYPING_DEBOUNCE_MS + 
+      (this.activeUserCount * this.DEBOUNCE_PER_USER_MS);
+    return Math.min(calculated, this.MAX_TYPING_DEBOUNCE_MS);
+  }
+  
+  // Set active user count for adaptive debouncing
+  setActiveUserCount(count: number): void {
+    this.activeUserCount = Math.max(1, count);
+  }
+  
+  // Get current adaptive debounce for debugging
+  getCurrentDebounceMs(): number {
+    return this.getAdaptiveDebounceMs();
   }
   
   // Flush all pending broadcasts immediately (for cleanup)
