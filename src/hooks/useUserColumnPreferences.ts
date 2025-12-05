@@ -58,7 +58,7 @@ const normalizeColumns = (cols: any[]): Column[] => {
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
-  const { team } = useTeam({ minimalMode: true });
+  const { team } = useTeam();
   const { teamColumns, loading: teamColumnsLoading, addTeamColumn, renameTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);

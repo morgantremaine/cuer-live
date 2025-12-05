@@ -56,12 +56,7 @@ export interface OrganizationMember {
   teams_list: string[];
 }
 
-export interface UseTeamOptions {
-  minimalMode?: boolean; // Only load current team + role, skip team members/invitations
-}
-
-export const useTeam = (options: UseTeamOptions = {}) => {
-  const { minimalMode = false } = options;
+export const useTeam = () => {
   const { user } = useAuth();
   const { activeTeamId, setActiveTeam } = useActiveTeam();
   const navigate = useNavigate();
@@ -79,65 +74,6 @@ export const useTeam = (options: UseTeamOptions = {}) => {
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
-
-  // Minimal mode: lightweight loading for rundown pages - only fetch current team + role
-  const loadCurrentTeamOnly = useCallback(async (teamId: string) => {
-    if (!user?.id || !teamId) {
-      setIsLoading(false);
-      return;
-    }
-
-    const cacheKey = `${user.id}-${teamId}`;
-    
-    // Check cache first for instant load
-    const cachedTeam = globalTeamCache.get(teamId);
-    const cachedRole = globalRoleCache.get(cacheKey);
-    
-    if (cachedTeam && cachedRole) {
-      setTeam(cachedTeam);
-      setUserRole(cachedRole);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      // Two parallel queries: team data + user's role
-      const [teamResult, membershipResult] = await Promise.all([
-        supabase.from('teams').select('*').eq('id', teamId).single(),
-        supabase.from('team_members').select('role').eq('user_id', user.id).eq('team_id', teamId).single()
-      ]);
-
-      if (teamResult.error) {
-        console.error('Error fetching team:', teamResult.error);
-        setError('Failed to load team');
-        setIsLoading(false);
-        return;
-      }
-
-      if (membershipResult.error) {
-        console.error('Error fetching membership:', membershipResult.error);
-        setError('Failed to load team membership');
-        setIsLoading(false);
-        return;
-      }
-
-      const teamData = teamResult.data as Team;
-      const role = membershipResult.data.role as 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter';
-
-      // Cache for future use
-      globalTeamCache.set(teamId, teamData);
-      globalRoleCache.set(cacheKey, role);
-
-      setTeam(teamData);
-      setUserRole(role);
-      setError(null);
-    } catch (error) {
-      console.error('Failed to load team data (minimal):', error);
-      setError('Failed to load team data');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -175,14 +111,8 @@ export const useTeam = (options: UseTeamOptions = {}) => {
         throw teamsError;
       }
 
-      // Step 3: Cache full team objects and combine the data
+      // Step 3: Combine the data
       const teamsMap = new Map(teamsData?.map(t => [t.id, t]) || []);
-      
-      // Cache full team objects by team ID for reuse in loadTeamData
-      teamsData?.forEach(teamData => {
-        globalTeamCache.set(teamData.id, teamData as Team);
-      });
-      
       const userTeams: UserTeam[] = membershipData.map(membership => {
         const teamData = teamsMap.get(membership.team_id);
         return {
@@ -447,23 +377,16 @@ export const useTeam = (options: UseTeamOptions = {}) => {
           return;
         }
 
-        // Use cached team data from loadAllUserTeams instead of another query
-        let teamData = globalTeamCache.get(targetTeamId);
-        
-        if (!teamData) {
-          // Fallback: Only query if not in cache (shouldn't happen normally)
-          console.log('⚠️ Team not in cache, fetching from database');
-          const { data, error: teamError } = await supabase
-            .from('teams')
-            .select('*')
-            .eq('id', targetTeamId)
-            .single();
+        // Load the specific team data
+        const { data: teamData, error: teamError } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', targetTeamId)
+          .single();
 
-          if (teamError) {
-            console.error('Error fetching team:', teamError);
-            throw teamError;
-          }
-          teamData = data;
+        if (teamError) {
+          console.error('Error fetching team:', teamError);
+          throw teamError;
         }
 
         // Get user's role in this team
@@ -872,19 +795,6 @@ export const useTeam = (options: UseTeamOptions = {}) => {
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
-    // MINIMAL MODE: Only load current team + role (for rundown pages)
-    // CRITICAL: Never fall through to slow loadTeamData() path when minimalMode is true
-    if (minimalMode) {
-      if (activeTeamId) {
-        loadCurrentTeamOnly(activeTeamId);
-      } else {
-        // In minimal mode without activeTeamId, just set loading to false
-        // and wait for activeTeamId to become available via useEffect dependency
-        setIsLoading(false);
-      }
-      return; // Always return in minimalMode, never fall through to loadTeamData
-    }
-    
     // If data is already loaded, restore from cache and load related data
     if (globalLoadedKeys.get(currentKey)) {
       const cachedTeam = globalTeamCache.get(currentKey);
@@ -922,7 +832,7 @@ export const useTeam = (options: UseTeamOptions = {}) => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, activeTeamId, minimalMode]);
+  }, [user?.id, activeTeamId]);
 
   // Realtime subscriptions for team membership changes
   useEffect(() => {

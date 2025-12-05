@@ -93,13 +93,7 @@ export const useShowcallerBroadcastSync = ({
       user?.id || ''
     );
 
-    // Immediately check connection status (don't wait for 10s interval)
-    setTimeout(() => {
-      const connected = showcallerBroadcast.isChannelConnected(rundownId);
-      setIsConnected(connected);
-    }, 100); // Small delay for channel to establish
-
-    // Check connection status periodically (reduced frequency since we check immediately)
+    // Check connection status periodically
     const statusInterval = setInterval(() => {
       const connected = showcallerBroadcast.isChannelConnected(rundownId);
       const currentStatus = showcallerBroadcast.getConnectionStatus(rundownId);
@@ -109,7 +103,7 @@ export const useShowcallerBroadcastSync = ({
       if (!connected) {
         console.warn('📺 ⚠️ Showcaller broadcast channel not connected:', rundownId, 'Status:', currentStatus);
       }
-    }, 30000); // Check every 30 seconds (reduced from 10s since we check immediately)
+    }, 10000); // Check every 10 seconds
 
     // Monitor window focus to ensure connection stays active (with debouncing)
     const handleVisibilityChange = () => {
