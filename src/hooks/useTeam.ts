@@ -14,6 +14,9 @@ const globalRealtimeChannels = new Map<string, any>();
 // Global cache for team data and roles to share across hook instances
 const globalTeamCache = new Map<string, Team>();
 const globalRoleCache = new Map<string, 'admin' | 'member' | 'manager' | 'showcaller' | 'teleprompter'>();
+// Track last successful load time to prevent unnecessary refetches on tab switch
+const globalLastLoadTime = new Map<string, number>();
+const TEAM_DATA_STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
 
 export interface Team {
   id: string;
@@ -477,6 +480,7 @@ export const useTeam = () => {
         isLoadingRef.current = false;
         globalLoadingStates.delete(loadKey);
         globalLoadedKeys.set(loadKey, true);
+        globalLastLoadTime.set(loadKey, Date.now());
       }
     })();
 
@@ -835,7 +839,7 @@ export const useTeam = () => {
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
-    // If data is already loaded, restore from cache and load related data
+    // If data is already loaded, restore from cache
     if (globalLoadedKeys.get(currentKey)) {
       const cachedTeam = globalTeamCache.get(currentKey);
       const cachedRole = globalRoleCache.get(currentKey);
@@ -845,13 +849,18 @@ export const useTeam = () => {
         setUserRole(cachedRole);
         setError(null);
         
-        // Load all user teams for the dropdown
-        loadAllUserTeams();
+        // Check if data is still fresh - skip refetches if within threshold
+        const lastLoadTime = globalLastLoadTime.get(currentKey) || 0;
+        const isDataFresh = Date.now() - lastLoadTime < TEAM_DATA_STALE_THRESHOLD;
         
-        // Load team members and invitations for this cached team
-        loadTeamMembers(cachedTeam.id);
-        if (cachedRole === 'admin' || cachedRole === 'manager') {
-          loadPendingInvitations(cachedTeam.id);
+        if (!isDataFresh) {
+          // Data is stale, refresh related data
+          loadAllUserTeams();
+          loadTeamMembers(cachedTeam.id);
+          if (cachedRole === 'admin' || cachedRole === 'manager') {
+            loadPendingInvitations(cachedTeam.id);
+          }
+          globalLastLoadTime.set(currentKey, Date.now());
         }
       }
       setIsLoading(false);
