@@ -111,8 +111,14 @@ export const useTeam = () => {
         throw teamsError;
       }
 
-      // Step 3: Combine the data
+      // Step 3: Cache full team objects and combine the data
       const teamsMap = new Map(teamsData?.map(t => [t.id, t]) || []);
+      
+      // Cache full team objects by team ID for reuse in loadTeamData
+      teamsData?.forEach(teamData => {
+        globalTeamCache.set(teamData.id, teamData as Team);
+      });
+      
       const userTeams: UserTeam[] = membershipData.map(membership => {
         const teamData = teamsMap.get(membership.team_id);
         return {
@@ -377,16 +383,23 @@ export const useTeam = () => {
           return;
         }
 
-        // Load the specific team data
-        const { data: teamData, error: teamError } = await supabase
-          .from('teams')
-          .select('*')
-          .eq('id', targetTeamId)
-          .single();
+        // Use cached team data from loadAllUserTeams instead of another query
+        let teamData = globalTeamCache.get(targetTeamId);
+        
+        if (!teamData) {
+          // Fallback: Only query if not in cache (shouldn't happen normally)
+          console.log('⚠️ Team not in cache, fetching from database');
+          const { data, error: teamError } = await supabase
+            .from('teams')
+            .select('*')
+            .eq('id', targetTeamId)
+            .single();
 
-        if (teamError) {
-          console.error('Error fetching team:', teamError);
-          throw teamError;
+          if (teamError) {
+            console.error('Error fetching team:', teamError);
+            throw teamError;
+          }
+          teamData = data;
         }
 
         // Get user's role in this team
