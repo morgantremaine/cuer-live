@@ -663,11 +663,15 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       column.isCustom;
 
     if (shouldRenderBrackets) {
-      return renderScriptWithBrackets(value, { 
-        inlineDisplay: true, 
-        fontSize: 14, 
-        showNullAsText: false 
-      });
+      return (
+        <div className="flex flex-wrap items-start gap-0.5">
+          {renderScriptWithBrackets(value, { 
+            inlineDisplay: true, 
+            fontSize: 14, 
+            showNullAsText: false 
+          })}
+        </div>
+      );
     }
 
     // For all other text content, render with clickable URLs
@@ -1264,7 +1268,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             } : {})
                           }}
                         >
-                            <div className="break-words whitespace-pre-wrap overflow-hidden">
+                            <div className="break-words whitespace-pre-wrap">
                               {(column.key === 'script' || column.key === 'notes') ? 
                                 renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime, items, originalIndex, rundownEndTime), item.id, column.key) ||
                                 <div>{renderCellContent(item, column, calculatedStartTime, originalIndex)}</div> :
