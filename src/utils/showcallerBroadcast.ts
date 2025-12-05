@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { authMonitor } from '@/services/AuthMonitor';
 
 export interface ShowcallerBroadcastState {
   rundownId: string;
@@ -24,12 +25,33 @@ class ShowcallerBroadcastManager {
   private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private lastReconnectTimes: Map<string, number> = new Map();
   private readonly MIN_RECONNECT_INTERVAL_MS = 5000;
+  private sessionExpired = false;
 
   constructor() {
     // Listen for network online events to allow immediate reconnection
     window.addEventListener('online', () => {
       console.log('🌐 Network online - clearing showcaller reconnection debounce');
       this.lastReconnectTimes.clear();
+      // Only clear session expired flag on network online if we have valid session
+      // The session will be validated on next reconnect attempt
+    });
+
+    // CRITICAL: Listen for auth state changes to stop reconnection on session expiry
+    authMonitor.registerListener('showcaller-broadcast', (session) => {
+      if (!session) {
+        console.log('🔐 Showcaller: Session expired - stopping all reconnection attempts');
+        this.sessionExpired = true;
+        // Clear all pending reconnection timeouts
+        this.reconnectTimeouts.forEach((timeout, rundownId) => {
+          clearTimeout(timeout);
+          console.log(`🔐 Cleared showcaller reconnect timeout for: ${rundownId}`);
+        });
+        this.reconnectTimeouts.clear();
+        this.reconnectAttempts.clear();
+      } else {
+        console.log('🔐 Showcaller: Session restored - allowing reconnection');
+        this.sessionExpired = false;
+      }
     });
   }
 
@@ -102,6 +124,12 @@ class ShowcallerBroadcastManager {
   async forceReconnect(rundownId: string): Promise<void> {
     console.log('📺 🔄 Force reconnect requested for:', rundownId);
     
+    // CRITICAL: Check if session expired - don't attempt reconnection with invalid auth
+    if (this.sessionExpired) {
+      console.log('🔐 Showcaller: Skipping reconnect - session expired');
+      return;
+    }
+    
     // Debounce rapid attempts
     const now = Date.now();
     const lastReconnect = this.lastReconnectTimes.get(rundownId) || 0;
@@ -110,6 +138,14 @@ class ShowcallerBroadcastManager {
       return;
     }
     this.lastReconnectTimes.set(rundownId, now);
+    
+    // Validate auth session before reconnecting
+    const isSessionValid = await authMonitor.isSessionValid();
+    if (!isSessionValid) {
+      console.log('🔐 Showcaller: Skipping reconnect - auth session invalid');
+      this.sessionExpired = true;
+      return;
+    }
     
     // Clean up existing channel
     const existingChannel = this.channels.get(rundownId);

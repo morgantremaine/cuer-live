@@ -6,7 +6,38 @@ import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { authMonitor } from '@/services/AuthMonitor';
 import { toast } from 'sonner';
+
+// Module-level auth state tracking for consolidated realtime
+let consolidatedSessionExpired = false;
+
+// CRITICAL: Register auth listener to stop reconnection on session expiry
+if (typeof window !== 'undefined') {
+  authMonitor.registerListener('consolidated-realtime', (session) => {
+    if (!session) {
+      console.log('🔐 ConsolidatedRealtime: Session expired - stopping all reconnection attempts');
+      consolidatedSessionExpired = true;
+      // Clear all pending reconnection timeouts for all rundowns
+      globalSubscriptions.forEach((state, rundownId) => {
+        if (state.reconnectTimeout) {
+          clearTimeout(state.reconnectTimeout);
+          state.reconnectTimeout = undefined;
+          console.log(`🔐 Cleared consolidated reconnect timeout for: ${rundownId}`);
+        }
+        if (state.guardTimeout) {
+          clearTimeout(state.guardTimeout);
+          state.guardTimeout = undefined;
+        }
+        state.reconnectAttempts = 0;
+        state.reconnecting = false;
+      });
+    } else {
+      console.log('🔐 ConsolidatedRealtime: Session restored - allowing reconnection');
+      consolidatedSessionExpired = false;
+    }
+  });
+}
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -46,9 +77,15 @@ const globalSubscriptions = new Map<string, {
 const MIN_RECONNECT_INTERVAL = 5000; // 5 seconds
 
 // Reconnection helper with exponential backoff and debouncing
-const handleConsolidatedChannelReconnect = (rundownId: string) => {
+const handleConsolidatedChannelReconnect = async (rundownId: string) => {
   const state = globalSubscriptions.get(rundownId);
   if (!state) return;
+
+  // CRITICAL: Check if session expired - don't attempt reconnection with invalid auth
+  if (consolidatedSessionExpired) {
+    console.log('🔐 ConsolidatedRealtime: Skipping reconnect - session expired');
+    return;
+  }
 
   // CRITICAL: Debounce rapid reconnection attempts
   const now = Date.now();
@@ -76,8 +113,18 @@ const handleConsolidatedChannelReconnect = (rundownId: string) => {
 
   console.log(`📡 Reconnecting in ${delay}ms (attempt ${attempts + 1})`);
 
-  state.reconnectTimeout = setTimeout(() => {
+  state.reconnectTimeout = setTimeout(async () => {
     state.reconnectTimeout = undefined;
+    
+    // Double-check auth is still valid before reconnecting
+    const isSessionValid = await authMonitor.isSessionValid();
+    if (!isSessionValid) {
+      console.log('🔐 ConsolidatedRealtime: Aborting reconnect - auth session invalid');
+      consolidatedSessionExpired = true;
+      state.reconnecting = false;
+      return;
+    }
+    
     if (state.reconnectHandler) {
       state.reconnectHandler();
     }

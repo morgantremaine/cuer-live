@@ -80,6 +80,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         authMonitor.onSignedIn(session)
       }
       
+      // CRITICAL: Auto-redirect to login when session expires during active use
+      // This happens when refresh_token fails (session truly expired)
+      if (!session && !isInitialLoad && event !== 'SIGNED_OUT') {
+        console.error('🔐 Auth state changed - session expired');
+        logger.debug('💡 To retry failed saves, check the save indicator');
+        
+        // Only redirect if user was previously authenticated and this isn't a manual sign out
+        if (user) {
+          console.log('🚪 Session expired while using app - redirecting to login');
+          // Clear any stale auth tokens
+          localStorage.removeItem('sb-khdiwrkgahsbjszlwnob-auth-token');
+          // Small delay to allow state cleanup before redirect
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 500);
+        }
+      }
+      
       // Mark initial load as complete after first auth state change
       if (isInitialLoad) {
         setIsInitialLoad(false)
