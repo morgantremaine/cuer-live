@@ -35,7 +35,10 @@ const SharedRundown = () => {
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
-  const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
+    // Will be properly initialized once rundownId is available
+    return false;
+  });
   const [realtimeShowcallerState, setRealtimeShowcallerState] = useState(null);
   const { isDark, toggleTheme } = useTheme();
   const { isTabActive } = useTabFocus();
@@ -168,8 +171,27 @@ const SharedRundown = () => {
     }
   };
 
+  // Load auto-scroll preference from localStorage when rundownId becomes available
+  useEffect(() => {
+    if (rundownId) {
+      const storageKey = `shared-rundown-autoscroll-${rundownId}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) {
+        try {
+          setAutoScrollEnabled(JSON.parse(saved));
+        } catch {
+          // Invalid JSON, use default
+        }
+      }
+    }
+  }, [rundownId]);
+
   const handleToggleAutoScroll = () => {
-    setAutoScrollEnabled(!autoScrollEnabled);
+    const newValue = !autoScrollEnabled;
+    setAutoScrollEnabled(newValue);
+    if (rundownId) {
+      localStorage.setItem(`shared-rundown-autoscroll-${rundownId}`, JSON.stringify(newValue));
+    }
   };
 
   // Simplified layout loading using the updated RPC function
