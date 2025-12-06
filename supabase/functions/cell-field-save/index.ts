@@ -120,6 +120,45 @@ serve(async (req) => {
       return v;
     };
 
+    // Normalize date strings to YYYY-MM-DD format for comparison
+    const normalizeDateValue = (v: any): string | null => {
+      if (v === null || v === undefined || v === '') return null;
+      const str = String(v);
+      // Extract just the date portion if it's an ISO string (2025-10-09T07:00:00.000Z → 2025-10-09)
+      return str.split('T')[0];
+    };
+
+    // Deep comparison for objects (handles customFields {} vs {} case)
+    const areValuesEqual = (oldVal: any, newVal: any): boolean => {
+      const normOld = normalizeValue(oldVal);
+      const normNew = normalizeValue(newVal);
+      
+      // Both null/empty - equal
+      if (normOld === null && normNew === null) return true;
+      
+      // One null, one not - not equal
+      if (normOld === null || normNew === null) return false;
+      
+      // Handle objects (customFields)
+      if (typeof normOld === 'object' && typeof normNew === 'object') {
+        // Empty objects are equal
+        const oldKeys = Object.keys(normOld);
+        const newKeys = Object.keys(normNew);
+        if (oldKeys.length === 0 && newKeys.length === 0) return true;
+        
+        return JSON.stringify(normOld) === JSON.stringify(normNew);
+      }
+      
+      return normOld === normNew;
+    };
+
+    // Check if date values are equal (handles format differences)
+    const areDatesEqual = (oldVal: any, newVal: any): boolean => {
+      const normOld = normalizeDateValue(oldVal);
+      const normNew = normalizeDateValue(newVal);
+      return normOld === normNew;
+    };
+
     // Apply field updates
     console.log('⚙️ Processing field updates:', {
       updates: fieldUpdates.map(u => ({
@@ -148,7 +187,7 @@ serve(async (req) => {
           if (update.field.startsWith('customFields.')) {
             const customFieldKey = update.field.replace('customFields.', '')
             const oldValue = updatedItems[itemIndex].customFields?.[customFieldKey];
-            if (normalizeValue(oldValue) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(oldValue, update.value)) {
               hasActualChanges = true;
               updatedItems[itemIndex] = {
                 ...updatedItems[itemIndex],
@@ -161,7 +200,7 @@ serve(async (req) => {
           } else {
             // Regular field update
             const oldValue = updatedItems[itemIndex][update.field];
-            if (normalizeValue(oldValue) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(oldValue, update.value)) {
               hasActualChanges = true;
               updatedItems[itemIndex] = {
                 ...updatedItems[itemIndex],
@@ -173,59 +212,59 @@ serve(async (req) => {
       } else {
         switch (update.field) {
           case 'title':
-            if (normalizeValue(updatedTitle) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedTitle, update.value)) {
               hasActualChanges = true;
               updatedTitle = update.value
             }
             break
           case 'startTime':
-            if (normalizeValue(updatedStartTime) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedStartTime, update.value)) {
               hasActualChanges = true;
               updatedStartTime = update.value
             }
             break
           case 'endTime':
-            if (normalizeValue(updatedEndTime) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedEndTime, update.value)) {
               hasActualChanges = true;
               updatedEndTime = update.value
             }
             break
           case 'timezone':
-            if (normalizeValue(updatedTimezone) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedTimezone, update.value)) {
               hasActualChanges = true;
               updatedTimezone = update.value
             }
             break
           case 'showDate':
-            if (update.value) {
-              const dateObj = typeof update.value === 'string' ? new Date(update.value) : update.value;
-              const newShowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-              if (normalizeValue(updatedShowDate) !== normalizeValue(newShowDate)) {
+            // Use date-specific comparison to handle format differences
+            // (2025-10-09 vs 2025-10-09T07:00:00.000Z)
+            if (!areDatesEqual(updatedShowDate, update.value)) {
+              if (update.value) {
+                const dateObj = typeof update.value === 'string' ? new Date(update.value) : update.value;
+                const newShowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
                 hasActualChanges = true;
                 updatedShowDate = newShowDate;
-              }
-            } else {
-              if (normalizeValue(updatedShowDate) !== null) {
+              } else {
                 hasActualChanges = true;
                 updatedShowDate = null;
               }
             }
             break
           case 'externalNotes':
-            if (normalizeValue(updatedExternalNotes) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedExternalNotes, update.value)) {
               hasActualChanges = true;
               updatedExternalNotes = update.value
             }
             break
           case 'numberingLocked':
-            if (normalizeValue(updatedNumberingLocked) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedNumberingLocked, update.value)) {
               hasActualChanges = true;
               updatedNumberingLocked = update.value
               console.log('🔒 Updating numbering_locked:', update.value);
             }
             break
           case 'lockedRowNumbers':
-            if (normalizeValue(updatedLockedRowNumbers) !== normalizeValue(update.value)) {
+            if (!areValuesEqual(updatedLockedRowNumbers, update.value)) {
               hasActualChanges = true;
               updatedLockedRowNumbers = update.value
               console.log('🔒 Updating locked_row_numbers:', Object.keys(update.value || {}).length, 'items');
@@ -327,9 +366,9 @@ serve(async (req) => {
         })
       };
 
-      // Filter out no-change updates before logging history
+      // Filter out no-change updates before logging history (use deep comparison)
       const actualChanges = operationData.fieldUpdates.filter(u => 
-        normalizeValue(u.oldValue) !== normalizeValue(u.newValue)
+        !areValuesEqual(u.oldValue, u.newValue)
       );
 
       // Only insert history if there are actual changes
