@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -37,6 +37,10 @@ const AccountManagement = () => {
   const { team, allUserTeams, userRole, switchToTeam, isLoading: isLoadingTeam, error: teamError, loadTeamData } = useTeam()
   const { toast } = useToast()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  
+  // Get the default tab from URL query param, fallback to 'profile'
+  const defaultTab = searchParams.get('tab') || 'profile'
 
   // Add timeout protection for loading state
   useEffect(() => {
@@ -260,7 +264,7 @@ const AccountManagement = () => {
           <p className="text-gray-400 mt-2">Manage your account and team settings</p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className={`grid w-full ${user?.email === 'morgan@cuer.live' ? 'grid-cols-5' : 'grid-cols-4'} bg-gray-800`}>
             <TabsTrigger value="profile" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Profile
