@@ -439,26 +439,30 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
   // Toggle all header groups expand/collapse state
   const handleToggleAllHeaders = () => {
-    // Find all headers in the items
     const headerItems = items.filter(item => item.type === 'header');
     
     if (headerItems.length === 0) return;
     
     // Check if any headers are currently collapsed
-    const hasCollapsedHeaders = headerItems.some(header => isHeaderCollapsed(header.id));
+    const hasCollapsedHeaders = headerItems.some(header => collapsedHeaders.has(header.id));
     
-    // If any headers are collapsed, expand all. If all are expanded, collapse all.
-    headerItems.forEach(header => {
-      const isCurrentlyCollapsed = isHeaderCollapsed(header.id);
-      
-      if (hasCollapsedHeaders && isCurrentlyCollapsed) {
-        // Expand this collapsed header
-        toggleHeaderCollapse(header.id);
-      } else if (!hasCollapsedHeaders && !isCurrentlyCollapsed) {
-        // Collapse this expanded header
-        toggleHeaderCollapse(header.id);
-      }
-    });
+    // Build the new Set in one operation to avoid stale closure issues
+    const newCollapsedHeaders = new Set(collapsedHeaders);
+    
+    if (hasCollapsedHeaders) {
+      // Expand all - remove all headers from collapsed set
+      headerItems.forEach(header => {
+        newCollapsedHeaders.delete(header.id);
+      });
+    } else {
+      // Collapse all - add all headers to collapsed set
+      headerItems.forEach(header => {
+        newCollapsedHeaders.add(header.id);
+      });
+    }
+    
+    // Single state update with all changes
+    updateCollapsedHeaders(newCollapsedHeaders);
   };
 
   // Helper function to render expandable cell content for script and notes
