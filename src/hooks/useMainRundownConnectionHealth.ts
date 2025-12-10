@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
-import { forceReconnectConsolidated } from '@/hooks/useConsolidatedRealtimeRundown';
+import { forceReconnectConsolidated, getLastConsolidatedUpdateTime } from '@/hooks/useConsolidatedRealtimeRundown';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
@@ -165,9 +165,10 @@ export const useMainRundownConnectionHealth = ({
     const isShowcallerConnected = showcallerBroadcast.isChannelConnected(rundownId);
     const health = unifiedConnectionHealth.getHealth(rundownId);
     
-    // Check last activity time - combines both our local tracking and cell broadcast tracking
+    // Check last activity time - combines local tracking, cell broadcast, AND consolidated updates
     const lastCellBroadcast = cellBroadcast.getLastBroadcastTime(rundownId);
-    const mostRecentActivity = Math.max(lastActivityRef.current, lastCellBroadcast);
+    const lastConsolidated = getLastConsolidatedUpdateTime(rundownId);
+    const mostRecentActivity = Math.max(lastActivityRef.current, lastCellBroadcast, lastConsolidated);
     const timeSinceActivity = Date.now() - mostRecentActivity;
     
     // Multiple staleness conditions:

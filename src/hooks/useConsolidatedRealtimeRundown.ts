@@ -77,6 +77,14 @@ const globalSubscriptions = new Map<string, {
 // Minimum interval between reconnection attempts (prevents storm)
 const MIN_RECONNECT_INTERVAL = 5000; // 5 seconds
 
+// Track last consolidated activity time per rundown for health monitoring
+const lastConsolidatedActivityTime = new Map<string, number>();
+
+// Export for health monitoring - allows checking when we last received consolidated updates
+export const getLastConsolidatedUpdateTime = (rundownId: string): number => {
+  return lastConsolidatedActivityTime.get(rundownId) || 0;
+};
+
 // Export force reconnect function for use by health monitoring
 export const forceReconnectConsolidated = async (rundownId: string): Promise<boolean> => {
   const state = globalSubscriptions.get(rundownId);
@@ -697,6 +705,11 @@ export const useConsolidatedRealtimeRundown = ({
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
     if (incomingDocVersion) {
       globalState.lastProcessedDocVersion = incomingDocVersion;
+    }
+    
+    // CRITICAL: Track activity for connection health monitoring
+    if (rundownId) {
+      lastConsolidatedActivityTime.set(rundownId, Date.now());
     }
     
     // Track update time for polling fallback
