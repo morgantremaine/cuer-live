@@ -678,6 +678,32 @@ export class CellBroadcastManager {
     };
   }
 
+  // Send heartbeat ping to keep channel alive during quiet periods
+  async sendHeartbeat(rundownId: string): Promise<void> {
+    const channel = this.channels.get(rundownId);
+    if (!channel) return;
+    
+    const isConnected = this.isChannelConnected(rundownId);
+    if (!isConnected) return;
+    
+    try {
+      await channel.send({
+        type: 'broadcast',
+        event: 'heartbeat',
+        payload: {
+          rundownId,
+          timestamp: Date.now(),
+          type: 'keepalive'
+        }
+      });
+      
+      // Update last broadcast time so staleness detection knows we're active
+      this.lastBroadcastReceivedAt.set(rundownId, Date.now());
+    } catch (error) {
+      console.warn('📡 Heartbeat send failed:', error);
+    }
+  }
+
   cleanup(rundownId: string) {
     // Flush any pending broadcasts before cleanup
     this.flushPendingBroadcasts(rundownId);
