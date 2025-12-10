@@ -439,16 +439,23 @@ const TeamManagement = () => {
                     variant="ghost"
                     size="sm"
                     onClick={handleEditTeamName}
-                    className="ml-auto"
+                    className="ml-2"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
                 )}
+                <Link 
+                  to="/help#team-roles" 
+                  className="text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                  title="Learn about team roles"
+                >
+                  <HelpCircle className="h-5 w-5" />
+                </Link>
               </>
             )}
           </CardTitle>
           <CardDescription>
-            Manage your team members and collaborate on rundowns. You have {userRole} access.
+            Manage your team members and collaborate on rundowns. You have {getRoleDisplayName(userRole)} access.
           </CardDescription>
         </CardHeader>
       </Card>
