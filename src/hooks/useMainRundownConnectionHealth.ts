@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface UseMainRundownConnectionHealthProps {
@@ -57,37 +56,8 @@ export const useMainRundownConnectionHealth = ({
     }
   }, [state.showConnectionWarning]);
 
-  // Silent refresh - fetch latest rundown data from database
-  const silentRefresh = useCallback(async () => {
-    if (!rundownId) return;
-    
-    try {
-      console.log('📡 Main Rundown: Performing silent refresh from database');
-      
-      // Fetch latest rundown data
-      const { data, error } = await supabase
-        .from('rundowns')
-        .select('*')
-        .eq('id', rundownId)
-        .single();
-      
-      if (error) {
-        console.error('📡 Silent refresh fetch error:', error);
-        return;
-      }
-      
-      if (data) {
-        console.log('📡 Silent refresh successful - data fetched');
-        // The consolidated realtime system will handle applying this
-        // We just need to verify we can reach the database
-        lastActivityRef.current = Date.now();
-      }
-    } catch (error) {
-      console.error('📡 Silent refresh error:', error);
-    }
-  }, [rundownId]);
-
-  // Attempt silent recovery - force reconnect all channels + catch-up sync
+  // Attempt silent recovery - force reconnect all channels
+  // The consolidated realtime hook's catch-up sync is automatically triggered when channels reconnect
   const attemptSilentRecovery = useCallback(async () => {
     if (!rundownId || isRecoveringRef.current) {
       console.log('📡 Main Rundown: Already recovering or no rundownId, skipping...');
@@ -103,6 +73,7 @@ export const useMainRundownConnectionHealth = ({
       console.warn('📡 Main Rundown: Stale connection detected, attempting silent recovery...');
       
       // Step 1: Force reconnect all channels in parallel
+      // This will trigger the consolidated realtime hook's catch-up sync automatically
       const reconnectPromises = [
         cellBroadcast.forceReconnect(rundownId).catch(e => console.warn('Cell reconnect error:', e)),
         showcallerBroadcast.forceReconnect(rundownId).catch(e => console.warn('Showcaller reconnect error:', e))
@@ -110,13 +81,10 @@ export const useMainRundownConnectionHealth = ({
       
       await Promise.all(reconnectPromises);
       
-      // Step 2: Wait a bit for reconnection to establish
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Step 2: Wait for reconnection to establish and catch-up sync to complete
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // Step 3: Fetch fresh data silently (catch-up sync)
-      await silentRefresh();
-      
-      // Step 4: Check if we're now connected
+      // Step 3: Check if we're now connected
       const isCellConnected = cellBroadcast.isChannelConnected(rundownId);
       const isShowcallerConnected = showcallerBroadcast.isChannelConnected(rundownId);
       const health = unifiedConnectionHealth.getHealth(rundownId);
@@ -170,7 +138,7 @@ export const useMainRundownConnectionHealth = ({
     } finally {
       isRecoveringRef.current = false;
     }
-  }, [rundownId, silentRefresh]);
+  }, [rundownId]);
 
   // Health check - runs every healthCheckIntervalMs
   const performHealthCheck = useCallback(async () => {
@@ -181,7 +149,7 @@ export const useMainRundownConnectionHealth = ({
     const isShowcallerConnected = showcallerBroadcast.isChannelConnected(rundownId);
     const health = unifiedConnectionHealth.getHealth(rundownId);
     
-    // Check last activity time
+    // Check last activity time - combines both our local tracking and cell broadcast tracking
     const lastCellBroadcast = cellBroadcast.getLastBroadcastTime(rundownId);
     const mostRecentActivity = Math.max(lastActivityRef.current, lastCellBroadcast);
     const timeSinceActivity = Date.now() - mostRecentActivity;
@@ -189,7 +157,6 @@ export const useMainRundownConnectionHealth = ({
     // Multiple staleness conditions:
     // 1. All channels report connected but no activity for staleThresholdMs
     // 2. Any channel explicitly disconnected
-    // 3. Unified health reports degraded state
     
     const allChannelsReportConnected = isCellConnected && isShowcallerConnected && health.consolidated;
     const isStale = allChannelsReportConnected && timeSinceActivity > staleThresholdMs;
@@ -266,4 +233,3 @@ export const useMainRundownConnectionHealth = ({
     manualRetry
   };
 };
-
