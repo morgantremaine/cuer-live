@@ -24,6 +24,7 @@ import { useMOSIntegration } from '@/hooks/useMOSIntegration';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useMemoryPressureMonitor } from '@/hooks/useMemoryPressureMonitor';
+import { useMainRundownConnectionHealth } from '@/hooks/useMainRundownConnectionHealth';
 import { supabase } from '@/integrations/supabase/client';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -168,6 +169,20 @@ const RundownIndexContentInner = () => {
     enabled: true,
   });
 
+  // Set up bulletproof connection health monitoring (30-second checks, 90-second stale threshold)
+  const { 
+    showConnectionWarning, 
+    consecutiveFailures, 
+    isRecovering: isHealthRecovering,
+    markActivityReceived,
+    manualRetry 
+  } = useMainRundownConnectionHealth({
+    rundownId,
+    enabled: !!rundownId,
+    staleThresholdMs: 90000, // 90 seconds
+    healthCheckIntervalMs: 30000 // 30 seconds
+  });
+
   // Set up per-cell active editor tracking with user count for adaptive batching
   const { getEditorForCell, getAllActiveEditors } = useActiveCellEditors(rundownId, activeUserCount);
 
@@ -180,10 +195,15 @@ const RundownIndexContentInner = () => {
     // Subscribe to unified health updates
     const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, (health) => {
       setIsReconnecting(health.anyDegraded);
+      
+      // Mark activity when health reports all channels healthy
+      if (health.allHealthy) {
+        markActivityReceived();
+      }
     });
     
     return unsubscribe;
-  }, [rundownId]);
+  }, [rundownId, markActivityReceived]);
   
   // Show teammate editing when any teammate is active and has unsaved changes
   const activeTeammates = otherUsers.filter(user => {
@@ -752,7 +772,9 @@ const RundownIndexContentInner = () => {
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
-      isReconnecting={isReconnecting}
+      isReconnecting={isReconnecting || isHealthRecovering}
+      showConnectionWarning={showConnectionWarning}
+      onManualRetry={manualRetry}
     >
       <RundownContainer
         currentTime={currentTime}

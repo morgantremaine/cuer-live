@@ -494,20 +494,20 @@ export const useConsolidatedRealtimeRundown = ({
     }
     
     const checkInterval = setInterval(async () => {
-      const state = globalSubscriptions.get(rundownId);
-      if (!state) return;
+      const subState = globalSubscriptions.get(rundownId);
+      if (!subState) return;
       
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 600000; // 10 minutes (safety net only)
+      const STALE_THRESHOLD = 180000; // 3 minutes (reduced from 10m for faster recovery)
       
       // Only catch up if:
-      // 1. WebSocket is disconnected OR
-      // 2. WebSocket connected but no updates for 10+ minutes (rare edge case)
-      if (!state.isConnected) {
+      // 1. WebSocket is disconnected, OR
+      // 2. We've gone 3 minutes without ANY update (safety net - main health check handles this faster)
+      if (subState && !subState.isConnected) {
         console.log('🔄 WebSocket disconnected - performing catch-up sync');
         await performCatchupSync();
       } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        debugLogger.realtime('WebSocket connected but no updates for 10m - checking for stale data');
+        debugLogger.realtime('WebSocket connected but no updates for 3m - checking for stale data');
         const hadUpdates = await performCatchupSync();
         if (!hadUpdates) {
           lastUpdateTimeRef.current = Date.now(); // Reset timer
