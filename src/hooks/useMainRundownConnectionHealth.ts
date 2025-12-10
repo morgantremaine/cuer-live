@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
+import { forceReconnectConsolidated } from '@/hooks/useConsolidatedRealtimeRundown';
 import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
 import { toast } from 'sonner';
 
@@ -9,6 +10,7 @@ interface UseMainRundownConnectionHealthProps {
   enabled?: boolean;
   staleThresholdMs?: number; // How long without activity before considered stale
   healthCheckIntervalMs?: number; // How often to check health
+  onCatchupSync?: () => Promise<boolean>; // Callback to trigger catch-up sync after recovery
 }
 
 interface ConnectionHealthState {
@@ -25,7 +27,8 @@ export const useMainRundownConnectionHealth = ({
   rundownId,
   enabled = true,
   staleThresholdMs = 90000, // 90 seconds - tighter than teleprompter
-  healthCheckIntervalMs = 30000 // 30 seconds
+  healthCheckIntervalMs = 30000, // 30 seconds
+  onCatchupSync
 }: UseMainRundownConnectionHealthProps) => {
   const [state, setState] = useState<ConnectionHealthState>({
     showConnectionWarning: false,
@@ -56,8 +59,7 @@ export const useMainRundownConnectionHealth = ({
     }
   }, [state.showConnectionWarning]);
 
-  // Attempt silent recovery - force reconnect all channels
-  // The consolidated realtime hook's catch-up sync is automatically triggered when channels reconnect
+  // Attempt silent recovery - force reconnect all channels including consolidated
   const attemptSilentRecovery = useCallback(async () => {
     if (!rundownId || isRecoveringRef.current) {
       console.log('📡 Main Rundown: Already recovering or no rundownId, skipping...');
@@ -72,25 +74,39 @@ export const useMainRundownConnectionHealth = ({
     try {
       console.warn('📡 Main Rundown: Stale connection detected, attempting silent recovery...');
       
-      // Step 1: Force reconnect all channels in parallel
-      // This will trigger the consolidated realtime hook's catch-up sync automatically
+      // Step 1: Force reconnect ALL channels in parallel (including consolidated)
       const reconnectPromises = [
         cellBroadcast.forceReconnect(rundownId).catch(e => console.warn('Cell reconnect error:', e)),
-        showcallerBroadcast.forceReconnect(rundownId).catch(e => console.warn('Showcaller reconnect error:', e))
+        showcallerBroadcast.forceReconnect(rundownId).catch(e => console.warn('Showcaller reconnect error:', e)),
+        forceReconnectConsolidated(rundownId).catch(e => console.warn('Consolidated reconnect error:', e))
       ];
       
       await Promise.all(reconnectPromises);
       
-      // Step 2: Wait for reconnection to establish and catch-up sync to complete
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Step 2: Wait briefly for reconnection to stabilize
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Step 3: Check if we're now connected
       const isCellConnected = cellBroadcast.isChannelConnected(rundownId);
       const isShowcallerConnected = showcallerBroadcast.isChannelConnected(rundownId);
       const health = unifiedConnectionHealth.getHealth(rundownId);
       
-      if ((isCellConnected || isShowcallerConnected) && health.consolidated) {
-        console.log('📡 Main Rundown: Silent recovery successful');
+      const anyChannelConnected = isCellConnected || isShowcallerConnected || health.consolidated;
+      
+      if (anyChannelConnected) {
+        console.log('📡 Main Rundown: Channels reconnected, triggering catch-up sync...');
+        
+        // Step 4: CRITICAL - Explicitly trigger catch-up sync to fetch latest data
+        if (onCatchupSync) {
+          try {
+            const syncResult = await onCatchupSync();
+            console.log('📡 Main Rundown: Catch-up sync completed:', syncResult ? 'updates applied' : 'already up to date');
+          } catch (syncError) {
+            console.warn('📡 Main Rundown: Catch-up sync error:', syncError);
+          }
+        }
+        
+        // Mark recovery successful
         if (mountedRef.current) {
           setState({
             showConnectionWarning: false,
@@ -138,7 +154,7 @@ export const useMainRundownConnectionHealth = ({
     } finally {
       isRecoveringRef.current = false;
     }
-  }, [rundownId]);
+  }, [rundownId, onCatchupSync]);
 
   // Health check - runs every healthCheckIntervalMs
   const performHealthCheck = useCallback(async () => {
