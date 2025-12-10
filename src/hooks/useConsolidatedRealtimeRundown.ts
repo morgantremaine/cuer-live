@@ -77,6 +77,67 @@ const globalSubscriptions = new Map<string, {
 // Minimum interval between reconnection attempts (prevents storm)
 const MIN_RECONNECT_INTERVAL = 5000; // 5 seconds
 
+// Export force reconnect function for use by health monitoring
+export const forceReconnectConsolidated = async (rundownId: string): Promise<boolean> => {
+  const state = globalSubscriptions.get(rundownId);
+  if (!state) {
+    console.log('📡 forceReconnectConsolidated: No subscription state for', rundownId);
+    return false;
+  }
+
+  // Check session validity first
+  if (consolidatedSessionExpired) {
+    console.log('🔐 forceReconnectConsolidated: Session expired - cannot reconnect');
+    return false;
+  }
+
+  console.log('📡 forceReconnectConsolidated: Forcing consolidated channel reconnection for', rundownId);
+
+  try {
+    // Remove and re-establish the channel
+    const oldChannel = state.subscription;
+    
+    // Clear any pending timeouts
+    if (state.reconnectTimeout) {
+      clearTimeout(state.reconnectTimeout);
+      state.reconnectTimeout = undefined;
+    }
+    
+    // Remove old channel
+    try {
+      await supabase.removeChannel(oldChannel);
+    } catch (e) {
+      console.warn('📡 Error removing old consolidated channel:', e);
+    }
+    
+    // Clear the subscription from state - the next access will re-create it
+    // The subscription will be re-established by handleConsolidatedChannelReconnect
+    state.reconnectAttempts = 0;
+    state.reconnecting = false;
+    
+    // Trigger reconnection
+    handleConsolidatedChannelReconnect(rundownId);
+    
+    // Wait for reconnection (max 10 seconds)
+    let attempts = 0;
+    while (attempts < 20) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const currentState = globalSubscriptions.get(rundownId);
+      if (currentState?.isConnected) {
+        console.log('📡 forceReconnectConsolidated: Successfully reconnected');
+        return true;
+      }
+      attempts++;
+    }
+    
+    console.warn('📡 forceReconnectConsolidated: Reconnection timed out');
+    return false;
+  } catch (error) {
+    console.error('📡 forceReconnectConsolidated: Error during reconnection:', error);
+    return false;
+  }
+};
+
 // Reconnection helper with exponential backoff and debouncing
 const handleConsolidatedChannelReconnect = async (rundownId: string) => {
   const state = globalSubscriptions.get(rundownId);

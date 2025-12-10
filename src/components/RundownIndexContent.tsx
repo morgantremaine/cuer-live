@@ -107,7 +107,9 @@ const RundownIndexContentInner = () => {
     moveItemDown,
     // Numbering lock
     numberingLocked,
-    toggleLock
+    toggleLock,
+    // Connection recovery
+    performCatchupSync
   } = coreState;
 
   // Enable realtime connection notifications (after rundownId is available)
@@ -180,7 +182,8 @@ const RundownIndexContentInner = () => {
     rundownId,
     enabled: !!rundownId,
     staleThresholdMs: 90000, // 90 seconds
-    healthCheckIntervalMs: 30000 // 30 seconds
+    healthCheckIntervalMs: 30000, // 30 seconds
+    onCatchupSync: performCatchupSync // Wire up catch-up sync for recovery
   });
 
   // Set up per-cell active editor tracking with user count for adaptive batching

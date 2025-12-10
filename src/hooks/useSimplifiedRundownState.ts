@@ -2050,6 +2050,9 @@ export const useSimplifiedRundownState = () => {
       if (rundownId) {
         cellBroadcast.flushPendingBroadcasts(rundownId);
       }
-    }, [rundownId])
+    }, [rundownId]),
+    
+    // Expose catch-up sync for connection health recovery
+    performCatchupSync
   };
 };
