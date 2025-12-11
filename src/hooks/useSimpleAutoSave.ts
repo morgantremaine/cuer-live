@@ -319,9 +319,20 @@ export const useSimpleAutoSave = (
 
   const handlePerCellSaveComplete = useCallback((completionCount?: number) => {
     setIsSaving(false);
+    
+    // CRITICAL: Sync all unsaved flags after successful per-cell save
+    // This prevents false positives in paranoid save timer
+    hasUnsavedChangesRef.current = false;
+    setPerCellHasUnsavedChanges(false);
+    
+    // Update the signature baseline to match current state
+    // This keeps useChangeTracking's signature-based detection in sync
+    const currentSignature = createContentSignatureFromState(state);
+    lastSavedRef.current = currentSignature;
+    
     // Forward completion count to parent so UI indicator can show "Saved"
     onSaved({ completionCount });
-  }, [onSaved]);
+  }, [onSaved, state, createContentSignatureFromState]);
 
   const handlePerCellUnsavedChanges = useCallback(() => {
     hasUnsavedChangesRef.current = true;
@@ -975,41 +986,32 @@ export const useSimpleAutoSave = (
 
   // Paranoid save timer - ensures old unsaved changes get persisted
   // Runs every 30 seconds and force-saves if changes are sitting unsaved
+  // SIMPLIFIED: Only check perCellHasUnsavedChanges since per-cell save is always enabled
   useEffect(() => {
     if (!rundownId || !isInitiallyLoaded || rundownId === DEMO_RUNDOWN_ID) return;
 
     const paranoidSaveInterval = setInterval(() => {
       // Only trigger if:
-      // 1. There are unsaved changes (either flag)
+      // 1. Per-cell system reports unsaved changes (single source of truth)
       // 2. Not currently typing (respect user input)
       // 3. Not in the middle of a save operation
       
-      const hasChanges = state.hasUnsavedChanges || hasUnsavedChangesRef.current || perCellHasUnsavedChanges;
+      const hasChanges = perCellHasUnsavedChanges;
       const isTyping = isTypingActive();
       const isSavingNow = saveInProgressRef.current || isSaving;
       
       if (hasChanges && !isTyping && !isSavingNow) {
         console.log('⏰ PARANOID SAVE: Forcing save for unsaved changes (30s timer)');
         
-        // Trigger immediate save, bypassing normal debouncing
-        if (isPerCellEnabled) {
-          // For per-cell mode, use coordinated save
-          saveCoordinatedState(state).catch(error => {
-            // "No changes to save" is actually success - flags were out of sync
-            if (error.message === 'No changes to save') {
-              console.log('⏰ PARANOID SAVE: Already saved - clearing stale flags');
-              hasUnsavedChangesRef.current = false;
-              setPerCellHasUnsavedChanges(false);
-            } else {
-              console.error('⏰ PARANOID SAVE: Per-cell save failed:', error);
-            }
-          });
-        } else {
-          // For delta mode, use performSave
-          performSave(true, isSharedView).catch(error => {
-            console.error('⏰ PARANOID SAVE: Delta save failed:', error);
-          });
-        }
+        // Per-cell mode: use coordinated save
+        saveCoordinatedState(state).catch(error => {
+          // "No changes to save" means flags were already synced - not an error
+          if (error.message === 'No changes to save') {
+            console.log('⏰ PARANOID SAVE: Already saved - flags were stale');
+          } else {
+            console.error('⏰ PARANOID SAVE: Save failed:', error);
+          }
+        });
       }
     }, 30000); // Check every 30 seconds
 
@@ -1017,14 +1019,10 @@ export const useSimpleAutoSave = (
   }, [
     rundownId, 
     isInitiallyLoaded, 
-    state.hasUnsavedChanges, 
     perCellHasUnsavedChanges,
     isTypingActive, 
     isSaving,
-    isPerCellEnabled,
     saveCoordinatedState,
-    performSave,
-    isSharedView,
     state
   ]);
 
