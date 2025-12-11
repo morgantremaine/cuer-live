@@ -6,14 +6,13 @@ import { usePendingInvitationsForMe, PendingInvitationForMe } from '@/hooks/useP
 import { formatDistanceToNow } from 'date-fns';
 
 const getRoleDisplayName = (role: string): string => {
-  const roleMap: Record<string, string> = {
-    'admin': 'Admin',
-    'manager': 'Manager',
-    'showcaller': 'Showcaller',
-    'member': 'Crew',
-    'teleprompter': 'Teleprompter'
-  };
-  return roleMap[role] || role;
+  switch (role) {
+    case 'admin': return 'Admin';
+    case 'manager': return 'Manager';
+    case 'showcaller': return 'Showcaller';
+    case 'teleprompter': return 'Teleprompter';
+    default: return 'Member';
+  }
 };
 
 const getRoleBadgeVariant = (role: string): 'default' | 'secondary' | 'outline' => {
