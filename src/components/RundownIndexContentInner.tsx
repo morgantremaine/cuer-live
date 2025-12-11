@@ -39,6 +39,7 @@ export const RundownIndexContentInner: React.FC<RundownIndexContentInnerProps> =
     onCopy: interactions.handleCopySelectedRows,
     onPaste: interactions.handlePasteRows,
     onAddRow: interactions.handleAddRow,
+    onDelete: interactions.handleDeleteSelectedRows,
     selectedRows: interactions.selectedRows,
     hasClipboardData: interactions.hasClipboardData(),
     onShowcallerPlay: coreState.play,
