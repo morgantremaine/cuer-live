@@ -487,7 +487,100 @@ export const useConsolidatedRealtimeRundown = ({
     wasConnectedRef.current = isConnected;
   }, [isConnected, performCatchupSync, rundownId]);
 
-  // Simplified polling fallback - only catch up when genuinely needed
+  // Proactive health check - detect zombie connections within 90 seconds
+  useEffect(() => {
+    if (!enabled || !rundownId || !isConnected) return;
+    
+    const HEALTH_CHECK_INTERVAL = 60000; // Check every 60 seconds
+    
+    const healthCheckInterval = setInterval(async () => {
+      // Skip if tab is hidden - save resources
+      if (document.hidden) return;
+      
+      const state = globalSubscriptions.get(rundownId);
+      if (!state?.isConnected) return;
+      
+      console.log('💓 Proactive health check...');
+      
+      try {
+        // Quick lightweight check - just fetch doc_version
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('doc_version')
+          .eq('id', rundownId)
+          .single();
+        
+        if (error) {
+          console.warn('❌ Health check failed - connection may be dead:', error.message);
+          // Force reconnection
+          handleConsolidatedChannelReconnect(rundownId);
+        } else {
+          // Connection is alive - check if we missed updates
+          const serverVersion = data?.doc_version || 0;
+          if (serverVersion > state.lastProcessedDocVersion) {
+            console.log('⚠️ Health check detected missed updates:', {
+              server: serverVersion,
+              local: state.lastProcessedDocVersion
+            });
+            await performCatchupSync();
+          }
+        }
+      } catch (err) {
+        console.warn('❌ Health check exception:', err);
+        handleConsolidatedChannelReconnect(rundownId);
+      }
+    }, HEALTH_CHECK_INTERVAL);
+    
+    return () => clearInterval(healthCheckInterval);
+  }, [enabled, rundownId, isConnected, performCatchupSync]);
+
+  // Visibility change handler - verify connection when tab becomes visible
+  useEffect(() => {
+    if (!enabled || !rundownId) return;
+    
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return;
+      
+      const state = globalSubscriptions.get(rundownId);
+      if (!state) return;
+      
+      console.log('👁️ Tab became visible - verifying connection health...');
+      
+      // Small delay to let network stabilize after wake
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      try {
+        // Quick health check
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('doc_version')
+          .eq('id', rundownId)
+          .single();
+        
+        if (error) {
+          console.warn('❌ Connection dead on visibility - forcing reconnect');
+          handleConsolidatedChannelReconnect(rundownId);
+        } else {
+          // Connection is alive - check for missed updates
+          const serverVersion = data?.doc_version || 0;
+          if (serverVersion > state.lastProcessedDocVersion) {
+            console.log('📡 Missed updates while away - catching up');
+            await performCatchupSync();
+          } else {
+            console.log('✅ Connection healthy, no missed updates');
+          }
+        }
+      } catch (err) {
+        console.warn('❌ Visibility health check failed:', err);
+        handleConsolidatedChannelReconnect(rundownId);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [enabled, rundownId, performCatchupSync]);
+
+  // Simplified polling fallback - reduced threshold from 10 to 3 minutes
   useEffect(() => {
     if (!enabled || !rundownId) {
       return;
@@ -498,22 +591,22 @@ export const useConsolidatedRealtimeRundown = ({
       if (!state) return;
       
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 600000; // 10 minutes (safety net only)
+      const STALE_THRESHOLD = 180000; // 3 minutes (reduced from 10)
       
       // Only catch up if:
       // 1. WebSocket is disconnected OR
-      // 2. WebSocket connected but no updates for 10+ minutes (rare edge case)
+      // 2. WebSocket connected but no updates for 3+ minutes (zombie detection)
       if (!state.isConnected) {
         console.log('🔄 WebSocket disconnected - performing catch-up sync');
         await performCatchupSync();
       } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        debugLogger.realtime('WebSocket connected but no updates for 10m - checking for stale data');
+        console.log('⏰ No updates for 3+ minutes - checking for stale data');
         const hadUpdates = await performCatchupSync();
         if (!hadUpdates) {
           lastUpdateTimeRef.current = Date.now(); // Reset timer
         }
       }
-    }, 30000); // Check every 30 seconds for faster detection
+    }, 30000); // Check every 30 seconds
     
     return () => clearInterval(checkInterval);
   }, [enabled, rundownId, isConnected, performCatchupSync]);
