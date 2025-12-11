@@ -549,6 +549,7 @@ const RundownIndexContentInner = () => {
     onCopy: handleCopySelectedRows,
     onPaste: handlePasteRows,
     onAddRow: handleAddRow,
+    onDeleteSelectedRows: handleDeleteSelectedRows,
     selectedRows: interactions.selectedRows,
     hasClipboardData: hasClipboardData(),
     onShowcallerPlay: play,
