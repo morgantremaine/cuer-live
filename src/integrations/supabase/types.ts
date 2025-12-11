@@ -1539,6 +1539,7 @@ export type Database = {
         Args: { post_uuid: string }
         Returns: undefined
       }
+      is_admin_user: { Args: never; Returns: boolean }
       is_layout_shared_for_public_rundown: {
         Args: { layout_uuid: string }
         Returns: boolean
