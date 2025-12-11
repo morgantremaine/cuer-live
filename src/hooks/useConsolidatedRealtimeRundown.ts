@@ -1171,6 +1171,9 @@ export const useConsolidatedRealtimeRundown = ({
         // CRITICAL: Cleanup unified health service
         unifiedConnectionHealth.cleanup(rundownId);
         
+        // CRITICAL: Cleanup consolidated activity tracking to prevent memory leak
+        lastConsolidatedActivityTime.delete(rundownId);
+        
         // Prevent recursive cleanup
         const subscription = state.subscription;
         globalSubscriptions.delete(rundownId);
