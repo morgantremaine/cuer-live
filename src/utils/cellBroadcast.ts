@@ -67,11 +67,6 @@ export class CellBroadcastManager {
   private healthyThreshold = 0.8; // 80% success rate required
   private healthCheckInterval = 30000; // 30 seconds
   
-  // HEARTBEAT: Keep connections alive during long-running shows
-  private heartbeatIntervals = new Map<string, NodeJS.Timeout>();
-  private lastHeartbeatSuccess = new Map<string, number>();
-  private readonly HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
-  
   // Broadcast timing tracking for teleprompter health monitoring
   private lastBroadcastReceivedAt = new Map<string, number>();
   
@@ -199,9 +194,6 @@ export class CellBroadcastManager {
           clearTimeout(pendingTimeout);
           this.reconnectTimeouts.delete(rundownId);
         }
-        
-        // START HEARTBEAT: Keep connection alive during long-running shows
-        this.startHeartbeat(rundownId);
         
         // Check if ALL channels are now healthy and reset global failure count
         if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
@@ -556,9 +548,6 @@ export class CellBroadcastManager {
     // CRITICAL: Mark as cleaning up BEFORE any cleanup to prevent status callback from scheduling reconnection
     this.cleaningUp.set(rundownId, true);
     
-    // Stop heartbeat immediately
-    this.stopHeartbeat(rundownId);
-    
     // Clear reconnect attempts and timeouts
     this.reconnectAttempts.delete(rundownId);
     const timeout = this.reconnectTimeouts.get(rundownId);
@@ -590,50 +579,6 @@ export class CellBroadcastManager {
       // Clear cleanup flag if no channel to remove
       this.cleaningUp.delete(rundownId);
     }
-  }
-  
-  // HEARTBEAT: Keep WebSocket connections alive during long-running shows
-  private startHeartbeat(rundownId: string): void {
-    this.stopHeartbeat(rundownId);
-    
-    console.log('💓 Starting cell broadcast heartbeat:', rundownId);
-    
-    const interval = setInterval(async () => {
-      const channel = this.channels.get(rundownId);
-      if (!channel || !this.subscribed.get(rundownId)) {
-        return;
-      }
-      
-      try {
-        await channel.send({
-          type: 'broadcast',
-          event: 'heartbeat',
-          payload: { timestamp: Date.now() }
-        });
-        
-        this.lastHeartbeatSuccess.set(rundownId, Date.now());
-        debugLogger.realtime('💓 Cell heartbeat sent:', rundownId);
-      } catch (error) {
-        console.warn('💔 Cell heartbeat failed - triggering reconnection:', rundownId, error);
-        // Track failure in unified health
-        unifiedConnectionHealth.trackFailure(rundownId);
-        // Trigger reconnection
-        this.forceReconnect(rundownId);
-      }
-    }, this.HEARTBEAT_INTERVAL_MS);
-    
-    this.heartbeatIntervals.set(rundownId, interval);
-    this.lastHeartbeatSuccess.set(rundownId, Date.now());
-  }
-  
-  private stopHeartbeat(rundownId: string): void {
-    const interval = this.heartbeatIntervals.get(rundownId);
-    if (interval) {
-      clearInterval(interval);
-      this.heartbeatIntervals.delete(rundownId);
-      console.log('💓 Stopped cell broadcast heartbeat:', rundownId);
-    }
-    this.lastHeartbeatSuccess.delete(rundownId);
   }
 
   // Health monitoring methods
@@ -734,9 +679,6 @@ export class CellBroadcastManager {
   }
 
   cleanup(rundownId: string) {
-    // Stop heartbeat first
-    this.stopHeartbeat(rundownId);
-    
     // Flush any pending broadcasts before cleanup
     this.flushPendingBroadcasts(rundownId);
     

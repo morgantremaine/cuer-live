@@ -487,45 +487,36 @@ export const useConsolidatedRealtimeRundown = ({
     wasConnectedRef.current = isConnected;
   }, [isConnected, performCatchupSync, rundownId]);
 
-  // HEARTBEAT: Connection health monitoring - verify messages are flowing
-  // This catches "zombie" connections that appear connected but aren't receiving data
+  // Simplified polling fallback - only catch up when genuinely needed
   useEffect(() => {
     if (!enabled || !rundownId) {
       return;
     }
     
-    const HEARTBEAT_CHECK_INTERVAL = 30000; // Check every 30 seconds
-    const CONNECTION_STALE_THRESHOLD = 90000; // 90 seconds without messages = stale
-    
-    const heartbeatCheck = setInterval(async () => {
+    const checkInterval = setInterval(async () => {
       const state = globalSubscriptions.get(rundownId);
       if (!state) return;
       
-      const timeSinceLastMessage = Date.now() - lastUpdateTimeRef.current;
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+      const STALE_THRESHOLD = 600000; // 10 minutes (safety net only)
       
-      // If connected but no messages for 90 seconds, connection may be dead
-      if (state.isConnected && timeSinceLastMessage > CONNECTION_STALE_THRESHOLD) {
-        console.warn('💔 Consolidated connection appears stale - no messages for 90s');
-        console.log('💓 Forcing catch-up sync and connection verification');
-        
-        // Mark as disconnected to trigger reconnection flow
-        state.isConnected = false;
-        unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
-        
-        // Trigger reconnection
-        handleConsolidatedChannelReconnect(rundownId);
-        
-        // Also perform catch-up sync to get any missed data
-        await performCatchupSync();
-      } else if (!state.isConnected) {
-        // WebSocket disconnected - try to catch up
+      // Only catch up if:
+      // 1. WebSocket is disconnected OR
+      // 2. WebSocket connected but no updates for 10+ minutes (rare edge case)
+      if (!state.isConnected) {
         console.log('🔄 WebSocket disconnected - performing catch-up sync');
         await performCatchupSync();
+      } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
+        debugLogger.realtime('WebSocket connected but no updates for 10m - checking for stale data');
+        const hadUpdates = await performCatchupSync();
+        if (!hadUpdates) {
+          lastUpdateTimeRef.current = Date.now(); // Reset timer
+        }
       }
-    }, HEARTBEAT_CHECK_INTERVAL);
+    }, 30000); // Check every 30 seconds for faster detection
     
-    return () => clearInterval(heartbeatCheck);
-  }, [enabled, rundownId, performCatchupSync]);
+    return () => clearInterval(checkInterval);
+  }, [enabled, rundownId, isConnected, performCatchupSync]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
