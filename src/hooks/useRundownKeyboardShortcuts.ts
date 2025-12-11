@@ -28,6 +28,7 @@ interface UseRundownKeyboardShortcutsProps {
   onCopy: () => void;
   onPaste: (targetRowId?: string) => void;
   onAddRow: () => void;
+  onDelete: () => void;
   selectedRows: Set<string>;
   hasClipboardData: boolean;
   onShowcallerPlay: () => void;
@@ -49,6 +50,7 @@ export const useRundownKeyboardShortcuts = ({
   onCopy,
   onPaste,
   onAddRow,
+  onDelete,
   selectedRows,
   hasClipboardData,
   onShowcallerPlay,
@@ -178,6 +180,13 @@ export const useRundownKeyboardShortcuts = ({
         onAddRow();
       }
 
+      // Delete selected rows: Backspace or Delete key
+      if ((e.key === 'Backspace' || e.key === 'Delete') && selectedRows.size > 0) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Delete', selectedRows.size, 'row(s)');
+        onDelete();
+      }
+
       // Undo: Ctrl/Cmd + Z (without Shift)
       if (isCtrlOrCmd && e.key.toLowerCase() === 'z' && !e.shiftKey && canUndo) {
         e.preventDefault();
@@ -238,5 +247,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, onAddRow, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole, talentPresets, onInsertTalent]);
+  }, [onCopy, onPaste, onAddRow, onDelete, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole, talentPresets, onInsertTalent]);
 };
