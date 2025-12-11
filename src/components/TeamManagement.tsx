@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check, LogOut, Shield, UserX, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import OrganizationMembers from '@/components/OrganizationMembers';
-import { PendingTeamInvitations } from '@/components/team/PendingTeamInvitations';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -390,9 +389,6 @@ const TeamManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Pending Invitations For Current User */}
-      <PendingTeamInvitations />
-      
       {/* Team Info */}
       <Card>
         <CardHeader>

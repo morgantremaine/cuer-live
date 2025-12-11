@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, User, LogOut, HelpCircle, Crown, ChevronDown, Shield, Users, ArrowLeftRight, Plus, Mail } from 'lucide-react'
+import { ArrowLeft, User, LogOut, HelpCircle, Crown, ChevronDown, Shield, Users, ArrowLeftRight, Plus } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,6 @@ import {
 import { useNavigate } from 'react-router-dom'
 import CuerLogo from '@/components/common/CuerLogo'
 import { Team, UserTeam } from '@/hooks/useTeam'
-import { usePendingInvitationsForMe } from '@/hooks/usePendingInvitationsForMe'
 
 interface DashboardHeaderProps {
   userEmail?: string
@@ -38,7 +37,6 @@ const DashboardHeader = ({
   onCreateTeam
 }: DashboardHeaderProps) => {
   const navigate = useNavigate()
-  const { count: pendingInvitationCount } = usePendingInvitationsForMe()
 
   const handleHelpClick = () => {
     window.open('/help', '_blank');
@@ -49,10 +47,6 @@ const DashboardHeader = ({
     if (switchToTeam) {
       switchToTeam(teamId);
     }
-  }
-
-  const handleViewInvitations = () => {
-    navigate('/account?tab=team');
   }
 
   return (
@@ -152,22 +146,6 @@ const DashboardHeader = ({
           </div>
           
           <div className="flex items-center space-x-4">
-            {/* Pending Invitations Notification */}
-            {pendingInvitationCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleViewInvitations}
-                className="relative text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
-              >
-                <Mail className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full">
-                  {pendingInvitationCount}
-                </span>
-                <span className="ml-2 hidden sm:inline">Team Invite{pendingInvitationCount > 1 ? 's' : ''}</span>
-              </Button>
-            )}
-            
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
