@@ -155,9 +155,6 @@ export class CellBroadcastManager {
           return;
         }
         
-        // Track broadcast receipt time for health monitoring - focus events count as activity
-        this.lastBroadcastReceivedAt.set(rundownId, Date.now());
-        
         const fieldKey = `${focus.itemId || 'rundown'}-${focus.field}`;
         debugLogger.realtime('Cell focus broadcast received:', { fieldKey, isFocused: focus.isFocused, userName: focus.userName });
         
@@ -166,14 +163,6 @@ export class CellBroadcastManager {
           cbs.forEach(cb => {
             try { cb(focus); } catch (e) { console.warn('Cell focus callback error', e); }
           });
-        }
-      })
-      .on('broadcast', { event: 'heartbeat' }, (payload: { payload: { rundownId: string; timestamp: number } }) => {
-        // Update lastBroadcastReceivedAt when ANY client sends a heartbeat
-        // This keeps channels marked as active during quiet periods (no edits)
-        const heartbeat = payload?.payload;
-        if (heartbeat?.rundownId === rundownId) {
-          this.lastBroadcastReceivedAt.set(rundownId, Date.now());
         }
       });
 
@@ -687,32 +676,6 @@ export class CellBroadcastManager {
       isHealthy: this.isBroadcastHealthy(rundownId),
       isConnected: this.isChannelConnected(rundownId)
     };
-  }
-
-  // Send heartbeat ping to keep channel alive during quiet periods
-  async sendHeartbeat(rundownId: string): Promise<void> {
-    const channel = this.channels.get(rundownId);
-    if (!channel) return;
-    
-    const isConnected = this.isChannelConnected(rundownId);
-    if (!isConnected) return;
-    
-    try {
-      await channel.send({
-        type: 'broadcast',
-        event: 'heartbeat',
-        payload: {
-          rundownId,
-          timestamp: Date.now(),
-          type: 'keepalive'
-        }
-      });
-      
-      // Update last broadcast time so staleness detection knows we're active
-      this.lastBroadcastReceivedAt.set(rundownId, Date.now());
-    } catch (error) {
-      console.warn('📡 Heartbeat send failed:', error);
-    }
   }
 
   cleanup(rundownId: string) {

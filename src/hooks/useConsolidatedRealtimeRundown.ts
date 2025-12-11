@@ -77,75 +77,6 @@ const globalSubscriptions = new Map<string, {
 // Minimum interval between reconnection attempts (prevents storm)
 const MIN_RECONNECT_INTERVAL = 5000; // 5 seconds
 
-// Track last consolidated activity time per rundown for health monitoring
-const lastConsolidatedActivityTime = new Map<string, number>();
-
-// Export for health monitoring - allows checking when we last received consolidated updates
-export const getLastConsolidatedUpdateTime = (rundownId: string): number => {
-  return lastConsolidatedActivityTime.get(rundownId) || 0;
-};
-
-// Export force reconnect function for use by health monitoring
-export const forceReconnectConsolidated = async (rundownId: string): Promise<boolean> => {
-  const state = globalSubscriptions.get(rundownId);
-  if (!state) {
-    console.log('📡 forceReconnectConsolidated: No subscription state for', rundownId);
-    return false;
-  }
-
-  // Check session validity first
-  if (consolidatedSessionExpired) {
-    console.log('🔐 forceReconnectConsolidated: Session expired - cannot reconnect');
-    return false;
-  }
-
-  console.log('📡 forceReconnectConsolidated: Forcing consolidated channel reconnection for', rundownId);
-
-  try {
-    // Remove and re-establish the channel
-    const oldChannel = state.subscription;
-    
-    // Clear any pending timeouts
-    if (state.reconnectTimeout) {
-      clearTimeout(state.reconnectTimeout);
-      state.reconnectTimeout = undefined;
-    }
-    
-    // Remove old channel
-    try {
-      await supabase.removeChannel(oldChannel);
-    } catch (e) {
-      console.warn('📡 Error removing old consolidated channel:', e);
-    }
-    
-    // Clear the subscription from state - the next access will re-create it
-    // The subscription will be re-established by handleConsolidatedChannelReconnect
-    state.reconnectAttempts = 0;
-    state.reconnecting = false;
-    
-    // Trigger reconnection
-    handleConsolidatedChannelReconnect(rundownId);
-    
-    // Wait for reconnection (max 10 seconds)
-    let attempts = 0;
-    while (attempts < 20) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const currentState = globalSubscriptions.get(rundownId);
-      if (currentState?.isConnected) {
-        console.log('📡 forceReconnectConsolidated: Successfully reconnected');
-        return true;
-      }
-      attempts++;
-    }
-    
-    console.warn('📡 forceReconnectConsolidated: Reconnection timed out');
-    return false;
-  } catch (error) {
-    console.error('📡 forceReconnectConsolidated: Error during reconnection:', error);
-    return false;
-  }
-};
-
 // Reconnection helper with exponential backoff and debouncing
 const handleConsolidatedChannelReconnect = async (rundownId: string) => {
   const state = globalSubscriptions.get(rundownId);
@@ -563,20 +494,20 @@ export const useConsolidatedRealtimeRundown = ({
     }
     
     const checkInterval = setInterval(async () => {
-      const subState = globalSubscriptions.get(rundownId);
-      if (!subState) return;
+      const state = globalSubscriptions.get(rundownId);
+      if (!state) return;
       
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes (reduced from 10m for faster recovery)
+      const STALE_THRESHOLD = 600000; // 10 minutes (safety net only)
       
       // Only catch up if:
-      // 1. WebSocket is disconnected, OR
-      // 2. We've gone 3 minutes without ANY update (safety net - main health check handles this faster)
-      if (subState && !subState.isConnected) {
+      // 1. WebSocket is disconnected OR
+      // 2. WebSocket connected but no updates for 10+ minutes (rare edge case)
+      if (!state.isConnected) {
         console.log('🔄 WebSocket disconnected - performing catch-up sync');
         await performCatchupSync();
       } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        debugLogger.realtime('WebSocket connected but no updates for 3m - checking for stale data');
+        debugLogger.realtime('WebSocket connected but no updates for 10m - checking for stale data');
         const hadUpdates = await performCatchupSync();
         if (!hadUpdates) {
           lastUpdateTimeRef.current = Date.now(); // Reset timer
@@ -705,11 +636,6 @@ export const useConsolidatedRealtimeRundown = ({
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
     if (incomingDocVersion) {
       globalState.lastProcessedDocVersion = incomingDocVersion;
-    }
-    
-    // CRITICAL: Track activity for connection health monitoring
-    if (rundownId) {
-      lastConsolidatedActivityTime.set(rundownId, Date.now());
     }
     
     // Track update time for polling fallback
@@ -1170,9 +1096,6 @@ export const useConsolidatedRealtimeRundown = ({
         
         // CRITICAL: Cleanup unified health service
         unifiedConnectionHealth.cleanup(rundownId);
-        
-        // CRITICAL: Cleanup consolidated activity tracking to prevent memory leak
-        lastConsolidatedActivityTime.delete(rundownId);
         
         // Prevent recursive cleanup
         const subscription = state.subscription;

@@ -44,7 +44,6 @@ import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
-import AdminDashboard from "./pages/AdminDashboard";
 import ScriptTimingCalculator from "./pages/tools/ScriptTimingCalculator";
 import BroadcastGlossary from "./pages/tools/BroadcastGlossary";
 import TimeCalculator from "./pages/tools/TimeCalculator";
@@ -127,14 +126,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiresSubscription={true}>
             <AdminHealth />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/admin/dashboard" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <AdminDashboard />
           </ProtectedRoute>
         } 
       />

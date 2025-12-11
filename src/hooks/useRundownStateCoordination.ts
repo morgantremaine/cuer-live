@@ -464,10 +464,7 @@ export const useRundownStateCoordination = () => {
       
       // Move functions for mobile
       moveItemUp,
-      moveItemDown,
-      
-      // Catch-up sync for connection health recovery
-      performCatchupSync: persistedState.performCatchupSync
+      moveItemDown
     },
     interactions,
     uiState,
