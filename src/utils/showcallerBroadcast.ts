@@ -37,6 +37,20 @@ class ShowcallerBroadcastManager {
       // The session will be validated on next reconnect attempt
     });
 
+    // Visibility change handler - verify connection when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      
+      // Check all active channels
+      this.channels.forEach((channel, rundownId) => {
+        const status = this.connectionStatus.get(rundownId);
+        if (status !== 'SUBSCRIBED') {
+          console.log('👁️ Tab visible - showcaller channel unhealthy, reconnecting:', rundownId);
+          this.forceReconnect(rundownId);
+        }
+      });
+    });
+
     // CRITICAL: Listen for auth state changes to stop reconnection on session expiry
     authMonitor.registerListener('showcaller-broadcast', (session) => {
       if (!session) {

@@ -89,6 +89,20 @@ export class CellBroadcastManager {
         this.reconnectGuardTimeouts.clear();
       });
 
+      // Visibility change handler - verify connection when tab becomes visible
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        
+        // Check all active channels
+        this.channels.forEach((channel, rundownId) => {
+          const status = this.connectionStatus.get(rundownId);
+          if (status !== 'SUBSCRIBED') {
+            console.log('👁️ Tab visible - cell channel unhealthy, reconnecting:', rundownId);
+            this.forceReconnect(rundownId);
+          }
+        });
+      });
+
       // CRITICAL: Listen for auth state changes to stop reconnection on session expiry
       authMonitor.registerListener('cell-broadcast', (session) => {
         if (!session) {
