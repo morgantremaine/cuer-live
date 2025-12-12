@@ -10,6 +10,16 @@ interface BroadcastHealthStatus {
   isReconnecting: boolean;
 }
 
+const mapHealthToStatus = (health: ReturnType<typeof simpleConnectionHealth.getHealth>): BroadcastHealthStatus => ({
+  isHealthy: health.allConnected && !health.isStabilizing,
+  isConnected: health.consolidated && health.showcaller && health.cell,
+  successRate: health.allConnected ? 1 : 0.5,
+  totalAttempts: health.consecutiveFailures,
+  lastChecked: Date.now(),
+  // Show as reconnecting if any channel is down OR we're in stabilization period
+  isReconnecting: health.anyDisconnected || health.isStabilizing
+});
+
 export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => {
   const [healthStatus, setHealthStatus] = useState<BroadcastHealthStatus>({
     isHealthy: true,
@@ -24,26 +34,12 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
     if (!enabled || !rundownId) return;
 
     const unsubscribe = simpleConnectionHealth.subscribe(rundownId, (health) => {
-      setHealthStatus({
-        isHealthy: health.allConnected,
-        isConnected: health.consolidated && health.showcaller && health.cell,
-        successRate: health.allConnected ? 1 : 0.5,
-        totalAttempts: health.consecutiveFailures,
-        lastChecked: Date.now(),
-        isReconnecting: health.anyDisconnected
-      });
+      setHealthStatus(mapHealthToStatus(health));
     });
 
     // Initial check
     const health = simpleConnectionHealth.getHealth(rundownId);
-    setHealthStatus({
-      isHealthy: health.allConnected,
-      isConnected: health.consolidated && health.showcaller && health.cell,
-      successRate: health.allConnected ? 1 : 0.5,
-      totalAttempts: health.consecutiveFailures,
-      lastChecked: Date.now(),
-      isReconnecting: health.anyDisconnected
-    });
+    setHealthStatus(mapHealthToStatus(health));
 
     return unsubscribe;
   }, [rundownId, enabled]);

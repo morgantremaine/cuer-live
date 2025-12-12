@@ -17,7 +17,8 @@ export const useConnectionHealth = (rundownId: string | null): UseConnectionHeal
     cell: false,
     allConnected: false,
     anyDisconnected: false,
-    consecutiveFailures: 0
+    consecutiveFailures: 0,
+    isStabilizing: false
   });
 
   useEffect(() => {
