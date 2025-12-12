@@ -81,9 +81,10 @@ class ShowcallerBroadcastManager {
 
       if (status === 'SUBSCRIBED') {
         console.log('✅ Showcaller channel connected:', rundownId);
-        // Success - reset retry count
+        // Success - reset retry count and clear intentional reconnect flag
         this.retryCount.delete(rundownId);
         this.clearRetryTimeout(rundownId);
+        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
         
         if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
           simpleConnectionHealth.resetFailures(rundownId);
@@ -140,6 +141,9 @@ class ShowcallerBroadcastManager {
     }
 
     console.log('📺 🔄 Force reconnecting showcaller:', rundownId);
+
+    // Mark as intentional reconnect to suppress cosmetic failure logging
+    simpleConnectionHealth.markIntentionalReconnect(rundownId);
 
     // Set cleanup flag to prevent status callback from triggering retry
     this.isCleaningUp.set(rundownId, true);

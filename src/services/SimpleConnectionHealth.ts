@@ -27,6 +27,9 @@ class SimpleConnectionHealthService {
   private stabilizationTimeouts = new Map<string, NodeJS.Timeout>();
   private isStabilizing = new Map<string, boolean>();
   
+  // Intentional reconnect tracking - suppresses cosmetic failure logging during force reconnects
+  private intentionalReconnect = new Map<string, boolean>();
+  
   private readonly MAX_FAILURES_BEFORE_RELOAD = 15;
   private readonly STABILIZATION_DELAY_MS = 500;
 
@@ -106,6 +109,12 @@ class SimpleConnectionHealthService {
     
     // Cancel any pending stabilization - connection is unstable again
     this.cancelStabilization(rundownId);
+    
+    // Skip failure tracking if this is an intentional force reconnect
+    if (this.intentionalReconnect.get(rundownId)) {
+      failedSet.add(channelName);
+      return;
+    }
     
     // Only increment failure count once per failure cycle (when first channel fails)
     if (failedSet.size === 0) {
@@ -241,6 +250,16 @@ class SimpleConnectionHealthService {
     }
   }
 
+  // Mark that a force reconnect is intentional (suppress failure logging)
+  markIntentionalReconnect(rundownId: string): void {
+    this.intentionalReconnect.set(rundownId, true);
+  }
+
+  // Clear intentional reconnect flag after successful reconnection
+  clearIntentionalReconnect(rundownId: string): void {
+    this.intentionalReconnect.delete(rundownId);
+  }
+
   cleanup(rundownId: string): void {
     this.cancelStabilization(rundownId);
     this.channelStatus.delete(rundownId);
@@ -248,6 +267,7 @@ class SimpleConnectionHealthService {
     this.failedChannelsInCycle.delete(rundownId);
     this.subscribers.delete(rundownId);
     this.isStabilizing.delete(rundownId);
+    this.intentionalReconnect.delete(rundownId);
   }
 }
 
