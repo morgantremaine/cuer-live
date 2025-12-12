@@ -561,9 +561,9 @@ export const useConsolidatedRealtimeRundown = ({
 
   // Stub functions for compatibility - these were part of the old complex system
   // but aren't needed with the simplified approach
-  const setTypingChecker = useCallback(() => {}, []);
-  const setUnsavedChecker = useCallback(() => {}, []);
-  const trackOwnUpdate = useCallback(() => {}, []);
+  const setTypingChecker = useCallback((_checker: () => boolean) => {}, []);
+  const setUnsavedChecker = useCallback((_checker: () => boolean) => {}, []);
+  const trackOwnUpdate = useCallback((_updateId?: string) => {}, []);
 
   return {
     isConnected,

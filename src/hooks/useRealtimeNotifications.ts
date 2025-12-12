@@ -1,10 +1,10 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { simpleConnectionHealth } from '@/services/SimpleConnectionHealth';
 
 /**
  * Hook that monitors realtime connection health and displays toast notifications
- * for connection status changes. Uses UnifiedConnectionHealth as single source of truth.
+ * for connection status changes. Uses SimpleConnectionHealth as single source of truth.
  * 
  * Only shows "Connection Restored" after recovering from a genuine failure,
  * not during initial channel setup on navigation.
@@ -15,9 +15,9 @@ export const useRealtimeNotifications = (rundownId?: string) => {
   const toastIdRef = useRef<string | null>(null);
   const hasHadStableConnectionRef = useRef<boolean>(false);
 
-  const updateStatus = useCallback((health: { allHealthy: boolean; anyDegraded: boolean }) => {
-    const currentStatus = health.allHealthy ? 'healthy' : 
-                         health.anyDegraded ? 'degraded' : 'healthy';
+  const updateStatus = useCallback((health: { allConnected: boolean; anyDisconnected: boolean }) => {
+    const currentStatus = health.allConnected ? 'healthy' : 
+                         health.anyDisconnected ? 'degraded' : 'healthy';
 
     if (currentStatus !== lastStatusRef.current) {
       // Dismiss previous toast
@@ -61,8 +61,8 @@ export const useRealtimeNotifications = (rundownId?: string) => {
     hasHadStableConnectionRef.current = false;
     lastStatusRef.current = 'unknown';
 
-    // Subscribe to unified health updates
-    const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, updateStatus);
+    // Subscribe to simple health updates
+    const unsubscribe = simpleConnectionHealth.subscribe(rundownId, updateStatus);
 
     return () => {
       unsubscribe();

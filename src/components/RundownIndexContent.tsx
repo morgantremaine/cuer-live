@@ -25,7 +25,7 @@ import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useMemoryPressureMonitor } from '@/hooks/useMemoryPressureMonitor';
 import { supabase } from '@/integrations/supabase/client';
-import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { simpleConnectionHealth } from '@/services/SimpleConnectionHealth';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { toast } from 'sonner';
 // Import timing test to run calculations check
@@ -177,9 +177,9 @@ const RundownIndexContentInner = () => {
   useEffect(() => {
     if (!rundownId) return;
     
-    // Subscribe to unified health updates
-    const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, (health) => {
-      setIsReconnecting(health.anyDegraded);
+    // Subscribe to simple health updates
+    const unsubscribe = simpleConnectionHealth.subscribe(rundownId, (health) => {
+      setIsReconnecting(health.anyDisconnected);
     });
     
     return unsubscribe;
