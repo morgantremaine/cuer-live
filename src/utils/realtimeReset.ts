@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 let lastVisibleAt = Date.now();
 let resetAttempts = 0;
+let isResetting = false; // Lock to prevent concurrent resets
 
 const EXTENDED_SLEEP_THRESHOLD = 30000; // 30 seconds
 const MAX_RESET_ATTEMPTS = 3;
@@ -35,8 +36,38 @@ export const realtimeReset = {
     resetAttempts = 0;
   },
 
+  // Check if reset is in progress
+  isResetInProgress(): boolean {
+    return isResetting;
+  },
+
+  // Wait for WebSocket to actually connect
+  async waitForWebSocketConnection(timeoutMs: number = 5000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      try {
+        // @ts-ignore - accessing internal state
+        if (supabase.realtime.isConnected?.()) {
+          return true;
+        }
+      } catch {
+        // Ignore errors checking connection state
+      }
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    console.warn('☢️ WebSocket connection timeout after', timeoutMs, 'ms');
+    return false;
+  },
+
   // Nuclear reset: kill everything and reconnect
   async performNuclearReset(): Promise<boolean> {
+    // Prevent concurrent resets
+    if (isResetting) {
+      console.log('☢️ Reset already in progress, skipping');
+      return false;
+    }
+
+    isResetting = true;
     resetAttempts++;
     
     if (resetAttempts > MAX_RESET_ATTEMPTS) {
@@ -46,6 +77,7 @@ export const realtimeReset = {
         duration: 2000,
       });
       setTimeout(() => window.location.reload(), 2000);
+      isResetting = false;
       return false;
     }
 
@@ -65,12 +97,22 @@ export const realtimeReset = {
 
       // Reconnect WebSocket
       supabase.realtime.connect();
-      console.log('☢️ WebSocket reconnected - channels must re-subscribe');
+      console.log('☢️ WebSocket reconnecting...');
+
+      // Wait for actual connection before returning
+      const connected = await this.waitForWebSocketConnection(5000);
+      if (connected) {
+        console.log('☢️ WebSocket connected - channels can now re-subscribe');
+      } else {
+        console.warn('☢️ WebSocket connection not confirmed, proceeding anyway');
+      }
 
       return true;
     } catch (error) {
       console.error('☢️ Nuclear reset error:', error);
       return false;
+    } finally {
+      isResetting = false;
     }
   },
 
