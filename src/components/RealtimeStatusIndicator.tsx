@@ -29,7 +29,7 @@ const RealtimeStatusIndicator = ({
       {/* Connection warning banner */}
       {connectionHealth.showWarning && connectionHealth.warningMessage && (
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
-          connectionHealth.health.consecutiveGlobalFailures >= 7 
+          connectionHealth.health.consecutiveFailures >= 7 
             ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
             : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
         }`}>

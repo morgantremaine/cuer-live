@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { simpleConnectionHealth } from '@/services/SimpleConnectionHealth';
 
 interface BroadcastHealthStatus {
   isHealthy: boolean;
@@ -23,27 +23,26 @@ export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => 
   useEffect(() => {
     if (!enabled || !rundownId) return;
 
-    // Subscribe to unified health updates
-    const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, (health) => {
+    const unsubscribe = simpleConnectionHealth.subscribe(rundownId, (health) => {
       setHealthStatus({
-        isHealthy: health.allHealthy,
+        isHealthy: health.allConnected,
         isConnected: health.consolidated && health.showcaller && health.cell,
-        successRate: health.allHealthy ? 1 : 0.5,
-        totalAttempts: health.consecutiveGlobalFailures,
+        successRate: health.allConnected ? 1 : 0.5,
+        totalAttempts: health.consecutiveFailures,
         lastChecked: Date.now(),
-        isReconnecting: health.anyDegraded
+        isReconnecting: health.anyDisconnected
       });
     });
 
     // Initial check
-    const health = unifiedConnectionHealth.getHealth(rundownId);
+    const health = simpleConnectionHealth.getHealth(rundownId);
     setHealthStatus({
-      isHealthy: health.allHealthy,
+      isHealthy: health.allConnected,
       isConnected: health.consolidated && health.showcaller && health.cell,
-      successRate: health.allHealthy ? 1 : 0.5,
-      totalAttempts: health.consecutiveGlobalFailures,
+      successRate: health.allConnected ? 1 : 0.5,
+      totalAttempts: health.consecutiveFailures,
       lastChecked: Date.now(),
-      isReconnecting: health.anyDegraded
+      isReconnecting: health.anyDisconnected
     });
 
     return unsubscribe;

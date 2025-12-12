@@ -1,9 +1,9 @@
-// Hook for consuming unified connection health in components
-import { useState, useEffect, useCallback } from 'react';
-import { unifiedConnectionHealth, ChannelHealth } from '@/services/UnifiedConnectionHealth';
+// Hook for consuming connection health in components - SIMPLIFIED
+import { useState, useEffect } from 'react';
+import { simpleConnectionHealth, SimpleHealthStatus } from '@/services/SimpleConnectionHealth';
 
 interface UseConnectionHealthResult {
-  health: ChannelHealth;
+  health: SimpleHealthStatus;
   isFullyConnected: boolean;
   isDegraded: boolean;
   showWarning: boolean;
@@ -11,19 +11,19 @@ interface UseConnectionHealthResult {
 }
 
 export const useConnectionHealth = (rundownId: string | null): UseConnectionHealthResult => {
-  const [health, setHealth] = useState<ChannelHealth>({
+  const [health, setHealth] = useState<SimpleHealthStatus>({
     consolidated: false,
     showcaller: false,
     cell: false,
-    allHealthy: false,
-    anyDegraded: false,
-    consecutiveGlobalFailures: 0
+    allConnected: false,
+    anyDisconnected: false,
+    consecutiveFailures: 0
   });
 
   useEffect(() => {
     if (!rundownId) return;
 
-    const unsubscribe = unifiedConnectionHealth.subscribe(rundownId, (newHealth) => {
+    const unsubscribe = simpleConnectionHealth.subscribe(rundownId, (newHealth) => {
       setHealth(newHealth);
     });
 
@@ -31,19 +31,19 @@ export const useConnectionHealth = (rundownId: string | null): UseConnectionHeal
   }, [rundownId]);
 
   // Determine warning state
-  const showWarning = health.anyDegraded || health.consecutiveGlobalFailures >= 3;
+  const showWarning = health.anyDisconnected || health.consecutiveFailures >= 3;
   
   let warningMessage: string | null = null;
-  if (health.consecutiveGlobalFailures >= 7) {
+  if (health.consecutiveFailures >= 7) {
     warningMessage = 'Connection problems - will refresh automatically if recovery fails';
-  } else if (health.consecutiveGlobalFailures >= 3 || health.anyDegraded) {
+  } else if (health.consecutiveFailures >= 3 || health.anyDisconnected) {
     warningMessage = 'Connection issues detected - syncing may be delayed';
   }
 
   return {
     health,
-    isFullyConnected: health.allHealthy,
-    isDegraded: health.anyDegraded,
+    isFullyConnected: health.allConnected,
+    isDegraded: health.anyDisconnected,
     showWarning,
     warningMessage
   };
