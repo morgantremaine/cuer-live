@@ -359,10 +359,31 @@ export const useConsolidatedRealtimeRundown = ({
       const state = globalSubscriptions.get(rundownId);
       if (!state) return;
       
+      // Skip if reconnection is already in progress
+      if (state.isCleaningUp) {
+        console.log('👁️ Tab visible - reconnection already in progress, skipping');
+        return;
+      }
+      
       console.log('👁️ Tab visible - checking ALL channel connections...');
       
-      // Small delay to let browser/network stabilize
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Longer delay to let browser/network stabilize and pending reconnections complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Re-check after delay - reconnection may have started
+      const stateAfterDelay = globalSubscriptions.get(rundownId);
+      if (stateAfterDelay?.isCleaningUp) {
+        console.log('👁️ Reconnection started during delay, skipping');
+        return;
+      }
+      
+      // Check if we're stabilizing (recovery in progress) - use SimpleConnectionHealth as source of truth
+      const health = simpleConnectionHealth.getHealth(rundownId);
+      if (health.isStabilizing) {
+        console.log('👁️ Channels stabilizing after recovery, skipping redundant reconnect');
+        await performCatchupSync();
+        return;
+      }
       
       try {
         const { error } = await supabase
@@ -380,26 +401,15 @@ export const useConsolidatedRealtimeRundown = ({
           await forceReconnect(rundownId);
           await showcallerBroadcast.forceReconnect(rundownId);
           await cellBroadcast.forceReconnect(rundownId);
-        } else if (!state.isConnected) {
-          console.log('📡 Consolidated not connected - reconnecting ALL channels');
-          await forceReconnect(rundownId);
-          await showcallerBroadcast.forceReconnect(rundownId);
-          await cellBroadcast.forceReconnect(rundownId);
+        } else if (!health.allConnected) {
+          // Use health.allConnected instead of state.isConnected - source of truth
+          console.log('📡 Not all channels connected - reconnecting unhealthy channels');
+          if (!health.consolidated) await forceReconnect(rundownId);
+          if (!health.showcaller) await showcallerBroadcast.forceReconnect(rundownId);
+          if (!health.cell) await cellBroadcast.forceReconnect(rundownId);
         } else {
-          // Check individual channel health and reconnect if needed
-          const showcallerHealthy = showcallerBroadcast.isChannelConnected(rundownId);
-          const cellHealthy = cellBroadcast.isChannelConnected(rundownId);
-          
-          if (!showcallerHealthy) {
-            console.log('📺 Showcaller unhealthy after visibility - reconnecting');
-            await showcallerBroadcast.forceReconnect(rundownId);
-          }
-          if (!cellHealthy) {
-            console.log('📱 Cell channel unhealthy after visibility - reconnecting');
-            await cellBroadcast.forceReconnect(rundownId);
-          }
-          
-          // Always do catch-up sync on visibility
+          // All healthy - just do catch-up sync
+          console.log('👁️ All channels healthy - performing catch-up sync');
           await performCatchupSync();
         }
       } catch (err) {
