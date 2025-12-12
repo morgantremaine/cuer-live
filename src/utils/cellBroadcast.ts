@@ -125,7 +125,6 @@ export class CellBroadcastManager {
         if (this.isCleaningUp.get(rundownId)) return;
         
         console.warn('🔌 Cell channel issue:', rundownId, status);
-        simpleConnectionHealth.trackFailure(rundownId);
         this.scheduleRetry(rundownId);
       }
     });
