@@ -342,25 +342,35 @@ export const useConsolidatedRealtimeRundown = ({
 
       // Check if this was an extended sleep
       if (realtimeReset.wasExtendedSleep()) {
-        console.log('☢️ Extended sleep detected - performing nuclear reset');
+        // Check if channels are actually healthy before nuking them
+        const health = simpleConnectionHealth.getHealth(rundownId);
         
-        // Clear stale health state before reinitializing
-        simpleConnectionHealth.cleanup(rundownId);
-        
-        const success = await realtimeReset.performNuclearReset();
-        if (success) {
-          // Re-initialize ALL channels
-          await initializeChannel();
-          const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
-          const { cellBroadcast } = await import('@/utils/cellBroadcast');
-          showcallerBroadcast.reinitialize(rundownId);
-          cellBroadcast.reinitialize(rundownId);
+        if (health.allConnected) {
+          // Channels survived the extended absence - just sync
+          console.log('👁️ Extended absence but channels healthy - just catching up');
+          await performCatchupSync();
+        } else {
+          // Channels are degraded - perform nuclear reset
+          console.log(`☢️ Extended sleep + degraded connections - performing nuclear reset (consolidated: ${health.consolidated}, showcaller: ${health.showcaller}, cell: ${health.cell})`);
           
-          // Give channels a moment to connect, then catch up
-          setTimeout(() => {
-            console.log('✅ Nuclear reset complete - syncing data');
-            performCatchupSync();
-          }, 2000);
+          // Clear stale health state before reinitializing
+          simpleConnectionHealth.cleanup(rundownId);
+          
+          const success = await realtimeReset.performNuclearReset();
+          if (success) {
+            // Re-initialize ALL channels
+            await initializeChannel();
+            const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
+            const { cellBroadcast } = await import('@/utils/cellBroadcast');
+            showcallerBroadcast.reinitialize(rundownId);
+            cellBroadcast.reinitialize(rundownId);
+            
+            // Give channels a moment to connect, then catch up
+            setTimeout(() => {
+              console.log('✅ Nuclear reset complete - syncing data');
+              performCatchupSync();
+            }, 2000);
+          }
         }
       } else {
         // Normal tab switch - just catch up
