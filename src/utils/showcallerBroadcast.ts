@@ -160,6 +160,14 @@ class ShowcallerBroadcastManager {
     }
     this.lastReconnectTimes.set(rundownId, now);
     
+    // CRITICAL: Clear any pending scheduled reconnection timeouts FIRST
+    // This prevents orphan callbacks from firing after we start a new reconnection
+    const pendingTimeout = this.reconnectTimeouts.get(rundownId);
+    if (pendingTimeout) {
+      clearTimeout(pendingTimeout);
+      this.reconnectTimeouts.delete(rundownId);
+    }
+    
     // Validate auth session before reconnecting
     const isSessionValid = await authMonitor.isSessionValid();
     if (!isSessionValid) {
@@ -167,6 +175,10 @@ class ShowcallerBroadcastManager {
       this.sessionExpired = true;
       return;
     }
+    
+    // CRITICAL: Set cleanup flag BEFORE removing channel to prevent CLOSED status 
+    // from triggering another reconnection attempt (feedback loop prevention)
+    this.cleaningUp.set(rundownId, true);
     
     // Clean up existing channel
     const existingChannel = this.channels.get(rundownId);
@@ -179,6 +191,9 @@ class ShowcallerBroadcastManager {
     }
     
     this.channels.delete(rundownId);
+    
+    // Clear cleanup flag before creating new channel
+    this.cleaningUp.set(rundownId, false);
     
     // Recreate if callbacks exist
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
