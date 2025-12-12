@@ -356,16 +356,11 @@ export const useConsolidatedRealtimeRundown = ({
           showcallerBroadcast.reinitialize(rundownId);
           cellBroadcast.reinitialize(rundownId);
           
-          // Verify all channels connected after 3 seconds
-          setTimeout(async () => {
-            const health = simpleConnectionHealth.getHealth(rundownId);
-            if (!health.allConnected) {
-              console.warn('⚠️ Not all channels connected after reset:', health);
-            } else {
-              console.log('✅ All channels recovered after nuclear reset');
-            }
-            await performCatchupSync();
-          }, 3000);
+          // Give channels a moment to connect, then catch up
+          setTimeout(() => {
+            console.log('✅ Nuclear reset complete - syncing data');
+            performCatchupSync();
+          }, 2000);
         }
       } else {
         // Normal tab switch - just catch up
