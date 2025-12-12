@@ -81,9 +81,10 @@ class ShowcallerBroadcastManager {
 
       if (status === 'SUBSCRIBED') {
         console.log('✅ Showcaller channel connected:', rundownId);
-        // Success - reset retry count and clear intentional reconnect flag
+        // Success - reset retry count, cleanup flag, and intentional reconnect flag
         this.retryCount.delete(rundownId);
         this.clearRetryTimeout(rundownId);
+        this.isCleaningUp.set(rundownId, false);
         simpleConnectionHealth.clearIntentionalReconnect(rundownId);
         
         if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
@@ -160,8 +161,14 @@ class ShowcallerBroadcastManager {
     }
     this.channels.delete(rundownId);
 
-    // Clear cleanup flag
-    this.isCleaningUp.set(rundownId, false);
+    // Safety net: reset cleanup flag after 10s if new channel doesn't connect
+    setTimeout(() => {
+      if (this.isCleaningUp.get(rundownId)) {
+        console.log('📺 Safety timeout: resetting cleanup flag for', rundownId);
+        this.isCleaningUp.set(rundownId, false);
+        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
+      }
+    }, 10000);
 
     // Recreate if callbacks exist
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
