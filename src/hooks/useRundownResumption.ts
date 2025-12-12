@@ -57,7 +57,7 @@ interface UseRundownResumptionProps {
 
 /**
  * Hook to handle rundown data resumption after disconnections or focus events.
- * Simplified version - relies on UnifiedConnectionHealth for reconnection management.
+ * Simplified version - relies on SimpleConnectionHealth for reconnection management.
  */
 export const useRundownResumption = ({
   rundownId,
