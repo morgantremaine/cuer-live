@@ -70,6 +70,7 @@ class ShowcallerBroadcastManager {
         simpleConnectionHealth.setShowcallerConnected(rundownId, isConnected);
 
         if (status === 'SUBSCRIBED') {
+          console.log('✅ Showcaller channel connected:', rundownId);
           // Success - reset retry count
           this.retryCount.delete(rundownId);
           this.clearRetryTimeout(rundownId);
