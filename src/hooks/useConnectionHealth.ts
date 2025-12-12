@@ -31,13 +31,11 @@ export const useConnectionHealth = (rundownId: string | null): UseConnectionHeal
     return unsubscribe;
   }, [rundownId]);
 
-  // Determine warning state
-  const showWarning = health.anyDisconnected || health.consecutiveFailures >= 3;
+  // Determine warning state - simplified, just based on connection status
+  const showWarning = health.anyDisconnected;
   
   let warningMessage: string | null = null;
-  if (health.consecutiveFailures >= 7) {
-    warningMessage = 'Connection problems - will refresh automatically if recovery fails';
-  } else if (health.consecutiveFailures >= 3 || health.anyDisconnected) {
+  if (health.anyDisconnected) {
     warningMessage = 'Connection issues detected - syncing may be delayed';
   }
 

@@ -16,17 +16,13 @@ export const useShowcallerBroadcastSync = ({
   const { user, tokenReady } = useAuth();
   const callbackRef = useRef(onBroadcastReceived);
   const lastBroadcastRef = useRef<number>(0);
-  const lastReconnectTriggerRef = useRef<number>(0); // Track last reconnection trigger
   const [isConnected, setIsConnected] = useState<boolean>(false);
   
-  // Keep callback updated
   callbackRef.current = onBroadcastReceived;
 
-  // Throttled broadcast handler to prevent spam
   const handleBroadcast = useCallback((state: ShowcallerBroadcastState) => {
     const now = Date.now();
     
-    // Throttle incoming broadcasts (max 10 per second)
     if (now - lastBroadcastRef.current < 100) {
       console.log('📺 Throttling showcaller broadcast');
       return;
@@ -36,7 +32,6 @@ export const useShowcallerBroadcastSync = ({
     callbackRef.current(state);
   }, []);
 
-  // Broadcast showcaller state with precise timing
   const broadcastState = useCallback((state: Omit<ShowcallerBroadcastState, 'rundownId' | 'userId' | 'timestamp'>) => {
     if (!rundownId || !user?.id || !enabled) return;
 
@@ -47,7 +42,6 @@ export const useShowcallerBroadcastSync = ({
       timestamp: Date.now()
     };
 
-    // Prevent duplicate broadcasts within 100ms
     const key = `${state.action}-${state.currentSegmentId}-${state.isPlaying}`;
     const now = Date.now();
     if (lastBroadcastRef.current > 0 && (now - lastBroadcastRef.current < 100)) {
@@ -60,7 +54,6 @@ export const useShowcallerBroadcastSync = ({
     showcallerBroadcast.broadcastState(fullState);
   }, [rundownId, user?.id, enabled]);
 
-  // Enhanced timing broadcast with precise playback start time
   const broadcastTimingUpdate = useCallback((timeRemaining: number, currentSegmentId: string | null, isPlaying: boolean, playbackStartTime: number | null) => {
     if (!rundownId || !user?.id || !enabled || !isPlaying || !currentSegmentId || !playbackStartTime) return;
 
@@ -72,7 +65,7 @@ export const useShowcallerBroadcastSync = ({
       isPlaying,
       currentSegmentId,
       timeRemaining,
-      playbackStartTime, // Include precise timing base
+      playbackStartTime,
       isController: true
     };
 
@@ -80,7 +73,6 @@ export const useShowcallerBroadcastSync = ({
     showcallerBroadcast.broadcastState(timingState);
   }, [rundownId, user?.id, enabled]);
 
-  // Set up broadcast subscription
   useEffect(() => {
     if (!rundownId || !enabled || !user || !tokenReady) {
       setIsConnected(false);
@@ -96,39 +88,17 @@ export const useShowcallerBroadcastSync = ({
     // Check connection status periodically
     const statusInterval = setInterval(() => {
       const connected = showcallerBroadcast.isChannelConnected(rundownId);
-      const currentStatus = showcallerBroadcast.getConnectionStatus(rundownId);
-      
       setIsConnected(connected);
       
       if (!connected) {
-        console.warn('📺 ⚠️ Showcaller broadcast channel not connected:', rundownId, 'Status:', currentStatus);
+        console.warn('📺 ⚠️ Showcaller broadcast channel not connected:', rundownId);
       }
-    }, 10000); // Check every 10 seconds
+    }, 10000);
 
-    // NOTE: Visibility handling consolidated in useConsolidatedRealtimeRundown.ts
-    // to prevent multiple overlapping reconnection attempts
-    
-    // Listen for WebSocket reconnection complete event
-    const handleWebSocketReconnection = async () => {
-      console.log('📺 WebSocket reconnected - scheduling showcaller recovery in 2 seconds...');
-      
-      // Wait for stabilization before forcing reconnection
-      setTimeout(async () => {
-        console.log('📺 Attempting showcaller broadcast recovery after WebSocket reconnection');
-        try {
-          await showcallerBroadcast.forceReconnect(rundownId);
-          console.log('📺 ✅ Showcaller broadcast recovery successful');
-        } catch (error) {
-          console.error('📺 ❌ Showcaller broadcast recovery failed:', error);
-        }
-      }, 2000);
-    };
-    
-    window.addEventListener('websocket-reconnection-complete', handleWebSocketReconnection);
+    // NOTE: Recovery handled by nuclear reset in useConsolidatedRealtimeRundown
 
     return () => {
       console.log('📺 Cleaning up showcaller broadcast sync');
-      window.removeEventListener('websocket-reconnection-complete', handleWebSocketReconnection);
       clearInterval(statusInterval);
       unsubscribe();
       setIsConnected(false);

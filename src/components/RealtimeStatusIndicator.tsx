@@ -20,7 +20,6 @@ const RealtimeStatusIndicator = ({
   const broadcastHealth = useBroadcastHealthMonitor(rundownId || '', !!rundownId);
   const connectionHealth = useConnectionHealth(rundownId || null);
   
-  // Determine connection quality - use unified health when available
   const isHealthy = broadcastHealth.isHealthy && connectionHealth.isFullyConnected;
   const isDegraded = isConnected && (!isHealthy || connectionHealth.isDegraded);
   
@@ -28,11 +27,7 @@ const RealtimeStatusIndicator = ({
     <div className="flex items-center gap-2">
       {/* Connection warning banner */}
       {connectionHealth.showWarning && connectionHealth.warningMessage && (
-        <div className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
-          connectionHealth.health.consecutiveFailures >= 7 
-            ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
-            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-        }`}>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30">
           <AlertTriangle className="h-3 w-3" />
           <span>{connectionHealth.warningMessage}</span>
         </div>

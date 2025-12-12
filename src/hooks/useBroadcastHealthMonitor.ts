@@ -11,13 +11,12 @@ interface BroadcastHealthStatus {
 }
 
 const mapHealthToStatus = (health: ReturnType<typeof simpleConnectionHealth.getHealth>): BroadcastHealthStatus => ({
-  isHealthy: health.allConnected && !health.isStabilizing,
+  isHealthy: health.allConnected,
   isConnected: health.consolidated && health.showcaller && health.cell,
   successRate: health.allConnected ? 1 : 0.5,
-  totalAttempts: health.consecutiveFailures,
+  totalAttempts: 0,
   lastChecked: Date.now(),
-  // Show as reconnecting if any channel is down OR we're in stabilization period
-  isReconnecting: health.anyDisconnected || health.isStabilizing
+  isReconnecting: health.anyDisconnected
 });
 
 export const useBroadcastHealthMonitor = (rundownId: string, enabled = true) => {

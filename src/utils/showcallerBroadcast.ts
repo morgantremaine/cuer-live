@@ -1,9 +1,10 @@
-// Showcaller real-time broadcast system - SIMPLIFIED
-// Uses simple exponential backoff reconnection
+// Showcaller real-time broadcast system - NUCLEAR RESET VERSION
+// Simple channel management, no complex retry logic
+// Recovery handled by realtimeReset.ts nuclear reset
+
 import { supabase } from '@/integrations/supabase/client';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { simpleConnectionHealth } from '@/services/SimpleConnectionHealth';
-import { authMonitor } from '@/services/AuthMonitor';
 
 export interface ShowcallerBroadcastState {
   rundownId: string;
@@ -22,24 +23,6 @@ class ShowcallerBroadcastManager {
   private channels = new Map<string, any>();
   private callbacks = new Map<string, Set<(state: ShowcallerBroadcastState) => void>>();
   private connectionStatus = new Map<string, string>();
-  
-  // Simple reconnection state
-  private retryCount = new Map<string, number>();
-  private retryTimeout = new Map<string, NodeJS.Timeout>();
-  private isCleaningUp = new Map<string, boolean>();
-  
-  private readonly MAX_RETRIES = 10;
-
-  constructor() {
-    // NOTE: Visibility handling consolidated in useConsolidatedRealtimeRundown.ts
-    // to prevent multiple overlapping reconnection attempts
-
-    // Handle network online
-    window.addEventListener('online', () => {
-      console.log('🌐 Network online - clearing showcaller retry counts');
-      this.retryCount.clear();
-    });
-  }
 
   private ensureChannel(rundownId: string) {
     if (this.channels.has(rundownId)) {
@@ -55,13 +38,11 @@ class ShowcallerBroadcastManager {
         }
       });
 
-    // Store channel BEFORE subscribing so callback can check identity
     this.channels.set(rundownId, channel);
 
     channel.subscribe((status) => {
       // Ignore callbacks from old channels
       if (this.channels.get(rundownId) !== channel) {
-        console.log('📺 Ignoring callback from old channel (showcaller)');
         return;
       }
 
@@ -71,109 +52,33 @@ class ShowcallerBroadcastManager {
 
       if (status === 'SUBSCRIBED') {
         console.log('✅ Showcaller channel connected:', rundownId);
-        // Success - reset retry count, cleanup flag, and intentional reconnect flag
-        this.retryCount.delete(rundownId);
-        this.clearRetryTimeout(rundownId);
-        this.isCleaningUp.set(rundownId, false);
-        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
-        
-        if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
-          simpleConnectionHealth.resetFailures(rundownId);
-        }
       } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
-        if (this.isCleaningUp.get(rundownId)) return;
-        
         console.warn('📺 Showcaller channel issue:', rundownId, status);
-        this.scheduleRetry(rundownId);
+        // No retry - nuclear reset will handle recovery
       }
     });
 
     return channel;
   }
 
-  private scheduleRetry(rundownId: string): void {
-    const count = this.retryCount.get(rundownId) || 0;
-    
-    if (count >= this.MAX_RETRIES) {
-      console.error(`🚨 Showcaller ${rundownId}: Max retries reached`);
-      return;
-    }
-
-    this.clearRetryTimeout(rundownId);
-
-    // Exponential backoff: 1s, 2s, 4s, 8s, 16s, max 30s
-    const delay = Math.min(1000 * Math.pow(2, count), 30000);
-    this.retryCount.set(rundownId, count + 1);
-
-    console.log(`📺 Showcaller: Retry ${count + 1}/${this.MAX_RETRIES} in ${delay}ms`);
-
-    const timeout = setTimeout(() => {
-      this.retryTimeout.delete(rundownId);
-      this.forceReconnect(rundownId);
-    }, delay);
-    
-    this.retryTimeout.set(rundownId, timeout);
-  }
-
-  private clearRetryTimeout(rundownId: string): void {
-    const timeout = this.retryTimeout.get(rundownId);
-    if (timeout) {
-      clearTimeout(timeout);
-      this.retryTimeout.delete(rundownId);
-    }
-  }
-
-  async forceReconnect(rundownId: string): Promise<void> {
-    // Check auth
-    const isSessionValid = await authMonitor.isSessionValid();
-    if (!isSessionValid) {
-      console.log('🔐 Showcaller: Skipping reconnect - session expired');
-      return;
-    }
-
-    console.log('📺 🔄 Force reconnecting showcaller:', rundownId);
-
-    // Mark as intentional reconnect to suppress cosmetic failure logging
-    simpleConnectionHealth.markIntentionalReconnect(rundownId);
-
-    // Set cleanup flag to prevent status callback from triggering retry
-    this.isCleaningUp.set(rundownId, true);
-    this.clearRetryTimeout(rundownId);
-
-    // Remove existing channel
-    const existingChannel = this.channels.get(rundownId);
-    if (existingChannel) {
-      try {
-        supabase.removeChannel(existingChannel);
-      } catch (e) {
-        console.warn('📺 Error removing channel:', e);
-      }
-    }
-    this.channels.delete(rundownId);
-
-    // Safety net: reset cleanup flag after 10s if new channel doesn't connect
-    setTimeout(() => {
-      if (this.isCleaningUp.get(rundownId)) {
-        console.log('📺 Safety timeout: resetting cleanup flag for', rundownId);
-        this.isCleaningUp.set(rundownId, false);
-        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
-      }
-    }, 10000);
-
-    // Recreate if callbacks exist
+  // Called after nuclear reset to re-establish channel
+  reinitialize(rundownId: string): void {
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+      console.log('📺 Reinitializing showcaller channel after nuclear reset');
+      this.channels.delete(rundownId);
+      this.connectionStatus.delete(rundownId);
       this.ensureChannel(rundownId);
     }
   }
 
   broadcastState(state: ShowcallerBroadcastState): void {
     const channel = this.ensureChannel(state.rundownId);
-    
+
     const updateId = `${state.userId}-${state.timestamp}`;
     ownUpdateTracker.track(updateId, `showcaller-${state.rundownId}`);
 
     console.log('📺 Broadcasting showcaller state:', state.action || 'state_update');
-    
+
     channel.send({
       type: 'broadcast',
       event: 'showcaller_state',
@@ -182,14 +87,14 @@ class ShowcallerBroadcastManager {
   }
 
   subscribeToShowcallerBroadcasts(
-    rundownId: string, 
+    rundownId: string,
     callback: (state: ShowcallerBroadcastState) => void,
     currentUserId: string
   ): () => void {
     this.ensureChannel(rundownId);
-    
+
     const callbacks = this.callbacks.get(rundownId) || new Set();
-    
+
     const wrappedCallback = (state: ShowcallerBroadcastState) => {
       if (state.userId === currentUserId) {
         return; // Skip own broadcasts
@@ -213,10 +118,6 @@ class ShowcallerBroadcastManager {
   }
 
   cleanup(rundownId: string): void {
-    this.isCleaningUp.set(rundownId, true);
-    this.clearRetryTimeout(rundownId);
-    this.retryCount.delete(rundownId);
-
     const channel = this.channels.get(rundownId);
     if (channel) {
       this.channels.delete(rundownId);
@@ -230,10 +131,7 @@ class ShowcallerBroadcastManager {
         } catch (e) {
           console.warn('📺 Error during cleanup:', e);
         }
-        this.isCleaningUp.delete(rundownId);
       }, 100);
-    } else {
-      this.isCleaningUp.delete(rundownId);
     }
   }
 
