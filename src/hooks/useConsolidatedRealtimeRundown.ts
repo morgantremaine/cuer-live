@@ -169,7 +169,13 @@ export const useConsolidatedRealtimeRundown = ({
       }
     }
 
-    state.isCleaningUp = false;
+    // Safety net: reset isCleaningUp after 10s if new channel fails to connect
+    setTimeout(() => {
+      const s = globalSubscriptions.get(rundownId);
+      if (s && s.isCleaningUp) {
+        s.isCleaningUp = false;
+      }
+    }, 10000);
 
     // Create new channel
     const newChannel = supabase.channel(`consolidated-realtime-${rundownId}`);
@@ -204,6 +210,9 @@ export const useConsolidatedRealtimeRundown = ({
       setIsConnected(s.isConnected);
 
       if (status === 'SUBSCRIBED') {
+        // Reset isCleaningUp NOW - after new channel successfully connected
+        s.isCleaningUp = false;
+        
         console.log('✅ Consolidated channel connected (reconnect):', rundownId);
         s.retryCount = 0;
         if (s.retryTimeout) {
