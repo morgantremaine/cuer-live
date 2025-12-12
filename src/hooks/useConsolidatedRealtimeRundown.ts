@@ -204,6 +204,7 @@ export const useConsolidatedRealtimeRundown = ({
       setIsConnected(s.isConnected);
 
       if (status === 'SUBSCRIBED') {
+        console.log('✅ Consolidated channel connected (reconnect):', rundownId);
         s.retryCount = 0;
         if (s.retryTimeout) {
           clearTimeout(s.retryTimeout);
@@ -438,6 +439,7 @@ export const useConsolidatedRealtimeRundown = ({
         setIsConnected(state.isConnected);
 
         if (status === 'SUBSCRIBED') {
+          console.log('✅ Consolidated channel connected:', rundownId);
           state.retryCount = 0;
           if (state.retryTimeout) {
             clearTimeout(state.retryTimeout);

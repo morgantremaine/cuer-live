@@ -133,6 +133,8 @@ class SimpleConnectionHealthService {
     // Clear any existing stabilization timeout
     this.cancelStabilization(rundownId);
     
+    console.log('🔄 All channels connected - stabilizing...');
+    
     // Mark as stabilizing
     this.isStabilizing.set(rundownId, true);
     this.notifySubscribers(rundownId);

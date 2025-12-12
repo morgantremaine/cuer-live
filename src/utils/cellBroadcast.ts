@@ -114,6 +114,7 @@ export class CellBroadcastManager {
       simpleConnectionHealth.setCellConnected(rundownId, isConnected);
 
       if (status === 'SUBSCRIBED') {
+        console.log('✅ Cell channel connected:', rundownId);
         this.retryCount.delete(rundownId);
         this.clearRetryTimeout(rundownId);
         this.broadcastFailureCount.set(rundownId, 0);
