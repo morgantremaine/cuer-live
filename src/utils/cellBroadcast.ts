@@ -126,6 +126,7 @@ export class CellBroadcastManager {
         console.log('✅ Cell channel connected:', rundownId);
         this.retryCount.delete(rundownId);
         this.clearRetryTimeout(rundownId);
+        this.isCleaningUp.set(rundownId, false);
         this.broadcastFailureCount.set(rundownId, 0);
         simpleConnectionHealth.clearIntentionalReconnect(rundownId);
         
@@ -199,7 +200,15 @@ export class CellBroadcastManager {
     }
     
     this.channels.delete(rundownId);
-    this.isCleaningUp.set(rundownId, false);
+
+    // Safety net: reset cleanup flag after 10s if new channel doesn't connect
+    setTimeout(() => {
+      if (this.isCleaningUp.get(rundownId)) {
+        console.log('📱 Safety timeout: resetting cleanup flag for', rundownId);
+        this.isCleaningUp.set(rundownId, false);
+        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
+      }
+    }, 10000);
 
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);
