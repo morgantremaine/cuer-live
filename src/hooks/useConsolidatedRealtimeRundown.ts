@@ -4,40 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
-import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
-import { unifiedConnectionHealth } from '@/services/UnifiedConnectionHealth';
+import { simpleConnectionHealth } from '@/services/SimpleConnectionHealth';
 import { authMonitor } from '@/services/AuthMonitor';
 import { toast } from 'sonner';
-
-// Module-level auth state tracking for consolidated realtime
-let consolidatedSessionExpired = false;
-
-// CRITICAL: Register auth listener to stop reconnection on session expiry
-if (typeof window !== 'undefined') {
-  authMonitor.registerListener('consolidated-realtime', (session) => {
-    if (!session) {
-      console.log('🔐 ConsolidatedRealtime: Session expired - stopping all reconnection attempts');
-      consolidatedSessionExpired = true;
-      // Clear all pending reconnection timeouts for all rundowns
-      globalSubscriptions.forEach((state, rundownId) => {
-        if (state.reconnectTimeout) {
-          clearTimeout(state.reconnectTimeout);
-          state.reconnectTimeout = undefined;
-          console.log(`🔐 Cleared consolidated reconnect timeout for: ${rundownId}`);
-        }
-        if (state.guardTimeout) {
-          clearTimeout(state.guardTimeout);
-          state.guardTimeout = undefined;
-        }
-        state.reconnectAttempts = 0;
-        state.reconnecting = false;
-      });
-    } else {
-      console.log('🔐 ConsolidatedRealtime: Session restored - allowing reconnection');
-      consolidatedSessionExpired = false;
-    }
-  });
-}
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -51,7 +20,7 @@ interface UseConsolidatedRealtimeRundownProps {
   hasPendingUpdates?: () => boolean;
 }
 
-// Simplified global subscription state
+// Simple global subscription state
 const globalSubscriptions = new Map<string, {
   subscription: any;
   callbacks: {
@@ -63,74 +32,13 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
-  offlineSince?: number;
-  reconnectAttempts?: number;
-  reconnectTimeout?: NodeJS.Timeout;
-  guardTimeout?: NodeJS.Timeout; // Track guard timeout to clear on success
-  reconnectHandler?: () => Promise<void>;
-  reconnecting?: boolean; // Guard against reconnection storms
-  reconnectingStartedAt?: number; // Track when reconnection started
-  lastReconnectTime?: number; // Debounce rapid reconnections
-  cleaningUp?: boolean; // Prevent reconnection during intentional cleanup
+  // Simple retry state
+  retryCount: number;
+  retryTimeout?: NodeJS.Timeout;
+  isCleaningUp?: boolean;
 }>();
 
-// Minimum interval between reconnection attempts (prevents storm)
-const MIN_RECONNECT_INTERVAL = 5000; // 5 seconds
-
-// Reconnection helper with exponential backoff and debouncing
-const handleConsolidatedChannelReconnect = async (rundownId: string) => {
-  const state = globalSubscriptions.get(rundownId);
-  if (!state) return;
-
-  // CRITICAL: Check if session expired - don't attempt reconnection with invalid auth
-  if (consolidatedSessionExpired) {
-    console.log('🔐 ConsolidatedRealtime: Skipping reconnect - session expired');
-    return;
-  }
-
-  // CRITICAL: Debounce rapid reconnection attempts
-  const now = Date.now();
-  const timeSinceLastReconnect = now - (state.lastReconnectTime || 0);
-  if (timeSinceLastReconnect < MIN_RECONNECT_INTERVAL) {
-    console.log(`⏭️ Skipping reconnection - too soon (${Math.round(timeSinceLastReconnect/1000)}s since last)`);
-    return;
-  }
-
-  // Set guard flag immediately to prevent feedback loop
-  state.reconnecting = true;
-  state.lastReconnectTime = now;
-
-  // Clear any existing reconnect timeout
-  if (state.reconnectTimeout) {
-    clearTimeout(state.reconnectTimeout);
-    state.reconnectTimeout = undefined;
-  }
-
-  const attempts = state.reconnectAttempts || 0;
-  state.reconnectAttempts = attempts + 1;
-
-  // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
-  const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
-
-  console.log(`📡 Reconnecting in ${delay}ms (attempt ${attempts + 1})`);
-
-  state.reconnectTimeout = setTimeout(async () => {
-    state.reconnectTimeout = undefined;
-    
-    // Double-check auth is still valid before reconnecting
-    const isSessionValid = await authMonitor.isSessionValid();
-    if (!isSessionValid) {
-      console.log('🔐 ConsolidatedRealtime: Aborting reconnect - auth session invalid');
-      consolidatedSessionExpired = true;
-      state.reconnecting = false;
-      return;
-    }
-    
-    if (state.reconnectHandler) {
-      state.reconnectHandler();
-    }
-  }, delay);
-};
+const MAX_RETRIES = 10;
 
 export const useConsolidatedRealtimeRundown = ({
   rundownId,
@@ -148,126 +56,30 @@ export const useConsolidatedRealtimeRundown = ({
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isInitialLoadRef = useRef(true);
-  const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateTimeRef = useRef<number>(Date.now());
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastCatchupAttemptRef = useRef<number>(0);
-  const MIN_CATCHUP_INTERVAL = 15000; // 15 seconds minimum between catch-ups
+  const MIN_CATCHUP_INTERVAL = 15000;
 
-  // Quick version check - lightweight pre-check before full sync
-  const performQuickVersionCheck = useCallback(async (): Promise<{ needsSync: boolean; serverVersion?: number }> => {
-    const state = globalSubscriptions.get(rundownId || '');
-    if (!rundownId || !state) return { needsSync: false };
-    
-    try {
-      const { data, error } = await supabase
-        .from('rundowns')
-        .select('doc_version, updated_at')
-        .eq('id', rundownId)
-        .single();
-      
-      if (!error && data) {
-        const serverDoc = data.doc_version || 0;
-        const needsSync = serverDoc > state.lastProcessedDocVersion;
-        
-        console.log('⚡ Quick version check:', {
-          serverVersion: serverDoc,
-          lastKnownVersion: state.lastProcessedDocVersion,
-          needsSync
-        });
-        
-        return { needsSync, serverVersion: serverDoc };
-      }
-    } catch (error) {
-      console.warn('⚠️ Quick version check failed:', error);
-    }
-    
-    return { needsSync: false };
-  }, [rundownId]);
-
-  // Define performCatchupSync before it's used in handleOnline
-  const performCatchupSync = useCallback(async (options?: { skipFailedOpsCheck?: boolean }): Promise<boolean> => {
+  // Catch-up sync - fetch latest data from database
+  const performCatchupSync = useCallback(async (): Promise<boolean> => {
     const state = globalSubscriptions.get(rundownId || '');
     if (!rundownId || !state) return false;
     
-    // Debounce: Don't allow catch-ups more than once every 15 seconds
     const now = Date.now();
-    const timeSinceLastCatchup = now - lastCatchupAttemptRef.current;
-    
-    if (timeSinceLastCatchup < MIN_CATCHUP_INTERVAL) {
-      console.log(`⏱️ Skipping catch-up sync - too soon (${Math.round(timeSinceLastCatchup/1000)}s since last attempt)`);
+    if (now - lastCatchupAttemptRef.current < MIN_CATCHUP_INTERVAL) {
+      console.log('⏱️ Skipping catch-up sync - too soon');
       return false;
     }
-    
     lastCatchupAttemptRef.current = now;
     
-    // CRITICAL: Check for pending updates from cell-level saves FIRST
-    // Block catch-up sync if there are pending changes to prevent data loss
+    // Block if pending updates
     if (hasPendingUpdates?.()) {
-      debugLogger.realtime('⚠️ Blocking catch-up sync - pending cell updates exist');
+      debugLogger.realtime('⚠️ Blocking catch-up sync - pending updates');
       return false;
-    }
-    
-    // CRITICAL: Also check for failed cell saves in localStorage (from previous session)
-    // This closes the edge case where page reloads with pending failed cell saves
-    if (!options?.skipFailedOpsCheck) {
-      try {
-        const cellSavesKey = `rundown_failed_saves_${rundownId}`;
-        const storedFailedCellSaves = localStorage.getItem(cellSavesKey);
-        
-        if (storedFailedCellSaves) {
-          const failedCellSaves = JSON.parse(storedFailedCellSaves);
-          if (failedCellSaves.length > 0) {
-            console.warn(`⚠️ Blocking catch-up sync - ${failedCellSaves.length} failed cell saves pending from previous session`);
-            return false; // Block sync - let retry mechanism handle these first
-          }
-        }
-      } catch (error) {
-        console.error('Error checking failed cell saves:', error);
-      }
-    }
-    
-    // CRITICAL: Check for pending failed structural operations
-    // Don't overwrite local state that contains unsaved changes
-    if (!options?.skipFailedOpsCheck) {
-      try {
-        const storageKey = `rundown_failed_operations_${rundownId}`;
-        const storedFailedOps = localStorage.getItem(storageKey);
-        
-        if (storedFailedOps) {
-          const failedOps = JSON.parse(storedFailedOps);
-          if (failedOps.length > 0) {
-            console.warn(`⚠️ Skipping catch-up sync - ${failedOps.length} failed structural operations pending`);
-            toast.warning('Sync Paused', {
-              description: `${failedOps.length} unsaved change${failedOps.length > 1 ? 's' : ''} detected. Please check your connection.`,
-              duration: 5000
-            });
-            return false; // Don't sync - preserve local state
-          }
-        }
-      } catch (error) {
-        console.error('Error checking failed operations:', error);
-      }
     }
     
     try {
-      // Step 1: Quick version check first (50ms vs 500ms)
-      const versionCheck = await performQuickVersionCheck();
-      if (!versionCheck.needsSync) {
-        console.log('✅ Quick check: No updates needed');
-        return false; // No updates found
-      }
-      
-      // Step 2: Only do full sync if version check shows updates
       setIsProcessingUpdate(true);
-      
-      const knownDocVersion = state.lastProcessedDocVersion;
-      const offlineDuration = state.offlineSince ? Date.now() - state.offlineSince : 0;
-      
-      console.log('🔄 Catch-up sync: fetching latest rundown data', {
-        lastKnownVersion: knownDocVersion,
-        offlineDurationMs: offlineDuration
-      });
       
       const { data, error } = await supabase
         .from('rundowns')
@@ -280,703 +92,391 @@ export const useConsolidatedRealtimeRundown = ({
         const currentTabId = getTabId();
         const isOwnUpdate = data.tab_id === currentTabId;
         
-        // Only count as "missed" if from a different tab
-        const missedUpdates = isOwnUpdate ? 0 : Math.max(0, serverDoc - knownDocVersion);
-        
-        console.log('🔄 Catch-up sync result:', {
-          serverVersion: serverDoc,
-          lastKnownVersion: knownDocVersion,
-          fromSameTab: isOwnUpdate,
-          missedUpdates
-        });
-        
-        if (serverDoc > knownDocVersion) {
+        if (serverDoc > state.lastProcessedDocVersion) {
           state.lastProcessedDocVersion = serverDoc;
           state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
-          state.offlineSince = undefined; // Clear offline timestamp
           
-          // Only apply callback if from different tab (avoid re-processing own updates)
           if (!isOwnUpdate) {
-            state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-              try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+            state.callbacks.onRundownUpdate.forEach(cb => {
+              try { cb(data); } catch (err) { console.error('Error in callback:', err); }
             });
           }
           
-          // FIXED: Only show toast for actual missed updates from OTHER users/tabs
-          // AND only after initial load is complete (not when first opening the rundown)
+          const missedUpdates = isOwnUpdate ? 0 : Math.max(0, serverDoc - state.lastProcessedDocVersion);
           if (missedUpdates > 0 && !isInitialLoadRef.current) {
-            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''} from other users`);
-          } else if (serverDoc > knownDocVersion) {
-            console.log(`✅ Caught up with ${serverDoc - knownDocVersion} operation(s) - no toast needed`);
+            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
           }
-          return true; // Updates were found and applied
-        } else {
-          console.log('✅ No missed updates - already up to date');
-          return false; // No updates
+          return true;
         }
-      } else if (error) {
-        console.warn('❌ Manual catch-up fetch failed:', error);
-        return false;
       }
     } finally {
-      // Keep processing indicator active briefly for UI feedback  
-      setTimeout(() => {
-        setIsProcessingUpdate(false);
-      }, 500);
+      setTimeout(() => setIsProcessingUpdate(false), 500);
     }
     return false;
-  }, [rundownId, performQuickVersionCheck]);
+  }, [rundownId, hasPendingUpdates]);
 
-  // Track actual channel connection status from globalSubscriptions + browser network
-  useEffect(() => {
-    if (!enabled || !rundownId) {
-      setIsConnected(false);
+  // Simple retry scheduling
+  const scheduleRetry = useCallback((rundownId: string) => {
+    const state = globalSubscriptions.get(rundownId);
+    if (!state) return;
+    
+    if (state.retryCount >= MAX_RETRIES) {
+      console.error('🚨 Consolidated: Max retries reached');
       return;
     }
 
-    // Immediate browser-level network detection with catch-up sync
-    const handleOnline = async () => {
-      console.log('📶 Browser detected network online - waiting for Supabase reconnection...');
-      
-      // Wait up to 15 seconds for Supabase to reconnect, checking every 500ms
-      let retries = 0;
-      const maxRetries = 30; // 30 * 500ms = 15 seconds
-      
-      while (retries < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const state = globalSubscriptions.get(rundownId);
-        
-        if (state?.isConnected) {
-          console.log('📶 Supabase connected - validating session...');
-          
-          // CRITICAL: Validate session before processing offline data
-          const { authMonitor } = await import('@/services/AuthMonitor');
-          const isSessionValid = await authMonitor.isSessionValid();
-          
-          if (!isSessionValid) {
-            console.warn('🔐 Session expired - cannot process offline queue');
-            toast.error('Session expired. Please log in to sync your changes.', {
-              duration: 10000,
-              action: {
-                label: 'Refresh',
-                onClick: () => window.location.reload()
-              }
-            });
-            setIsConnected(false); // Keep disconnected state to prevent queue processing
-            return;
-          }
-          
-          console.log('📶 Session valid - performing catch-up sync');
-          
-          // FIRST: Fetch latest data from server (catch-up sync)
-          await performCatchupSync();
-          
-          // SECOND: Set connected to trigger offline queue processing
-          setIsConnected(true);
-          
-          console.log('✅ Reconnection complete: catch-up synced + offline queue will process');
-          return;
-        }
-        retries++;
-      }
-      
-      console.warn('⏳ Supabase still not connected after 15s - catch-up sync will run when connection is established');
-    };
-    
-    const handleOffline = () => {
-      console.log('📵 Browser reported offline (may be false)');
-      
-      // Don't immediately trust navigator.onLine
-      // Wait 2s and verify with actual Supabase session check
-      setTimeout(async () => {
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          if (!error && data.session) {
-            console.log('✅ Auth check passed despite offline report - ignoring false offline');
-            return; // Network is actually fine
-          }
-        } catch {
-          // Network truly offline
-          console.log('📵 Confirmed network offline via auth check');
-          setIsConnected(false);
-          const state = globalSubscriptions.get(rundownId);
-          if (state) {
-            state.isConnected = false;
-            state.offlineSince = Date.now();
-            console.log('📵 Marked offline at:', new Date(state.offlineSince).toISOString());
-          }
-        }
-      }, 2000);
-    };
-    
-    // Listen to browser network events for instant detection
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Check initial browser network status
-    if (!navigator.onLine) {
-      setIsConnected(false);
+    if (state.retryTimeout) {
+      clearTimeout(state.retryTimeout);
     }
 
-    // Check connection status from global state
-    const checkConnection = () => {
-      // If browser is offline, always show disconnected
-      if (!navigator.onLine) {
-        setIsConnected(false);
-        return;
-      }
-      
-      const state = globalSubscriptions.get(rundownId);
-      setIsConnected(state?.isConnected || false);
-    };
+    const delay = Math.min(1000 * Math.pow(2, state.retryCount), 30000);
+    state.retryCount++;
 
-    // Initial check
-    checkConnection();
+    console.log(`📡 Consolidated: Retry ${state.retryCount}/${MAX_RETRIES} in ${delay}ms`);
 
-    // Poll for connection status updates every 500ms (backup)
-    const interval = setInterval(checkConnection, 500);
+    state.retryTimeout = setTimeout(async () => {
+      state.retryTimeout = undefined;
+      await forceReconnect(rundownId);
+    }, delay);
+  }, []);
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [enabled, rundownId, performCatchupSync]);
+  // Force reconnect function
+  const forceReconnect = useCallback(async (rundownId: string) => {
+    const state = globalSubscriptions.get(rundownId);
+    if (!state) return;
 
-  // Trigger catch-up sync when connection is restored (NOT on initial load)
-  // CRITICAL FIX: Wait for all channels to stabilize before catch-up sync
-  const wasConnectedRef = useRef(isConnected);
-  useEffect(() => {
-    // FIXED: Skip during initial load - initial data already fetched in subscribe callback
-    if (isConnected && !wasConnectedRef.current && rundownId && !isInitialLoadRef.current) {
-      console.log('📡 Connection restored - waiting for channel stabilization before catch-up sync...');
-      
-      // Update unified health service
-      unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
-      
-      // Wait for all channels to stabilize before syncing
-      const performStabilizedSync = async () => {
-        const stabilized = await unifiedConnectionHealth.waitForStabilization(rundownId, 5000);
-        
-        if (stabilized) {
-          console.log('✅ All channels healthy - performing catch-up sync');
-          unifiedConnectionHealth.resetFailures(rundownId);
-          await performCatchupSync();
-        } else {
-          console.warn('⚠️ Some channels still unhealthy - deferring catch-up sync for 10 seconds');
-          // Schedule retry after 10 more seconds
-          setTimeout(async () => {
-            const nowStabilized = unifiedConnectionHealth.areAllChannelsHealthy(rundownId);
-            if (nowStabilized) {
-              console.log('✅ Delayed check: All channels now healthy - performing catch-up sync');
-              unifiedConnectionHealth.resetFailures(rundownId);
-            } else {
-              console.warn('⚠️ Delayed check: Still unhealthy - performing catch-up sync anyway');
-            }
-            await performCatchupSync();
-          }, 10000);
-        }
-      };
-      
-      performStabilizedSync();
-    } else if (!isConnected && wasConnectedRef.current && rundownId) {
-      // Connection lost
-      unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
-      unifiedConnectionHealth.trackFailure(rundownId);
-    }
-    wasConnectedRef.current = isConnected;
-  }, [isConnected, performCatchupSync, rundownId]);
-
-  // Proactive health check - detect zombie connections within 90 seconds
-  useEffect(() => {
-    if (!enabled || !rundownId || !isConnected) return;
-    
-    const HEALTH_CHECK_INTERVAL = 60000; // Check every 60 seconds
-    
-    const healthCheckInterval = setInterval(async () => {
-      // Skip if tab is hidden - save resources
-      if (document.hidden) return;
-      
-      const state = globalSubscriptions.get(rundownId);
-      if (!state?.isConnected) return;
-      
-      console.log('💓 Proactive health check...');
-      
-      try {
-        // Quick lightweight check - just fetch doc_version
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('doc_version')
-          .eq('id', rundownId)
-          .single();
-        
-        if (error) {
-          console.warn('❌ Health check failed - connection may be dead:', error.message);
-          // Force reconnection
-          handleConsolidatedChannelReconnect(rundownId);
-        } else {
-          // Connection is alive - check if we missed updates
-          const serverVersion = data?.doc_version || 0;
-          if (serverVersion > state.lastProcessedDocVersion) {
-            console.log('⚠️ Health check detected missed updates:', {
-              server: serverVersion,
-              local: state.lastProcessedDocVersion
-            });
-            await performCatchupSync();
-          }
-        }
-      } catch (err) {
-        console.warn('❌ Health check exception:', err);
-        handleConsolidatedChannelReconnect(rundownId);
-      }
-    }, HEALTH_CHECK_INTERVAL);
-    
-    return () => clearInterval(healthCheckInterval);
-  }, [enabled, rundownId, isConnected, performCatchupSync]);
-
-  // Visibility change handler - verify connection when tab becomes visible
-  useEffect(() => {
-    if (!enabled || !rundownId) return;
-    
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState !== 'visible') return;
-      
-      const state = globalSubscriptions.get(rundownId);
-      if (!state) return;
-      
-      console.log('👁️ Tab became visible - verifying connection health...');
-      
-      // Small delay to let network stabilize after wake
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      try {
-        // Quick health check
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('doc_version')
-          .eq('id', rundownId)
-          .single();
-        
-        if (error) {
-          console.warn('❌ Connection dead on visibility - forcing reconnect');
-          handleConsolidatedChannelReconnect(rundownId);
-        } else {
-          // Connection is alive - check for missed updates
-          const serverVersion = data?.doc_version || 0;
-          if (serverVersion > state.lastProcessedDocVersion) {
-            console.log('📡 Missed updates while away - catching up');
-            await performCatchupSync();
-          } else {
-            console.log('✅ Connection healthy, no missed updates');
-          }
-        }
-      } catch (err) {
-        console.warn('❌ Visibility health check failed:', err);
-        handleConsolidatedChannelReconnect(rundownId);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [enabled, rundownId, performCatchupSync]);
-
-  // Simplified polling fallback - reduced threshold from 10 to 3 minutes
-  useEffect(() => {
-    if (!enabled || !rundownId) {
+    const isSessionValid = await authMonitor.isSessionValid();
+    if (!isSessionValid) {
+      console.log('🔐 Consolidated: Skipping reconnect - session expired');
       return;
     }
-    
-    const checkInterval = setInterval(async () => {
-      const state = globalSubscriptions.get(rundownId);
-      if (!state) return;
-      
-      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes (reduced from 10)
-      
-      // Only catch up if:
-      // 1. WebSocket is disconnected OR
-      // 2. WebSocket connected but no updates for 3+ minutes (zombie detection)
-      if (!state.isConnected) {
-        console.log('🔄 WebSocket disconnected - performing catch-up sync');
-        await performCatchupSync();
-      } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
-        console.log('⏰ No updates for 3+ minutes - checking for stale data');
-        const hadUpdates = await performCatchupSync();
-        if (!hadUpdates) {
-          lastUpdateTimeRef.current = Date.now(); // Reset timer
-        }
+
+    console.log('📡 🔄 Force reconnecting consolidated:', rundownId);
+
+    state.isCleaningUp = true;
+
+    if (state.retryTimeout) {
+      clearTimeout(state.retryTimeout);
+      state.retryTimeout = undefined;
+    }
+
+    // Remove existing channel
+    if (state.subscription) {
+      try {
+        await supabase.removeChannel(state.subscription);
+      } catch (e) {
+        console.warn('📡 Error removing channel:', e);
       }
-    }, 30000); // Check every 30 seconds
+    }
+
+    state.isCleaningUp = false;
+
+    // Create new channel
+    const newChannel = supabase.channel(`consolidated-realtime-${rundownId}`);
     
-    return () => clearInterval(checkInterval);
-  }, [enabled, rundownId, isConnected, performCatchupSync]);
-  
-  // Simplified callback refs (no tab coordination needed)
-  const callbackRefs = useRef({
-    onRundownUpdate,
-    onShowcallerUpdate,
-    onBlueprintUpdate
-  });
+    newChannel.on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'rundowns'
+    }, (payload) => {
+      const s = globalSubscriptions.get(rundownId);
+      if (s) processRealtimeUpdate(payload, s);
+    });
 
-  // Keep refs updated
-  callbackRefs.current = {
-    onRundownUpdate,
-    onShowcallerUpdate,
-    onBlueprintUpdate
-  };
+    if (!isSharedView) {
+      newChannel.on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'blueprints'
+      }, (payload) => {
+        const s = globalSubscriptions.get(rundownId);
+        if (s) processRealtimeUpdate({ ...payload, table: 'blueprints' }, s);
+      });
+    }
 
-  // Performance-optimized realtime update processing with early size checks
-  const processRealtimeUpdate = useCallback(async (payload: any, globalState: any) => {
+    newChannel.subscribe(async (status) => {
+      const s = globalSubscriptions.get(rundownId);
+      if (!s) return;
+
+      const wasConnected = s.isConnected;
+      s.isConnected = status === 'SUBSCRIBED';
+      simpleConnectionHealth.setConsolidatedConnected(rundownId, s.isConnected);
+      setIsConnected(s.isConnected);
+
+      if (status === 'SUBSCRIBED') {
+        s.retryCount = 0;
+        if (s.retryTimeout) {
+          clearTimeout(s.retryTimeout);
+          s.retryTimeout = undefined;
+        }
+        
+        if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
+          simpleConnectionHealth.resetFailures(rundownId);
+        }
+
+        // Catch-up on reconnection
+        if (!wasConnected) {
+          await performCatchupSync();
+        }
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        if (s.isCleaningUp) return;
+        
+        console.warn('📡 Consolidated channel issue:', status);
+        simpleConnectionHealth.trackFailure(rundownId);
+        scheduleRetry(rundownId);
+      }
+    });
+
+    state.subscription = newChannel;
+  }, [isSharedView, performCatchupSync, scheduleRetry]);
+
+  // Process realtime updates
+  const processRealtimeUpdate = useCallback((payload: any, globalState: any) => {
     const updateTimestamp = payload.new?.updated_at;
     const normalizedTimestamp = normalizeTimestamp(updateTimestamp);
     const incomingDocVersion = payload.new?.doc_version || 0;
 
-    // Skip if not for current rundown 
     if (payload.new?.id !== rundownId && payload.new?.rundown_id !== rundownId) {
       return;
     }
 
-    // Performance optimization: Early size check for very large updates
-    const itemCount = payload.new?.items?.length || 0;
-    if (itemCount > 300) {
-      console.log('🐌 Large update detected, using performance mode:', itemCount, 'items');
-      // Add small delay to prevent UI blocking
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-
-    // Enhanced doc version checking - prevent race conditions
-    const currentDocVersion = globalState.lastProcessedDocVersion;
-    
-    // Skip stale updates more aggressively 
-    if (incomingDocVersion && incomingDocVersion <= currentDocVersion) {
-      debugLogger.realtime('Skipping stale doc version:', {
-        incoming: incomingDocVersion,
-        lastProcessed: currentDocVersion,
-        timestamp: normalizedTimestamp
-      });
+    // Skip stale or duplicate updates
+    if (incomingDocVersion && incomingDocVersion <= globalState.lastProcessedDocVersion) {
       return;
     }
 
-    // Enhanced timestamp deduplication
     if (normalizedTimestamp && normalizedTimestamp === globalState.lastProcessedTimestamp) {
-      debugLogger.realtime('Skipping duplicate timestamp:', normalizedTimestamp);
       return;
     }
 
-    // FIXED: Skip updates from same tab (not same user)
+    // Skip own updates
     if (payload.new?.tab_id === getTabId()) {
-      console.log('⏭️ Skipping realtime update - own update (same tab)');
       return;
     }
 
-    // SIMPLIFIED: No gap detection - just apply all updates immediately (Google Sheets style)
-    // Let per-cell saves handle conflicts at database level
-    // "Last write wins" for concurrent editing - simple and predictable
-
-    // Determine update type with better categorization
+    // Determine update type
     const hasContentChanges = ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
       .some(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]));
     const hasShowcallerChanges = JSON.stringify(payload.new?.showcaller_state) !== JSON.stringify(payload.old?.showcaller_state);
     const hasBlueprintChanges = payload.table === 'blueprints';
-
-    console.log('📡 Enhanced realtime update processing:', {
-      type: hasBlueprintChanges ? 'blueprint' : hasShowcallerChanges && !hasContentChanges ? 'showcaller' : 'content',
-      docVersion: incomingDocVersion,
-      timestamp: normalizedTimestamp,
-      userId: payload.new?.last_updated_by
-    });
-    
-    // Performance monitoring and memory management
-    const realtimeItemCount = (payload.new?.items as any[])?.length || 0;
-    const isLargeRealtimeRundown = realtimeItemCount > 100;
-    const isVeryLargeRealtimeRundown = realtimeItemCount > 200;
-    
-    // Memory cleanup warning for large rundowns (informational only - no functional changes)
-    if (isLargeRealtimeRundown && globalSubscriptions.size > 50) {
-      console.warn('⚠️ Large number of active subscriptions:', globalSubscriptions.size, 'with', realtimeItemCount, 'items');
-      
-      // Memory cleanup for very large rundowns (cleanup only, never skip functionality)
-      if (isVeryLargeRealtimeRundown && globalSubscriptions.size > 100) {
-        console.log('🧹 Performing background subscription cleanup for memory optimization');
-        // Clean up old subscriptions that might be stale (but never skip current processing)
-        const now = Date.now();
-        for (const [key, sub] of globalSubscriptions.entries()) {
-          // Skip current subscription
-          if (key === rundownId) continue;
-          
-          // Check if subscription hasn't been used recently
-          const timeSinceLastUpdate = now - (globalState.lastProcessedTimestamp ? new Date(globalState.lastProcessedTimestamp).getTime() : 0);
-          if (timeSinceLastUpdate > 300000) { // 5 minutes old
-            console.log('🧹 Removing stale subscription:', key);
-            globalSubscriptions.delete(key);
-          }
-        }
-      }
-    }
-    
-    // Memory monitoring only - never skip realtime functionality
-    if (isVeryLargeRealtimeRundown && typeof window !== 'undefined' && 'performance' in window && 'memory' in (window.performance as any)) {
-      const memory = (window.performance as any).memory;
-      const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
-      
-      if (usedMB > 750) {
-        // Silently monitor high memory usage without console warnings
-        // Note: We still process the update - just skip the warning
-      }
-    }
 
     // Update tracking state
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
     if (incomingDocVersion) {
       globalState.lastProcessedDocVersion = incomingDocVersion;
     }
-    
-    // Track update time for polling fallback
     lastUpdateTimeRef.current = Date.now();
 
-    // MOVED: AutoSave blocking will be handled after field protection check in callbacks
-
-    // Dispatch to appropriate callbacks with enhanced error handling
+    // Dispatch to callbacks
     if (hasBlueprintChanges) {
-      globalState.callbacks.onBlueprintUpdate.forEach((callback: (d: any) => void) => {
-        try { 
-          callback(payload.new); 
-        } catch (error) { 
-          console.error('Error in blueprint callback:', error);
-        }
+      globalState.callbacks.onBlueprintUpdate.forEach((cb: (d: any) => void) => {
+        try { cb(payload.new); } catch (err) { console.error('Blueprint callback error:', err); }
       });
     } else if (hasShowcallerChanges && !hasContentChanges) {
-      globalState.callbacks.onShowcallerUpdate.forEach((callback: (d: any) => void) => {
-        try { 
-          callback(payload.new); 
-        } catch (error) { 
-          console.error('Error in showcaller callback:', error);
-        }
+      globalState.callbacks.onShowcallerUpdate.forEach((cb: (d: any) => void) => {
+        try { cb(payload.new); } catch (err) { console.error('Showcaller callback error:', err); }
       });
     } else if (hasContentChanges) {
-      // Check broadcast health and use fallback if needed
-      const { cellBroadcast } = await import('@/utils/cellBroadcast');
-      const isBroadcastHealthy = cellBroadcast.isBroadcastHealthy(rundownId);
-      
-      if (isBroadcastHealthy) {
-        console.log('📱 Using cell broadcasts for content sync', {
-          docVersion: incomingDocVersion,
-          timestamp: normalizedTimestamp,
-          reason: 'Broadcast system healthy'
-        });
-        return;
-      } else {
-        // Use database fallback when broadcast health is poor
-        console.log('🔄 Using database fallback due to poor broadcast health', {
-          docVersion: incomingDocVersion,
-          timestamp: normalizedTimestamp,
-          healthMetrics: cellBroadcast.getHealthMetrics(rundownId)
-        });
-        
-        globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
-          try { 
-            callback(payload.new); 
-          } catch (error) { 
-            console.error('Error in fallback rundown callback:', error);
-          }
-        });
-      }
+      // Use cell broadcasts for content - only fall back to database if unhealthy
+      import('@/utils/cellBroadcast').then(({ cellBroadcast }) => {
+        if (!cellBroadcast.isBroadcastHealthy(rundownId || '')) {
+          globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+            try { cb(payload.new); } catch (err) { console.error('Rundown callback error:', err); }
+          });
+        }
+      });
     }
-
   }, [rundownId, user?.id, isSharedView]);
 
-  // REMOVED: processQueuedUpdates - no longer needed with simplified approach
+  // Callback refs
+  const callbackRefs = useRef({ onRundownUpdate, onShowcallerUpdate, onBlueprintUpdate });
+  callbackRefs.current = { onRundownUpdate, onShowcallerUpdate, onBlueprintUpdate };
 
+  // Network event handlers
   useEffect(() => {
-    // For shared views, allow subscription without authentication
-    // For authenticated users, wait for token to be ready
-    if (!rundownId || (!user && !isSharedView) || !enabled) {
+    if (!enabled || !rundownId) {
+      setIsConnected(false);
       return;
     }
 
-    if (user && !tokenReady) {
-      console.log('📡 Waiting for token to be ready before connecting to realtime...');
-      return;
-    }
+    const handleOnline = async () => {
+      console.log('📶 Network online - reconnecting...');
+      const state = globalSubscriptions.get(rundownId);
+      if (state) {
+        state.retryCount = 0; // Reset retries on network restore
+      }
+      await forceReconnect(rundownId);
+    };
 
-    // Reset initial load flag for new rundown
+    const handleOffline = () => {
+      console.log('📵 Network offline');
+      setIsConnected(false);
+      const state = globalSubscriptions.get(rundownId);
+      if (state) {
+        state.isConnected = false;
+        simpleConnectionHealth.setConsolidatedConnected(rundownId, false);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [enabled, rundownId, forceReconnect]);
+
+  // Visibility change handler
+  useEffect(() => {
+    if (!enabled || !rundownId) return;
+
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return;
+      
+      const state = globalSubscriptions.get(rundownId);
+      if (!state) return;
+      
+      console.log('👁️ Tab visible - checking connection...');
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      try {
+        const { error } = await supabase
+          .from('rundowns')
+          .select('doc_version')
+          .eq('id', rundownId)
+          .single();
+        
+        if (error) {
+          console.warn('❌ Connection dead on visibility - reconnecting');
+          await forceReconnect(rundownId);
+        } else if (!state.isConnected) {
+          await forceReconnect(rundownId);
+        } else {
+          await performCatchupSync();
+        }
+      } catch (err) {
+        console.warn('❌ Visibility check failed:', err);
+        await forceReconnect(rundownId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [enabled, rundownId, forceReconnect, performCatchupSync]);
+
+  // Polling fallback (3 minute stale threshold)
+  useEffect(() => {
+    if (!enabled || !rundownId) return;
+    
+    const checkInterval = setInterval(async () => {
+      const state = globalSubscriptions.get(rundownId);
+      if (!state) return;
+      
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+      const STALE_THRESHOLD = 180000; // 3 minutes
+      
+      if (!state.isConnected) {
+        await performCatchupSync();
+      } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
+        console.log('⏰ No updates for 3+ minutes - checking for stale data');
+        const hadUpdates = await performCatchupSync();
+        if (!hadUpdates) {
+          lastUpdateTimeRef.current = Date.now();
+        }
+      }
+    }, 30000);
+    
+    return () => clearInterval(checkInterval);
+  }, [enabled, rundownId, performCatchupSync]);
+
+  // Main subscription effect
+  useEffect(() => {
+    if (!rundownId || (!user && !isSharedView) || !enabled) return;
+    if (user && !tokenReady) return;
+
     setIsInitialLoad(true);
     isInitialLoadRef.current = true;
 
     let globalState = globalSubscriptions.get(rundownId);
 
     if (!globalState) {
-      // Create new global subscription with enhanced state tracking
-      
-      // Define reconnect handler that will be set later
-      let reconnectHandler: (() => Promise<void>) | null = null;
-      
       const channel = supabase
         .channel(`consolidated-realtime-${rundownId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'rundowns'
-          },
-          (payload) => {
-            const state = globalSubscriptions.get(rundownId);
-            if (state) {
-              processRealtimeUpdate(payload, state);
-            }
-          }
-        );
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns'
+        }, (payload) => {
+          const state = globalSubscriptions.get(rundownId);
+          if (state) processRealtimeUpdate(payload, state);
+        });
 
-      // Also listen for blueprint changes if not shared view
       if (!isSharedView) {
-        channel.on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'blueprints'
-          },
-          (payload) => {
-            const state = globalSubscriptions.get(rundownId);
-            if (state) {
-              processRealtimeUpdate({ ...payload, table: 'blueprints' }, state);
-            }
-          }
-        );
+        channel.on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'blueprints'
+        }, (payload) => {
+          const state = globalSubscriptions.get(rundownId);
+          if (state) processRealtimeUpdate({ ...payload, table: 'blueprints' }, state);
+        });
       }
 
       channel.subscribe(async (status) => {
         const state = globalSubscriptions.get(rundownId);
         if (!state) return;
 
-        // Guard: Skip if already reconnecting to prevent feedback loop
-        if (state.reconnecting && status !== 'SUBSCRIBED') {
-          console.log('⏭️ Reconnection in progress:', {
-            rundownId,
-            status,
-            reconnectAttempts: state.reconnectAttempts
-          });
-          
-          // Safety: If stuck in reconnecting for >60s, force clear
-          if (!state.reconnectingStartedAt) {
-            state.reconnectingStartedAt = Date.now();
-          } else if (Date.now() - state.reconnectingStartedAt > 60000) {
-            console.error('🚨 Reconnection stuck for >60s - force clearing flag');
-            state.reconnecting = false;
-            state.reconnectingStartedAt = undefined;
-          } else {
-            return; // Skip this attempt
-          }
-        }
+        state.isConnected = status === 'SUBSCRIBED';
+        simpleConnectionHealth.setConsolidatedConnected(rundownId, state.isConnected);
+        setIsConnected(state.isConnected);
 
         if (status === 'SUBSCRIBED') {
-          state.isConnected = true;
-          // CRITICAL: Clear ALL pending timeouts and flags on success
-          state.reconnecting = false;
-          state.reconnectingStartedAt = undefined;
-          state.reconnectAttempts = 0;
-          if (state.reconnectTimeout) {
-            clearTimeout(state.reconnectTimeout);
-            state.reconnectTimeout = undefined;
-          }
-          if (state.guardTimeout) {
-            clearTimeout(state.guardTimeout);
-            state.guardTimeout = undefined;
+          state.retryCount = 0;
+          if (state.retryTimeout) {
+            clearTimeout(state.retryTimeout);
+            state.retryTimeout = undefined;
           }
           
-          // Update unified health service - consolidated is now connected
-          unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
-          
-          // Check if ALL channels are now healthy and reset global failure count
-          if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
-            console.log('📡 All channels healthy - resetting global failure count');
-            unifiedConnectionHealth.resetFailures(rundownId);
+          if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
+            simpleConnectionHealth.resetFailures(rundownId);
           }
-          
-          // Initial catch-up: read latest row to ensure no missed updates during subscribe
+
+          // Initial fetch
           try {
-            // Don't show processing indicator during initial load
             const { data, error } = await supabase
               .from('rundowns')
               .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
-              .eq('id', rundownId as string)
+              .eq('id', rundownId)
               .single();
-             
-             if (!error && data) {
-                // SIMPLIFIED: Apply initial catch-up immediately
-                const serverDoc = data.doc_version || 0;
+              
+            if (!error && data) {
+              const serverDoc = data.doc_version || 0;
               if (serverDoc > state.lastProcessedDocVersion) {
                 state.lastProcessedDocVersion = serverDoc;
                 state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
-                state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-                  try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+                state.callbacks.onRundownUpdate.forEach(cb => {
+                  try { cb(data); } catch (err) { console.error('Callback error:', err); }
                 });
               }
               
-              // FIXED: Clear initial load gate IMMEDIATELY after successful data fetch
               setIsInitialLoad(false);
               isInitialLoadRef.current = false;
-              if (initialLoadTimeoutRef.current) {
-                clearTimeout(initialLoadTimeoutRef.current);
-                initialLoadTimeoutRef.current = null;
-              }
-              
-              debugLogger.realtime('Initial load gate cleared - realtime updates enabled');
-            } else if (error) {
-              console.warn('Initial catch-up fetch failed:', error);
-              // Fallback: Clear gate after timeout if fetch fails
-              initialLoadTimeoutRef.current = setTimeout(() => {
-                setIsInitialLoad(false);
-                isInitialLoadRef.current = false;
-                initialLoadTimeoutRef.current = null;
-                debugLogger.realtime('Initial load gate cleared (fallback) - realtime updates enabled');
-              }, 2000);
             }
           } catch (err) {
-            console.error('Initial catch-up error:', err);
-            // Fallback: Clear gate after timeout on error
-            initialLoadTimeoutRef.current = setTimeout(() => {
+            console.error('Initial fetch error:', err);
+            setTimeout(() => {
               setIsInitialLoad(false);
               isInitialLoadRef.current = false;
-              initialLoadTimeoutRef.current = null;
-              debugLogger.realtime('Initial load gate cleared (error fallback) - realtime updates enabled');
             }, 2000);
           }
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          // Skip reconnection if intentionally cleaning up (navigation away)
-          if (state.cleaningUp) {
-            console.log('📡 Ignoring consolidated channel status during cleanup:', rundownId, status);
-            return;
-          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          if (state.isCleaningUp) return;
           
-          state.isConnected = false;
-          state.reconnecting = false; // CRITICAL: Clear flag on error
-          console.error('❌ Consolidated realtime connection failed:', status);
-          
-          // Track failure in unified health service
-          unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
-          unifiedConnectionHealth.trackFailure(rundownId);
-          
-          // Direct reconnection with exponential backoff
-          handleConsolidatedChannelReconnect(rundownId);
-        } else if (status === 'CLOSED') {
-          // Skip reconnection if intentionally cleaning up (navigation away)
-          if (state.cleaningUp) {
-            console.log('📡 Ignoring consolidated channel status during cleanup:', rundownId, status);
-            return;
-          }
-          
-          state.isConnected = false;
-          state.reconnecting = false; // CRITICAL: Clear flag on close
-          console.log('🔌 Consolidated realtime connection closed');
-          
-          // Track in unified health service
-          unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
-          unifiedConnectionHealth.trackFailure(rundownId);
-          
-          // Direct reconnection with exponential backoff (consistent with CHANNEL_ERROR handling)
-          handleConsolidatedChannelReconnect(rundownId);
+          console.warn('📡 Consolidated channel issue:', status);
+          simpleConnectionHealth.trackFailure(rundownId);
+          scheduleRetry(rundownId);
         }
       });
 
@@ -991,156 +491,10 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
         refCount: 0,
-        reconnectAttempts: 0
+        retryCount: 0
       };
 
       globalSubscriptions.set(rundownId, globalState);
-      
-      // Define and register reconnection handler
-      reconnectHandler = async () => {
-        console.log('📡 🔄 Force reconnect requested for consolidated channel:', rundownId);
-        
-        // CRITICAL: Debounce rapid reconnection attempts
-        if (globalState) {
-          const now = Date.now();
-          const timeSinceLastReconnect = now - (globalState.lastReconnectTime || 0);
-          if (timeSinceLastReconnect < MIN_RECONNECT_INTERVAL) {
-            console.log(`⏭️ Skipping force reconnect - too soon (${Math.round(timeSinceLastReconnect/1000)}s since last)`);
-            return;
-          }
-          globalState.lastReconnectTime = now;
-          globalState.reconnecting = true;
-          
-          // CRITICAL: Clear any pending scheduled reconnection timeouts FIRST
-          // This prevents orphan callbacks from firing after we start a new reconnection
-          if (globalState.reconnectTimeout) {
-            clearTimeout(globalState.reconnectTimeout);
-            globalState.reconnectTimeout = undefined;
-          }
-          
-          // Clear existing guard timeout before setting new one
-          if (globalState.guardTimeout) {
-            clearTimeout(globalState.guardTimeout);
-          }
-          
-          // CRITICAL: Auto-clear flag after 30 seconds if reconnection doesn't complete
-          globalState.guardTimeout = setTimeout(() => {
-            if (globalState && globalState.reconnecting) {
-              console.warn('⏰ Reconnection guard timeout - force clearing flag');
-              globalState.reconnecting = false;
-              globalState.reconnectingStartedAt = undefined;
-              globalState.guardTimeout = undefined;
-              // Report timeout as a failure to unified health tracking
-              unifiedConnectionHealth.trackFailure(rundownId);
-            }
-          }, 30000); // 30 second timeout
-        }
-        
-        // Check auth first
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session) {
-          console.warn('📡 ⚠️ Cannot reconnect - invalid auth session');
-          if (globalState) {
-            globalState.reconnecting = false; // Clear flag on auth failure
-          }
-          return;
-        }
-        
-        // CRITICAL: Set cleanup flag BEFORE removing channel to prevent CLOSED status 
-        // from triggering another reconnection attempt (feedback loop prevention)
-        if (globalState) {
-          globalState.cleaningUp = true;
-        }
-        
-        // Unsubscribe and resubscribe
-        if (globalState?.subscription) {
-          await supabase.removeChannel(globalState.subscription);
-          
-          // CRITICAL: Clear cleanup flag AFTER channel is removed, before creating new one
-          if (globalState) {
-            globalState.cleaningUp = false;
-          }
-          
-          const newChannel = supabase.channel(`consolidated-realtime-${rundownId}`);
-          
-          // Re-setup listeners (copy from above)
-          newChannel.on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'rundowns'
-          }, (payload) => {
-            const state = globalSubscriptions.get(rundownId);
-            if (state) processRealtimeUpdate(payload, state);
-          });
-          
-          if (!isSharedView) {
-            newChannel.on('postgres_changes', {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'blueprints'
-            }, (payload) => {
-              const state = globalSubscriptions.get(rundownId);
-              if (state) processRealtimeUpdate({ ...payload, table: 'blueprints' }, state);
-            });
-          }
-          
-          await newChannel.subscribe(async (status) => {
-              if (status === 'SUBSCRIBED') {
-              if (globalState) {
-                globalState.isConnected = true;
-                globalState.reconnecting = false;
-                globalState.reconnectAttempts = 0;
-                globalState.cleaningUp = false; // Ensure cleanup flag is cleared
-                // CRITICAL: Clear ALL pending timeouts on success
-                if (globalState.reconnectTimeout) {
-                  clearTimeout(globalState.reconnectTimeout);
-                  globalState.reconnectTimeout = undefined;
-                }
-                if (globalState.guardTimeout) {
-                  clearTimeout(globalState.guardTimeout);
-                  globalState.guardTimeout = undefined;
-                }
-              }
-              // Update unified health service
-              unifiedConnectionHealth.setConsolidatedStatus(rundownId, true);
-              
-              // Check if ALL channels are now healthy and reset global failure count
-              if (unifiedConnectionHealth.areAllChannelsHealthy(rundownId)) {
-                console.log('📡 All channels healthy - resetting global failure count');
-                unifiedConnectionHealth.resetFailures(rundownId);
-              }
-              console.log('📡 Force reconnection successful - catch-up sync handled by wasConnectedRef effect');
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-              // Skip if we're in cleanup mode (intentional channel removal)
-              if (globalState?.cleaningUp) {
-                console.log('📡 Ignoring status during forceReconnect cleanup:', status);
-                return;
-              }
-              if (globalState) {
-                globalState.isConnected = false;
-                globalState.reconnecting = false;
-              }
-              // Update unified health service with failure
-              unifiedConnectionHealth.setConsolidatedStatus(rundownId, false);
-              unifiedConnectionHealth.trackFailure(rundownId);
-              // Trigger backoff retry
-              handleConsolidatedChannelReconnect(rundownId);
-            }
-          });
-          
-          if (globalState) {
-            globalState.subscription = newChannel;
-          }
-        }
-      };
-      
-      // Store handler in state for reconnection
-      globalState.reconnectHandler = reconnectHandler;
-    } else {
-      // Existing subscription - reset reconnect attempts on successful status change
-      if (globalState.isConnected) {
-        globalState.reconnectAttempts = 0;
-      }
     }
 
     // Register callbacks
@@ -1161,7 +515,6 @@ export const useConsolidatedRealtimeRundown = ({
       const state = globalSubscriptions.get(rundownId);
       if (!state) return;
 
-      // Unregister callbacks
       if (callbackRefs.current.onRundownUpdate) {
         state.callbacks.onRundownUpdate.delete(callbackRefs.current.onRundownUpdate);
       }
@@ -1173,107 +526,52 @@ export const useConsolidatedRealtimeRundown = ({
       }
 
       state.refCount--;
-      
-      // FIXED: Validate and auto-correct refCount desync
+
       if (state.refCount < 0) {
-        console.error('🚨 CRITICAL: refCount went negative! Auto-correcting...', {
-          rundownId,
-          refCount: state.refCount,
-          callbacks: {
-            onRundownUpdate: state.callbacks.onRundownUpdate.size,
-            onShowcallerUpdate: state.callbacks.onShowcallerUpdate.size,
-            onBlueprintUpdate: state.callbacks.onBlueprintUpdate.size
-          }
-        });
-        state.refCount = 0; // Force correction
+        state.refCount = 0;
       }
 
-      // Calculate total callbacks as secondary source of truth
       const totalCallbacks = 
         state.callbacks.onRundownUpdate.size + 
         state.callbacks.onShowcallerUpdate.size + 
         state.callbacks.onBlueprintUpdate.size;
 
-      // Clean up subscription if no more references AND no active callbacks
       if (state.refCount <= 0 && totalCallbacks === 0) {
-        // CRITICAL: Mark as cleaning up BEFORE any cleanup to prevent status callback from scheduling reconnection
-        state.cleaningUp = true;
+        state.isCleaningUp = true;
         
-        console.log('📡 Closing consolidated realtime subscription for', rundownId, {
-          refCount: state.refCount,
-          totalCallbacks
-        });
-        
-        // Clear any pending timeouts
-        if (state.reconnectTimeout) {
-          clearTimeout(state.reconnectTimeout);
-        }
-        if (state.guardTimeout) {
-          clearTimeout(state.guardTimeout);
+        if (state.retryTimeout) {
+          clearTimeout(state.retryTimeout);
         }
         
-        // CRITICAL: Cleanup unified health service
-        unifiedConnectionHealth.cleanup(rundownId);
+        simpleConnectionHealth.cleanup(rundownId);
         
-        // Prevent recursive cleanup
         const subscription = state.subscription;
         globalSubscriptions.delete(rundownId);
         
-        // Safe async cleanup
         setTimeout(() => {
           try {
             supabase.removeChannel(subscription);
-          } catch (error) {
-            console.warn('📡 Error during consolidated cleanup:', error);
+          } catch (e) {
+            console.warn('Cleanup error:', e);
           }
         }, 100);
-      } else if (state.refCount <= 0 && totalCallbacks > 0) {
-        // FIXED: Correct refCount if callbacks still exist but refCount is 0
-        console.warn('⚠️ refCount mismatch detected - correcting', {
-          oldRefCount: state.refCount,
-          totalCallbacks,
-          newRefCount: totalCallbacks
-        });
-        state.refCount = totalCallbacks;
       }
-
-      // Clear initial load timeout on unmount
-      if (initialLoadTimeoutRef.current) {
-        clearTimeout(initialLoadTimeoutRef.current);
-        initialLoadTimeoutRef.current = null;
-      }
-
-      setIsConnected(false);
     };
-  }, [rundownId, user?.id, tokenReady, enabled, processRealtimeUpdate, isSharedView]);
+  }, [rundownId, user, tokenReady, enabled, isSharedView, lastSeenDocVersion, processRealtimeUpdate, scheduleRetry]);
 
-  // Sync lastSeenDocVersion into global state without resubscribing
-  useEffect(() => {
-    if (!rundownId) return;
-    const state = globalSubscriptions.get(rundownId);
-    if (state && lastSeenDocVersion > state.lastProcessedDocVersion) {
-      state.lastProcessedDocVersion = lastSeenDocVersion;
-    }
-  }, [rundownId, lastSeenDocVersion]);
-
-  // SIMPLIFIED: No longer track timestamps, rely only on tab_id
-  // Legacy compatibility function - now directly uses centralized tracker
-  const trackOwnUpdateFunc = useCallback((timestamp: string) => {
-    if (rundownId && timestamp) {
-      const context = `realtime-${rundownId}`;
-      ownUpdateTracker.track(normalizeTimestamp(timestamp), context);
-      console.log('🏷️ Tracked own update via centralized tracker:', timestamp);
-    }
-  }, [rundownId]);
+  // Stub functions for compatibility - these were part of the old complex system
+  // but aren't needed with the simplified approach
+  const setTypingChecker = useCallback(() => {}, []);
+  const setUnsavedChecker = useCallback(() => {}, []);
+  const trackOwnUpdate = useCallback(() => {}, []);
 
   return {
     isConnected,
     isProcessingUpdate,
-    trackOwnUpdate: trackOwnUpdateFunc,
-    tabId: 'single-session', // Single session - no tab tracking needed
-    // Legacy compatibility methods (no-ops maintained)
-    setTypingChecker: (checker: any) => {},
-    setUnsavedChecker: (checker: any) => {},
-    performCatchupSync
+    isInitialLoad,
+    performCatchupSync,
+    setTypingChecker,
+    setUnsavedChecker,
+    trackOwnUpdate
   };
 };
