@@ -487,6 +487,14 @@ export class CellBroadcastManager {
     }
     this.lastReconnectTimes.set(rundownId, now);
     
+    // CRITICAL: Clear any pending scheduled reconnection timeouts FIRST
+    // This prevents orphan callbacks from firing after we start a new reconnection
+    const pendingTimeout = this.reconnectTimeouts.get(rundownId);
+    if (pendingTimeout) {
+      clearTimeout(pendingTimeout);
+      this.reconnectTimeouts.delete(rundownId);
+    }
+    
     // Check current connection status
     const currentStatus = this.connectionStatus.get(rundownId);
     const isReconnecting = this.reconnecting.get(rundownId);
@@ -539,6 +547,10 @@ export class CellBroadcastManager {
       return;
     }
     
+    // CRITICAL: Set cleanup flag BEFORE removing channel to prevent CLOSED status 
+    // from triggering another reconnection attempt (feedback loop prevention)
+    this.cleaningUp.set(rundownId, true);
+    
     // Clean up and reconnect immediately
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
@@ -552,6 +564,9 @@ export class CellBroadcastManager {
     this.channels.delete(rundownId);
     this.subscribed.delete(rundownId);
     // Don't reset attempts here - let SUBSCRIBED handler reset on success
+    
+    // Clear cleanup flag before creating new channel
+    this.cleaningUp.set(rundownId, false);
     
     if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
       this.ensureChannel(rundownId);

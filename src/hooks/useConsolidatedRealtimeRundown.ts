@@ -1011,6 +1011,13 @@ export const useConsolidatedRealtimeRundown = ({
           globalState.lastReconnectTime = now;
           globalState.reconnecting = true;
           
+          // CRITICAL: Clear any pending scheduled reconnection timeouts FIRST
+          // This prevents orphan callbacks from firing after we start a new reconnection
+          if (globalState.reconnectTimeout) {
+            clearTimeout(globalState.reconnectTimeout);
+            globalState.reconnectTimeout = undefined;
+          }
+          
           // Clear existing guard timeout before setting new one
           if (globalState.guardTimeout) {
             clearTimeout(globalState.guardTimeout);
@@ -1039,9 +1046,21 @@ export const useConsolidatedRealtimeRundown = ({
           return;
         }
         
+        // CRITICAL: Set cleanup flag BEFORE removing channel to prevent CLOSED status 
+        // from triggering another reconnection attempt (feedback loop prevention)
+        if (globalState) {
+          globalState.cleaningUp = true;
+        }
+        
         // Unsubscribe and resubscribe
         if (globalState?.subscription) {
           await supabase.removeChannel(globalState.subscription);
+          
+          // CRITICAL: Clear cleanup flag AFTER channel is removed, before creating new one
+          if (globalState) {
+            globalState.cleaningUp = false;
+          }
+          
           const newChannel = supabase.channel(`consolidated-realtime-${rundownId}`);
           
           // Re-setup listeners (copy from above)
@@ -1071,6 +1090,7 @@ export const useConsolidatedRealtimeRundown = ({
                 globalState.isConnected = true;
                 globalState.reconnecting = false;
                 globalState.reconnectAttempts = 0;
+                globalState.cleaningUp = false; // Ensure cleanup flag is cleared
                 // CRITICAL: Clear ALL pending timeouts on success
                 if (globalState.reconnectTimeout) {
                   clearTimeout(globalState.reconnectTimeout);
@@ -1091,6 +1111,11 @@ export const useConsolidatedRealtimeRundown = ({
               }
               console.log('📡 Force reconnection successful - catch-up sync handled by wasConnectedRef effect');
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              // Skip if we're in cleanup mode (intentional channel removal)
+              if (globalState?.cleaningUp) {
+                console.log('📡 Ignoring status during forceReconnect cleanup:', status);
+                return;
+              }
               if (globalState) {
                 globalState.isConnected = false;
                 globalState.reconnecting = false;
