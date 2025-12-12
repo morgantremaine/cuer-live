@@ -31,18 +31,8 @@ class ShowcallerBroadcastManager {
   private readonly MAX_RETRIES = 10;
 
   constructor() {
-    // Handle tab visibility - verify connection when visible
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible') return;
-      
-      this.channels.forEach((_, rundownId) => {
-        const status = this.connectionStatus.get(rundownId);
-        if (status !== 'SUBSCRIBED') {
-          console.log('👁️ Tab visible - showcaller channel unhealthy, reconnecting:', rundownId);
-          this.forceReconnect(rundownId);
-        }
-      });
-    });
+    // NOTE: Visibility handling consolidated in useConsolidatedRealtimeRundown.ts
+    // to prevent multiple overlapping reconnection attempts
 
     // Handle network online
     window.addEventListener('online', () => {

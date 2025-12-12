@@ -105,31 +105,8 @@ export const useShowcallerBroadcastSync = ({
       }
     }, 10000); // Check every 10 seconds
 
-    // Monitor window focus to ensure connection stays active (with debouncing)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // Debounce: only trigger reconnection if not triggered recently
-        const now = Date.now();
-        const timeSinceLastTrigger = now - lastReconnectTriggerRef.current;
-        
-        if (timeSinceLastTrigger < 5000) {
-          console.log(`📺 Skipping visibility reconnection trigger - debounced (${timeSinceLastTrigger}ms since last trigger)`);
-          return;
-        }
-        
-        // When tab becomes visible, check connection and trigger reconnection if needed
-        setTimeout(() => {
-          const connected = showcallerBroadcast.isChannelConnected(rundownId);
-          if (!connected) {
-            console.log('📺 🔄 Tab visible but showcaller not connected, triggering reconnection');
-            lastReconnectTriggerRef.current = Date.now();
-            showcallerBroadcast.forceReconnect(rundownId);
-          }
-        }, 2000);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // NOTE: Visibility handling consolidated in useConsolidatedRealtimeRundown.ts
+    // to prevent multiple overlapping reconnection attempts
     
     // Listen for WebSocket reconnection complete event
     const handleWebSocketReconnection = async () => {
@@ -151,7 +128,6 @@ export const useShowcallerBroadcastSync = ({
 
     return () => {
       console.log('📺 Cleaning up showcaller broadcast sync');
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('websocket-reconnection-complete', handleWebSocketReconnection);
       clearInterval(statusInterval);
       unsubscribe();

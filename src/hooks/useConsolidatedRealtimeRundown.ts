@@ -359,8 +359,9 @@ export const useConsolidatedRealtimeRundown = ({
       const state = globalSubscriptions.get(rundownId);
       if (!state) return;
       
-      console.log('👁️ Tab visible - checking connection...');
+      console.log('👁️ Tab visible - checking ALL channel connections...');
       
+      // Small delay to let browser/network stabilize
       await new Promise(resolve => setTimeout(resolve, 500));
       
       try {
@@ -370,17 +371,44 @@ export const useConsolidatedRealtimeRundown = ({
           .eq('id', rundownId)
           .single();
         
+        // Import broadcast managers dynamically to avoid circular deps
+        const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
+        const { cellBroadcast } = await import('@/utils/cellBroadcast');
+        
         if (error) {
-          console.warn('❌ Connection dead on visibility - reconnecting');
+          console.warn('❌ Connection dead on visibility - reconnecting ALL channels');
           await forceReconnect(rundownId);
+          await showcallerBroadcast.forceReconnect(rundownId);
+          await cellBroadcast.forceReconnect(rundownId);
         } else if (!state.isConnected) {
+          console.log('📡 Consolidated not connected - reconnecting ALL channels');
           await forceReconnect(rundownId);
+          await showcallerBroadcast.forceReconnect(rundownId);
+          await cellBroadcast.forceReconnect(rundownId);
         } else {
+          // Check individual channel health and reconnect if needed
+          const showcallerHealthy = showcallerBroadcast.isChannelConnected(rundownId);
+          const cellHealthy = cellBroadcast.isChannelConnected(rundownId);
+          
+          if (!showcallerHealthy) {
+            console.log('📺 Showcaller unhealthy after visibility - reconnecting');
+            await showcallerBroadcast.forceReconnect(rundownId);
+          }
+          if (!cellHealthy) {
+            console.log('📱 Cell channel unhealthy after visibility - reconnecting');
+            await cellBroadcast.forceReconnect(rundownId);
+          }
+          
+          // Always do catch-up sync on visibility
           await performCatchupSync();
         }
       } catch (err) {
         console.warn('❌ Visibility check failed:', err);
+        const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
+        const { cellBroadcast } = await import('@/utils/cellBroadcast');
         await forceReconnect(rundownId);
+        await showcallerBroadcast.forceReconnect(rundownId);
+        await cellBroadcast.forceReconnect(rundownId);
       }
     };
 
