@@ -278,7 +278,14 @@ export const useConsolidatedRealtimeRundown = ({
     }
 
     const handleOnline = async () => {
+      if (realtimeReset.isResetInProgress()) {
+        console.log('📶 Network online but reset in progress - skipping');
+        return;
+      }
+      
       console.log('📶 Network online - performing nuclear reset');
+      simpleConnectionHealth.cleanup(rundownId);
+      
       const success = await realtimeReset.performNuclearReset();
       if (success) {
         await initializeChannel();
@@ -287,7 +294,10 @@ export const useConsolidatedRealtimeRundown = ({
         const { cellBroadcast } = await import('@/utils/cellBroadcast');
         showcallerBroadcast.reinitialize(rundownId);
         cellBroadcast.reinitialize(rundownId);
-        await performCatchupSync();
+        
+        setTimeout(async () => {
+          await performCatchupSync();
+        }, 2000);
       }
     };
 
@@ -308,7 +318,7 @@ export const useConsolidatedRealtimeRundown = ({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [enabled, rundownId, initializeChannel, performCatchupSync]);
+  }, [enabled, rundownId, performCatchupSync]); // Removed initializeChannel from deps
 
   // Visibility change handler - THE NUCLEAR RESET TRIGGER
   useEffect(() => {
@@ -321,12 +331,22 @@ export const useConsolidatedRealtimeRundown = ({
         return;
       }
 
+      // Skip if reset already in progress
+      if (realtimeReset.isResetInProgress()) {
+        console.log('👁️ Tab visible but reset in progress - skipping');
+        return;
+      }
+
       // Tab becoming visible
       console.log('👁️ Tab visible - checking if nuclear reset needed...');
 
       // Check if this was an extended sleep
       if (realtimeReset.wasExtendedSleep()) {
         console.log('☢️ Extended sleep detected - performing nuclear reset');
+        
+        // Clear stale health state before reinitializing
+        simpleConnectionHealth.cleanup(rundownId);
+        
         const success = await realtimeReset.performNuclearReset();
         if (success) {
           // Re-initialize ALL channels
@@ -336,10 +356,16 @@ export const useConsolidatedRealtimeRundown = ({
           showcallerBroadcast.reinitialize(rundownId);
           cellBroadcast.reinitialize(rundownId);
           
-          // Wait for channels to connect then catch up
+          // Verify all channels connected after 3 seconds
           setTimeout(async () => {
+            const health = simpleConnectionHealth.getHealth(rundownId);
+            if (!health.allConnected) {
+              console.warn('⚠️ Not all channels connected after reset:', health);
+            } else {
+              console.log('✅ All channels recovered after nuclear reset');
+            }
             await performCatchupSync();
-          }, 2000);
+          }, 3000);
         }
       } else {
         // Normal tab switch - just catch up
@@ -352,13 +378,16 @@ export const useConsolidatedRealtimeRundown = ({
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [enabled, rundownId, initializeChannel, performCatchupSync]);
+  }, [enabled, rundownId, performCatchupSync]); // Removed initializeChannel from deps
 
   // Polling fallback (3 minute stale threshold)
   useEffect(() => {
     if (!enabled || !rundownId) return;
 
     const checkInterval = setInterval(async () => {
+      // Skip if reset already in progress
+      if (realtimeReset.isResetInProgress()) return;
+      
       const state = globalSubscriptions.get(rundownId);
       if (!state) return;
 
@@ -367,6 +396,8 @@ export const useConsolidatedRealtimeRundown = ({
 
       if (!state.isConnected || timeSinceLastUpdate > STALE_THRESHOLD) {
         console.log('⏰ Connection stale or disconnected - performing nuclear reset');
+        simpleConnectionHealth.cleanup(rundownId);
+        
         const success = await realtimeReset.performNuclearReset();
         if (success) {
           await initializeChannel();
@@ -374,14 +405,17 @@ export const useConsolidatedRealtimeRundown = ({
           const { cellBroadcast } = await import('@/utils/cellBroadcast');
           showcallerBroadcast.reinitialize(rundownId);
           cellBroadcast.reinitialize(rundownId);
-          await performCatchupSync();
-          lastUpdateTimeRef.current = Date.now();
+          
+          setTimeout(async () => {
+            await performCatchupSync();
+            lastUpdateTimeRef.current = Date.now();
+          }, 2000);
         }
       }
     }, 60000); // Check every minute
 
     return () => clearInterval(checkInterval);
-  }, [enabled, rundownId, initializeChannel, performCatchupSync]);
+  }, [enabled, rundownId, performCatchupSync]); // Removed initializeChannel from deps
 
   // Main subscription effect
   useEffect(() => {
@@ -455,7 +489,7 @@ export const useConsolidatedRealtimeRundown = ({
         }, 100);
       }
     };
-  }, [rundownId, user, tokenReady, enabled, isSharedView, initializeChannel]);
+  }, [rundownId, user, tokenReady, enabled, isSharedView]); // Removed initializeChannel from deps
 
   // Stub functions for compatibility
   const setTypingChecker = useCallback((_checker: () => boolean) => {}, []);
