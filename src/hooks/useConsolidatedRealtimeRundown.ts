@@ -153,6 +153,9 @@ export const useConsolidatedRealtimeRundown = ({
 
     console.log('📡 🔄 Force reconnecting consolidated:', rundownId);
 
+    // Mark as intentional reconnect to suppress cosmetic failure logging
+    simpleConnectionHealth.markIntentionalReconnect(rundownId);
+
     state.isCleaningUp = true;
 
     if (state.retryTimeout) {
@@ -174,6 +177,7 @@ export const useConsolidatedRealtimeRundown = ({
       const s = globalSubscriptions.get(rundownId);
       if (s && s.isCleaningUp) {
         s.isCleaningUp = false;
+        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
       }
     }, 10000);
 
@@ -221,6 +225,8 @@ export const useConsolidatedRealtimeRundown = ({
       if (status === 'SUBSCRIBED') {
         // Reset isCleaningUp NOW - after new channel successfully connected
         s.isCleaningUp = false;
+        // Clear intentional reconnect flag on success
+        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
         
         console.log('✅ Consolidated channel connected (reconnect):', rundownId);
         s.retryCount = 0;

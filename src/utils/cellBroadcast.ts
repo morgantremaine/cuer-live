@@ -127,6 +127,7 @@ export class CellBroadcastManager {
         this.retryCount.delete(rundownId);
         this.clearRetryTimeout(rundownId);
         this.broadcastFailureCount.set(rundownId, 0);
+        simpleConnectionHealth.clearIntentionalReconnect(rundownId);
         
         if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
           simpleConnectionHealth.resetFailures(rundownId);
@@ -181,6 +182,9 @@ export class CellBroadcastManager {
     }
 
     console.log('📱 🔄 Force reconnecting cell channel:', rundownId);
+
+    // Mark as intentional reconnect to suppress cosmetic failure logging
+    simpleConnectionHealth.markIntentionalReconnect(rundownId);
 
     this.isCleaningUp.set(rundownId, true);
     this.clearRetryTimeout(rundownId);
