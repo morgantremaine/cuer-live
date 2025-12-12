@@ -1,6 +1,6 @@
 // Simple Connection Health Service
 // Replaces the complex UnifiedConnectionHealth with straightforward tracking
-// No coordination, no stabilization waits, just simple status reporting
+// Includes stabilization delay to prevent rapid flapping during sleep/wake recovery
 
 import { toast } from 'sonner';
 
@@ -11,6 +11,7 @@ export interface SimpleHealthStatus {
   allConnected: boolean;
   anyDisconnected: boolean;
   consecutiveFailures: number;
+  isStabilizing: boolean;
 }
 
 class SimpleConnectionHealthService {
@@ -22,7 +23,12 @@ class SimpleConnectionHealthService {
   // This prevents racing where all 3 channels failing simultaneously counts as 3 failures
   private failedChannelsInCycle = new Map<string, Set<string>>();
   
+  // Stabilization tracking - prevents rapid flapping during recovery
+  private stabilizationTimeouts = new Map<string, NodeJS.Timeout>();
+  private isStabilizing = new Map<string, boolean>();
+  
   private readonly MAX_FAILURES_BEFORE_RELOAD = 15;
+  private readonly STABILIZATION_DELAY_MS = 500;
 
   private getStatus(rundownId: string) {
     if (!this.channelStatus.has(rundownId)) {
@@ -43,9 +49,15 @@ class SimpleConnectionHealthService {
     const wasConnected = status.consolidated;
     status.consolidated = connected;
     
-    // Track failure cycle
-    if (!connected && wasConnected) {
-      this.handleChannelFailure(rundownId, 'consolidated');
+    // Track failure cycle - handle both transitions from connected AND from uninitialized
+    if (!connected) {
+      // Channel is disconnecting - if it was connected OR this is initial state reporting disconnect
+      if (wasConnected) {
+        this.handleChannelFailure(rundownId, 'consolidated');
+      } else {
+        // First time seeing this channel as disconnected - add to failed set for tracking
+        this.getFailedChannelsSet(rundownId).add('consolidated');
+      }
     } else if (connected) {
       this.handleChannelRecovery(rundownId, 'consolidated');
     }
@@ -58,8 +70,12 @@ class SimpleConnectionHealthService {
     const wasConnected = status.showcaller;
     status.showcaller = connected;
     
-    if (!connected && wasConnected) {
-      this.handleChannelFailure(rundownId, 'showcaller');
+    if (!connected) {
+      if (wasConnected) {
+        this.handleChannelFailure(rundownId, 'showcaller');
+      } else {
+        this.getFailedChannelsSet(rundownId).add('showcaller');
+      }
     } else if (connected) {
       this.handleChannelRecovery(rundownId, 'showcaller');
     }
@@ -72,8 +88,12 @@ class SimpleConnectionHealthService {
     const wasConnected = status.cell;
     status.cell = connected;
     
-    if (!connected && wasConnected) {
-      this.handleChannelFailure(rundownId, 'cell');
+    if (!connected) {
+      if (wasConnected) {
+        this.handleChannelFailure(rundownId, 'cell');
+      } else {
+        this.getFailedChannelsSet(rundownId).add('cell');
+      }
     } else if (connected) {
       this.handleChannelRecovery(rundownId, 'cell');
     }
@@ -83,6 +103,9 @@ class SimpleConnectionHealthService {
 
   private handleChannelFailure(rundownId: string, channelName: string): void {
     const failedSet = this.getFailedChannelsSet(rundownId);
+    
+    // Cancel any pending stabilization - connection is unstable again
+    this.cancelStabilization(rundownId);
     
     // Only increment failure count once per failure cycle (when first channel fails)
     if (failedSet.size === 0) {
@@ -96,9 +119,52 @@ class SimpleConnectionHealthService {
     const failedSet = this.getFailedChannelsSet(rundownId);
     failedSet.delete(channelName);
     
-    // When all channels have recovered, reset failures
-    if (failedSet.size === 0) {
-      this.resetFailures(rundownId);
+    // Check if all channels are now connected
+    const status = this.getStatus(rundownId);
+    const allConnected = status.consolidated && status.showcaller && status.cell;
+    
+    if (allConnected && failedSet.size === 0) {
+      // Start stabilization period before declaring full recovery
+      this.startStabilization(rundownId);
+    }
+  }
+
+  private startStabilization(rundownId: string): void {
+    // Clear any existing stabilization timeout
+    this.cancelStabilization(rundownId);
+    
+    // Mark as stabilizing
+    this.isStabilizing.set(rundownId, true);
+    this.notifySubscribers(rundownId);
+    
+    // After stabilization delay, if still all connected, declare recovery
+    const timeout = setTimeout(() => {
+      const status = this.getStatus(rundownId);
+      const stillAllConnected = status.consolidated && status.showcaller && status.cell;
+      
+      if (stillAllConnected) {
+        this.isStabilizing.set(rundownId, false);
+        this.resetFailures(rundownId);
+      } else {
+        // Connection dropped during stabilization, stay in unstable state
+        this.isStabilizing.set(rundownId, false);
+        this.notifySubscribers(rundownId);
+      }
+    }, this.STABILIZATION_DELAY_MS);
+    
+    this.stabilizationTimeouts.set(rundownId, timeout);
+  }
+
+  private cancelStabilization(rundownId: string): void {
+    const timeout = this.stabilizationTimeouts.get(rundownId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.stabilizationTimeouts.delete(rundownId);
+    }
+    
+    if (this.isStabilizing.get(rundownId)) {
+      this.isStabilizing.set(rundownId, false);
+      // Don't notify here - caller will notify after their state change
     }
   }
 
@@ -131,12 +197,14 @@ class SimpleConnectionHealthService {
   getHealth(rundownId: string): SimpleHealthStatus {
     const status = this.getStatus(rundownId);
     const allConnected = status.consolidated && status.showcaller && status.cell;
+    const stabilizing = this.isStabilizing.get(rundownId) || false;
     
     return {
       ...status,
       allConnected,
       anyDisconnected: !allConnected,
-      consecutiveFailures: this.failureCount.get(rundownId) || 0
+      consecutiveFailures: this.failureCount.get(rundownId) || 0,
+      isStabilizing: stabilizing
     };
   }
 
@@ -172,10 +240,12 @@ class SimpleConnectionHealthService {
   }
 
   cleanup(rundownId: string): void {
+    this.cancelStabilization(rundownId);
     this.channelStatus.delete(rundownId);
     this.failureCount.delete(rundownId);
     this.failedChannelsInCycle.delete(rundownId);
     this.subscribers.delete(rundownId);
+    this.isStabilizing.delete(rundownId);
   }
 }
 
