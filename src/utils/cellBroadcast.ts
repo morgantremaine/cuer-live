@@ -108,7 +108,16 @@ export class CellBroadcastManager {
         }
       });
 
+    // Store channel BEFORE subscribing so callback can check identity
+    this.channels.set(rundownId, channel);
+
     channel.subscribe((status: string) => {
+      // Ignore callbacks from old channels
+      if (this.channels.get(rundownId) !== channel) {
+        console.log('🔌 Ignoring callback from old channel (cell)');
+        return;
+      }
+
       this.connectionStatus.set(rundownId, status);
       const isConnected = status === 'SUBSCRIBED';
       simpleConnectionHealth.setCellConnected(rundownId, isConnected);
@@ -130,7 +139,6 @@ export class CellBroadcastManager {
       }
     });
 
-    this.channels.set(rundownId, channel);
     return channel;
   }
 

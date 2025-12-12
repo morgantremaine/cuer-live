@@ -63,30 +63,39 @@ class ShowcallerBroadcastManager {
         if (callbacks) {
           callbacks.forEach(callback => callback(payload));
         }
-      })
-      .subscribe((status) => {
-        this.connectionStatus.set(rundownId, status);
-        const isConnected = status === 'SUBSCRIBED';
-        simpleConnectionHealth.setShowcallerConnected(rundownId, isConnected);
-
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Showcaller channel connected:', rundownId);
-          // Success - reset retry count
-          this.retryCount.delete(rundownId);
-          this.clearRetryTimeout(rundownId);
-          
-          if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
-            simpleConnectionHealth.resetFailures(rundownId);
-          }
-        } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
-          if (this.isCleaningUp.get(rundownId)) return;
-          
-        console.warn('📺 Showcaller channel issue:', rundownId, status);
-        this.scheduleRetry(rundownId);
-        }
       });
 
+    // Store channel BEFORE subscribing so callback can check identity
     this.channels.set(rundownId, channel);
+
+    channel.subscribe((status) => {
+      // Ignore callbacks from old channels
+      if (this.channels.get(rundownId) !== channel) {
+        console.log('📺 Ignoring callback from old channel (showcaller)');
+        return;
+      }
+
+      this.connectionStatus.set(rundownId, status);
+      const isConnected = status === 'SUBSCRIBED';
+      simpleConnectionHealth.setShowcallerConnected(rundownId, isConnected);
+
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Showcaller channel connected:', rundownId);
+        // Success - reset retry count
+        this.retryCount.delete(rundownId);
+        this.clearRetryTimeout(rundownId);
+        
+        if (simpleConnectionHealth.areAllChannelsHealthy(rundownId)) {
+          simpleConnectionHealth.resetFailures(rundownId);
+        }
+      } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+        if (this.isCleaningUp.get(rundownId)) return;
+        
+        console.warn('📺 Showcaller channel issue:', rundownId, status);
+        this.scheduleRetry(rundownId);
+      }
+    });
+
     return channel;
   }
 
