@@ -53,18 +53,8 @@ export class CellBroadcastManager {
   private broadcastFailureCount = new Map<string, number>();
 
   constructor() {
-    // Handle tab visibility
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState !== 'visible') return;
-      
-      this.channels.forEach((_, rundownId) => {
-        const status = this.connectionStatus.get(rundownId);
-        if (status !== 'SUBSCRIBED') {
-          console.log('👁️ Tab visible - cell channel unhealthy, reconnecting:', rundownId);
-          this.forceReconnect(rundownId);
-        }
-      });
-    });
+    // NOTE: Visibility handling consolidated in useConsolidatedRealtimeRundown.ts
+    // to prevent multiple overlapping reconnection attempts
 
     // Handle network online
     window.addEventListener('online', () => {
