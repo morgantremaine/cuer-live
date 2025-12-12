@@ -446,9 +446,32 @@ export const useConsolidatedRealtimeRundown = ({
         });
       }
 
+      // Create state object BEFORE subscribing so callback can check channel identity
+      globalState = {
+        subscription: channel,
+        callbacks: {
+          onRundownUpdate: new Set(),
+          onShowcallerUpdate: new Set(),
+          onBlueprintUpdate: new Set()
+        },
+        lastProcessedTimestamp: null,
+        lastProcessedDocVersion: lastSeenDocVersion,
+        isConnected: false,
+        refCount: 0,
+        retryCount: 0
+      };
+
+      globalSubscriptions.set(rundownId, globalState);
+
       channel.subscribe(async (status) => {
         const state = globalSubscriptions.get(rundownId);
         if (!state) return;
+
+        // Ignore callbacks from old channels - only process if this is the current subscription
+        if (state.subscription !== channel) {
+          console.log('📡 Ignoring callback from old channel (main subscription)');
+          return;
+        }
 
         state.isConnected = status === 'SUBSCRIBED';
         simpleConnectionHealth.setConsolidatedConnected(rundownId, state.isConnected);
@@ -501,22 +524,6 @@ export const useConsolidatedRealtimeRundown = ({
           scheduleRetry(rundownId);
         }
       });
-
-      globalState = {
-        subscription: channel,
-        callbacks: {
-          onRundownUpdate: new Set(),
-          onShowcallerUpdate: new Set(),
-          onBlueprintUpdate: new Set()
-        },
-        lastProcessedTimestamp: null,
-        lastProcessedDocVersion: lastSeenDocVersion,
-        isConnected: false,
-        refCount: 0,
-        retryCount: 0
-      };
-
-      globalSubscriptions.set(rundownId, globalState);
     }
 
     // Register callbacks
