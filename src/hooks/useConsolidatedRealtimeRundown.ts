@@ -222,7 +222,6 @@ export const useConsolidatedRealtimeRundown = ({
         if (s.isCleaningUp) return;
         
         console.warn('📡 Consolidated channel issue:', status);
-        simpleConnectionHealth.trackFailure(rundownId);
         scheduleRetry(rundownId);
       }
     });
@@ -475,7 +474,6 @@ export const useConsolidatedRealtimeRundown = ({
           if (state.isCleaningUp) return;
           
           console.warn('📡 Consolidated channel issue:', status);
-          simpleConnectionHealth.trackFailure(rundownId);
           scheduleRetry(rundownId);
         }
       });

@@ -80,9 +80,8 @@ class ShowcallerBroadcastManager {
         } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
           if (this.isCleaningUp.get(rundownId)) return;
           
-          console.warn('📺 Showcaller channel issue:', rundownId, status);
-          simpleConnectionHealth.trackFailure(rundownId);
-          this.scheduleRetry(rundownId);
+        console.warn('📺 Showcaller channel issue:', rundownId, status);
+        this.scheduleRetry(rundownId);
         }
       });
 
