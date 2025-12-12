@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
+import { realtimeReset } from '@/utils/realtimeReset';
 
 interface UseADViewConnectionHealthProps {
   rundownId: string;
   enabled?: boolean;
   onSilentRefresh: () => Promise<void>;
-  staleThresholdMs?: number; // How long without updates before considered stale
-  healthCheckIntervalMs?: number; // How often to check health
+  staleThresholdMs?: number;
+  healthCheckIntervalMs?: number;
 }
 
 interface ConnectionHealthState {
@@ -21,8 +22,8 @@ export const useADViewConnectionHealth = ({
   rundownId,
   enabled = true,
   onSilentRefresh,
-  staleThresholdMs = 60000, // 60 seconds default
-  healthCheckIntervalMs = 30000 // 30 seconds default
+  staleThresholdMs = 60000,
+  healthCheckIntervalMs = 30000
 }: UseADViewConnectionHealthProps) => {
   const [state, setState] = useState<ConnectionHealthState>({
     showConnectionWarning: false,
@@ -36,11 +37,8 @@ export const useADViewConnectionHealth = ({
   const lastBroadcastTimeRef = useRef<number>(Date.now());
   const isTabVisibleRef = useRef<boolean>(!document.hidden);
   
-  // Mark that we received a successful poll (no stale closure - checks state inside setState)
   const markPollReceived = useCallback(() => {
     lastPollTimeRef.current = Date.now();
-    
-    // Clear warning if showing - use functional update to avoid stale closure
     setState(prev => {
       if (prev.showConnectionWarning) {
         console.log('📺 AD View: Poll received - clearing warning');
@@ -55,11 +53,8 @@ export const useADViewConnectionHealth = ({
     });
   }, []);
 
-  // Mark that we received a showcaller broadcast (no stale closure)
   const markBroadcastReceived = useCallback(() => {
     lastBroadcastTimeRef.current = Date.now();
-    
-    // Clear warning if showing - use functional update to avoid stale closure
     setState(prev => {
       if (prev.showConnectionWarning) {
         console.log('📺 AD View: Broadcast received - clearing warning');
@@ -74,7 +69,7 @@ export const useADViewConnectionHealth = ({
     });
   }, []);
 
-  // Attempt silent recovery
+  // Attempt recovery using nuclear reset
   const attemptSilentRecovery = useCallback(async () => {
     if (isRecoveringRef.current) {
       console.log('📺 AD View: Already recovering, skipping...');
@@ -84,63 +79,64 @@ export const useADViewConnectionHealth = ({
     isRecoveringRef.current = true;
     
     try {
-      console.warn('📺 AD View: Stale connection detected, attempting silent recovery...');
+      console.warn('📺 AD View: Stale connection detected, attempting nuclear reset...');
       
-      // Step 1: Force reconnect the showcallerBroadcast channel
-      showcallerBroadcast.forceReconnect(rundownId);
+      // Use nuclear reset
+      const success = await realtimeReset.performNuclearReset();
       
-      // Step 2: Wait a bit for reconnection
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Step 3: Fetch fresh data silently
-      await onSilentRefresh();
-      
-      // Step 4: Check if channel is connected
-      const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
-      
-      if (isChannelConnected) {
-        console.log('📺 AD View: Silent recovery successful');
-        setState({
-          showConnectionWarning: false,
-          consecutiveFailures: 0,
-          lastSuccessfulRecovery: Date.now()
-        });
-        lastPollTimeRef.current = Date.now();
-        lastBroadcastTimeRef.current = Date.now();
-      } else {
-        // Recovery failed, increment counter
-        setState(prev => {
-          const newFailures = prev.consecutiveFailures + 1;
-          console.warn(`📺 AD View: Recovery attempt ${newFailures} failed`);
-          
-          // Unlike teleprompter, AD View CAN force refresh after max failures
-          if (newFailures >= MAX_FAILURES_BEFORE_REFRESH) {
-            console.warn(`📺 AD View: ${newFailures} consecutive failures - forcing page refresh`);
-            window.location.reload();
-            return prev; // Won't actually execute due to reload
-          }
-          
-          // Show warning after 3 consecutive failures
-          return {
-            ...prev,
-            consecutiveFailures: newFailures,
-            showConnectionWarning: newFailures >= 3
-          };
-        });
+      if (success) {
+        // Wait for reconnection
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Reinitialize showcaller
+        showcallerBroadcast.reinitialize(rundownId);
+        
+        // Wait and check
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Fetch fresh data
+        await onSilentRefresh();
+        
+        const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
+        
+        if (isChannelConnected) {
+          console.log('📺 AD View: Recovery successful');
+          setState({
+            showConnectionWarning: false,
+            consecutiveFailures: 0,
+            lastSuccessfulRecovery: Date.now()
+          });
+          lastPollTimeRef.current = Date.now();
+          lastBroadcastTimeRef.current = Date.now();
+        } else {
+          setState(prev => {
+            const newFailures = prev.consecutiveFailures + 1;
+            console.warn(`📺 AD View: Recovery attempt ${newFailures} failed`);
+            
+            if (newFailures >= MAX_FAILURES_BEFORE_REFRESH) {
+              console.warn(`📺 AD View: ${newFailures} consecutive failures - forcing page refresh`);
+              window.location.reload();
+              return prev;
+            }
+            
+            return {
+              ...prev,
+              consecutiveFailures: newFailures,
+              showConnectionWarning: newFailures >= 3
+            };
+          });
+        }
       }
     } catch (error) {
-      console.error('📺 AD View: Silent recovery error:', error);
+      console.error('📺 AD View: Recovery error:', error);
       setState(prev => {
         const newFailures = prev.consecutiveFailures + 1;
         
-        // Force refresh after max failures
         if (newFailures >= MAX_FAILURES_BEFORE_REFRESH) {
-          console.warn(`📺 AD View: ${newFailures} consecutive failures - forcing page refresh`);
           window.location.reload();
           return prev;
         }
         
-        // Fixed: consistent threshold >= 3 (was >= 2)
         return {
           ...prev,
           consecutiveFailures: newFailures,
@@ -152,36 +148,24 @@ export const useADViewConnectionHealth = ({
     }
   }, [rundownId, onSilentRefresh]);
 
-  // Health check function - runs regardless of tab visibility for AD View
-  // AD View is designed to run unattended on secondary monitors for extended periods
   const performHealthCheck = useCallback(async () => {
-    
-    // Check if showcaller broadcast channel is connected
     const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
-    
-    // Check timing of last poll and broadcast
     const timeSinceLastPoll = Date.now() - lastPollTimeRef.current;
     const timeSinceLastBroadcast = Date.now() - lastBroadcastTimeRef.current;
     
-    // Consider stale if BOTH poll and broadcast haven't been received recently
-    // (Poll is the main data source, broadcast is for real-time showcaller updates)
     const isPollStale = timeSinceLastPoll > staleThresholdMs;
     const isBroadcastStale = timeSinceLastBroadcast > staleThresholdMs;
-    
-    // Only consider stale if poll is stale AND either broadcast is stale or channel is disconnected
     const isStale = isPollStale && (isBroadcastStale || !isChannelConnected);
     
     if (isStale) {
-      console.warn(`📺 AD View health check: Connection stale (poll: ${Math.round(timeSinceLastPoll/1000)}s, broadcast: ${Math.round(timeSinceLastBroadcast/1000)}s)`);
+      console.warn(`📺 AD View health check: Connection stale`);
       await attemptSilentRecovery();
     } else if (!isChannelConnected && timeSinceLastBroadcast > staleThresholdMs / 2) {
-      // Channel disconnected and no recent broadcasts - proactively try to reconnect
-      console.warn('📺 AD View health check: Showcaller channel disconnected, attempting reconnect');
-      showcallerBroadcast.forceReconnect(rundownId);
+      console.warn('📺 AD View health check: Showcaller channel disconnected');
+      showcallerBroadcast.reinitialize(rundownId);
     }
   }, [rundownId, staleThresholdMs, attemptSilentRecovery]);
 
-  // Tab visibility change handler
   useEffect(() => {
     if (!enabled) return;
     
@@ -189,7 +173,6 @@ export const useADViewConnectionHealth = ({
       const wasHidden = !isTabVisibleRef.current;
       isTabVisibleRef.current = !document.hidden;
       
-      // If tab just became visible, run immediate health check
       if (wasHidden && isTabVisibleRef.current) {
         console.log('📺 AD View: Tab became visible, running health check');
         performHealthCheck();
@@ -197,44 +180,28 @@ export const useADViewConnectionHealth = ({
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [enabled, performHealthCheck]);
 
-  // Network online/offline event handlers
   useEffect(() => {
     if (!enabled) return;
     
     const handleOnline = () => {
-      console.log('📺 AD View: Network online - resetting recovery state');
-      
-      // Reset timestamps to prevent false positive staleness detection
+      console.log('📺 AD View: Network online');
       lastPollTimeRef.current = Date.now();
       lastBroadcastTimeRef.current = Date.now();
-      
-      // Clear recovery state
       isRecoveringRef.current = false;
       setState({
         showConnectionWarning: false,
         consecutiveFailures: 0,
         lastSuccessfulRecovery: null
       });
-      
-      // Trigger immediate health check after short delay for network to stabilize
-      setTimeout(() => {
-        performHealthCheck();
-      }, 1000);
+      setTimeout(() => performHealthCheck(), 1000);
     };
     
     const handleOffline = () => {
       console.warn('📺 AD View: Network offline detected');
-      // Show warning immediately when offline detected
-      setState(prev => ({
-        ...prev,
-        showConnectionWarning: true
-      }));
+      setState(prev => ({ ...prev, showConnectionWarning: true }));
     };
     
     window.addEventListener('online', handleOnline);
@@ -246,14 +213,10 @@ export const useADViewConnectionHealth = ({
     };
   }, [enabled, performHealthCheck]);
 
-  // Health check interval effect
   useEffect(() => {
     if (!enabled || !rundownId) return;
     
-    // Run initial check after short delay
     const initialTimeout = setTimeout(performHealthCheck, 5000);
-    
-    // Set up periodic health checks
     healthCheckIntervalRef.current = setInterval(performHealthCheck, healthCheckIntervalMs);
     
     return () => {
