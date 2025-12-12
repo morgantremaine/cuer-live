@@ -378,9 +378,15 @@ export const useConsolidatedRealtimeRundown = ({
       
       if (!state.isConnected) {
         await performCatchupSync();
+        // Also force reconnect to fix potential zombie WebSocket
+        console.log('🔄 Force reconnecting disconnected channel');
+        await forceReconnect(rundownId);
       } else if (timeSinceLastUpdate > STALE_THRESHOLD) {
         console.log('⏰ No updates for 3+ minutes - checking for stale data');
         const hadUpdates = await performCatchupSync();
+        // Force reconnect to eliminate potential zombie WebSocket
+        console.log('🔄 Force reconnecting to prevent zombie WebSocket');
+        await forceReconnect(rundownId);
         if (!hadUpdates) {
           lastUpdateTimeRef.current = Date.now();
         }
@@ -388,7 +394,7 @@ export const useConsolidatedRealtimeRundown = ({
     }, 30000);
     
     return () => clearInterval(checkInterval);
-  }, [enabled, rundownId, performCatchupSync]);
+  }, [enabled, rundownId, performCatchupSync, forceReconnect]);
 
   // Main subscription effect
   useEffect(() => {
