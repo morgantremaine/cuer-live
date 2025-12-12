@@ -200,9 +200,18 @@ export const useConsolidatedRealtimeRundown = ({
       });
     }
 
+    // Set subscription BEFORE subscribing so callback can check channel identity
+    state.subscription = newChannel;
+
     newChannel.subscribe(async (status) => {
       const s = globalSubscriptions.get(rundownId);
       if (!s) return;
+
+      // Ignore callbacks from old channels - only process if this is the current subscription
+      if (s.subscription !== newChannel) {
+        console.log('📡 Ignoring callback from old channel');
+        return;
+      }
 
       const wasConnected = s.isConnected;
       s.isConnected = status === 'SUBSCRIBED';
@@ -235,8 +244,6 @@ export const useConsolidatedRealtimeRundown = ({
         scheduleRetry(rundownId);
       }
     });
-
-    state.subscription = newChannel;
   }, [isSharedView, performCatchupSync, scheduleRetry]);
 
   // Process realtime updates
