@@ -35,7 +35,6 @@ export const useRealtimeActivityIndicator = ({
 
   // Handle when processing starts
   const startActivity = useCallback(() => {
-    console.log('📺 Realtime activity: Starting indicator');
     setIsShowingActivity(true);
     showStartTimeRef.current = Date.now();
     
@@ -49,36 +48,23 @@ export const useRealtimeActivityIndicator = ({
     const showDuration = showStartTimeRef.current ? now - showStartTimeRef.current : 0;
     const remainingMinimumTime = effectiveMinimumDuration - showDuration;
 
-    console.log('📺 Realtime activity: Processing stopped', {
-      showDuration,
-      remainingMinimumTime,
-      needsMinimumWait: remainingMinimumTime > 0,
-      hadActualUpdate,
-      effectiveMinimumDuration
-    });
-
     if (remainingMinimumTime > 0) {
       // Need to wait for minimum duration to complete
       minimumTimeoutRef.current = setTimeout(() => {
-        console.log('📺 Realtime activity: Minimum duration reached, starting cooldown');
-        
         // Start cooldown period
         cooldownTimeoutRef.current = setTimeout(() => {
-          console.log('📺 Realtime activity: Cooldown complete, hiding indicator');
           setIsShowingActivity(false);
           showStartTimeRef.current = null;
         }, effectiveCooldown);
       }, remainingMinimumTime);
     } else {
       // Minimum duration already met, start cooldown immediately
-      console.log('📺 Realtime activity: Starting immediate cooldown');
       cooldownTimeoutRef.current = setTimeout(() => {
-        console.log('📺 Realtime activity: Cooldown complete, hiding indicator');
         setIsShowingActivity(false);
         showStartTimeRef.current = null;
       }, effectiveCooldown);
     }
-  }, [effectiveMinimumDuration, effectiveCooldown, hadActualUpdate]);
+  }, [effectiveMinimumDuration, effectiveCooldown]);
 
   // React to processing state changes
   useEffect(() => {
