@@ -388,9 +388,10 @@ export const useConsolidatedRealtimeRundown = ({
             showcallerBroadcast.reinitialize(rundownId);
             cellBroadcast.reinitialize(rundownId);
             
-            // Give channels a moment to connect, then force catch up
+            // Give channels a moment to connect, then force catch up and verify health
             setTimeout(() => {
-              console.log('✅ Nuclear reset complete - force syncing data');
+              const health = simpleConnectionHealth.getHealth(rundownId);
+              console.log('✅ Nuclear reset complete - health:', health, '- force syncing data');
               performCatchupSync(true);
             }, 2000);
           }

@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useOperationUndo } from './useOperationUndo';
+import { debouncedFieldTracker } from '@/utils/debouncedFieldTracker';
 
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
@@ -1144,10 +1145,8 @@ export const useSimplifiedRundownState = () => {
     const now = Date.now();
     recentlyEditedFieldsRef.current.set(fieldKey, now);
     
-    // Use debounced tracker to reduce logging overhead
-    import('@/utils/debouncedFieldTracker').then(({ debouncedFieldTracker }) => {
-      debouncedFieldTracker.trackField(fieldKey);
-    });
+    // Use static import - avoids network errors during offline periods
+    debouncedFieldTracker.trackField(fieldKey);
   }, []);
 
   // Simplified handlers - enhanced for per-cell save coordination
