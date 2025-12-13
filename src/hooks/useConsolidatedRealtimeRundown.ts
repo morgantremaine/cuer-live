@@ -137,6 +137,41 @@ export const useConsolidatedRealtimeRundown = ({
   // Keep ref updated with latest function
   performCatchupSyncRef.current = performCatchupSync;
 
+  // Lightweight version check - queries only doc_version column
+  const checkServerVersion = useCallback(async (): Promise<boolean> => {
+    const state = globalSubscriptions.get(rundownId || '');
+    if (!rundownId || !state) return false;
+
+    try {
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('doc_version')
+        .eq('id', rundownId)
+        .single();
+
+      if (error) {
+        console.warn('⚠️ Version check failed:', error.message);
+        return false;
+      }
+
+      const serverVersion = data?.doc_version || 0;
+      const localVersion = state.lastProcessedDocVersion;
+      
+      if (serverVersion > localVersion) {
+        console.log(`🔍 Version mismatch detected: server=${serverVersion}, local=${localVersion} (${serverVersion - localVersion} missed)`);
+        return true;
+      }
+      
+      return false;
+    } catch (err) {
+      console.warn('⚠️ Version check error:', err);
+      return false;
+    }
+  }, [rundownId]);
+
+  const checkServerVersionRef = useRef<() => Promise<boolean>>();
+  checkServerVersionRef.current = checkServerVersion;
+
   // Initialize channel (called on mount and after nuclear reset)
   const initializeChannel = useCallback(async () => {
     if (!rundownId) return;
@@ -494,8 +529,17 @@ export const useConsolidatedRealtimeRundown = ({
         return;
       }
 
+      // PROACTIVE VERSION CHECK - detect desync within 60 seconds
+      const hasVersionMismatch = await checkServerVersionRef.current?.();
+      if (hasVersionMismatch) {
+        console.log('⏰ 60s health check: version mismatch - triggering catch-up sync');
+        await performCatchupSyncRef.current?.(true);
+        lastUpdateTimeRef.current = Date.now();
+        return; // Skip stale check if we just synced
+      }
+
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes
+      const STALE_THRESHOLD = 180000; // 3 minutes - secondary safety net
       const isStale = timeSinceLastUpdate > STALE_THRESHOLD;
 
       console.log(`⏰ 60s health check: connected=${state.isConnected}, lastUpdate=${Math.round(timeSinceLastUpdate/1000)}s ago, stale=${isStale}`);
