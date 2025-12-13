@@ -38,7 +38,7 @@ const TextAreaCell = ({
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
+  // Direct DOM height - no React state for instant updates
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
@@ -68,13 +68,15 @@ const TextAreaCell = ({
     return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
   };
 
-  // Function to calculate required height using a measurement div
+  // Track last height for change detection
+  const lastHeightRef = useRef<number>(38);
+
+  // Function to calculate required height - DIRECT DOM MANIPULATION for instant updates
   const calculateHeight = (source?: string) => {
     // Guard against concurrent recalculations
     if (isRecalculatingRef.current) return;
     isRecalculatingRef.current = true;
     
-    const startTime = performance.now();
     if (!textareaRef.current || !measurementRef.current) {
       isRecalculatingRef.current = false;
       return;
@@ -83,11 +85,13 @@ const TextAreaCell = ({
     const textarea = textareaRef.current;
     const measurementDiv = measurementRef.current;
     
-    // Get the current width using zoom-safe clientWidth instead of getBoundingClientRect
+    // Get the current width using zoom-safe clientWidth
     const textareaWidth = textarea.clientWidth;
     
-    // Update current width
-    setCurrentWidth(textareaWidth);
+    // Update current width (still use state for resize detection)
+    if (textareaWidth !== currentWidth) {
+      setCurrentWidth(textareaWidth);
+    }
     
     // Copy textarea styles to measurement div
     const computedStyle = window.getComputedStyle(textarea);
@@ -99,21 +103,19 @@ const TextAreaCell = ({
     measurementDiv.style.padding = computedStyle.padding;
     measurementDiv.style.border = computedStyle.border;
     measurementDiv.style.boxSizing = computedStyle.boxSizing;
-    // Always allow normal text wrapping in the measurement div
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
     // Set the content - strip brackets if renderBrackets is enabled AND not focused
-    // When focused, user sees raw text so we need to measure the raw text
     const textToMeasure = (renderBrackets && !isFocused)
       ? stripBracketFormatting(debouncedValue.value)
       : debouncedValue.value;
-    measurementDiv.textContent = textToMeasure || ' '; // Use space for empty content
+    measurementDiv.textContent = textToMeasure || ' ';
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
     
-    // Calculate minimum height (single line) with better line-height fallback
+    // Calculate minimum height (single line)
     const lineHeightValue = computedStyle.lineHeight;
     const lineHeight = lineHeightValue === 'normal' 
       ? parseFloat(computedStyle.fontSize) * 1.3 
@@ -124,24 +126,12 @@ const TextAreaCell = ({
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
     const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
-    
-    // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
-    const elapsed = performance.now() - startTime;
-    
-    // Always update height if it's different
-    if (newHeight !== calculatedHeight) {
-      console.log(`📏 [TextAreaCell] calculateHeight from=${source || 'unknown'}`, {
-        elapsed: elapsed.toFixed(2) + 'ms',
-        prevHeight: calculatedHeight,
-        newHeight,
-        naturalHeight,
-        minHeight,
-        textLength: debouncedValue.value.length,
-        width: textareaWidth
-      });
-      setCalculatedHeight(newHeight);
+    // DIRECT DOM UPDATE - no React state, instant visual change
+    if (newHeight !== lastHeightRef.current) {
+      textarea.style.height = `${newHeight}px`;
+      lastHeightRef.current = newHeight;
     }
     
     isRecalculatingRef.current = false;
@@ -202,17 +192,13 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
-      // Set cursor position and value synchronously
+      // Set cursor position and value SYNCHRONOUSLY
       textarea.value = newValue;
       textarea.setSelectionRange(start + 1, start + 1);
       
-      // Defer height calculation to next frame AFTER DOM updates
-      // This prevents cursor jumping because height change happens after cursor is positioned
-      requestAnimationFrame(() => {
-        isRecalculatingRef.current = false;
-        calculateHeight('line-break-immediate');
-        console.log(`📏 [TextAreaCell] Line break COMPLETE in ${(performance.now() - insertStart).toFixed(2)}ms`);
-      });
+      // SYNCHRONOUS height calculation - instant row resize
+      isRecalculatingRef.current = false;
+      calculateHeight('line-break');
       
       return;
     }
@@ -402,7 +388,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: `${calculatedHeight}px`,
+            height: '38px', // Initial height, updated directly via DOM
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
