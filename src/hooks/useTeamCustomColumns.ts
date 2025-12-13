@@ -27,12 +27,17 @@ const retryRpc = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => 
 
 export const useTeamCustomColumns = () => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team, isLoading: teamLoading } = useTeam();
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
   // Start as NOT loading - don't block UI while waiting for team data
   const [loading, setLoading] = useState(false);
   const loadingRef = useRef(false);
   const lastLoadedTeamRef = useRef<string | null>(null);
+  
+  // Strategic timing log
+  useEffect(() => {
+    console.log('⏱️ [TEAM_COLS] state changed - loading:', loading, 'teamLoading:', teamLoading, 'team:', team?.id?.slice(0,8));
+  }, [loading, teamLoading, team?.id]);
 
   // Load team custom columns
   const loadTeamColumns = useCallback(async () => {

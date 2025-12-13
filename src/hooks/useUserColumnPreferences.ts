@@ -58,7 +58,7 @@ const normalizeColumns = (cols: any[]): Column[] => {
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team, isLoading: teamLoading } = useTeam();
   const { teamColumns, loading: teamColumnsLoading, addTeamColumn, renameTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +70,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   
   // Shared column name overrides from rundowns.columns (for built-in renamable columns)
   const [columnNameOverrides, setColumnNameOverrides] = useState<Record<string, string>>({});
+  
+  // Strategic timing log
+  useEffect(() => {
+    console.log('⏱️ [COLUMNS] state changed - isLoading:', isLoading, 'teamColumnsLoading:', teamColumnsLoading, 'teamLoading:', teamLoading, 'team:', team?.id?.slice(0,8));
+  }, [isLoading, teamColumnsLoading, teamLoading, team?.id]);
 
   // Merge columns with team columns and apply shared name overrides
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], overrides: Record<string, string> = {}) => {
@@ -227,10 +232,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Load user's column preferences for this rundown (waits for team columns to be ready)
   const loadColumnPreferences = useCallback(async () => {
+    console.log('⏱️ [COLUMNS] loadColumnPreferences START');
     if (!user?.id || !rundownId) {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, columnNameOverrides);
       setColumns(mergedDefaults);
       setIsLoading(false);
+      console.log('⏱️ [COLUMNS] loadColumnPreferences COMPLETE (no user/rundown)');
       debugLogger.preferences('No user/rundown - using defaults');
       return;
     }
@@ -364,6 +371,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       // CRITICAL: Set flag BEFORE clearing loading to prevent race condition
       setHasInitialLoad(true);
       setIsLoading(false);
+      console.log('⏱️ [COLUMNS] loadColumnPreferences COMPLETE');
     }
   }, [user?.id, rundownId, team?.id, teamColumnsLoading]); // Removed mergeColumnsWithTeamColumns to prevent recreation
 

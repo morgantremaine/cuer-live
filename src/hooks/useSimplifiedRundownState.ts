@@ -186,6 +186,10 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
   
+  // Strategic timing log
+  useEffect(() => {
+    console.log('⏱️ [RUNDOWN_STATE] isLoading:', isLoading, 'isLoadingColumns:', isLoadingColumns, 'combined:', isLoading || isLoadingColumns);
+  }, [isLoading, isLoadingColumns]);
 
   // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
   const teleprompterSync = useGlobalTeleprompterSync();

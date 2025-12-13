@@ -481,6 +481,11 @@ const RundownIndexContentInner = () => {
     !items || items.length === 0
   );
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
+  
+  // Strategic timing log for skeleton state
+  useEffect(() => {
+    console.log('⏱️ [UI] showSkeleton:', showSkeleton, '- isFullyLoading:', isFullyLoading, 'isLoading:', isLoading, 'isInitialized:', isInitialized, 'hasItems:', items?.length > 0);
+  }, [showSkeleton, isFullyLoading, isLoading, isInitialized, items?.length]);
 
   // After core rundown loads, prevent skeleton from reappearing
   useEffect(() => {
