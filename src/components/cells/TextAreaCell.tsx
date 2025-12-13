@@ -108,10 +108,8 @@ const TextAreaCell = ({
     const lineHeight = lineHeightValue === 'normal' 
       ? parseFloat(computedStyle.fontSize) * 1.3 
       : parseFloat(lineHeightValue) || parseFloat(computedStyle.fontSize) * 1.3 || 20;
-    const parsedPaddingTop = parseFloat(computedStyle.paddingTop);
-    const parsedPaddingBottom = parseFloat(computedStyle.paddingBottom);
-    const paddingTop = isNaN(parsedPaddingTop) ? 8 : parsedPaddingTop;
-    const paddingBottom = isNaN(parsedPaddingBottom) ? 8 : parsedPaddingBottom;
+    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
@@ -369,16 +367,15 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
           data-field-key={`${itemId}-${resolvedFieldKey}`}
-          className={`w-full h-full px-3 py-0 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+          className={`w-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
             isDuration ? 'font-mono' : ''
           } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: `${calculatedHeight}px`,
+            height: 'auto',
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left',
-            alignContent: 'center'
+            textAlign: isDuration ? 'center' : 'left'
           }}
         />
       </div>
