@@ -186,14 +186,6 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
   
-  // Diagnostic: log only when isLoadingColumns changes
-  const prevIsLoadingColumnsRef = useRef<boolean>(true);
-  useEffect(() => {
-    if (prevIsLoadingColumnsRef.current !== isLoadingColumns) {
-      console.log(`⏱️ useSimplifiedRundownState: isLoadingColumns ${prevIsLoadingColumnsRef.current} → ${isLoadingColumns}`);
-      prevIsLoadingColumnsRef.current = isLoadingColumns;
-    }
-  }, [isLoadingColumns]);
 
   // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
   const teleprompterSync = useGlobalTeleprompterSync();

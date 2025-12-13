@@ -29,27 +29,25 @@ export const useTeamCustomColumns = () => {
   const { user } = useAuth();
   const { team } = useTeam();
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
-  const [loading, setLoading] = useState(true);
-  const loadStartRef = useRef<number>(0);
-  const prevLoadingRef = useRef<boolean>(true);
-
-  // Diagnostic: log only when loading state changes
-  useEffect(() => {
-    if (prevLoadingRef.current !== loading) {
-      const elapsed = loadStartRef.current ? Date.now() - loadStartRef.current : 0;
-      console.log(`⏱️ useTeamCustomColumns: loading ${prevLoadingRef.current} → ${loading}${elapsed ? ` (${elapsed}ms)` : ''}`);
-      prevLoadingRef.current = loading;
-    }
-  }, [loading]);
+  // Start as NOT loading - don't block UI while waiting for team data
+  const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
+  const lastLoadedTeamRef = useRef<string | null>(null);
 
   // Load team custom columns
   const loadTeamColumns = useCallback(async () => {
     if (!team?.id || !user) {
       setTeamColumns([]);
-      setLoading(false);
       return;
     }
-    loadStartRef.current = Date.now();
+    
+    // Skip if already loaded for this team
+    if (lastLoadedTeamRef.current === team.id) {
+      return;
+    }
+    
+    setLoading(true);
+    loadingRef.current = true;
 
     try {
       // Ensure we have a valid session before making the call
@@ -72,12 +70,14 @@ export const useTeamCustomColumns = () => {
         setTeamColumns([]);
       } else {
         setTeamColumns(data || []);
+        lastLoadedTeamRef.current = team.id;
       }
     } catch (error) {
       console.error('Failed to load team custom columns:', error);
       setTeamColumns([]);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   }, [team?.id, user]);
 

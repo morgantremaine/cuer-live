@@ -284,32 +284,45 @@ export const useTeam = () => {
       return;
     }
 
+    // IMMEDIATE: Return cached data first, then refresh in background
+    const cachedTeam = globalTeamCache.get(loadKey);
+    const cachedRole = globalRoleCache.get(loadKey);
+    if (cachedTeam && cachedRole) {
+      // Set cached data immediately - UI unblocks now
+      setTeam(cachedTeam);
+      setUserRole(cachedRole);
+      setError(null);
+      setIsLoading(false);
+      // Continue to refresh in background (don't return)
+    }
+
     // Check global loading state - deduplicate concurrent requests
     if (globalLoadingStates.get(loadKey)) {
-      // Another instance is already loading this exact team
+      // Another instance is already loading - if we have cache, we're done
+      if (cachedTeam && cachedRole) {
+        return;
+      }
+      // No cache, wait for existing load
       const existingPromise = globalLoadPromises.get(loadKey);
       if (existingPromise) {
         try {
-          // Wait for existing promise with longer timeout (15s to accommodate slow networks)
           await Promise.race([
             existingPromise,
             new Promise((_, reject) => setTimeout(() => reject(new Error('Load timeout')), 15000))
           ]);
         } catch (error) {
           console.error('Existing promise timeout or error:', error);
-          // Clear the hung state so we can retry
           globalLoadingStates.delete(loadKey);
           globalLoadPromises.delete(loadKey);
         }
       }
       
-      // Use cached data if available (first instance may have succeeded)
-      const cachedTeam = globalTeamCache.get(loadKey);
-      const cachedRole = globalRoleCache.get(loadKey);
-      if (cachedTeam && cachedRole) {
-        console.log('Using cached team data after waiting on existing load');
-        setTeam(cachedTeam);
-        setUserRole(cachedRole);
+      // Use cached data if available now
+      const newCachedTeam = globalTeamCache.get(loadKey);
+      const newCachedRole = globalRoleCache.get(loadKey);
+      if (newCachedTeam && newCachedRole) {
+        setTeam(newCachedTeam);
+        setUserRole(newCachedRole);
         setError(null);
         setIsLoading(false);
       }

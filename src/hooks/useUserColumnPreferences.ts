@@ -67,17 +67,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const currentSavePromiseRef = useRef<Promise<void> | null>(null);
   const hasLoadedRef = useRef(false); // Prevent multiple initial loads
-  const loadStartRef = useRef<number>(0);
-  const prevIsLoadingRef = useRef<boolean>(true);
-  
-  // Diagnostic: log only when isLoading state changes
-  useEffect(() => {
-    if (prevIsLoadingRef.current !== isLoading) {
-      const elapsed = loadStartRef.current ? Date.now() - loadStartRef.current : 0;
-      console.log(`⏱️ useUserColumnPreferences: isLoading ${prevIsLoadingRef.current} → ${isLoading}${elapsed ? ` (${elapsed}ms)` : ''}`);
-      prevIsLoadingRef.current = isLoading;
-    }
-  }, [isLoading]);
   
   // Shared column name overrides from rundowns.columns (for built-in renamable columns)
   const [columnNameOverrides, setColumnNameOverrides] = useState<Record<string, string>>({});
@@ -246,7 +235,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    loadStartRef.current = Date.now();
     setIsLoading(true);
 
     try {
