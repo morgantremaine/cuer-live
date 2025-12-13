@@ -37,7 +37,7 @@ const ExpandableScriptCell = ({
 }: ExpandableScriptCellProps) => {
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  // rowHeight state removed - no longer needed with fixed line clamp
+  const [lineClamp, setLineClamp] = useState(1); // Start with 1 line, expand dynamically
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -111,7 +111,32 @@ const ExpandableScriptCell = ({
     };
   }, []);
 
-  // No longer need to clear row height - using fixed line clamp
+  // Measure row height using requestAnimationFrame - no debounce, single pass per render
+  useEffect(() => {
+    if (effectiveExpanded) {
+      setLineClamp(1); // Reset when expanded
+      return;
+    }
+    
+    const measureRowHeight = () => {
+      const row = containerRef.current?.closest('tr');
+      if (!row) return;
+      
+      const rowHeight = row.offsetHeight;
+      if (rowHeight === 0) return;
+      
+      const lineHeight = 20; // 1.25rem (20px)
+      const padding = 16; // py-1 = 8px top + 8px bottom
+      const availableHeight = rowHeight - padding;
+      const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
+      
+      setLineClamp(maxLines);
+    };
+    
+    // Single RAF measurement - synchronous within browser paint cycle
+    const rafId = requestAnimationFrame(measureRowHeight);
+    return () => cancelAnimationFrame(rafId);
+  }, [effectiveExpanded, value]);
 
   // Auto-focus the real textarea only when expanded via tab navigation (shouldAutoFocus = true)
   useEffect(() => {
@@ -300,9 +325,9 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Simple fixed line clamp - no more ResizeObserver cascading calculations
+  // Return dynamic line clamp calculated from row height
   const getDynamicLineClamp = () => {
-    return 3; // Fixed 3-line preview for collapsed script cells
+    return lineClamp;
   };
 
   return (
