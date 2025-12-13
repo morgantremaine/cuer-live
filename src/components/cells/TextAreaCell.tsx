@@ -37,9 +37,7 @@ const TextAreaCell = ({
   onCellBlur
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
-  const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
@@ -60,65 +58,41 @@ const TextAreaCell = ({
     };
   }, []);
 
-  // Helper to strip bracket formatting for height measurement
-  const stripBracketFormatting = (text: string): string => {
-    // Replace [content]{color} or [content] with just content plus spacing
-    return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
-  };
-
-  // Function to calculate required height using a measurement div - accepts text to measure directly
+  // Function to calculate required height using native textarea scrollHeight
   const calculateHeightWithText = (textToMeasure: string) => {
-    if (!textareaRef.current || !measurementRef.current) return;
+    if (!textareaRef.current) return;
     
     const textarea = textareaRef.current;
-    const measurementDiv = measurementRef.current;
     
-    // Get the current width using zoom-safe clientWidth instead of getBoundingClientRect
-    const textareaWidth = textarea.clientWidth;
+    // Temporarily set the value and height to measure accurately
+    const originalValue = textarea.value;
+    const originalHeight = textarea.style.height;
     
-    // Update current width
-    setCurrentWidth(textareaWidth);
+    // Set the text we want to measure
+    textarea.value = textToMeasure;
+    textarea.style.height = 'auto';
     
-    // Copy textarea styles to measurement div
+    // Get the natural scrollHeight
+    const naturalHeight = textarea.scrollHeight;
+    
+    // Restore original values
+    textarea.value = originalValue;
+    textarea.style.height = originalHeight;
+    
+    // Calculate minimum height (single line)
     const computedStyle = window.getComputedStyle(textarea);
-    measurementDiv.style.width = `${textareaWidth}px`;
-    measurementDiv.style.fontSize = computedStyle.fontSize;
-    measurementDiv.style.fontFamily = computedStyle.fontFamily;
-    measurementDiv.style.fontWeight = computedStyle.fontWeight;
-    measurementDiv.style.lineHeight = computedStyle.lineHeight;
-    measurementDiv.style.padding = computedStyle.padding;
-    measurementDiv.style.border = computedStyle.border;
-    measurementDiv.style.boxSizing = computedStyle.boxSizing;
-    // Always allow normal text wrapping in the measurement div
-    measurementDiv.style.wordWrap = 'break-word';
-    measurementDiv.style.whiteSpace = 'pre-wrap';
-    
-    // Set the content - strip brackets if renderBrackets is enabled AND not focused
-    // When focused, user sees raw text so we need to measure the raw text
-    const finalText = (renderBrackets && !isFocused)
-      ? stripBracketFormatting(textToMeasure)
-      : textToMeasure;
-    measurementDiv.textContent = finalText || ' '; // Use space for empty content
-    
-    // Get the natural height
-    const naturalHeight = measurementDiv.offsetHeight;
-    
-    // Calculate minimum height (single line) with better line-height fallback
     const lineHeightValue = computedStyle.lineHeight;
     const lineHeight = lineHeightValue === 'normal' 
       ? parseFloat(computedStyle.fontSize) * 1.3 
       : parseFloat(lineHeightValue) || parseFloat(computedStyle.fontSize) * 1.3 || 20;
     const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
     const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
-    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
-    const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
-    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    const minHeight = lineHeight + paddingTop + paddingBottom;
     
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
-    // Always update height if it's different
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
@@ -143,17 +117,12 @@ const TextAreaCell = ({
     
     let resizeTimer: NodeJS.Timeout;
     
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const newWidth = entry.contentRect.width;
-        if (newWidth !== currentWidth && Math.abs(newWidth - currentWidth) > 1) {
-          // Debounce resize events too
-          clearTimeout(resizeTimer);
-          resizeTimer = setTimeout(() => {
-            calculateHeight();
-          }, 50);
-        }
-      }
+    const resizeObserver = new ResizeObserver(() => {
+      // Debounce resize events
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        calculateHeight();
+      }, 50);
     });
     
     resizeObserver.observe(textareaRef.current);
@@ -162,7 +131,7 @@ const TextAreaCell = ({
       clearTimeout(resizeTimer);
       resizeObserver.disconnect();
     };
-  }, [currentWidth]);
+  }, []);
 
   // Handle keyboard navigation and line breaks
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -303,17 +272,6 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
 
   return (
     <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
-      {/* Hidden measurement div */}
-      <div
-        ref={measurementRef}
-        className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
-        style={{ 
-          fontSize: isHeaderRow ? '14px' : '14px',
-          fontFamily: 'inherit',
-          lineHeight: '1.3',
-          zIndex: -1
-        }}
-      />
       
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
@@ -378,7 +336,8 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         style={{ 
           backgroundColor: 'transparent',
           color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-          height: `${calculatedHeight}px`,
+          minHeight: `${calculatedHeight}px`,
+          height: 'auto',
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
         }}
