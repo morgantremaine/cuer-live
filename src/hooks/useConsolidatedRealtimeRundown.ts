@@ -250,8 +250,13 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Skip own updates
+    // Skip own updates - but still track the version to prevent false "missed updates" in catch-up sync
     if (payload.new?.tab_id === getTabId()) {
+      if (incomingDocVersion && incomingDocVersion > globalState.lastProcessedDocVersion) {
+        globalState.lastProcessedDocVersion = incomingDocVersion;
+        globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
+        lastUpdateTimeRef.current = Date.now();
+      }
       return;
     }
 
