@@ -474,15 +474,24 @@ export const useConsolidatedRealtimeRundown = ({
 
     const checkInterval = setInterval(async () => {
       // Skip if reset already in progress
-      if (realtimeReset.isResetInProgress()) return;
+      if (realtimeReset.isResetInProgress()) {
+        console.log('⏰ 60s health check: skipped (reset in progress)');
+        return;
+      }
       
       const state = globalSubscriptions.get(rundownId);
-      if (!state) return;
+      if (!state) {
+        console.log('⏰ 60s health check: skipped (no subscription state)');
+        return;
+      }
 
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
       const STALE_THRESHOLD = 180000; // 3 minutes
+      const isStale = timeSinceLastUpdate > STALE_THRESHOLD;
 
-      if (!state.isConnected || timeSinceLastUpdate > STALE_THRESHOLD) {
+      console.log(`⏰ 60s health check: connected=${state.isConnected}, lastUpdate=${Math.round(timeSinceLastUpdate/1000)}s ago, stale=${isStale}`);
+
+      if (!state.isConnected || isStale) {
         console.log('⏰ Connection stale or disconnected - performing nuclear reset');
         simpleConnectionHealth.cleanup(rundownId);
         
