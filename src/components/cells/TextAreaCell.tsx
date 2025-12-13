@@ -68,7 +68,8 @@ const TextAreaCell = ({
   };
 
   // Function to calculate required height using a measurement div
-  const calculateHeight = () => {
+  const calculateHeight = (source?: string) => {
+    const startTime = performance.now();
     if (!textareaRef.current || !measurementRef.current) return;
     
     const textarea = textareaRef.current;
@@ -119,8 +120,19 @@ const TextAreaCell = ({
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
+    const elapsed = performance.now() - startTime;
+    
     // Always update height if it's different
     if (newHeight !== calculatedHeight) {
+      console.log(`📏 [TextAreaCell] calculateHeight from=${source || 'unknown'}`, {
+        elapsed: elapsed.toFixed(2) + 'ms',
+        prevHeight: calculatedHeight,
+        newHeight,
+        naturalHeight,
+        minHeight,
+        textLength: debouncedValue.value.length,
+        width: textareaWidth
+      });
       setCalculatedHeight(newHeight);
     }
   };
@@ -128,8 +140,8 @@ const TextAreaCell = ({
   // Debounced height recalculation - only recalculate after user stops typing
   useEffect(() => {
     const timer = setTimeout(() => {
-      calculateHeight();
-    }, 100); // 100ms debounce for height recalculation
+      calculateHeight('useEffect-debounced');
+    }, 50); // Reduced from 100ms to 50ms for faster response
     return () => clearTimeout(timer);
   }, [debouncedValue.value, isFocused]);
 
@@ -164,6 +176,9 @@ const TextAreaCell = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Cmd+Enter (Mac) or Ctrl+Enter (Windows), manually insert line break
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      const insertStart = performance.now();
+      console.log('📏 [TextAreaCell] Line break START');
+      
       e.preventDefault();
       e.stopPropagation();
       
@@ -178,15 +193,17 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
-      // Immediately recalculate height after line break insertion
-      setTimeout(() => {
-        calculateHeight();
-      }, 0);
+      // Set cursor position FIRST (synchronously)
+      textarea.value = newValue;
+      textarea.setSelectionRange(start + 1, start + 1);
       
-      // Set cursor position after the inserted line break
-      setTimeout(() => {
-        textarea.setSelectionRange(start + 1, start + 1);
-      }, 0);
+      // Immediately recalculate height using requestAnimationFrame for fastest response
+      requestAnimationFrame(() => {
+        calculateHeight('line-break-immediate');
+        console.log('📏 [TextAreaCell] Line break COMPLETE', {
+          totalElapsed: (performance.now() - insertStart).toFixed(2) + 'ms'
+        });
+      });
       
       return;
     }

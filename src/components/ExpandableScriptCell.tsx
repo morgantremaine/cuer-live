@@ -164,8 +164,11 @@ const ExpandableScriptCell = ({
   };
 
   // Simple height calculation with debouncing
-  const adjustHeight = () => {
+  const adjustHeight = (source?: string) => {
+    const startTime = performance.now();
     if (!textareaRef.current) return;
+    
+    const prevHeight = textareaRef.current.style.height;
     
     // Reset height to auto to get accurate scrollHeight
     textareaRef.current.style.height = 'auto';
@@ -173,32 +176,44 @@ const ExpandableScriptCell = ({
     
     // When overlay is showing (not focused), badges add extra height due to padding
     // Each badge has py-0.5 (4px) + my-px (2px) = 6px extra per line with badges
+    let badgeAdjustment = 0;
     if (showOverlay && debouncedValue.value) {
       const badgeMatches = debouncedValue.value.match(/\[[^\[\]{}]+(?:\{[^}]+\})?\]/g);
       if (badgeMatches && badgeMatches.length > 0) {
         // Estimate lines containing badges by counting badge occurrences
         // Add ~6px per badge to account for padding/margin
-        const badgeHeightAdjustment = badgeMatches.length * 6;
-        requiredHeight += badgeHeightAdjustment;
+        badgeAdjustment = badgeMatches.length * 6;
+        requiredHeight += badgeAdjustment;
       }
     }
     
-    textareaRef.current.style.height = `${Math.max(requiredHeight, 24)}px`;
+    const finalHeight = Math.max(requiredHeight, 24);
+    textareaRef.current.style.height = `${finalHeight}px`;
+    
+    const elapsed = performance.now() - startTime;
+    console.log(`📏 [ScriptCell] adjustHeight from=${source || 'unknown'}`, {
+      elapsed: elapsed.toFixed(2) + 'ms',
+      prevHeight,
+      finalHeight,
+      scrollHeight: textareaRef.current.scrollHeight,
+      badgeAdjustment,
+      textLength: debouncedValue.value.length
+    });
   };
 
   // Debounced height recalculation - only after typing stops
   useEffect(() => {
     clearTimeout(heightCalcTimeoutRef.current);
     heightCalcTimeoutRef.current = setTimeout(() => {
-      adjustHeight();
-    }, 100); // 100ms debounce
+      adjustHeight('useEffect-debounced');
+    }, 50); // Reduced from 100ms to 50ms for faster response
     return () => clearTimeout(heightCalcTimeoutRef.current);
   }, [debouncedValue.value, showOverlay]);
 
   // Adjust height on mount and expansion
   useEffect(() => {
     if (effectiveExpanded) {
-      adjustHeight();
+      adjustHeight('expansion-mount');
     }
   }, [effectiveExpanded]);
 
@@ -316,27 +331,39 @@ const ExpandableScriptCell = ({
         const previewDiv = containerRef.current?.querySelector('.script-preview-content');
         
         if (row) {
-          // Debounce height updates to prevent scroll jumps during scrolling
+          // Reduced debounce from 100ms to 30ms for faster response
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
+            const startTime = performance.now();
+            let heightWithoutScript: number;
+            
             if (previewDiv) {
               // Temporarily hide the preview to measure row height from OTHER cells only
               const originalDisplay = (previewDiv as HTMLElement).style.display;
               (previewDiv as HTMLElement).style.display = 'none';
               
               // Measure the row height (driven by other cells)
-              const heightWithoutScript = row.offsetHeight;
+              heightWithoutScript = row.offsetHeight;
               
               // Restore the preview
               (previewDiv as HTMLElement).style.display = originalDisplay;
-              
-              // Use this "clean" height for line clamp calculation
-              setRowHeight(heightWithoutScript);
             } else {
               // Fallback if no preview div found
-              setRowHeight(row.offsetHeight);
+              heightWithoutScript = row.offsetHeight;
             }
-          }, 100);
+            
+            const elapsed = performance.now() - startTime;
+            
+            if (heightWithoutScript !== rowHeight) {
+              console.log(`📏 [ScriptCell] ResizeObserver row height change`, {
+                elapsed: elapsed.toFixed(2) + 'ms',
+                prevRowHeight: rowHeight,
+                newRowHeight: heightWithoutScript,
+                lineClamp: getDynamicLineClamp()
+              });
+              setRowHeight(heightWithoutScript);
+            }
+          }, 30); // Reduced from 100ms to 30ms
         }
       };
 
