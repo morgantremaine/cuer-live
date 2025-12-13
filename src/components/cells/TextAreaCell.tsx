@@ -37,7 +37,8 @@ const TextAreaCell = ({
   onCellBlur
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(34); // lineHeight(18) + padding(16)
+  const [cellHeight, setCellHeight] = useState<number>(34); // Minimum cell height with padding
+  const [contentHeight, setContentHeight] = useState<number>(20); // Just the text content height
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
@@ -73,6 +74,7 @@ const TextAreaCell = ({
       : parseFloat(lineHeightValue) || fontSize * 1.3 || 20;
     const basePadding = 8; // py-2 = 8px
     const minCellHeight = lineHeight + basePadding * 2;
+    const singleLineContentHeight = lineHeight; // Just the text, no padding
     
     // Temporarily set the value and height to measure accurately
     const originalValue = textarea.value;
@@ -82,18 +84,25 @@ const TextAreaCell = ({
     textarea.value = textToMeasure;
     textarea.style.height = 'auto';
     
-    // Get the natural scrollHeight
-    const naturalHeight = textarea.scrollHeight;
+    // Get the natural scrollHeight (includes textarea's internal padding)
+    const naturalScrollHeight = textarea.scrollHeight;
+    // Estimate pure content height (subtract padding that textarea adds)
+    const pureContentHeight = naturalScrollHeight - basePadding * 2;
     
     // Restore original values
     textarea.value = originalValue;
     textarea.style.height = originalHeight;
     
-    // Use the larger of natural height or minimum cell height
-    const newHeight = Math.max(naturalHeight, minCellHeight);
+    // Cell height is the larger of natural scroll height or minimum
+    const newCellHeight = Math.max(naturalScrollHeight, minCellHeight);
+    // Content height is just the text (for single line, use lineHeight; for multi-line, use calculated)
+    const newContentHeight = Math.max(pureContentHeight, singleLineContentHeight);
     
-    if (newHeight !== calculatedHeight) {
-      setCalculatedHeight(newHeight);
+    if (newCellHeight !== cellHeight) {
+      setCellHeight(newCellHeight);
+    }
+    if (newContentHeight !== contentHeight) {
+      setContentHeight(newContentHeight);
     }
   };
 
@@ -273,12 +282,15 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const basePadding = 8; // py-2 = 8px
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div 
+      className="relative w-full flex items-center" 
+      style={{ backgroundColor, minHeight: cellHeight }}
+    >
       
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          className={`absolute inset-0 flex items-center px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -292,7 +304,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-start gap-0.5 pointer-events-none z-10`}
+          className={`absolute inset-0 flex items-center px-3 ${fontSize} ${fontWeight} flex-wrap gap-0.5 pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -332,14 +344,13 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+        className={`w-full px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
           color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-          minHeight: `${calculatedHeight}px`,
-          height: 'auto',
+          height: `${contentHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
         }}
