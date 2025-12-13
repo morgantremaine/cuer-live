@@ -100,7 +100,7 @@ export const useConsolidatedRealtimeRundown = ({
 
         console.log(`📊 Catch-up sync: server doc_version=${serverDoc}, local=${localDoc}, last_saved_by_this_tab=${lastSavedByThisTab}`);
 
-        if (serverDoc > localDoc) {
+        if (serverDoc > localDoc || forceSync) {
           const missedUpdates = serverDoc - localDoc;
           console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
           
