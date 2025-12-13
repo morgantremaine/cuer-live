@@ -289,12 +289,12 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
       
       {/* Clickable URL overlay when not focused */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          className={`absolute inset-0 px-3 py-2 flex items-center ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -308,7 +308,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-start gap-0.5 pointer-events-none z-10`}
+          className={`absolute inset-0 px-3 py-2 flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -323,42 +323,45 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         </div>
       )}
       
-      <textarea
-        ref={(el) => {
-          textareaRef.current = el;
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          } else {
-            delete cellRefs.current[cellKey];
-          }
-        }}
-        value={debouncedValue.value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onClick={(e) => {
-          onCellClick(e);
-          // Also trigger focus broadcast on click
-          if (onCellFocus) {
-            onCellFocus(itemId, cellRefKey);
-          }
-        }}
-        onMouseDown={handleMouseDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        data-cell-id={cellKey}
-        data-cell-ref={cellKey}
-        data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
-          isDuration ? 'font-mono' : ''
-        } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
-        style={{ 
-          backgroundColor: 'transparent',
-          color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-          height: `${calculatedHeight}px`,
-          lineHeight: '1.3',
-          textAlign: isDuration ? 'center' : 'left'
-        }}
-      />
+      <div className="w-full">
+        <textarea
+          ref={(el) => {
+            textareaRef.current = el;
+            if (el) {
+              cellRefs.current[cellKey] = el;
+            } else {
+              delete cellRefs.current[cellKey];
+            }
+          }}
+          value={debouncedValue.value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onClick={(e) => {
+            onCellClick(e);
+            // Also trigger focus broadcast on click
+            if (onCellFocus) {
+              onCellFocus(itemId, cellRefKey);
+            }
+          }}
+          onMouseDown={handleMouseDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
+          data-field-key={`${itemId}-${resolvedFieldKey}`}
+          className={`w-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+            isDuration ? 'font-mono' : ''
+          } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
+          style={{ 
+            backgroundColor: 'transparent',
+            color: showOverlay ? 'transparent' : (textColor || 'inherit'),
+            minHeight: `${calculatedHeight}px`,
+            height: 'auto',
+            lineHeight: '1.3',
+            textAlign: isDuration ? 'center' : 'left'
+          }}
+        />
+      </div>
     </div>
   );
 };
