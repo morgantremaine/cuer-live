@@ -289,7 +289,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full flex items-center" style={{ backgroundColor }}>
       
       {/* Clickable URL overlay when not focused */}
       {shouldShowClickableUrls && (
@@ -355,6 +355,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
