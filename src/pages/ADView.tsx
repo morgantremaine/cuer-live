@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getRowNumber } from '@/utils/sharedRundownUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { timeToSeconds, secondsToTime, calculateItemsWithTiming } from '@/utils/rundownCalculations';
 import CuerLogo from '@/components/common/CuerLogo';
 import {
@@ -490,7 +491,8 @@ const ADView = () => {
       name: '--', 
       rowNumber: '', 
       columnData: {},
-      color: null as string | null
+      color: null as string | null,
+      textColor: null as string | null
     };
     
     // Find the original index in the full items array (including headers)
@@ -512,16 +514,20 @@ const ADView = () => {
       columnData[columnKey] = value;
     });
     
-    return { name, rowNumber, columnData, color: segment.color || null };
+    const color = segment.color || null;
+    // Calculate contrast text color when custom color exists
+    const textColor = hasCustomColor(color) ? getContrastTextColor(color) : null;
+    
+    return { name, rowNumber, columnData, color, textColor };
   };
 
   // Get info for all segments
-  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {}, color: null };
-  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {}, color: null };
+  const prev1Info = previousSegments[0] ? getSegmentInfo(previousSegments[0]) : { name: '--', rowNumber: '', columnData: {}, color: null, textColor: null };
+  const currInfo = currentSegment ? getSegmentInfo(currentSegment) : { name: '--', rowNumber: '', columnData: {}, color: null, textColor: null };
   
   // Dynamic next segment info based on calculated maximum
   const nextSegmentInfos = nextSegments.map(segment => 
-    segment ? getSegmentInfo(segment) : { name: '--', rowNumber: '', columnData: {}, color: null }
+    segment ? getSegmentInfo(segment) : { name: '--', rowNumber: '', columnData: {}, color: null, textColor: null }
   );
 
   // Add a column to display
@@ -543,13 +549,17 @@ const ADView = () => {
   );
 
   // Render additional column data for a segment
-  const renderColumnData = (columnData: { [key: string]: string }) => {
+  const renderColumnData = (columnData: { [key: string]: string }, textColor: string | null = null) => {
     return selectedColumns.map(columnKey => {
       const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
       const value = columnData[columnKey] || '--';
       
       return (
-        <div key={columnKey} className="text-sm text-gray-400 mt-1">
+        <div 
+          key={columnKey} 
+          className="text-sm mt-1"
+          style={{ color: textColor || 'rgb(156, 163, 175)', opacity: textColor ? 0.8 : 1 }}
+        >
           <span className="font-semibold">{columnName}:</span> {value}
         </div>
       );
@@ -841,12 +851,12 @@ const ADView = () => {
                 >
                   <div className="flex items-center space-x-[1vw]">
                     <div className="w-[4vw] text-center">
-                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] text-zinc-400 font-semibold">PREV</div>
-                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono text-zinc-300">{prev1Info.rowNumber}</div>
+                      <div className="text-[clamp(0.7rem,0.9vw,1.2rem)] font-semibold" style={{ color: prev1Info.textColor || 'rgb(161, 161, 170)' }}>PREV</div>
+                      <div className="text-[clamp(0.9rem,1.3vw,1.8rem)] font-mono" style={{ color: prev1Info.textColor || 'rgb(212, 212, 216)' }}>{prev1Info.rowNumber}</div>
                     </div>
                     <div className="flex-1">
-                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-bold text-zinc-300">{prev1Info.name}</div>
-                      {renderColumnData(prev1Info.columnData)}
+                      <div className="text-[clamp(1.1rem,1.6vw,2.2rem)] font-bold" style={{ color: prev1Info.textColor || 'rgb(212, 212, 216)' }}>{prev1Info.name}</div>
+                      {renderColumnData(prev1Info.columnData, prev1Info.textColor)}
                     </div>
                   </div>
                 </div>
@@ -867,18 +877,18 @@ const ADView = () => {
                   >
                     <div className="flex items-center space-x-[1vw]">
                       <div className="w-[4vw] text-center">
-                        <div className="text-[clamp(1rem,1.2vw,1.8rem)] text-green-400 font-bold">LIVE</div>
-                        <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold text-white">{currInfo.rowNumber}</div>
+                        <div className="text-[clamp(1rem,1.2vw,1.8rem)] font-bold" style={{ color: currInfo.textColor ? (currInfo.textColor === '#000000' ? 'rgb(22, 163, 74)' : 'rgb(74, 222, 128)') : 'rgb(74, 222, 128)' }}>LIVE</div>
+                        <div className="text-[clamp(1.2rem,1.8vw,2.5rem)] font-mono font-bold" style={{ color: currInfo.textColor || 'white' }}>{currInfo.rowNumber}</div>
                       </div>
                       <div className="flex-1">
-                        <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold text-white mb-[0.3vh]">{currInfo.name}</div>
+                        <div className="text-[clamp(1.4rem,2.2vw,3rem)] font-bold mb-[0.3vh]" style={{ color: currInfo.textColor || 'white' }}>{currInfo.name}</div>
                         <div className="mt-[0.3vh]">
                           {selectedColumns.map(columnKey => {
                             const columnName = availableColumns.find(col => col.key === columnKey)?.name || columnKey;
                             const value = currInfo.columnData[columnKey] || '--';
                             
                             return (
-                              <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] text-zinc-200 mt-[0.2vh]">
+                              <div key={columnKey} className="text-[clamp(0.9rem,1.3vw,1.8rem)] mt-[0.2vh]" style={{ color: currInfo.textColor || 'rgb(228, 228, 231)', opacity: currInfo.textColor ? 0.9 : 1 }}>
                                 <span className="font-semibold">{columnName}:</span> {value}
                               </div>
                             );
@@ -904,20 +914,21 @@ const ADView = () => {
                   >
                     <div className="flex items-center space-x-[1vw]">
                       <div className="w-[4vw] text-center">
-                        <div className={`text-[clamp(0.7rem,0.9vw,1.2rem)] font-semibold ${
-                          index === 0 ? 'text-zinc-400' : 'text-zinc-500'
-                        }`}>NEXT</div>
-                        <div className={`font-mono ${
-                          index === 0 ? 'text-[clamp(0.9rem,1.3vw,1.8rem)] text-zinc-300' : 
-                          'text-[clamp(0.8rem,1.1vw,1.5rem)] text-zinc-400'
-                        }`}>{nextInfo.rowNumber}</div>
+                        <div 
+                          className={`text-[clamp(0.7rem,0.9vw,1.2rem)] font-semibold`}
+                          style={{ color: nextInfo.textColor || (index === 0 ? 'rgb(161, 161, 170)' : 'rgb(113, 113, 122)') }}
+                        >NEXT</div>
+                        <div 
+                          className={`font-mono ${index === 0 ? 'text-[clamp(0.9rem,1.3vw,1.8rem)]' : 'text-[clamp(0.8rem,1.1vw,1.5rem)]'}`}
+                          style={{ color: nextInfo.textColor || (index === 0 ? 'rgb(212, 212, 216)' : 'rgb(161, 161, 170)') }}
+                        >{nextInfo.rowNumber}</div>
                       </div>
                       <div className="flex-1">
-                        <div className={`font-bold ${
-                          index === 0 ? 'text-[clamp(1.1rem,1.6vw,2.2rem)] text-zinc-300' : 
-                          'text-[clamp(1rem,1.4vw,2rem)] text-zinc-400'
-                        }`}>{nextInfo.name}</div>
-                        {renderColumnData(nextInfo.columnData)}
+                        <div 
+                          className={`font-bold ${index === 0 ? 'text-[clamp(1.1rem,1.6vw,2.2rem)]' : 'text-[clamp(1rem,1.4vw,2rem)]'}`}
+                          style={{ color: nextInfo.textColor || (index === 0 ? 'rgb(212, 212, 216)' : 'rgb(161, 161, 170)') }}
+                        >{nextInfo.name}</div>
+                        {renderColumnData(nextInfo.columnData, nextInfo.textColor)}
                       </div>
                     </div>
                   </div>
