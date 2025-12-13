@@ -314,6 +314,9 @@ export const useConsolidatedRealtimeRundown = ({
         // Reset catch-up throttle to allow immediate sync after nuclear reset
         lastCatchupAttemptRef.current = 0;
         
+        // Clear stale subscription so initializeChannel creates a fresh one
+        globalSubscriptions.delete(rundownId);
+        
         await initializeChannel();
         // Re-initialize other channels
         const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
@@ -388,6 +391,9 @@ export const useConsolidatedRealtimeRundown = ({
           
           const success = await realtimeReset.performNuclearReset();
           if (success) {
+            // Clear stale subscription so initializeChannel creates a fresh one
+            globalSubscriptions.delete(rundownId);
+            
             // Re-initialize ALL channels
             await initializeChannel();
             const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
