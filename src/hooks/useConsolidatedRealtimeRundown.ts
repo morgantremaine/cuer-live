@@ -314,10 +314,26 @@ export const useConsolidatedRealtimeRundown = ({
         // Reset catch-up throttle to allow immediate sync after nuclear reset
         lastCatchupAttemptRef.current = 0;
         
-        // Clear stale subscription so initializeChannel creates a fresh one
-        globalSubscriptions.delete(rundownId);
+        // Preserve existing callbacks before deleting stale subscription
+        const existingState = globalSubscriptions.get(rundownId);
+        const preservedCallbacks = existingState ? {
+          onRundownUpdate: new Set(existingState.callbacks.onRundownUpdate),
+          onShowcallerUpdate: new Set(existingState.callbacks.onShowcallerUpdate),
+          onBlueprintUpdate: new Set(existingState.callbacks.onBlueprintUpdate)
+        } : null;
         
+        globalSubscriptions.delete(rundownId);
         await initializeChannel();
+        
+        // Re-register preserved callbacks on new state
+        if (preservedCallbacks) {
+          const newState = globalSubscriptions.get(rundownId);
+          if (newState) {
+            preservedCallbacks.onRundownUpdate.forEach(cb => newState.callbacks.onRundownUpdate.add(cb));
+            preservedCallbacks.onShowcallerUpdate.forEach(cb => newState.callbacks.onShowcallerUpdate.add(cb));
+            preservedCallbacks.onBlueprintUpdate.forEach(cb => newState.callbacks.onBlueprintUpdate.add(cb));
+          }
+        }
         // Re-initialize other channels
         const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
         const { cellBroadcast } = await import('@/utils/cellBroadcast');
@@ -391,11 +407,28 @@ export const useConsolidatedRealtimeRundown = ({
           
           const success = await realtimeReset.performNuclearReset();
           if (success) {
-            // Clear stale subscription so initializeChannel creates a fresh one
+            // Preserve existing callbacks before deleting stale subscription
+            const existingState = globalSubscriptions.get(rundownId);
+            const preservedCallbacks = existingState ? {
+              onRundownUpdate: new Set(existingState.callbacks.onRundownUpdate),
+              onShowcallerUpdate: new Set(existingState.callbacks.onShowcallerUpdate),
+              onBlueprintUpdate: new Set(existingState.callbacks.onBlueprintUpdate)
+            } : null;
+            
             globalSubscriptions.delete(rundownId);
             
             // Re-initialize ALL channels
             await initializeChannel();
+            
+            // Re-register preserved callbacks on new state
+            if (preservedCallbacks) {
+              const newState = globalSubscriptions.get(rundownId);
+              if (newState) {
+                preservedCallbacks.onRundownUpdate.forEach(cb => newState.callbacks.onRundownUpdate.add(cb));
+                preservedCallbacks.onShowcallerUpdate.forEach(cb => newState.callbacks.onShowcallerUpdate.add(cb));
+                preservedCallbacks.onBlueprintUpdate.forEach(cb => newState.callbacks.onBlueprintUpdate.add(cb));
+              }
+            }
             const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
             const { cellBroadcast } = await import('@/utils/cellBroadcast');
             showcallerBroadcast.reinitialize(rundownId);
@@ -446,7 +479,26 @@ export const useConsolidatedRealtimeRundown = ({
         
         const success = await realtimeReset.performNuclearReset();
         if (success) {
+          // Preserve existing callbacks before deleting stale subscription
+          const existingState = globalSubscriptions.get(rundownId);
+          const preservedCallbacks = existingState ? {
+            onRundownUpdate: new Set(existingState.callbacks.onRundownUpdate),
+            onShowcallerUpdate: new Set(existingState.callbacks.onShowcallerUpdate),
+            onBlueprintUpdate: new Set(existingState.callbacks.onBlueprintUpdate)
+          } : null;
+          
+          globalSubscriptions.delete(rundownId);
           await initializeChannel();
+          
+          // Re-register preserved callbacks on new state
+          if (preservedCallbacks) {
+            const newState = globalSubscriptions.get(rundownId);
+            if (newState) {
+              preservedCallbacks.onRundownUpdate.forEach(cb => newState.callbacks.onRundownUpdate.add(cb));
+              preservedCallbacks.onShowcallerUpdate.forEach(cb => newState.callbacks.onShowcallerUpdate.add(cb));
+              preservedCallbacks.onBlueprintUpdate.forEach(cb => newState.callbacks.onBlueprintUpdate.add(cb));
+            }
+          }
           const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
           const { cellBroadcast } = await import('@/utils/cellBroadcast');
           showcallerBroadcast.reinitialize(rundownId);
