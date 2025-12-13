@@ -38,8 +38,10 @@ const TextAreaCell = ({
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [contentHeight, setContentHeight] = useState<number>(38);
+  const [rowHeight, setRowHeight] = useState<number>(0);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
@@ -59,6 +61,28 @@ const TextAreaCell = ({
         clearInterval(heartbeatIntervalRef.current);
       }
     };
+  }, []);
+
+  // Monitor actual row height for vertical centering
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const updateRowHeight = () => {
+      const row = containerRef.current?.closest('tr');
+      if (row) {
+        setRowHeight(row.offsetHeight);
+      }
+    };
+
+    updateRowHeight();
+    
+    const observer = new ResizeObserver(updateRowHeight);
+    const row = containerRef.current?.closest('tr');
+    if (row) {
+      observer.observe(row);
+    }
+
+    return () => observer.disconnect();
   }, []);
 
   // Helper to strip bracket formatting for height measurement
@@ -302,10 +326,12 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
   
   // Calculate vertical padding to center content within cell
-  const verticalPadding = Math.max(0, (calculatedHeight - contentHeight) / 2);
+  // Use actual row height when available, otherwise fall back to calculatedHeight
+  const displayHeight = rowHeight > 0 ? rowHeight : calculatedHeight;
+  const verticalPadding = Math.max(0, (displayHeight - contentHeight) / 2);
 
   return (
-    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div ref={containerRef} className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
