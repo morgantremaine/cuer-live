@@ -59,22 +59,24 @@ export const useConsolidatedRealtimeRundown = ({
   const MIN_CATCHUP_INTERVAL = 15000;
 
   // Catch-up sync - fetch latest data from database
-  const performCatchupSync = useCallback(async (): Promise<boolean> => {
+  const performCatchupSync = useCallback(async (forceSync: boolean = false): Promise<boolean> => {
     const state = globalSubscriptions.get(rundownId || '');
     if (!rundownId || !state) return false;
 
     const now = Date.now();
-    if (now - lastCatchupAttemptRef.current < MIN_CATCHUP_INTERVAL) {
-      console.log('⏱️ Skipping catch-up sync - too soon');
+    if (!forceSync && now - lastCatchupAttemptRef.current < MIN_CATCHUP_INTERVAL) {
+      console.log('⏱️ Skipping catch-up sync - too soon (last attempt:', Math.round((now - lastCatchupAttemptRef.current) / 1000), 's ago)');
       return false;
     }
     lastCatchupAttemptRef.current = now;
 
     // Block if pending updates
     if (hasPendingUpdates?.()) {
-      debugLogger.realtime('⚠️ Blocking catch-up sync - pending updates');
+      console.log('⚠️ Blocking catch-up sync - pending updates exist');
       return false;
     }
+
+    console.log('🔄 Performing catch-up sync for rundown:', rundownId);
 
     try {
       setIsProcessingUpdate(true);
@@ -85,26 +87,40 @@ export const useConsolidatedRealtimeRundown = ({
         .eq('id', rundownId)
         .single();
 
-      if (!error && data) {
-        const serverDoc = data.doc_version || 0;
-        const currentTabId = getTabId();
-        const isOwnUpdate = data.tab_id === currentTabId;
+      if (error) {
+        console.error('❌ Catch-up sync fetch error:', error);
+        return false;
+      }
 
-        if (serverDoc > state.lastProcessedDocVersion) {
+      if (data) {
+        const serverDoc = data.doc_version || 0;
+        const localDoc = state.lastProcessedDocVersion;
+        const currentTabId = getTabId();
+        const lastSavedByThisTab = data.tab_id === currentTabId;
+
+        console.log(`📊 Catch-up sync: server doc_version=${serverDoc}, local=${localDoc}, last_saved_by_this_tab=${lastSavedByThisTab}`);
+
+        if (serverDoc > localDoc) {
+          const missedUpdates = serverDoc - localDoc;
+          console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
+          
+          // Update tracking state BEFORE callbacks
           state.lastProcessedDocVersion = serverDoc;
           state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
 
-          if (!isOwnUpdate) {
-            state.callbacks.onRundownUpdate.forEach(cb => {
-              try { cb(data); } catch (err) { console.error('Error in callback:', err); }
-            });
-          }
+          // ALWAYS apply server data during catch-up sync
+          // The tab_id check is for realtime updates (echo prevention), not catch-up
+          // Even if this tab saved last, there may have been other saves we missed
+          state.callbacks.onRundownUpdate.forEach(cb => {
+            try { cb(data); } catch (err) { console.error('Error in callback:', err); }
+          });
 
-          const missedUpdates = isOwnUpdate ? 0 : Math.max(0, serverDoc - state.lastProcessedDocVersion);
           if (missedUpdates > 0 && !isInitialLoadRef.current) {
             toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
           }
           return true;
+        } else {
+          console.log('📊 Catch-up sync: already up to date');
         }
       }
     } finally {
@@ -288,6 +304,9 @@ export const useConsolidatedRealtimeRundown = ({
       
       const success = await realtimeReset.performNuclearReset();
       if (success) {
+        // Reset catch-up throttle to allow immediate sync after nuclear reset
+        lastCatchupAttemptRef.current = 0;
+        
         await initializeChannel();
         // Re-initialize other channels
         const { showcallerBroadcast } = await import('@/utils/showcallerBroadcast');
@@ -296,7 +315,8 @@ export const useConsolidatedRealtimeRundown = ({
         cellBroadcast.reinitialize(rundownId);
         
         setTimeout(async () => {
-          await performCatchupSync();
+          // Force sync after nuclear reset - we may have missed updates while offline
+          await performCatchupSync(true);
         }, 2000);
       }
     };
@@ -346,15 +366,18 @@ export const useConsolidatedRealtimeRundown = ({
         const health = simpleConnectionHealth.getHealth(rundownId);
         
         if (health.allConnected) {
-          // Channels survived the extended absence - just sync
-          console.log('👁️ Extended absence but channels healthy - just catching up');
-          await performCatchupSync();
+          // Channels survived the extended absence - force sync to catch missed updates
+          console.log('👁️ Extended absence but channels healthy - force catching up');
+          await performCatchupSync(true);
         } else {
           // Channels are degraded - perform nuclear reset
           console.log(`☢️ Extended sleep + degraded connections - performing nuclear reset (consolidated: ${health.consolidated}, showcaller: ${health.showcaller}, cell: ${health.cell})`);
           
           // Clear stale health state before reinitializing
           simpleConnectionHealth.cleanup(rundownId);
+          
+          // Reset catch-up throttle
+          lastCatchupAttemptRef.current = 0;
           
           const success = await realtimeReset.performNuclearReset();
           if (success) {
@@ -365,10 +388,10 @@ export const useConsolidatedRealtimeRundown = ({
             showcallerBroadcast.reinitialize(rundownId);
             cellBroadcast.reinitialize(rundownId);
             
-            // Give channels a moment to connect, then catch up
+            // Give channels a moment to connect, then force catch up
             setTimeout(() => {
-              console.log('✅ Nuclear reset complete - syncing data');
-              performCatchupSync();
+              console.log('✅ Nuclear reset complete - force syncing data');
+              performCatchupSync(true);
             }, 2000);
           }
         }
