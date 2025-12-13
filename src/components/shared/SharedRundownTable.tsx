@@ -664,7 +664,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
     if (shouldRenderBrackets) {
       return (
-        <div className="flex flex-wrap items-start gap-0.5">
+        <div className="flex flex-wrap items-center gap-0.5">
           {renderScriptWithBrackets(value, { 
             inlineDisplay: true, 
             fontSize: 14, 
