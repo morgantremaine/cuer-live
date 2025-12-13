@@ -60,12 +60,6 @@ const TextAreaCell = ({
     };
   }, []);
 
-  // Helper to strip bracket formatting for height measurement
-  const stripBracketFormatting = (text: string): string => {
-    // Replace [content]{color} or [content] with just content plus spacing
-    return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
-  };
-
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
     if (!textareaRef.current || !measurementRef.current) return;
@@ -93,12 +87,8 @@ const TextAreaCell = ({
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content - strip brackets if renderBrackets is enabled AND not focused
-    // When focused, user sees raw text so we need to measure the raw text
-    const textToMeasure = (renderBrackets && !isFocused)
-      ? stripBracketFormatting(debouncedValue.value)
-      : debouncedValue.value;
-    measurementDiv.textContent = textToMeasure || ' '; // Use space for empty content
+    // Always measure the actual value - no special bracket handling
+    measurementDiv.textContent = debouncedValue.value || ' ';
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
@@ -177,10 +167,6 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
-      // Immediately recalculate height after line break insertion
-      setTimeout(() => {
-        calculateHeight();
-      }, 0);
       
       // Set cursor position after the inserted line break
       setTimeout(() => {
@@ -296,7 +282,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
@@ -326,7 +312,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
