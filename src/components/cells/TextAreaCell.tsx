@@ -370,13 +370,13 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
             isDuration ? 'font-mono' : ''
           } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
-          style={{ 
-            backgroundColor: 'transparent',
-            color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: `${calculatedHeight}px`,
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
-          }}
+style={{ 
+  backgroundColor: 'transparent',
+  color: showOverlay ? 'transparent' : (textColor || 'inherit'),
+  minHeight: `${calculatedHeight}px`,
+  lineHeight: '1.3',
+  textAlign: isDuration ? 'center' : 'left'
+}}
         />
       </div>
     </div>
