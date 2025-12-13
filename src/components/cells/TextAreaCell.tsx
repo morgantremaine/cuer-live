@@ -202,16 +202,17 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
-      // Set cursor position FIRST (synchronously)
+      // Set cursor position and value synchronously
       textarea.value = newValue;
       textarea.setSelectionRange(start + 1, start + 1);
       
-      // Reset guard flag to allow immediate calculation
-      isRecalculatingRef.current = false;
-      
-      // Immediate synchronous height calculation - no debounce for line breaks
-      calculateHeight('line-break-immediate');
-      console.log(`📏 [TextAreaCell] Line break COMPLETE in ${(performance.now() - insertStart).toFixed(2)}ms`);
+      // Defer height calculation to next frame AFTER DOM updates
+      // This prevents cursor jumping because height change happens after cursor is positioned
+      requestAnimationFrame(() => {
+        isRecalculatingRef.current = false;
+        calculateHeight('line-break-immediate');
+        console.log(`📏 [TextAreaCell] Line break COMPLETE in ${(performance.now() - insertStart).toFixed(2)}ms`);
+      });
       
       return;
     }
