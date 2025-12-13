@@ -235,12 +235,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    // If team context exists, wait until team columns have loaded to avoid two-phase layout
-    if (team?.id && teamColumnsLoading) {
-      debugLogger.preferences('Deferring column load until team columns are ready');
-      return;
-    }
-
     setIsLoading(true);
 
     try {
