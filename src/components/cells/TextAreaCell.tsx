@@ -296,87 +296,89 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
-      {/* Hidden measurement div */}
-      <div
-        ref={measurementRef}
-        className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
-        style={{ 
-          fontSize: isHeaderRow ? '14px' : '14px',
-          fontFamily: 'inherit',
-          lineHeight: '1.3',
-          zIndex: -1
-        }}
-      />
-      
-      {/* Clickable URL overlay when not focused - positioned to allow editing */}
-      {shouldShowClickableUrls && (
+    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
+      <div className="relative w-full">
+        {/* Hidden measurement div */}
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          ref={measurementRef}
+          className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
           style={{ 
-            color: textColor || 'inherit',
+            fontSize: isHeaderRow ? '14px' : '14px',
+            fontFamily: 'inherit',
+            lineHeight: '1.3',
+            zIndex: -1
+          }}
+        />
+        
+        {/* Clickable URL overlay when not focused - positioned to allow editing */}
+        {shouldShowClickableUrls && (
+          <div
+            className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+            style={{ 
+              color: textColor || 'inherit',
+              lineHeight: '1.3',
+              textAlign: isDuration ? 'center' : 'left'
+            }}
+          >
+            {renderTextWithClickableUrls(debouncedValue.value)}
+          </div>
+        )}
+        
+        {/* Bracket-styled overlay when not focused */}
+        {shouldShowBrackets && (
+          <div
+            className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
+            style={{ 
+              color: textColor || 'inherit',
+              lineHeight: '1.3',
+              textAlign: isDuration ? 'center' : 'left'
+            }}
+          >
+            {renderScriptWithBrackets(debouncedValue.value, { 
+              inlineDisplay: true, 
+              fontSize: 14,
+              showNullAsText: true 
+            })}
+          </div>
+        )}
+        
+        <textarea
+          ref={(el) => {
+            textareaRef.current = el;
+            if (el) {
+              cellRefs.current[cellKey] = el;
+            } else {
+              delete cellRefs.current[cellKey];
+            }
+          }}
+          value={debouncedValue.value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onClick={(e) => {
+            onCellClick(e);
+            // Also trigger focus broadcast on click
+            if (onCellFocus) {
+              onCellFocus(itemId, cellRefKey);
+            }
+          }}
+          onMouseDown={handleMouseDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
+          data-field-key={`${itemId}-${resolvedFieldKey}`}
+          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+            isDuration ? 'font-mono' : ''
+          } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
+          style={{ 
+            backgroundColor: 'transparent',
+            color: showOverlay ? 'transparent' : (textColor || 'inherit'),
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
-        >
-          {renderTextWithClickableUrls(debouncedValue.value)}
-        </div>
-      )}
-      
-      {/* Bracket-styled overlay when not focused */}
-      {shouldShowBrackets && (
-        <div
-          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
-          style={{ 
-            color: textColor || 'inherit',
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
-          }}
-        >
-          {renderScriptWithBrackets(debouncedValue.value, { 
-            inlineDisplay: true, 
-            fontSize: 14,
-            showNullAsText: true 
-          })}
-        </div>
-      )}
-      
-      <textarea
-        ref={(el) => {
-          textareaRef.current = el;
-          if (el) {
-            cellRefs.current[cellKey] = el;
-          } else {
-            delete cellRefs.current[cellKey];
-          }
-        }}
-        value={debouncedValue.value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onClick={(e) => {
-          onCellClick(e);
-          // Also trigger focus broadcast on click
-          if (onCellFocus) {
-            onCellFocus(itemId, cellRefKey);
-          }
-        }}
-        onMouseDown={handleMouseDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        data-cell-id={cellKey}
-        data-cell-ref={cellKey}
-        data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
-          isDuration ? 'font-mono' : ''
-        } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
-        style={{ 
-          backgroundColor: 'transparent',
-          color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-          height: `${calculatedHeight}px`,
-          lineHeight: '1.3',
-          textAlign: isDuration ? 'center' : 'left'
-        }}
-      />
+        />
+      </div>
     </div>
   );
 };
