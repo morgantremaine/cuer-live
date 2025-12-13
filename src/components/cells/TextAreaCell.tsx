@@ -297,7 +297,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
 
   return (
     <div className="relative w-full h-full flex items-center" style={{ backgroundColor }}>
-      <div className="relative w-full flex items-center">
+      <div className="relative w-full">
         {/* Hidden measurement div */}
         <div
           ref={measurementRef}
@@ -373,9 +373,10 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            minHeight: `${calculatedHeight}px`,
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
+            textAlign: isDuration ? 'center' : 'left',
+            alignContent: 'center'
           }}
         />
       </div>
