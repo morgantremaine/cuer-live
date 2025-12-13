@@ -306,18 +306,36 @@ const ExpandableScriptCell = ({
   };
 
   // Monitor row height changes for dynamic preview sizing
+  // Uses temporary hiding to measure row height driven by OTHER cells (not this script preview)
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
       let timeoutId: NodeJS.Timeout;
       
       const updateRowHeight = () => {
         const row = containerRef.current?.closest('tr');
+        const previewDiv = containerRef.current?.querySelector('.script-preview-content');
+        
         if (row) {
           // Debounce height updates to prevent scroll jumps during scrolling
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
-            const height = row.offsetHeight;
-            setRowHeight(height);
+            if (previewDiv) {
+              // Temporarily hide the preview to measure row height from OTHER cells only
+              const originalDisplay = (previewDiv as HTMLElement).style.display;
+              (previewDiv as HTMLElement).style.display = 'none';
+              
+              // Measure the row height (driven by other cells)
+              const heightWithoutScript = row.offsetHeight;
+              
+              // Restore the preview
+              (previewDiv as HTMLElement).style.display = originalDisplay;
+              
+              // Use this "clean" height for line clamp calculation
+              setRowHeight(heightWithoutScript);
+            } else {
+              // Fallback if no preview div found
+              setRowHeight(row.offsetHeight);
+            }
           }, 100);
         }
       };
@@ -544,6 +562,7 @@ const ExpandableScriptCell = ({
             >
               {debouncedValue.value ? (
                 <div 
+                  className="script-preview-content"
                   style={{ 
                     maxWidth: '100%',
                     whiteSpace: 'pre-wrap',
