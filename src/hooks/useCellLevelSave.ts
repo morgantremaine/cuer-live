@@ -300,9 +300,33 @@ export const useCellLevelSave = (
 
     } catch (error) {
       console.error('Per-cell save exception:', error);
-      throw error;
+      
+      // CRITICAL: Persist failed saves instead of re-throwing
+      // This ensures offline edits survive page refresh
+      failedSavesRef.current.push(...updatesToSave);
+      persistFailedSaves();
+      
+      if (onUnsavedChanges) {
+        onUnsavedChanges();
+      }
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Save failed - will retry automatically';
+      
+      if (onSaveError) {
+        onSaveError(errorMessage);
+      }
+      
+      // Schedule retry for when network is back
+      scheduleRetry();
+      
+      // Clear the shared saveInProgress flag
+      if (saveInProgressRef) {
+        saveInProgressRef.current = false;
+      }
     }
-  }, [rundownId, onSaveError]);
+  }, [rundownId, onSaveError, onUnsavedChanges]);
 
   // Schedule retry with exponential backoff (30s, 60s, 120s, then stop)
   const scheduleRetry = useCallback(() => {
