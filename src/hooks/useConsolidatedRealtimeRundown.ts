@@ -509,25 +509,9 @@ export const useConsolidatedRealtimeRundown = ({
         state.refCount = 0;
       }
 
-      const totalCallbacks =
-        state.callbacks.onRundownUpdate.size +
-        state.callbacks.onShowcallerUpdate.size +
-        state.callbacks.onBlueprintUpdate.size;
-
-      if (state.refCount <= 0 && totalCallbacks === 0) {
-        simpleConnectionHealth.cleanup(rundownId);
-
-        const subscription = state.subscription;
-        globalSubscriptions.delete(rundownId);
-
-        setTimeout(() => {
-          try {
-            supabase.removeChannel(subscription);
-          } catch (e) {
-            console.warn('Cleanup error:', e);
-          }
-        }, 100);
-      }
+      // Keep channel alive across effect re-runs - only log for debugging
+      // Channel will be reused on next mount, preventing duplicate initialization
+      console.log('📡 Consolidated callback removed, channel kept alive for reuse (refCount:', state.refCount, ')');
     };
   }, [rundownId, user, tokenReady, enabled, isSharedView]); // Removed initializeChannel from deps
 
