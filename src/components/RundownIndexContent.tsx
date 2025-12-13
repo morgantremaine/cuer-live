@@ -21,7 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActiveCellEditors } from '@/hooks/useActiveCellEditors';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useMOSIntegration } from '@/hooks/useMOSIntegration';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useMemoryPressureMonitor } from '@/hooks/useMemoryPressureMonitor';
 import { supabase } from '@/integrations/supabase/client';
@@ -109,8 +109,6 @@ const RundownIndexContentInner = () => {
     toggleLock
   } = coreState;
 
-  // Enable realtime connection notifications (after rundownId is available)
-  useRealtimeNotifications(rundownId);
 
   const userId = user?.id || '';
   const userName = user?.user_metadata?.full_name || user?.email || 'Anonymous';
