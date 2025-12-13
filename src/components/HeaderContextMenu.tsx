@@ -10,7 +10,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Column } from '@/types/columns';
-import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
+import { TeamCustomColumn } from '@/hooks/useTeamCustomColumns';
 import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
 
 interface LayoutData {
@@ -34,6 +34,7 @@ interface HeaderContextMenuProps {
   savedLayouts?: LayoutData[];
   onLoadLayout?: (columns: Column[]) => void;
   userColumns?: Column[]; // User's column preferences with renamed names
+  teamColumns?: TeamCustomColumn[]; // Team custom columns passed from parent
 }
 
 const HeaderContextMenu = ({ 
@@ -45,9 +46,9 @@ const HeaderContextMenu = ({
   onToggleColumnVisibility,
   savedLayouts = [],
   onLoadLayout,
-  userColumns
+  userColumns,
+  teamColumns = []
 }: HeaderContextMenuProps) => {
-  const { teamColumns } = useTeamCustomColumns();
 
   // Get all possible columns (built-in + team custom + any existing custom)
   const allPossibleColumns = useMemo(() => {
