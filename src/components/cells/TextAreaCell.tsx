@@ -294,8 +294,8 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full flex items-center" style={{ backgroundColor }}>
-      <div className="relative w-full h-auto">
+    <div className="relative w-full h-full flex items-center" style={{ backgroundColor }}>
+      <div className="relative w-full">
         {/* Hidden measurement div */}
         <div
           ref={measurementRef}
@@ -371,7 +371,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: `${calculatedHeight}px`,
+            minHeight: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
