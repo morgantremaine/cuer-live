@@ -344,6 +344,16 @@ export const useSimpleAutoSave = (
     setPerCellHasUnsavedChanges(false);
   }, []);
 
+  // SINGLE POINT: Update baseline after ANY server data load
+  // This is the ONE place where we sync signature baseline with server state
+  const updateBaselineFromServerData = useCallback(() => {
+    const currentSignature = createContentSignatureFromState(state);
+    lastSavedRef.current = currentSignature;
+    hasUnsavedChangesRef.current = false;
+    setPerCellHasUnsavedChanges(false);
+    console.log('📊 Baseline updated from server data');
+  }, [state, createContentSignatureFromState]);
+
   const handlePerCellSaveError = useCallback((error: string) => {
     // Store reference for retry button
     const retryFn = saveCoordinatedStateRef.current?.retryFailedSaves;
@@ -1057,6 +1067,7 @@ export const useSimpleAutoSave = (
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
     retryFailedSaves,
     getFailedSavesCount,
+    updateBaselineFromServerData, // SINGLE POINT: Call after any server data load
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,
     setVerboseLogging: keystrokeJournal.setVerboseLogging,
