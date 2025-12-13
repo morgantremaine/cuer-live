@@ -102,23 +102,31 @@ export const useConsolidatedRealtimeRundown = ({
 
         if (serverDoc > localDoc || forceSync) {
           const missedUpdates = serverDoc - localDoc;
-          console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
           
-          // Update tracking state BEFORE callbacks
-          state.lastProcessedDocVersion = serverDoc;
-          state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+          // Only apply callbacks if there are ACTUAL missed updates
+          // forceSync with 0 missed updates means we're just verifying state, not applying changes
+          // This prevents false "change detected" scenarios from object reference differences
+          if (missedUpdates > 0) {
+            console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
+            
+            // Update tracking state BEFORE callbacks
+            state.lastProcessedDocVersion = serverDoc;
+            state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
 
-          // ALWAYS apply server data during catch-up sync
-          // The tab_id check is for realtime updates (echo prevention), not catch-up
-          // Even if this tab saved last, there may have been other saves we missed
-          state.callbacks.onRundownUpdate.forEach(cb => {
-            try { cb(data); } catch (err) { console.error('Error in callback:', err); }
-          });
+            state.callbacks.onRundownUpdate.forEach(cb => {
+              try { cb(data); } catch (err) { console.error('Error in callback:', err); }
+            });
 
-          if (missedUpdates > 0 && !isInitialLoadRef.current) {
-            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
+            if (!isInitialLoadRef.current) {
+              toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
+            }
+            return true;
+          } else {
+            // forceSync requested but already up to date - still update timestamps to prevent re-triggering
+            console.log('📊 Catch-up sync: forceSync requested but already up to date (no callbacks triggered)');
+            state.lastProcessedDocVersion = serverDoc;
+            state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
           }
-          return true;
         } else {
           console.log('📊 Catch-up sync: already up to date');
         }
