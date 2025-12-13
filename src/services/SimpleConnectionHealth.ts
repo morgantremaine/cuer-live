@@ -89,6 +89,11 @@ class SimpleConnectionHealthService {
     }
   }
 
+  // Public method to force notify all subscribers (used after nuclear reset)
+  forceNotify(rundownId: string): void {
+    this.notifySubscribers(rundownId);
+  }
+
   // Reset channel status but preserve subscribers so they receive reconnection updates
   cleanup(rundownId: string): void {
     this.channelStatus.set(rundownId, { consolidated: false, showcaller: false, cell: false });
