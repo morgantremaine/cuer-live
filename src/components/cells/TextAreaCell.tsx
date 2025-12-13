@@ -66,8 +66,8 @@ const TextAreaCell = ({
     return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
   };
 
-  // Function to calculate required height using a measurement div
-  const calculateHeight = () => {
+  // Function to calculate required height using a measurement div - accepts text to measure directly
+  const calculateHeightWithText = (textToMeasure: string) => {
     if (!textareaRef.current || !measurementRef.current) return;
     
     const textarea = textareaRef.current;
@@ -95,10 +95,10 @@ const TextAreaCell = ({
     
     // Set the content - strip brackets if renderBrackets is enabled AND not focused
     // When focused, user sees raw text so we need to measure the raw text
-    const textToMeasure = (renderBrackets && !isFocused)
-      ? stripBracketFormatting(debouncedValue.value)
-      : debouncedValue.value;
-    measurementDiv.textContent = textToMeasure || ' '; // Use space for empty content
+    const finalText = (renderBrackets && !isFocused)
+      ? stripBracketFormatting(textToMeasure)
+      : textToMeasure;
+    measurementDiv.textContent = finalText || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
@@ -118,10 +118,15 @@ const TextAreaCell = ({
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
-    // Always update height if it's different (removed the conservative condition)
+    // Always update height if it's different
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
+  };
+
+  // Backward-compatible wrapper
+  const calculateHeight = () => {
+    calculateHeightWithText(debouncedValue.value);
   };
 
   // Debounced height recalculation - only recalculate after user stops typing
@@ -177,13 +182,10 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
-      // Immediately recalculate height after line break insertion
+      // Immediately recalculate height with the NEW value (not debounced)
       setTimeout(() => {
-        calculateHeight();
-      }, 0);
-      
-      // Set cursor position after the inserted line break
-      setTimeout(() => {
+        calculateHeightWithText(newValue);
+        // Set cursor position after the inserted line break
         textarea.setSelectionRange(start + 1, start + 1);
       }, 0);
       
@@ -200,7 +202,11 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    debouncedValue.onChange(e.target.value, e.target as HTMLTextAreaElement);
+    const newValue = e.target.value;
+    debouncedValue.onChange(newValue, e.target as HTMLTextAreaElement);
+    
+    // Immediately recalculate height for responsive shrinking/expanding
+    calculateHeightWithText(newValue);
     
     // Send typing heartbeat (throttled to every 3 seconds)
     const now = Date.now();
@@ -296,7 +302,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
