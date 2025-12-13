@@ -133,6 +133,13 @@ export const useConsolidatedRealtimeRundown = ({
   const initializeChannel = useCallback(async () => {
     if (!rundownId) return;
 
+    // Guard: Don't reinitialize if already connected
+    const existingState = globalSubscriptions.get(rundownId);
+    if (existingState?.isConnected && existingState?.subscription) {
+      console.log('📡 Consolidated channel already connected, skipping reinitialization');
+      return;
+    }
+
     console.log('📡 Initializing consolidated channel:', rundownId);
 
     const channel = supabase
@@ -392,6 +399,10 @@ export const useConsolidatedRealtimeRundown = ({
             setTimeout(() => {
               const health = simpleConnectionHealth.getHealth(rundownId);
               console.log('✅ Nuclear reset complete - health:', health, '- force syncing data');
+              
+              // Force notify to clear any stale UI state
+              simpleConnectionHealth.forceNotify(rundownId);
+              
               performCatchupSync(true);
             }, 2000);
           }
