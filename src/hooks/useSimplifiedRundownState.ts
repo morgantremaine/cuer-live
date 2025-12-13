@@ -179,14 +179,21 @@ export const useSimplifiedRundownState = () => {
   }, rundownId || undefined, markActiveTypingRef);
 
   // User-specific column preferences (separate from team sync)
-  console.log('⏱️ useSimplifiedRundownState: calling useUserColumnPreferences');
   const {
     columns,
     updateColumns: setColumns, // Use updateColumns for external API compatibility
     isLoading: isLoadingColumns,
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
-  console.log('⏱️ useSimplifiedRundownState: isLoadingColumns?', isLoadingColumns, 'columns count:', columns.length);
+  
+  // Diagnostic: log only when isLoadingColumns changes
+  const prevIsLoadingColumnsRef = useRef<boolean>(true);
+  useEffect(() => {
+    if (prevIsLoadingColumnsRef.current !== isLoadingColumns) {
+      console.log(`⏱️ useSimplifiedRundownState: isLoadingColumns ${prevIsLoadingColumnsRef.current} → ${isLoadingColumns}`);
+      prevIsLoadingColumnsRef.current = isLoadingColumns;
+    }
+  }, [isLoadingColumns]);
 
   // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
   const teleprompterSync = useGlobalTeleprompterSync();

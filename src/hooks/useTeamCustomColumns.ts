@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useTeam } from './useTeam';
@@ -26,22 +26,30 @@ const retryRpc = async <T>(fn: () => Promise<T>, maxRetries = 2): Promise<T> => 
 };
 
 export const useTeamCustomColumns = () => {
-  console.time('⏱️ useTeamCustomColumns total');
   const { user } = useAuth();
   const { team } = useTeam();
-  console.log('⏱️ useTeamCustomColumns: team loaded?', !!team?.id, 'user?', !!user);
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadStartRef = useRef<number>(0);
+  const prevLoadingRef = useRef<boolean>(true);
+
+  // Diagnostic: log only when loading state changes
+  useEffect(() => {
+    if (prevLoadingRef.current !== loading) {
+      const elapsed = loadStartRef.current ? Date.now() - loadStartRef.current : 0;
+      console.log(`⏱️ useTeamCustomColumns: loading ${prevLoadingRef.current} → ${loading}${elapsed ? ` (${elapsed}ms)` : ''}`);
+      prevLoadingRef.current = loading;
+    }
+  }, [loading]);
 
   // Load team custom columns
   const loadTeamColumns = useCallback(async () => {
-    console.log('⏱️ useTeamCustomColumns.loadTeamColumns called, team?.id:', team?.id, 'user:', !!user);
     if (!team?.id || !user) {
-      console.log('⏱️ useTeamCustomColumns: No team/user, setting loading=false');
       setTeamColumns([]);
       setLoading(false);
       return;
     }
+    loadStartRef.current = Date.now();
 
     try {
       // Ensure we have a valid session before making the call
@@ -69,7 +77,6 @@ export const useTeamCustomColumns = () => {
       console.error('Failed to load team custom columns:', error);
       setTeamColumns([]);
     } finally {
-      console.log('⏱️ useTeamCustomColumns: loadTeamColumns complete, setting loading=false');
       setLoading(false);
     }
   }, [team?.id, user]);

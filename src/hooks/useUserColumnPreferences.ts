@@ -57,12 +57,9 @@ const normalizeColumns = (cols: any[]): Column[] => {
 };
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
-  console.log('⏱️ useUserColumnPreferences: hook called, rundownId:', rundownId);
   const { user } = useAuth();
   const { team } = useTeam();
-  console.log('⏱️ useUserColumnPreferences: user?', !!user, 'team?', !!team);
   const { teamColumns, loading: teamColumnsLoading, addTeamColumn, renameTeamColumn } = useTeamCustomColumns();
-  console.log('⏱️ useUserColumnPreferences: teamColumnsLoading?', teamColumnsLoading, 'teamColumns count:', teamColumns.length);
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -70,6 +67,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const currentSavePromiseRef = useRef<Promise<void> | null>(null);
   const hasLoadedRef = useRef(false); // Prevent multiple initial loads
+  const loadStartRef = useRef<number>(0);
+  const prevIsLoadingRef = useRef<boolean>(true);
+  
+  // Diagnostic: log only when isLoading state changes
+  useEffect(() => {
+    if (prevIsLoadingRef.current !== isLoading) {
+      const elapsed = loadStartRef.current ? Date.now() - loadStartRef.current : 0;
+      console.log(`⏱️ useUserColumnPreferences: isLoading ${prevIsLoadingRef.current} → ${isLoading}${elapsed ? ` (${elapsed}ms)` : ''}`);
+      prevIsLoadingRef.current = isLoading;
+    }
+  }, [isLoading]);
   
   // Shared column name overrides from rundowns.columns (for built-in renamable columns)
   const [columnNameOverrides, setColumnNameOverrides] = useState<Record<string, string>>({});
@@ -230,20 +238,16 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Load user's column preferences for this rundown (waits for team columns to be ready)
   const loadColumnPreferences = useCallback(async () => {
-    console.time('⏱️ useUserColumnPreferences.loadColumnPreferences');
-    console.log('⏱️ useUserColumnPreferences.loadColumnPreferences called, user?', !!user?.id, 'rundownId?', !!rundownId);
     if (!user?.id || !rundownId) {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, columnNameOverrides);
       setColumns(mergedDefaults);
       setIsLoading(false);
-      console.log('⏱️ useUserColumnPreferences: No user/rundown, set isLoading=false');
-      console.timeEnd('⏱️ useUserColumnPreferences.loadColumnPreferences');
       debugLogger.preferences('No user/rundown - using defaults');
       return;
     }
 
+    loadStartRef.current = Date.now();
     setIsLoading(true);
-    console.log('⏱️ useUserColumnPreferences: set isLoading=true, starting DB queries');
 
     try {
       // Load both user preferences and shared column name overrides in parallel
@@ -372,8 +376,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       // CRITICAL: Set flag BEFORE clearing loading to prevent race condition
       setHasInitialLoad(true);
       setIsLoading(false);
-      console.log('⏱️ useUserColumnPreferences: loadColumnPreferences complete, isLoading=false');
-      console.timeEnd('⏱️ useUserColumnPreferences.loadColumnPreferences');
     }
   }, [user?.id, rundownId, team?.id, teamColumnsLoading]); // Removed mergeColumnsWithTeamColumns to prevent recreation
 
