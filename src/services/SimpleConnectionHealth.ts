@@ -89,7 +89,14 @@ class SimpleConnectionHealthService {
     }
   }
 
+  // Reset channel status but preserve subscribers so they receive reconnection updates
   cleanup(rundownId: string): void {
+    this.channelStatus.set(rundownId, { consolidated: false, showcaller: false, cell: false });
+    this.notifySubscribers(rundownId);
+  }
+
+  // Full cleanup for component unmount - removes everything
+  fullCleanup(rundownId: string): void {
     this.channelStatus.delete(rundownId);
     this.subscribers.delete(rundownId);
   }
