@@ -177,6 +177,11 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
+      // Immediately recalculate height after line break insertion
+      setTimeout(() => {
+        calculateHeight();
+      }, 0);
+      
       // Set cursor position after the inserted line break
       setTimeout(() => {
         textarea.setSelectionRange(start + 1, start + 1);
@@ -291,7 +296,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
