@@ -290,10 +290,10 @@ export const useTeam = () => {
       const existingPromise = globalLoadPromises.get(loadKey);
       if (existingPromise) {
         try {
-          // Wait for existing promise with timeout
+          // Wait for existing promise with longer timeout (15s to accommodate slow networks)
           await Promise.race([
             existingPromise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Load timeout')), 10000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Load timeout')), 15000))
           ]);
         } catch (error) {
           console.error('Existing promise timeout or error:', error);
@@ -301,6 +301,17 @@ export const useTeam = () => {
           globalLoadingStates.delete(loadKey);
           globalLoadPromises.delete(loadKey);
         }
+      }
+      
+      // Use cached data if available (first instance may have succeeded)
+      const cachedTeam = globalTeamCache.get(loadKey);
+      const cachedRole = globalRoleCache.get(loadKey);
+      if (cachedTeam && cachedRole) {
+        console.log('Using cached team data after waiting on existing load');
+        setTeam(cachedTeam);
+        setUserRole(cachedRole);
+        setError(null);
+        setIsLoading(false);
       }
       return;
     }
@@ -418,9 +429,9 @@ export const useTeam = () => {
               console.warn(`⚠️ Team load took ${loadTime}ms - consider optimization`);
             }
           })(),
-          // 10 second timeout
+          // 20 second timeout to accommodate slow networks
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Team load timeout after 10 seconds')), 10000)
+            setTimeout(() => reject(new Error('Team load timeout after 20 seconds')), 20000)
           )
         ]);
       } catch (error) {
