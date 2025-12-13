@@ -470,7 +470,12 @@ export const useConsolidatedRealtimeRundown = ({
 
   // Polling fallback (3 minute stale threshold)
   useEffect(() => {
-    if (!enabled || !rundownId) return;
+    if (!enabled || !rundownId) {
+      console.log(`⏰ Health check: NOT starting (enabled=${enabled}, rundownId=${rundownId})`);
+      return;
+    }
+
+    console.log(`⏰ Health check interval STARTED for ${rundownId} - first check in 60s`);
 
     const checkInterval = setInterval(async () => {
       // Skip if reset already in progress
@@ -530,7 +535,10 @@ export const useConsolidatedRealtimeRundown = ({
       }
     }, 60000); // Check every minute
 
-    return () => clearInterval(checkInterval);
+    return () => {
+      console.log(`⏰ Health check interval STOPPED for ${rundownId}`);
+      clearInterval(checkInterval);
+    };
   }, [enabled, rundownId, performCatchupSync]); // Removed initializeChannel from deps
 
   // Main subscription effect
