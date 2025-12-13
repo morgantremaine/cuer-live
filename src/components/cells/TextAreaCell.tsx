@@ -373,9 +373,10 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: 'auto',
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
+            textAlign: isDuration ? 'center' : 'left',
+            alignContent: 'center'
           }}
         />
       </div>
