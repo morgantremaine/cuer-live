@@ -49,8 +49,6 @@ const ExpandableScriptCell = ({
   const heightCalcTimeoutRef = useRef<NodeJS.Timeout>();
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
-  const isRecalculatingRef = useRef<boolean>(false);
-  const lastRowHeightUpdateRef = useRef<number>(0);
   
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -165,19 +163,9 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Simple height calculation with guard against cascading updates
-  const adjustHeight = (source?: string) => {
-    // Guard against concurrent recalculations
-    if (isRecalculatingRef.current) return;
-    isRecalculatingRef.current = true;
-    
-    const startTime = performance.now();
-    if (!textareaRef.current) {
-      isRecalculatingRef.current = false;
-      return;
-    }
-    
-    const prevHeight = textareaRef.current.style.height;
+  // Simple height calculation with debouncing
+  const adjustHeight = () => {
+    if (!textareaRef.current) return;
     
     // Reset height to auto to get accurate scrollHeight
     textareaRef.current.style.height = 'auto';
@@ -185,39 +173,32 @@ const ExpandableScriptCell = ({
     
     // When overlay is showing (not focused), badges add extra height due to padding
     // Each badge has py-0.5 (4px) + my-px (2px) = 6px extra per line with badges
-    let badgeAdjustment = 0;
     if (showOverlay && debouncedValue.value) {
       const badgeMatches = debouncedValue.value.match(/\[[^\[\]{}]+(?:\{[^}]+\})?\]/g);
       if (badgeMatches && badgeMatches.length > 0) {
         // Estimate lines containing badges by counting badge occurrences
         // Add ~6px per badge to account for padding/margin
-        badgeAdjustment = badgeMatches.length * 6;
-        requiredHeight += badgeAdjustment;
+        const badgeHeightAdjustment = badgeMatches.length * 6;
+        requiredHeight += badgeHeightAdjustment;
       }
     }
     
-    const finalHeight = Math.max(requiredHeight, 24);
-    textareaRef.current.style.height = `${finalHeight}px`;
-    
-    const elapsed = performance.now() - startTime;
-    console.log(`📏 [ScriptCell] adjustHeight from=${source || 'unknown'} in ${elapsed.toFixed(2)}ms`);
-    
-    isRecalculatingRef.current = false;
+    textareaRef.current.style.height = `${Math.max(requiredHeight, 24)}px`;
   };
 
   // Debounced height recalculation - only after typing stops
   useEffect(() => {
     clearTimeout(heightCalcTimeoutRef.current);
     heightCalcTimeoutRef.current = setTimeout(() => {
-      adjustHeight('useEffect-debounced');
-    }, 50); // Reduced from 100ms to 50ms for faster response
+      adjustHeight();
+    }, 100); // 100ms debounce
     return () => clearTimeout(heightCalcTimeoutRef.current);
   }, [debouncedValue.value, showOverlay]);
 
   // Adjust height on mount and expansion
   useEffect(() => {
     if (effectiveExpanded) {
-      adjustHeight('expansion-mount');
+      adjustHeight();
     }
   }, [effectiveExpanded]);
 
@@ -325,61 +306,56 @@ const ExpandableScriptCell = ({
   };
 
   // Monitor row height changes for dynamic preview sizing
-  // Read TextAreaCell's calculated style.height for accurate collapse behavior
+  // Uses temporary hiding to measure row height driven by OTHER cells (not this script preview)
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
+      let timeoutId: NodeJS.Timeout;
+      
       const updateRowHeight = () => {
         const row = containerRef.current?.closest('tr');
-        if (!row) return;
+        const previewDiv = containerRef.current?.querySelector('.script-preview-content');
         
-        // Find the script cell's td to exclude
-        const scriptTd = containerRef.current?.closest('td');
-        
-        // Measure tallest non-script cell using their textarea's style.height (authoritative)
-        let maxOtherCellHeight = 38; // Minimum row height
-        const cells = row.querySelectorAll('td');
-        cells.forEach((td) => {
-          if (td !== scriptTd) {
-            // First try to get the textarea's explicit style.height set by TextAreaCell
-            const textarea = td.querySelector('textarea');
-            if (textarea && textarea.style.height) {
-              const styleHeight = parseFloat(textarea.style.height) || 0;
-              if (styleHeight > 0) {
-                maxOtherCellHeight = Math.max(maxOtherCellHeight, styleHeight + 16); // Add padding
-                return;
-              }
+        if (row) {
+          // Debounce height updates to prevent scroll jumps during scrolling
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            if (previewDiv) {
+              // Temporarily hide the preview to measure row height from OTHER cells only
+              const originalDisplay = (previewDiv as HTMLElement).style.display;
+              (previewDiv as HTMLElement).style.display = 'none';
+              
+              // Measure the row height (driven by other cells)
+              const heightWithoutScript = row.offsetHeight;
+              
+              // Restore the preview
+              (previewDiv as HTMLElement).style.display = originalDisplay;
+              
+              // Use this "clean" height for line clamp calculation
+              setRowHeight(heightWithoutScript);
+            } else {
+              // Fallback if no preview div found
+              setRowHeight(row.offsetHeight);
             }
-            // Fallback: use offsetHeight for non-textarea cells
-            const cellHeight = td.offsetHeight || 38;
-            maxOtherCellHeight = Math.max(maxOtherCellHeight, cellHeight);
-          }
-        });
-        
-        if (maxOtherCellHeight !== rowHeight) {
-          setRowHeight(maxOtherCellHeight);
+          }, 100);
         }
       };
 
       // Initial measurement
       updateRowHeight();
 
-      // Use ResizeObserver with minimal debounce (10ms) to monitor row height changes
-      let resizeTimer: NodeJS.Timeout;
-      const observer = new ResizeObserver(() => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(updateRowHeight, 10);
-      });
+      // Use ResizeObserver to monitor row height changes
+      const observer = new ResizeObserver(updateRowHeight);
       const row = containerRef.current?.closest('tr');
       if (row) {
         observer.observe(row);
       }
 
       return () => {
-        clearTimeout(resizeTimer);
+        clearTimeout(timeoutId);
         observer.disconnect();
       };
     }
-  }, [effectiveExpanded, value, rowHeight]);
+  }, [effectiveExpanded, value]);
 
   // Calculate dynamic line clamp based on row height
   const getDynamicLineClamp = () => {

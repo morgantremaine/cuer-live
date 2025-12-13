@@ -38,13 +38,11 @@ const TextAreaCell = ({
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
-  // Direct DOM height - no React state for instant updates
+  const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
-  const skipNextDebouncedRef = useRef<boolean>(false);
-  const mountedRef = useRef<boolean>(false);
 
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -69,24 +67,18 @@ const TextAreaCell = ({
     return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
   };
 
-  // Track last height for change detection
-  const lastHeightRef = useRef<number>(38);
-
-  // Function to calculate required height - DIRECT DOM MANIPULATION for instant updates
+  // Function to calculate required height using a measurement div
   const calculateHeight = () => {
     if (!textareaRef.current || !measurementRef.current) return;
     
     const textarea = textareaRef.current;
     const measurementDiv = measurementRef.current;
     
-    // Get the current width using zoom-safe clientWidth
+    // Get the current width using zoom-safe clientWidth instead of getBoundingClientRect
     const textareaWidth = textarea.clientWidth;
-    if (textareaWidth === 0) return; // Not ready yet
     
-    // Update current width (still use state for resize detection)
-    if (textareaWidth !== currentWidth) {
-      setCurrentWidth(textareaWidth);
-    }
+    // Update current width
+    setCurrentWidth(textareaWidth);
     
     // Copy textarea styles to measurement div
     const computedStyle = window.getComputedStyle(textarea);
@@ -98,19 +90,21 @@ const TextAreaCell = ({
     measurementDiv.style.padding = computedStyle.padding;
     measurementDiv.style.border = computedStyle.border;
     measurementDiv.style.boxSizing = computedStyle.boxSizing;
+    // Always allow normal text wrapping in the measurement div
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
     // Set the content - strip brackets if renderBrackets is enabled AND not focused
+    // When focused, user sees raw text so we need to measure the raw text
     const textToMeasure = (renderBrackets && !isFocused)
       ? stripBracketFormatting(debouncedValue.value)
       : debouncedValue.value;
-    measurementDiv.textContent = textToMeasure || ' ';
+    measurementDiv.textContent = textToMeasure || ' '; // Use space for empty content
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
     
-    // Calculate minimum height (single line)
+    // Calculate minimum height (single line) with better line-height fallback
     const lineHeightValue = computedStyle.lineHeight;
     const lineHeight = lineHeightValue === 'normal' 
       ? parseFloat(computedStyle.fontSize) * 1.3 
@@ -121,35 +115,21 @@ const TextAreaCell = ({
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
     const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    
+    // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
-    // DIRECT DOM UPDATE - no React state, instant visual change
-    textarea.style.height = `${newHeight}px`;
-    lastHeightRef.current = newHeight;
-  };
-
-  // Initialize height on mount
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      // Small delay to ensure DOM is ready
-      requestAnimationFrame(() => {
-        calculateHeight();
-      });
+    // Always update height if it's different
+    if (newHeight !== calculatedHeight) {
+      setCalculatedHeight(newHeight);
     }
-  }, []);
+  };
 
   // Debounced height recalculation - only recalculate after user stops typing
   useEffect(() => {
-    // Skip if line-break just handled it
-    if (skipNextDebouncedRef.current) {
-      skipNextDebouncedRef.current = false;
-      return;
-    }
-    
     const timer = setTimeout(() => {
       calculateHeight();
-    }, 50);
+    }, 100); // 100ms debounce for height recalculation
     return () => clearTimeout(timer);
   }, [debouncedValue.value, isFocused]);
 
@@ -184,8 +164,6 @@ const TextAreaCell = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // For Cmd+Enter (Mac) or Ctrl+Enter (Windows), manually insert line break
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      const insertStart = performance.now();
-      
       e.preventDefault();
       e.stopPropagation();
       
@@ -200,13 +178,15 @@ const TextAreaCell = ({
       // Update the value using debounced handler
       debouncedValue.onChange(newValue);
       
-      // Set cursor position and value SYNCHRONOUSLY
-      textarea.value = newValue;
-      textarea.setSelectionRange(start + 1, start + 1);
+      // Immediately recalculate height after line break insertion
+      setTimeout(() => {
+        calculateHeight();
+      }, 0);
       
-      // SYNCHRONOUS height calculation - instant row resize
-      skipNextDebouncedRef.current = true; // Prevent debounced effect from conflicting
-      calculateHeight();
+      // Set cursor position after the inserted line break
+      setTimeout(() => {
+        textarea.setSelectionRange(start + 1, start + 1);
+      }, 0);
       
       return;
     }
@@ -396,7 +376,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            minHeight: '38px', // CSS min-height only, actual height set via DOM
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
