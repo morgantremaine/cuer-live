@@ -102,22 +102,27 @@ export const useConsolidatedRealtimeRundown = ({
 
         if (serverDoc > localDoc || forceSync) {
           const missedUpdates = serverDoc - localDoc;
-          console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
           
-          // Update tracking state BEFORE callbacks
+          // Update tracking state regardless
           state.lastProcessedDocVersion = serverDoc;
           state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
 
-          // ALWAYS apply callbacks - the callback layer handles baseline updates
-          // This is simpler than conditional logic here
-          state.callbacks.onRundownUpdate.forEach(cb => {
-            try { cb(data); } catch (err) { console.error('Error in callback:', err); }
-          });
+          // Only call callbacks if there are ACTUAL missed updates
+          if (missedUpdates > 0) {
+            console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
+            
+            state.callbacks.onRundownUpdate.forEach(cb => {
+              try { cb(data); } catch (err) { console.error('Error in callback:', err); }
+            });
 
-          if (missedUpdates > 0 && !isInitialLoadRef.current) {
-            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
+            if (!isInitialLoadRef.current) {
+              toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
+            }
+            return true;
+          } else {
+            console.log('📊 Catch-up sync: forceSync verified - already in sync');
           }
-          return true;
+          return false;
         } else {
           console.log('📊 Catch-up sync: already up to date');
         }
