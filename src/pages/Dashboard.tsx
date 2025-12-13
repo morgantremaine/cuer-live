@@ -18,7 +18,7 @@ import { useRundownFolders } from '@/hooks/useRundownFolders';
 import { useTeam } from '@/hooks/useTeam';
 import { useRundownLimits } from '@/hooks/useRundownLimits';
 import { useToast } from '@/hooks/use-toast';
-import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+
 import { useAdminTeams } from '@/hooks/useAdminTeams';
 import { Column } from '@/types/columns';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -51,8 +51,6 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { adminTeams } = useAdminTeams();
   
-  // Enable realtime notifications for connection issues
-  useRealtimeNotifications();
   // Remove unused useColumnsManager import since useUserColumnPreferences handles columns now
   const isMobile = useIsMobile();
   
