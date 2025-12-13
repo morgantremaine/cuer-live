@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 import { realtimeReset } from '@/utils/realtimeReset';
-
+import { supabase } from '@/integrations/supabase/client';
 interface UseADViewConnectionHealthProps {
   rundownId: string;
   enabled?: boolean;
@@ -79,6 +79,20 @@ export const useADViewConnectionHealth = ({
     isRecoveringRef.current = true;
     
     try {
+      // First verify auth session is valid - catches network drops and token refresh failures
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session) {
+        console.warn('📺 AD View: Auth session invalid or network error - skipping recovery');
+        setState(prev => ({
+          ...prev,
+          showConnectionWarning: true,
+          consecutiveFailures: prev.consecutiveFailures + 1
+        }));
+        isRecoveringRef.current = false;
+        return;
+      }
+      
       console.warn('📺 AD View: Stale connection detected, attempting nuclear reset...');
       
       // Use nuclear reset
