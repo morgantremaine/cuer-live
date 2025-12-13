@@ -259,7 +259,7 @@ const RegularRow = (props: RegularRowProps) => {
       userRole={userRole}
     >
       <tr 
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-8 min-h-8 animate-fade-in`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer animate-fade-in`}
         style={{ 
           backgroundColor,
           contain: 'style paint'
