@@ -65,43 +65,21 @@ const TextAreaCell = ({
     return text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, ' $1 ').trim();
   };
 
-  // Function to calculate required height using scrollHeight for immediate response
+  // Function to calculate required height using scrollHeight
   const calculateHeight = () => {
     if (!textareaRef.current) return;
     
     const textarea = textareaRef.current;
     
-    // Reset height to auto to get accurate scrollHeight
-    const originalHeight = textarea.style.height;
+    // Temporarily collapse to get true scrollHeight
     textarea.style.height = 'auto';
+    textarea.style.height = '0';
     
-    // Get the natural scroll height
-    const scrollHeight = textarea.scrollHeight;
+    const newHeight = Math.max(textarea.scrollHeight, 38);
     
-    // Restore original height to prevent flicker
-    textarea.style.height = originalHeight;
+    // Apply the height immediately
+    textarea.style.height = `${newHeight}px`;
     
-    // Calculate minimum height (single line)
-    const computedStyle = window.getComputedStyle(textarea);
-    const lineHeightValue = computedStyle.lineHeight;
-    const lineHeight = lineHeightValue === 'normal' 
-      ? parseFloat(computedStyle.fontSize) * 1.3 
-      : parseFloat(lineHeightValue) || parseFloat(computedStyle.fontSize) * 1.3 || 20;
-    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
-    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
-    
-    const minHeight = lineHeight + paddingTop + paddingBottom;
-    
-    // Use the larger of scroll height or minimum height
-    const newHeight = Math.max(scrollHeight, minHeight, 38);
-    
-    // Update current width for resize observer
-    const textareaWidth = textarea.clientWidth;
-    if (textareaWidth !== currentWidth) {
-      setCurrentWidth(textareaWidth);
-    }
-    
-    // Always update height
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
@@ -333,6 +311,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
               delete cellRefs.current[cellKey];
             }
           }}
+          rows={1}
           value={debouncedValue.value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -355,8 +334,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: 'auto',
-            minHeight: '38px',
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
