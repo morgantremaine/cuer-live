@@ -164,8 +164,9 @@ const TextAreaCell = ({
     const textarea = e.target;
     debouncedValue.onChange(textarea.value, textarea);
     
-    // Immediate height adjustment for responsive condensing/expanding
+    // Immediate height adjustment - collapse first to get true scrollHeight
     textarea.style.height = 'auto';
+    textarea.style.height = '0';
     const scrollHeight = textarea.scrollHeight;
     const newHeight = Math.max(scrollHeight, 38);
     if (newHeight !== calculatedHeight) {
@@ -267,7 +268,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
 
   return (
-    <div className="relative w-full" style={{ backgroundColor }}>
+    <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: '38px' }}>
       
       {/* Clickable URL overlay when not focused */}
       {shouldShowClickableUrls && (
@@ -301,7 +302,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         </div>
       )}
       
-      <div className="w-full">
+      <div className="w-full flex-shrink-0">
         <textarea
           ref={(el) => {
             textareaRef.current = el;
