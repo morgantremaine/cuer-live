@@ -108,12 +108,10 @@ const TextAreaCell = ({
     const lineHeight = lineHeightValue === 'normal' 
       ? parseFloat(computedStyle.fontSize) * 1.3 
       : parseFloat(lineHeightValue) || parseFloat(computedStyle.fontSize) * 1.3 || 20;
-    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
-    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
-    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    const minHeight = lineHeight + borderTop + borderBottom;
     
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
@@ -313,7 +311,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         {/* Clickable URL overlay when not focused - positioned to allow editing */}
         {shouldShowClickableUrls && (
           <div
-            className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+            className={`absolute top-0 left-0 w-full h-full px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10 flex items-center`}
             style={{ 
               color: textColor || 'inherit',
               lineHeight: '1.3',
@@ -327,7 +325,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         {/* Bracket-styled overlay when not focused */}
         {shouldShowBrackets && (
           <div
-            className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
+            className={`absolute inset-0 px-3 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
             style={{ 
               color: textColor || 'inherit',
               lineHeight: '1.3',
@@ -367,7 +365,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
           data-field-key={`${itemId}-${resolvedFieldKey}`}
-          className={`w-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+          className={`w-full px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
             isDuration ? 'font-mono' : ''
           } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
           style={{ 
