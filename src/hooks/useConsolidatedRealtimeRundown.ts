@@ -138,12 +138,21 @@ export const useConsolidatedRealtimeRundown = ({
   performCatchupSyncRef.current = performCatchupSync;
 
   // Lightweight version check - queries only doc_version column
+  // Also verifies auth connectivity to catch token refresh failures early
   // Returns { success: true, needsSync: boolean } if check succeeded, or { success: false } if network error
   const checkServerVersion = useCallback(async (): Promise<{ success: boolean; needsSync: boolean }> => {
     const state = globalSubscriptions.get(rundownId || '');
     if (!rundownId || !state) return { success: false, needsSync: false };
 
     try {
+      // First verify auth session is still valid - catches network drops and token refresh failures
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session) {
+        console.warn('⚠️ Health check: auth session invalid or network error');
+        return { success: false, needsSync: false };
+      }
+
       const { data, error } = await supabase
         .from('rundowns')
         .select('doc_version')
