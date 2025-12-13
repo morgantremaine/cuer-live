@@ -325,33 +325,37 @@ const ExpandableScriptCell = ({
   };
 
   // Monitor row height changes for dynamic preview sizing
-  // Optimized: measure tallest non-script cell instead of hide/show DOM manipulation
+  // Read TextAreaCell's calculated style.height for accurate collapse behavior
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
       const updateRowHeight = () => {
-        const now = performance.now();
-        // Throttle to max 60fps (16ms) to prevent rapid-fire updates
-        if (now - lastRowHeightUpdateRef.current < 16) return;
-        
         const row = containerRef.current?.closest('tr');
         if (!row) return;
         
         // Find the script cell's td to exclude
         const scriptTd = containerRef.current?.closest('td');
         
-        // Measure tallest non-script cell directly (no DOM manipulation)
+        // Measure tallest non-script cell using their textarea's style.height (authoritative)
         let maxOtherCellHeight = 38; // Minimum row height
         const cells = row.querySelectorAll('td');
         cells.forEach((td) => {
           if (td !== scriptTd) {
-            // Use scrollHeight for accurate content height
-            const cellHeight = td.scrollHeight || td.offsetHeight;
+            // First try to get the textarea's explicit style.height set by TextAreaCell
+            const textarea = td.querySelector('textarea');
+            if (textarea && textarea.style.height) {
+              const styleHeight = parseFloat(textarea.style.height) || 0;
+              if (styleHeight > 0) {
+                maxOtherCellHeight = Math.max(maxOtherCellHeight, styleHeight + 16); // Add padding
+                return;
+              }
+            }
+            // Fallback: use offsetHeight for non-textarea cells
+            const cellHeight = td.offsetHeight || 38;
             maxOtherCellHeight = Math.max(maxOtherCellHeight, cellHeight);
           }
         });
         
         if (maxOtherCellHeight !== rowHeight) {
-          lastRowHeightUpdateRef.current = now;
           setRowHeight(maxOtherCellHeight);
         }
       };
@@ -359,14 +363,19 @@ const ExpandableScriptCell = ({
       // Initial measurement
       updateRowHeight();
 
-      // Use ResizeObserver to monitor row height changes
-      const observer = new ResizeObserver(updateRowHeight);
+      // Use ResizeObserver with minimal debounce (10ms) to monitor row height changes
+      let resizeTimer: NodeJS.Timeout;
+      const observer = new ResizeObserver(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(updateRowHeight, 10);
+      });
       const row = containerRef.current?.closest('tr');
       if (row) {
         observer.observe(row);
       }
 
       return () => {
+        clearTimeout(resizeTimer);
         observer.disconnect();
       };
     }
