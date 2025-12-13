@@ -133,10 +133,10 @@ export const useConsolidatedRealtimeRundown = ({
   const initializeChannel = useCallback(async () => {
     if (!rundownId) return;
 
-    // Guard: Don't reinitialize if already connected
+    // Guard: Don't reinitialize if channel already exists (connected or connecting)
     const existingState = globalSubscriptions.get(rundownId);
-    if (existingState?.isConnected && existingState?.subscription) {
-      console.log('📡 Consolidated channel already connected, skipping reinitialization');
+    if (existingState?.subscription) {
+      console.log('📡 Consolidated channel already exists (connected:', existingState.isConnected, ') - skipping reinitialization');
       return;
     }
 
