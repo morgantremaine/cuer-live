@@ -56,6 +56,7 @@ export const useConsolidatedRealtimeRundown = ({
   const isInitialLoadRef = useRef(true);
   const lastUpdateTimeRef = useRef<number>(Date.now());
   const lastCatchupAttemptRef = useRef<number>(0);
+  const performCatchupSyncRef = useRef<(forceSync?: boolean) => Promise<boolean>>();
   const MIN_CATCHUP_INTERVAL = 15000;
 
   // Catch-up sync - fetch latest data from database
@@ -132,6 +133,9 @@ export const useConsolidatedRealtimeRundown = ({
     }
     return false;
   }, [rundownId, hasPendingUpdates]);
+
+  // Keep ref updated with latest function
+  performCatchupSyncRef.current = performCatchupSync;
 
   // Initialize channel (called on mount and after nuclear reset)
   const initializeChannel = useCallback(async () => {
@@ -527,8 +531,8 @@ export const useConsolidatedRealtimeRundown = ({
           showcallerBroadcast.reinitialize(rundownId);
           cellBroadcast.reinitialize(rundownId);
           
-          setTimeout(async () => {
-            await performCatchupSync();
+        setTimeout(async () => {
+            await performCatchupSyncRef.current?.();
             lastUpdateTimeRef.current = Date.now();
           }, 2000);
         }
@@ -539,7 +543,7 @@ export const useConsolidatedRealtimeRundown = ({
       console.log(`⏰ Health check interval STOPPED for ${rundownId}`);
       clearInterval(checkInterval);
     };
-  }, [enabled, rundownId, performCatchupSync]); // Removed initializeChannel from deps
+  }, [enabled, rundownId]); // Removed performCatchupSync - using ref instead
 
   // Main subscription effect
   useEffect(() => {
