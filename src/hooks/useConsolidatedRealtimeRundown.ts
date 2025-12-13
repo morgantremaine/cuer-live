@@ -102,31 +102,22 @@ export const useConsolidatedRealtimeRundown = ({
 
         if (serverDoc > localDoc || forceSync) {
           const missedUpdates = serverDoc - localDoc;
+          console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
           
-          // Only apply callbacks if there are ACTUAL missed updates
-          // forceSync with 0 missed updates means we're just verifying state, not applying changes
-          // This prevents false "change detected" scenarios from object reference differences
-          if (missedUpdates > 0) {
-            console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
-            
-            // Update tracking state BEFORE callbacks
-            state.lastProcessedDocVersion = serverDoc;
-            state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+          // Update tracking state BEFORE callbacks
+          state.lastProcessedDocVersion = serverDoc;
+          state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
 
-            state.callbacks.onRundownUpdate.forEach(cb => {
-              try { cb(data); } catch (err) { console.error('Error in callback:', err); }
-            });
+          // ALWAYS apply callbacks - the callback layer handles baseline updates
+          // This is simpler than conditional logic here
+          state.callbacks.onRundownUpdate.forEach(cb => {
+            try { cb(data); } catch (err) { console.error('Error in callback:', err); }
+          });
 
-            if (!isInitialLoadRef.current) {
-              toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
-            }
-            return true;
-          } else {
-            // forceSync requested but already up to date - still update timestamps to prevent re-triggering
-            console.log('📊 Catch-up sync: forceSync requested but already up to date (no callbacks triggered)');
-            state.lastProcessedDocVersion = serverDoc;
-            state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+          if (missedUpdates > 0 && !isInitialLoadRef.current) {
+            toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
           }
+          return true;
         } else {
           console.log('📊 Catch-up sync: already up to date');
         }

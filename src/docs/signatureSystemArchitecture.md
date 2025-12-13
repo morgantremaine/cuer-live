@@ -156,11 +156,19 @@ if (currentSignature !== lastSavedSignature) {
 }
 ```
 
-### Per-Cell Save Integration
+### Server Data Baseline Synchronization (CRITICAL)
 ```typescript
-// Field-level signatures for granular saves
-const fieldSignature = createFieldSignature(itemId, fieldName, value)
-trackFieldChange(itemId, fieldName, fieldSignature)
+// SINGLE POINT: After ANY server data load, update the baseline
+// This prevents false "unsaved changes" from object reference differences
+
+// In useSimplifiedRundownState.ts:
+// 1. After initial database load
+// 2. After realtime updates (onRundownUpdate callback)
+// 3. After conflict resolution
+// 4. After data refresh/resumption
+
+actions.loadState(serverData);
+updateBaselineFromServerData(); // Sync signature baseline with current state
 ```
 
 ### Conflict Resolution Integration

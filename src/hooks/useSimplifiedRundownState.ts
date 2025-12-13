@@ -97,6 +97,9 @@ export const useSimplifiedRundownState = () => {
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
+  // Ref for updateBaselineFromServerData (populated after autoSave is created)
+  const updateBaselineRef = useRef<(() => void) | undefined>(undefined);
+  
   // Track last save time for race condition detection
   const lastSaveTimeRef = useRef<number>(0);
   
@@ -204,6 +207,9 @@ export const useSimplifiedRundownState = () => {
     if (mergedData.updated_at) {
       setLastKnownTimestamp(mergedData.updated_at);
     }
+    
+    // SINGLE POINT: Update baseline after conflict resolution
+    updateBaselineRef.current?.();
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline (no setTrackOwnUpdate needed - uses centralized tracker)
@@ -256,8 +262,14 @@ export const useSimplifiedRundownState = () => {
     isTypingActive, 
     triggerImmediateSave, 
     retryFailedSaves, 
-    getFailedSavesCount 
+    getFailedSavesCount,
+    updateBaselineFromServerData
   } = autoSave;
+
+  // Populate ref for use in callbacks defined before autoSave
+  useEffect(() => {
+    updateBaselineRef.current = updateBaselineFromServerData;
+  }, [updateBaselineFromServerData]);
   
   // Update the ref so useRundownState can use it
   markActiveTypingRef.current = markActiveTyping;
@@ -385,6 +397,9 @@ export const useSimplifiedRundownState = () => {
         // Track remote update time
         lastRemoteUpdateRef.current = Date.now();
         
+        // SINGLE POINT: Update baseline after server data load
+        updateBaselineRef.current?.();
+        
       } else {
         // Safety guard: Don't apply updates that would clear all items unless intentional
         // Also ensure we only update fields that are actually present in the payload
@@ -416,6 +431,9 @@ export const useSimplifiedRundownState = () => {
         // Only apply if we have fields to update
         if (Object.keys(updateData).length > 0) {
           actions.loadState(updateData);
+          
+          // SINGLE POINT: Update baseline after server data load
+          updateBaselineRef.current?.();
         }
         
         // REMOVED: blockUntilLocalEditRef blocking - autosave now operates independently
@@ -1294,6 +1312,18 @@ export const useSimplifiedRundownState = () => {
     loadRundown();
   }, [rundownId]); // Remove isInitialized dependency to prevent reload
 
+  // SINGLE POINT: Update baseline after initial load completes
+  useEffect(() => {
+    if (isInitialized && !isLoading && updateBaselineRef.current) {
+      // Small delay to ensure state has propagated
+      const timer = setTimeout(() => {
+        updateBaselineRef.current?.();
+        console.log('📊 Initial load complete - baseline updated');
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, isLoading]);
+
   // Handle data refreshing from resumption
   const handleDataRefresh = useCallback((latestData: any) => {
     // Update timestamp first
@@ -1340,6 +1370,9 @@ export const useSimplifiedRundownState = () => {
         externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes,
         docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
       });
+      
+      // SINGLE POINT: Update baseline after server data load
+      updateBaselineRef.current?.();
       return;
     }
     
@@ -1353,6 +1386,9 @@ export const useSimplifiedRundownState = () => {
       externalNotes: latestData.external_notes,
       docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
     });
+    
+    // SINGLE POINT: Update baseline after server data load
+    updateBaselineRef.current?.();
   }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
   // Simplified: No tab-based refresh needed with single sessions
