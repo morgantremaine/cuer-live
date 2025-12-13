@@ -95,7 +95,7 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className={`py-2 align-middle ${isCurrentSegmentName || activeEditor ? 'relative' : ''}`}
+            className={`align-middle ${isCurrentSegmentName || activeEditor ? 'relative' : ''}`}
             style={{ 
               width: normalizedWidth,
               minWidth: normalizedWidth,

@@ -37,7 +37,7 @@ const ExpandableScriptCell = ({
 }: ExpandableScriptCellProps) => {
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [lineClamp, setLineClamp] = useState(1); // Start with 1 line, expand dynamically
+  const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -111,32 +111,12 @@ const ExpandableScriptCell = ({
     };
   }, []);
 
-  // Measure row height using requestAnimationFrame - no debounce, single pass per render
+  // Clear row height when expanded to prevent stale ResizeObserver measurements
   useEffect(() => {
     if (effectiveExpanded) {
-      setLineClamp(1); // Reset when expanded
-      return;
+      setRowHeight(0);
     }
-    
-    const measureRowHeight = () => {
-      const row = containerRef.current?.closest('tr');
-      if (!row) return;
-      
-      const rowHeight = row.offsetHeight;
-      if (rowHeight === 0) return;
-      
-      const lineHeight = 20; // 1.25rem (20px)
-      const padding = 16; // py-1 = 8px top + 8px bottom
-      const availableHeight = rowHeight - padding;
-      const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
-      
-      setLineClamp(maxLines);
-    };
-    
-    // Single RAF measurement - synchronous within browser paint cycle
-    const rafId = requestAnimationFrame(measureRowHeight);
-    return () => cancelAnimationFrame(rafId);
-  }, [effectiveExpanded, value]);
+  }, [effectiveExpanded]);
 
   // Auto-focus the real textarea only when expanded via tab navigation (shouldAutoFocus = true)
   useEffect(() => {
@@ -325,9 +305,50 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Return dynamic line clamp calculated from row height
+  // Monitor row height changes for dynamic preview sizing
+  useEffect(() => {
+    if (!effectiveExpanded && containerRef.current) {
+      let timeoutId: NodeJS.Timeout;
+      
+      const updateRowHeight = () => {
+        const row = containerRef.current?.closest('tr');
+        if (row) {
+          // Debounce height updates to prevent scroll jumps during scrolling
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            const height = row.offsetHeight;
+            setRowHeight(height);
+          }, 100);
+        }
+      };
+
+      // Initial measurement
+      updateRowHeight();
+
+      // Use ResizeObserver to monitor row height changes
+      const observer = new ResizeObserver(updateRowHeight);
+      const row = containerRef.current?.closest('tr');
+      if (row) {
+        observer.observe(row);
+      }
+
+      return () => {
+        clearTimeout(timeoutId);
+        observer.disconnect();
+      };
+    }
+  }, [effectiveExpanded, value]);
+
+  // Calculate dynamic line clamp based on row height
   const getDynamicLineClamp = () => {
-    return lineClamp;
+    if (rowHeight === 0) return 1; // Default fallback
+    
+    const lineHeight = 20; // 1.25rem (20px) as specified in the styling
+    const padding = 16; // Account for py-1 (8px top + 8px bottom)
+    const availableHeight = rowHeight - padding;
+    const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
+    
+    return maxLines;
   };
 
   return (
