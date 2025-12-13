@@ -108,8 +108,10 @@ const TextAreaCell = ({
     const lineHeight = lineHeightValue === 'normal' 
       ? parseFloat(computedStyle.fontSize) * 1.3 
       : parseFloat(lineHeightValue) || parseFloat(computedStyle.fontSize) * 1.3 || 20;
-    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
-    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
+    const parsedPaddingTop = parseFloat(computedStyle.paddingTop);
+    const parsedPaddingBottom = parseFloat(computedStyle.paddingBottom);
+    const paddingTop = isNaN(parsedPaddingTop) ? 8 : parsedPaddingTop;
+    const paddingBottom = isNaN(parsedPaddingBottom) ? 8 : parsedPaddingBottom;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
