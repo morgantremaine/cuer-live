@@ -111,7 +111,7 @@ const TextAreaCell = ({
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
-    const minHeight = lineHeight + borderTop + borderBottom;
+    const minHeight = lineHeight + borderTop + borderBottom + 8; // +8 for py-1 (4px top + 4px bottom padding)
     
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
@@ -295,7 +295,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
 
   return (
     <div className="relative w-full flex items-center" style={{ backgroundColor }}>
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-auto">
         {/* Hidden measurement div */}
         <div
           ref={measurementRef}
@@ -365,12 +365,13 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
           data-field-key={`${itemId}-${resolvedFieldKey}`}
-          className={`w-full h-full px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden flex items-center ${
+          className={`w-full px-3 py-1 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
             isDuration ? 'font-mono' : ''
           } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
+            height: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
