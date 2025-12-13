@@ -43,7 +43,8 @@ const TextAreaCell = ({
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
-  const isRecalculatingRef = useRef<boolean>(false);
+  const skipNextDebouncedRef = useRef<boolean>(false);
+  const mountedRef = useRef<boolean>(false);
 
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -72,21 +73,15 @@ const TextAreaCell = ({
   const lastHeightRef = useRef<number>(38);
 
   // Function to calculate required height - DIRECT DOM MANIPULATION for instant updates
-  const calculateHeight = (source?: string) => {
-    // Guard against concurrent recalculations
-    if (isRecalculatingRef.current) return;
-    isRecalculatingRef.current = true;
-    
-    if (!textareaRef.current || !measurementRef.current) {
-      isRecalculatingRef.current = false;
-      return;
-    }
+  const calculateHeight = () => {
+    if (!textareaRef.current || !measurementRef.current) return;
     
     const textarea = textareaRef.current;
     const measurementDiv = measurementRef.current;
     
     // Get the current width using zoom-safe clientWidth
     const textareaWidth = textarea.clientWidth;
+    if (textareaWidth === 0) return; // Not ready yet
     
     // Update current width (still use state for resize detection)
     if (textareaWidth !== currentWidth) {
@@ -129,19 +124,32 @@ const TextAreaCell = ({
     const newHeight = Math.max(naturalHeight, minHeight);
     
     // DIRECT DOM UPDATE - no React state, instant visual change
-    if (newHeight !== lastHeightRef.current) {
-      textarea.style.height = `${newHeight}px`;
-      lastHeightRef.current = newHeight;
-    }
-    
-    isRecalculatingRef.current = false;
+    textarea.style.height = `${newHeight}px`;
+    lastHeightRef.current = newHeight;
   };
+
+  // Initialize height on mount
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      // Small delay to ensure DOM is ready
+      requestAnimationFrame(() => {
+        calculateHeight();
+      });
+    }
+  }, []);
 
   // Debounced height recalculation - only recalculate after user stops typing
   useEffect(() => {
+    // Skip if line-break just handled it
+    if (skipNextDebouncedRef.current) {
+      skipNextDebouncedRef.current = false;
+      return;
+    }
+    
     const timer = setTimeout(() => {
-      calculateHeight('useEffect-debounced');
-    }, 50); // Reduced from 100ms to 50ms for faster response
+      calculateHeight();
+    }, 50);
     return () => clearTimeout(timer);
   }, [debouncedValue.value, isFocused]);
 
@@ -197,8 +205,8 @@ const TextAreaCell = ({
       textarea.setSelectionRange(start + 1, start + 1);
       
       // SYNCHRONOUS height calculation - instant row resize
-      isRecalculatingRef.current = false;
-      calculateHeight('line-break');
+      skipNextDebouncedRef.current = true; // Prevent debounced effect from conflicting
+      calculateHeight();
       
       return;
     }
@@ -388,7 +396,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           style={{ 
             backgroundColor: 'transparent',
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
-            height: '38px', // Initial height, updated directly via DOM
+            minHeight: '38px', // CSS min-height only, actual height set via DOM
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
