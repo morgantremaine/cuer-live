@@ -278,8 +278,6 @@ export const useTeam = () => {
   const loadTeamData = useCallback(async () => {
     const currentActiveTeamId = activeTeamId;
     const loadKey = `${user?.id}-${currentActiveTeamId}`;
-    const loadStartTime = Date.now();
-    console.log('⏱️ [TEAM] loadTeamData START', { userId: user?.id?.slice(0,8), hasCachedTeam: !!globalTeamCache.get(loadKey) });
     
     if (!user?.id) {
       setIsLoading(false);
@@ -291,7 +289,6 @@ export const useTeam = () => {
     const cachedRole = globalRoleCache.get(loadKey);
     if (cachedTeam && cachedRole) {
       // Set cached data immediately - UI unblocks now
-      console.log('⏱️ [TEAM] Returning CACHED data immediately - UI should unblock');
       setTeam(cachedTeam);
       setUserRole(cachedRole);
       setError(null);
@@ -437,12 +434,6 @@ export const useTeam = () => {
             loadTeamMembers(targetTeamId);
             if (role === 'admin' || role === 'manager') {
               loadPendingInvitations(targetTeamId);
-            }
-            
-            const loadTime = Date.now() - loadStartTime;
-            console.log(`⏱️ [TEAM] loadTeamData COMPLETE in ${loadTime}ms`);
-            if (loadTime > 5000) {
-              console.warn(`⚠️ Team load took ${loadTime}ms - consider optimization`);
             }
           })(),
           // 20 second timeout to accommodate slow networks

@@ -71,10 +71,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   // Shared column name overrides from rundowns.columns (for built-in renamable columns)
   const [columnNameOverrides, setColumnNameOverrides] = useState<Record<string, string>>({});
   
-  // Strategic timing log
-  useEffect(() => {
-    console.log('⏱️ [COLUMNS] state changed - isLoading:', isLoading, 'teamColumnsLoading:', teamColumnsLoading, 'teamLoading:', teamLoading, 'team:', team?.id?.slice(0,8));
-  }, [isLoading, teamColumnsLoading, teamLoading, team?.id]);
 
   // Merge columns with team columns and apply shared name overrides
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], overrides: Record<string, string> = {}) => {

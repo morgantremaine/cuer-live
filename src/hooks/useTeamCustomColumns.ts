@@ -34,10 +34,6 @@ export const useTeamCustomColumns = () => {
   const loadingRef = useRef(false);
   const lastLoadedTeamRef = useRef<string | null>(null);
   
-  // Strategic timing log
-  useEffect(() => {
-    console.log('⏱️ [TEAM_COLS] state changed - loading:', loading, 'teamLoading:', teamLoading, 'team:', team?.id?.slice(0,8));
-  }, [loading, teamLoading, team?.id]);
 
   // Load team custom columns
   const loadTeamColumns = useCallback(async () => {

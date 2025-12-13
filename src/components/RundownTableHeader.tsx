@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   DndContext,
@@ -25,6 +24,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import ResizableColumnHeader from './ResizableColumnHeader';
 import HeaderContextMenu from './HeaderContextMenu';
 import { Column } from '@/types/columns';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
@@ -60,6 +60,9 @@ const RundownTableHeader = ({
   zoomLevel = 1
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  
+  // Call useTeamCustomColumns once at parent level instead of in each HeaderContextMenu
+  const { teamColumns } = useTeamCustomColumns();
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -359,6 +362,7 @@ const RundownTableHeader = ({
                        savedLayouts={savedLayouts}
                        onLoadLayout={onLoadLayout}
                        userColumns={allColumns}
+                       teamColumns={teamColumns}
                      >
                        {headerContent}
                      </HeaderContextMenu>
