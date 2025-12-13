@@ -39,6 +39,7 @@ const TextAreaCell = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
+  const [contentHeight, setContentHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
@@ -117,6 +118,11 @@ const TextAreaCell = ({
     
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
+    
+    // Track content height separately for vertical centering
+    if (naturalHeight !== contentHeight) {
+      setContentHeight(Math.max(naturalHeight, minHeight));
+    }
     
     // Always update height if it's different (removed the conservative condition)
     if (newHeight !== calculatedHeight) {
@@ -294,6 +300,9 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   
   // Determine if we should show any overlay
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
+  
+  // Calculate vertical padding to center content within cell
+  const verticalPadding = Math.max(0, (calculatedHeight - contentHeight) / 2);
 
   return (
     <div className="relative w-full flex items-center" style={{ backgroundColor, minHeight: calculatedHeight }}>
@@ -312,25 +321,29 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10 flex items-center`}
+          className={`absolute inset-0 px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
+            textAlign: isDuration ? 'center' : 'left',
+            paddingTop: `${8 + verticalPadding}px`,
+            paddingBottom: `${8 + verticalPadding}px`
           }}
         >
-          <span className="w-full">{renderTextWithClickableUrls(debouncedValue.value)}</span>
+          {renderTextWithClickableUrls(debouncedValue.value)}
         </div>
       )}
       
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-center gap-0.5 pointer-events-none z-10`}
+          className={`absolute inset-0 px-3 ${fontSize} ${fontWeight} flex flex-wrap items-start gap-0.5 pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
+            textAlign: isDuration ? 'center' : 'left',
+            paddingTop: `${8 + verticalPadding}px`,
+            paddingBottom: `${8 + verticalPadding}px`
           }}
         >
           {renderScriptWithBrackets(debouncedValue.value, { 
@@ -367,7 +380,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
           data-field-key={`${itemId}-${resolvedFieldKey}`}
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+          className={`w-full h-full px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
             isDuration ? 'font-mono' : ''
           } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
           style={{ 
@@ -375,7 +388,9 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
             color: showOverlay ? 'transparent' : (textColor || 'inherit'),
             height: `${calculatedHeight}px`,
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
+            textAlign: isDuration ? 'center' : 'left',
+            paddingTop: `${8 + verticalPadding}px`,
+            paddingBottom: `${8 + verticalPadding}px`
           }}
         />
       </div>
