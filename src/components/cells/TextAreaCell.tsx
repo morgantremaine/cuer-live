@@ -37,8 +37,7 @@ const TextAreaCell = ({
   onCellBlur
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
-  const [isSingleLine, setIsSingleLine] = useState<boolean>(true);
+  const [calculatedHeight, setCalculatedHeight] = useState<number>(34); // lineHeight(18) + padding(16)
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
@@ -73,7 +72,7 @@ const TextAreaCell = ({
       ? fontSize * 1.3 
       : parseFloat(lineHeightValue) || fontSize * 1.3 || 20;
     const basePadding = 8; // py-2 = 8px
-    const singleLineHeight = lineHeight + basePadding * 2;
+    const minCellHeight = lineHeight + basePadding * 2;
     
     // Temporarily set the value and height to measure accurately
     const originalValue = textarea.value;
@@ -90,12 +89,8 @@ const TextAreaCell = ({
     textarea.value = originalValue;
     textarea.style.height = originalHeight;
     
-    // Detect if content is single line (with small tolerance for browser variance)
-    const isSingle = naturalHeight <= singleLineHeight + 2;
-    setIsSingleLine(isSingle);
-    
-    // Use the larger of natural height or minimum height
-    const newHeight = Math.max(naturalHeight, singleLineHeight);
+    // Use the larger of natural height or minimum cell height
+    const newHeight = Math.max(naturalHeight, minCellHeight);
     
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
@@ -274,12 +269,8 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   // Determine if we should show any overlay
   const showOverlay = shouldShowClickableUrls || shouldShowBrackets;
   
-  // Calculate dynamic padding for vertical centering of single-line content
+  // Standard padding - height is handled by minHeight on container
   const basePadding = 8; // py-2 = 8px
-  const textHeight = 18; // Approximate single line text height
-  const centeredPaddingTop = isSingleLine && calculatedHeight > textHeight + basePadding * 2
-    ? Math.max(basePadding, (calculatedHeight - textHeight) / 2)
-    : basePadding;
 
   return (
     <div className="relative w-full" style={{ backgroundColor, minHeight: calculatedHeight }}>
@@ -287,13 +278,11 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 right-0 px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left',
-            paddingTop: `${centeredPaddingTop}px`,
-            paddingBottom: `${basePadding}px`
+            textAlign: isDuration ? 'center' : 'left'
           }}
         >
           {renderTextWithClickableUrls(debouncedValue.value)}
@@ -303,13 +292,11 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Bracket-styled overlay when not focused */}
       {shouldShowBrackets && (
         <div
-          className={`absolute top-0 left-0 right-0 px-3 ${fontSize} ${fontWeight} flex flex-wrap items-start gap-0.5 pointer-events-none z-10`}
+          className={`absolute top-0 left-0 right-0 px-3 py-2 ${fontSize} ${fontWeight} flex flex-wrap items-start gap-0.5 pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left',
-            paddingTop: `${centeredPaddingTop}px`,
-            paddingBottom: `${basePadding}px`
+            textAlign: isDuration ? 'center' : 'left'
           }}
         >
           {renderScriptWithBrackets(debouncedValue.value, { 
@@ -345,7 +332,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
@@ -354,9 +341,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           minHeight: `${calculatedHeight}px`,
           height: 'auto',
           lineHeight: '1.3',
-          textAlign: isDuration ? 'center' : 'left',
-          paddingTop: `${centeredPaddingTop}px`,
-          paddingBottom: `${basePadding}px`
+          textAlign: isDuration ? 'center' : 'left'
         }}
       />
     </div>
