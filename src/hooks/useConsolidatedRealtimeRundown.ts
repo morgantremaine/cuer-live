@@ -138,9 +138,10 @@ export const useConsolidatedRealtimeRundown = ({
   performCatchupSyncRef.current = performCatchupSync;
 
   // Lightweight version check - queries only doc_version column
-  const checkServerVersion = useCallback(async (): Promise<boolean> => {
+  // Returns { success: true, needsSync: boolean } if check succeeded, or { success: false } if network error
+  const checkServerVersion = useCallback(async (): Promise<{ success: boolean; needsSync: boolean }> => {
     const state = globalSubscriptions.get(rundownId || '');
-    if (!rundownId || !state) return false;
+    if (!rundownId || !state) return { success: false, needsSync: false };
 
     try {
       const { data, error } = await supabase
@@ -151,7 +152,7 @@ export const useConsolidatedRealtimeRundown = ({
 
       if (error) {
         console.warn('⚠️ Version check failed:', error.message);
-        return false;
+        return { success: false, needsSync: false };
       }
 
       const serverVersion = data?.doc_version || 0;
@@ -159,17 +160,18 @@ export const useConsolidatedRealtimeRundown = ({
       
       if (serverVersion > localVersion) {
         console.log(`🔍 Version mismatch detected: server=${serverVersion}, local=${localVersion} (${serverVersion - localVersion} missed)`);
-        return true;
+        return { success: true, needsSync: true };
       }
       
-      return false;
+      // Versions match - connection is proven healthy
+      return { success: true, needsSync: false };
     } catch (err) {
       console.warn('⚠️ Version check error:', err);
-      return false;
+      return { success: false, needsSync: false };
     }
   }, [rundownId]);
 
-  const checkServerVersionRef = useRef<() => Promise<boolean>>();
+  const checkServerVersionRef = useRef<() => Promise<{ success: boolean; needsSync: boolean }>>();
   checkServerVersionRef.current = checkServerVersion;
 
   // Initialize channel (called on mount and after nuclear reset)
@@ -530,19 +532,27 @@ export const useConsolidatedRealtimeRundown = ({
       }
 
       // PROACTIVE VERSION CHECK - detect desync within 60 seconds
-      const hasVersionMismatch = await checkServerVersionRef.current?.();
-      if (hasVersionMismatch) {
-        console.log('⏰ 60s health check: version mismatch - triggering catch-up sync');
-        await performCatchupSyncRef.current?.(true);
+      const versionCheckResult = await checkServerVersionRef.current?.();
+      
+      if (versionCheckResult?.success) {
+        // Version check succeeded - connection is proven healthy, reset stale timer
         lastUpdateTimeRef.current = Date.now();
-        return; // Skip stale check if we just synced
+        
+        if (versionCheckResult.needsSync) {
+          console.log('⏰ 60s health check: version mismatch - triggering catch-up sync');
+          await performCatchupSyncRef.current?.(true);
+        } else {
+          console.log('⏰ 60s health check: versions match, connection healthy');
+        }
+        return; // Skip stale check - connection is proven working
       }
 
+      // Version check failed (network error) - fall back to stale threshold as safety net
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      const STALE_THRESHOLD = 180000; // 3 minutes - secondary safety net
+      const STALE_THRESHOLD = 180000; // 3 minutes - secondary safety net for network errors
       const isStale = timeSinceLastUpdate > STALE_THRESHOLD;
 
-      console.log(`⏰ 60s health check: connected=${state.isConnected}, lastUpdate=${Math.round(timeSinceLastUpdate/1000)}s ago, stale=${isStale}`);
+      console.log(`⏰ 60s health check: version check failed, connected=${state.isConnected}, lastUpdate=${Math.round(timeSinceLastUpdate/1000)}s ago, stale=${isStale}`);
 
       if (!state.isConnected || isStale) {
         console.log('⏰ Connection stale or disconnected - performing nuclear reset');
