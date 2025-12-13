@@ -196,6 +196,7 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={isTimeField}
+      renderBrackets={column.key === 'talent' || column.key === 'gfx' || column.key === 'video' || column.isCustom}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
