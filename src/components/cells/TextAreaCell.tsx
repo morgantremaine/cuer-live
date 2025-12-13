@@ -367,7 +367,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
           data-field-key={`${itemId}-${resolvedFieldKey}`}
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+          className={`w-full h-full px-3 py-0 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
             isDuration ? 'font-mono' : ''
           } ${showOverlay ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
           style={{ 
