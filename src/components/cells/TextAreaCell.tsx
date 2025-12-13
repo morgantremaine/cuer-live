@@ -125,39 +125,26 @@ const TextAreaCell = ({
     }
   };
 
-  // Debounced height recalculation - only recalculate after user stops typing
+  // Immediate height recalculation for responsive expand/contract
   useEffect(() => {
-    const timer = setTimeout(() => {
-      calculateHeight();
-    }, 100); // 100ms debounce for height recalculation
-    return () => clearTimeout(timer);
+    calculateHeight();
   }, [debouncedValue.value, isFocused]);
 
-  // Recalculate height when textarea width changes (column resize)
   useEffect(() => {
     if (!textareaRef.current) return;
-    
-    let resizeTimer: NodeJS.Timeout;
     
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const newWidth = entry.contentRect.width;
         if (newWidth !== currentWidth && Math.abs(newWidth - currentWidth) > 1) {
-          // Debounce resize events too
-          clearTimeout(resizeTimer);
-          resizeTimer = setTimeout(() => {
-            calculateHeight();
-          }, 50);
+          calculateHeight();
         }
       }
     });
     
     resizeObserver.observe(textareaRef.current);
     
-    return () => {
-      clearTimeout(resizeTimer);
-      resizeObserver.disconnect();
-    };
+    return () => resizeObserver.disconnect();
   }, [currentWidth]);
 
   // Handle keyboard navigation and line breaks

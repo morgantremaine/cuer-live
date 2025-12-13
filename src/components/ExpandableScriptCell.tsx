@@ -186,13 +186,9 @@ const ExpandableScriptCell = ({
     textareaRef.current.style.height = `${Math.max(requiredHeight, 24)}px`;
   };
 
-  // Debounced height recalculation - only after typing stops
+  // Immediate height recalculation for responsive expand/contract
   useEffect(() => {
-    clearTimeout(heightCalcTimeoutRef.current);
-    heightCalcTimeoutRef.current = setTimeout(() => {
-      adjustHeight();
-    }, 100); // 100ms debounce
-    return () => clearTimeout(heightCalcTimeoutRef.current);
+    adjustHeight();
   }, [debouncedValue.value, showOverlay]);
 
   // Adjust height on mount and expansion
@@ -309,34 +305,25 @@ const ExpandableScriptCell = ({
   // Uses temporary hiding to measure row height driven by OTHER cells (not this script preview)
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
-      let timeoutId: NodeJS.Timeout;
-      
       const updateRowHeight = () => {
         const row = containerRef.current?.closest('tr');
         const previewDiv = containerRef.current?.querySelector('.script-preview-content');
         
-        if (row) {
-          // Debounce height updates to prevent scroll jumps during scrolling
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            if (previewDiv) {
-              // Temporarily hide the preview to measure row height from OTHER cells only
-              const originalDisplay = (previewDiv as HTMLElement).style.display;
-              (previewDiv as HTMLElement).style.display = 'none';
-              
-              // Measure the row height (driven by other cells)
-              const heightWithoutScript = row.offsetHeight;
-              
-              // Restore the preview
-              (previewDiv as HTMLElement).style.display = originalDisplay;
-              
-              // Use this "clean" height for line clamp calculation
-              setRowHeight(heightWithoutScript);
-            } else {
-              // Fallback if no preview div found
-              setRowHeight(row.offsetHeight);
-            }
-          }, 100);
+        if (row && previewDiv) {
+          // Temporarily hide the preview to measure row height from OTHER cells only
+          const originalDisplay = (previewDiv as HTMLElement).style.display;
+          (previewDiv as HTMLElement).style.display = 'none';
+          
+          // Measure the row height (driven by other cells)
+          const heightWithoutScript = row.offsetHeight;
+          
+          // Restore the preview
+          (previewDiv as HTMLElement).style.display = originalDisplay;
+          
+          // Use this "clean" height for line clamp calculation
+          setRowHeight(heightWithoutScript);
+        } else if (row) {
+          setRowHeight(row.offsetHeight);
         }
       };
 
@@ -350,10 +337,7 @@ const ExpandableScriptCell = ({
         observer.observe(row);
       }
 
-      return () => {
-        clearTimeout(timeoutId);
-        observer.disconnect();
-      };
+      return () => observer.disconnect();
     }
   }, [effectiveExpanded, value]);
 
