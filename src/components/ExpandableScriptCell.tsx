@@ -49,6 +49,8 @@ const ExpandableScriptCell = ({
   const heightCalcTimeoutRef = useRef<NodeJS.Timeout>();
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
+  const isRecalculatingRef = useRef<boolean>(false);
+  const lastRowHeightUpdateRef = useRef<number>(0);
   
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -163,10 +165,17 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Simple height calculation with debouncing
+  // Simple height calculation with guard against cascading updates
   const adjustHeight = (source?: string) => {
+    // Guard against concurrent recalculations
+    if (isRecalculatingRef.current) return;
+    isRecalculatingRef.current = true;
+    
     const startTime = performance.now();
-    if (!textareaRef.current) return;
+    if (!textareaRef.current) {
+      isRecalculatingRef.current = false;
+      return;
+    }
     
     const prevHeight = textareaRef.current.style.height;
     
@@ -191,14 +200,9 @@ const ExpandableScriptCell = ({
     textareaRef.current.style.height = `${finalHeight}px`;
     
     const elapsed = performance.now() - startTime;
-    console.log(`📏 [ScriptCell] adjustHeight from=${source || 'unknown'}`, {
-      elapsed: elapsed.toFixed(2) + 'ms',
-      prevHeight,
-      finalHeight,
-      scrollHeight: textareaRef.current.scrollHeight,
-      badgeAdjustment,
-      textLength: debouncedValue.value.length
-    });
+    console.log(`📏 [ScriptCell] adjustHeight from=${source || 'unknown'} in ${elapsed.toFixed(2)}ms`);
+    
+    isRecalculatingRef.current = false;
   };
 
   // Debounced height recalculation - only after typing stops
@@ -321,49 +325,34 @@ const ExpandableScriptCell = ({
   };
 
   // Monitor row height changes for dynamic preview sizing
-  // Uses temporary hiding to measure row height driven by OTHER cells (not this script preview)
+  // Optimized: measure tallest non-script cell instead of hide/show DOM manipulation
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
-      let timeoutId: NodeJS.Timeout;
-      
       const updateRowHeight = () => {
-        const row = containerRef.current?.closest('tr');
-        const previewDiv = containerRef.current?.querySelector('.script-preview-content');
+        const now = performance.now();
+        // Throttle to max 60fps (16ms) to prevent rapid-fire updates
+        if (now - lastRowHeightUpdateRef.current < 16) return;
         
-        if (row) {
-          // Reduced debounce from 100ms to 30ms for faster response
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            const startTime = performance.now();
-            let heightWithoutScript: number;
-            
-            if (previewDiv) {
-              // Temporarily hide the preview to measure row height from OTHER cells only
-              const originalDisplay = (previewDiv as HTMLElement).style.display;
-              (previewDiv as HTMLElement).style.display = 'none';
-              
-              // Measure the row height (driven by other cells)
-              heightWithoutScript = row.offsetHeight;
-              
-              // Restore the preview
-              (previewDiv as HTMLElement).style.display = originalDisplay;
-            } else {
-              // Fallback if no preview div found
-              heightWithoutScript = row.offsetHeight;
-            }
-            
-            const elapsed = performance.now() - startTime;
-            
-            if (heightWithoutScript !== rowHeight) {
-              console.log(`📏 [ScriptCell] ResizeObserver row height change`, {
-                elapsed: elapsed.toFixed(2) + 'ms',
-                prevRowHeight: rowHeight,
-                newRowHeight: heightWithoutScript,
-                lineClamp: getDynamicLineClamp()
-              });
-              setRowHeight(heightWithoutScript);
-            }
-          }, 30); // Reduced from 100ms to 30ms
+        const row = containerRef.current?.closest('tr');
+        if (!row) return;
+        
+        // Find the script cell's td to exclude
+        const scriptTd = containerRef.current?.closest('td');
+        
+        // Measure tallest non-script cell directly (no DOM manipulation)
+        let maxOtherCellHeight = 38; // Minimum row height
+        const cells = row.querySelectorAll('td');
+        cells.forEach((td) => {
+          if (td !== scriptTd) {
+            // Use scrollHeight for accurate content height
+            const cellHeight = td.scrollHeight || td.offsetHeight;
+            maxOtherCellHeight = Math.max(maxOtherCellHeight, cellHeight);
+          }
+        });
+        
+        if (maxOtherCellHeight !== rowHeight) {
+          lastRowHeightUpdateRef.current = now;
+          setRowHeight(maxOtherCellHeight);
         }
       };
 
@@ -378,11 +367,10 @@ const ExpandableScriptCell = ({
       }
 
       return () => {
-        clearTimeout(timeoutId);
         observer.disconnect();
       };
     }
-  }, [effectiveExpanded, value]);
+  }, [effectiveExpanded, value, rowHeight]);
 
   // Calculate dynamic line clamp based on row height
   const getDynamicLineClamp = () => {

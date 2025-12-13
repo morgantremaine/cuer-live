@@ -43,6 +43,7 @@ const TextAreaCell = ({
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const lastHeartbeatRef = useRef<number>(0);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
+  const isRecalculatingRef = useRef<boolean>(false);
 
   // Debounced input handling - immediate UI updates, batched parent updates
   const debouncedValue = useDebouncedInput(
@@ -69,8 +70,15 @@ const TextAreaCell = ({
 
   // Function to calculate required height using a measurement div
   const calculateHeight = (source?: string) => {
+    // Guard against concurrent recalculations
+    if (isRecalculatingRef.current) return;
+    isRecalculatingRef.current = true;
+    
     const startTime = performance.now();
-    if (!textareaRef.current || !measurementRef.current) return;
+    if (!textareaRef.current || !measurementRef.current) {
+      isRecalculatingRef.current = false;
+      return;
+    }
     
     const textarea = textareaRef.current;
     const measurementDiv = measurementRef.current;
@@ -135,6 +143,8 @@ const TextAreaCell = ({
       });
       setCalculatedHeight(newHeight);
     }
+    
+    isRecalculatingRef.current = false;
   };
 
   // Debounced height recalculation - only recalculate after user stops typing
@@ -177,7 +187,6 @@ const TextAreaCell = ({
     // For Cmd+Enter (Mac) or Ctrl+Enter (Windows), manually insert line break
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       const insertStart = performance.now();
-      console.log('📏 [TextAreaCell] Line break START');
       
       e.preventDefault();
       e.stopPropagation();
@@ -197,13 +206,12 @@ const TextAreaCell = ({
       textarea.value = newValue;
       textarea.setSelectionRange(start + 1, start + 1);
       
-      // Immediately recalculate height using requestAnimationFrame for fastest response
-      requestAnimationFrame(() => {
-        calculateHeight('line-break-immediate');
-        console.log('📏 [TextAreaCell] Line break COMPLETE', {
-          totalElapsed: (performance.now() - insertStart).toFixed(2) + 'ms'
-        });
-      });
+      // Reset guard flag to allow immediate calculation
+      isRecalculatingRef.current = false;
+      
+      // Immediate synchronous height calculation - no debounce for line breaks
+      calculateHeight('line-break-immediate');
+      console.log(`📏 [TextAreaCell] Line break COMPLETE in ${(performance.now() - insertStart).toFixed(2)}ms`);
       
       return;
     }
