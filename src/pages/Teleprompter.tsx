@@ -194,9 +194,13 @@ const Teleprompter = () => {
         setError(`Unable to load rundown: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
+        const rawItems = data.items || [];
+        // Sort items by sortOrder for consistent display order (same as main rundown)
+        const sortedItems = [...rawItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+        
         const loadedData = {
           title: data.title || 'Untitled Rundown',
-          items: data.items || [],
+          items: sortedItems,
           startTime: data.startTime || '00:00:00'
         };
         
@@ -272,9 +276,13 @@ const Teleprompter = () => {
         .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
       if (!queryError && data) {
+        const rawItems = data.items || [];
+        // Sort items by sortOrder for consistent display order (same as main rundown)
+        const sortedItems = [...rawItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+        
         const refreshedData = {
           title: data.title || 'Untitled Rundown',
-          items: data.items || [],
+          items: sortedItems,
           startTime: data.startTime || '00:00:00',
           numberingLocked: data.numbering_locked,
           lockedRowNumbers: data.locked_row_numbers
