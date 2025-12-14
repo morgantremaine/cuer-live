@@ -744,7 +744,14 @@ export const useSimplifiedRundownState = () => {
           });
 
           if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
-            actionsRef.current.loadRemoteState({ items: updatedItems });
+            // If sortOrder was updated, re-sort the items array
+            if (update.field === 'sortOrder') {
+              const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+              console.log('📊 Applying remote sortOrder change - re-sorting items');
+              actionsRef.current.loadRemoteState({ items: sortedItems });
+            } else {
+              actionsRef.current.loadRemoteState({ items: updatedItems });
+            }
           }
       } catch (error) {
         console.error('📱 Error applying cell broadcast update:', error);
@@ -2125,6 +2132,30 @@ export const useSimplifiedRundownState = () => {
         }, 500); // 500ms protection window after drag ends
         console.log('🎯 [BROADCAST-FIRST] Drag ended - 500ms protection window active');
       }
-    }, [])
+    }, []),
+    
+    // Fractional indexing: track sortOrder changes for conflict-free reordering
+    // This uses the cell-level save system to persist and broadcast sortOrder changes
+    // NOTE: Local state is already updated by useDragAndDrop - this only handles persistence and broadcast
+    trackSortOrderChange: useCallback((itemId: string, newSortOrder: string) => {
+      console.log('📊 trackSortOrderChange:', { itemId, newSortOrder });
+      
+      // Use per-cell save system to persist
+      if (cellEditIntegration.isPerCellEnabled) {
+        cellEditIntegration.handleCellChange(itemId, 'sortOrder', newSortOrder);
+      }
+      
+      // Broadcast immediately for real-time sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          itemId,
+          'sortOrder',
+          newSortOrder,
+          currentUserId,
+          getTabId()
+        );
+      }
+    }, [cellEditIntegration, rundownId, currentUserId])
   };
 };
