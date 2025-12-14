@@ -7,9 +7,9 @@
 
 import { RundownItem } from '@/types/rundown';
 
-export type StructuralOperationType = 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
+export type StructuralOperationType = 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order';
 
-export type BroadcastFieldName = 'items:add' | 'items:remove' | 'items:remove-multiple' | 'items:copy' | 'items:reorder' | 'lock_state';
+export type BroadcastFieldName = 'items:add' | 'items:remove' | 'items:remove-multiple' | 'items:copy' | 'items:reorder' | 'lock_state' | 'sortOrder';
 
 /**
  * Maps database operation types to broadcast field names
@@ -23,7 +23,8 @@ export function mapOperationToBroadcastField(operationType: StructuralOperationT
     'copy_rows': 'items:copy',
     'move_rows': 'items:reorder',
     'reorder': 'items:reorder',
-    'toggle_lock': 'lock_state'
+    'toggle_lock': 'lock_state',
+    'update_sort_order': 'sortOrder'
   };
   
   return mapping[operationType];
