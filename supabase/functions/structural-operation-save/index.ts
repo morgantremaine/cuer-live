@@ -124,7 +124,38 @@ serve(async (req) => {
       numberingLocked: operation.operationData.numberingLocked
     });
 
+    // Generate a consistent lock ID from rundownId (hash to bigint)
+    const lockId = operation.rundownId.split('').reduce((acc, char) => {
+      return ((acc << 5) - acc) + char.charCodeAt(0);
+    }, 0);
+    
+    let lockAcquired = false;
+    
     try {
+      // Acquire advisory lock with retries (40 attempts × 500ms = 20s max wait)
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const { data: lockResult, error: lockError } = await supabase.rpc('pg_try_advisory_lock', { key: lockId });
+        
+        if (lockError) {
+          console.error(`⚠️ Lock attempt ${attempt + 1} failed:`, lockError);
+        } else if (lockResult === true) {
+          lockAcquired = true;
+          console.log(`🔒 Advisory lock acquired for rundown ${operation.rundownId} (attempt ${attempt + 1})`);
+          break;
+        }
+        
+        // Wait 500ms before next attempt
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      if (!lockAcquired) {
+        console.error('❌ Could not acquire advisory lock after 40 attempts');
+        return new Response(
+          JSON.stringify({ error: 'Could not acquire lock - server busy, please retry' }),
+          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       // Fetch current rundown from database
       const { data: rundown, error: fetchError } = await supabase
         .from('rundowns')
@@ -325,9 +356,16 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-    } catch (innerError) {
-      console.error('❌ Error during structural operation:', innerError);
-      throw innerError;
+    } finally {
+      // Always release the advisory lock
+      if (lockAcquired) {
+        const { error: unlockError } = await supabase.rpc('pg_advisory_unlock', { key: lockId });
+        if (unlockError) {
+          console.error('⚠️ Failed to release advisory lock:', unlockError);
+        } else {
+          console.log(`🔓 Advisory lock released for rundown ${operation.rundownId}`);
+        }
+      }
     }
 
   } catch (error) {
