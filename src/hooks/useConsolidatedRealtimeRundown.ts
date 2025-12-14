@@ -333,29 +333,54 @@ export const useConsolidatedRealtimeRundown = ({
     const hasShowcallerChanges = JSON.stringify(payload.new?.showcaller_state) !== JSON.stringify(payload.old?.showcaller_state);
     const hasBlueprintChanges = payload.table === 'blueprints';
 
-    // Update tracking state
+    // Update timestamp tracking (always update - used for staleness detection)
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
-    if (incomingDocVersion) {
-      globalState.lastProcessedDocVersion = incomingDocVersion;
-    }
     lastUpdateTimeRef.current = Date.now();
 
-    // Dispatch to callbacks
+    // Helper to update version only when update is actually applied
+    const updateVersionIfApplied = (applied: boolean) => {
+      if (applied && incomingDocVersion) {
+        globalState.lastProcessedDocVersion = incomingDocVersion;
+        console.log(`📊 Updated lastProcessedDocVersion to ${incomingDocVersion}`);
+      } else if (!applied && incomingDocVersion) {
+        console.log(`⏭️ Skipped version update (${incomingDocVersion}) - callback returned false/skipped`);
+      }
+    };
+
+    // Dispatch to callbacks - only update version if callback returns true (applied)
     if (hasBlueprintChanges) {
-      globalState.callbacks.onBlueprintUpdate.forEach((cb: (d: any) => void) => {
-        try { cb(payload.new); } catch (err) { console.error('Blueprint callback error:', err); }
+      let anyApplied = false;
+      globalState.callbacks.onBlueprintUpdate.forEach((cb: (d: any) => boolean | void) => {
+        try { 
+          const result = cb(payload.new); 
+          if (result !== false) anyApplied = true;
+        } catch (err) { console.error('Blueprint callback error:', err); }
       });
+      updateVersionIfApplied(anyApplied);
     } else if (hasShowcallerChanges && !hasContentChanges) {
-      globalState.callbacks.onShowcallerUpdate.forEach((cb: (d: any) => void) => {
-        try { cb(payload.new); } catch (err) { console.error('Showcaller callback error:', err); }
+      let anyApplied = false;
+      globalState.callbacks.onShowcallerUpdate.forEach((cb: (d: any) => boolean | void) => {
+        try { 
+          const result = cb(payload.new); 
+          if (result !== false) anyApplied = true;
+        } catch (err) { console.error('Showcaller callback error:', err); }
       });
+      updateVersionIfApplied(anyApplied);
     } else if (hasContentChanges) {
       // Use cell broadcasts for content - only fall back to database if unhealthy
       import('@/utils/cellBroadcast').then(({ cellBroadcast }) => {
         if (!cellBroadcast.isBroadcastHealthy(rundownId || '')) {
-          globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-            try { cb(payload.new); } catch (err) { console.error('Rundown callback error:', err); }
+          let anyApplied = false;
+          globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => boolean | void) => {
+            try { 
+              const result = cb(payload.new); 
+              if (result !== false) anyApplied = true;
+            } catch (err) { console.error('Rundown callback error:', err); }
           });
+          updateVersionIfApplied(anyApplied);
+        } else {
+          // Cell broadcast is healthy - update version since broadcast will handle sync
+          updateVersionIfApplied(true);
         }
       });
     }
