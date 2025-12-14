@@ -41,7 +41,9 @@ export const useDragAndDrop = (
   rundownId?: string | null,
   currentUserId?: string | null,
   recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void,
-  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void
+  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void,
+  // BROADCAST-FIRST: Notify parent when drag state changes to block incoming reorder broadcasts
+  setDragActive?: (active: boolean) => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -292,6 +294,9 @@ export const useDragAndDrop = (
     setDragTimeout();
     isDragActiveRef.current = true;
     
+    // BROADCAST-FIRST: Notify parent to block incoming reorder broadcasts
+    setDragActive?.(true);
+    
     if (process.env.NODE_ENV === 'development') {
       console.log('🎯 Drag state set:', {
         activeId: active.id,
@@ -300,7 +305,7 @@ export const useDragAndDrop = (
         isHeaderGroup
       });
     }
-   }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
+   }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout, setDragActive]);
 
   // @dnd-kit drag end handler
   const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {
@@ -532,8 +537,10 @@ export const useDragAndDrop = (
     } finally {
       console.log('🎯 Resetting drag state');
       resetDragState();
+      // BROADCAST-FIRST: Notify parent to re-enable incoming reorder broadcasts (with protection window)
+      setDragActive?.(false);
     }
-  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
+  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState, setDragActive]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
@@ -659,7 +666,9 @@ export const useDragAndDrop = (
     // No valid drop or same position - just reset
     console.log('🎯 No valid drop - resetting state');
     resetDragState();
-  }, [items, handleDndKitDragEnd, resetDragState]);
+    // BROADCAST-FIRST: Re-enable reorder broadcasts since we're not processing a drop
+    setDragActive?.(false);
+  }, [items, handleDndKitDragEnd, resetDragState, setDragActive]);
 
   // Create sortable items list for @dnd-kit
   const sortableItems = useMemo(() => 
