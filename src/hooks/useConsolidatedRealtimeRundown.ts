@@ -108,24 +108,23 @@ export const useConsolidatedRealtimeRundown = ({
         if (serverDoc > localDoc || forceSync) {
           const missedUpdates = serverDoc - localDoc;
           
-          // Update tracking state regardless
+          // Update tracking state
           state.lastProcessedDocVersion = serverDoc;
           state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
 
-          // Only call callbacks if there are ACTUAL missed updates
-          if (missedUpdates > 0) {
-            console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
+          // When forceSync is true, ALWAYS apply the data - this is the recovery path
+          // This ensures we reconcile actual data state, not just version numbers
+          if (missedUpdates > 0 || forceSync) {
+            console.log(`✅ Catch-up sync: applying ${forceSync ? 'forced sync' : missedUpdates + ' missed update(s)'} (server=${serverDoc}, local=${localDoc})`);
             
             state.callbacks.onRundownUpdate.forEach(cb => {
               try { cb(data); } catch (err) { console.error('Error in callback:', err); }
             });
 
-            if (!isInitialLoadRef.current) {
+            if (!isInitialLoadRef.current && missedUpdates > 0) {
               toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
             }
             return true;
-          } else {
-            console.log('📊 Catch-up sync: forceSync verified - already in sync');
           }
           return false;
         } else {
@@ -379,8 +378,10 @@ export const useConsolidatedRealtimeRundown = ({
           });
           updateVersionIfApplied(anyApplied);
         } else {
-          // Cell broadcast is healthy - update version since broadcast will handle sync
-          updateVersionIfApplied(true);
+          // Cell broadcast is healthy - DON'T update version here
+          // Let the actual cell broadcast application update the version
+          // This prevents false "in sync" state when broadcasts are skipped during structural operations
+          console.log('📡 Content changes detected but cell broadcast healthy - relying on broadcast channel');
         }
       });
     }
