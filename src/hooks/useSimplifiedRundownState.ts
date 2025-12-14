@@ -611,8 +611,10 @@ export const useSimplifiedRundownState = () => {
                   if (newItemsToAdd.length > 0) {
                     const newItems = [...stateRef.current.items];
                     newItems.splice(index, 0, ...newItemsToAdd);
+                    // Re-sort by sortOrder to ensure consistency across clients
+                    newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                     actionsRef.current.loadState({ items: newItems });
-                    
+                    console.log('📊 items:add batch - re-sorted by sortOrder', { count: newItemsToAdd.length });
                   }
                 }
               } else {
@@ -622,8 +624,10 @@ export const useSimplifiedRundownState = () => {
                 if (item && !stateRef.current.items.find(i => i.id === item.id)) {
                   const newItems = [...stateRef.current.items];
                   newItems.splice(index, 0, item);
+                  // Re-sort by sortOrder to ensure consistency across clients
+                  newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                   actionsRef.current.loadState({ items: newItems });
-                  
+                  console.log('📊 items:add single - re-sorted by sortOrder', { itemId: item.id, sortOrder: item.sortOrder });
                 }
               }
               break;
@@ -643,8 +647,10 @@ export const useSimplifiedRundownState = () => {
                 if (newItemsToAdd.length > 0) {
                   const newItems = [...stateRef.current.items];
                   newItems.splice(index, 0, ...newItemsToAdd);
+                  // Re-sort by sortOrder to ensure consistency across clients
+                  newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                   actionsRef.current.loadState({ items: newItems });
-                  
+                  console.log('📊 items:copy - re-sorted by sortOrder', { count: newItemsToAdd.length });
                 }
               }
               break;
