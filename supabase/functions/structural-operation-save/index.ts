@@ -221,37 +221,44 @@ serve(async (req) => {
       sortOrderUpdatesCount: operation.operationData.sortOrderUpdates?.length
     });
 
-    // Use advisory lock to serialize operations per rundown
+    // sortOrder updates don't need advisory locks - they're independent item-level updates
+    // Fractional indexing was designed specifically for conflict-free concurrent reordering
+    const needsLock = operation.operationType !== 'update_sort_order';
+    
     const lockId = getLockId(operation.rundownId);
     let lockAcquired = false;
     let retryCount = 0;
     const maxRetries = 40;
     const retryDelayMs = 500;
 
-    // Try to acquire advisory lock with retries
-    while (!lockAcquired && retryCount < maxRetries) {
-      const { data: lockResult, error: lockError } = await supabase
-        .rpc('pg_try_advisory_lock', { lock_id: lockId });
-      
-      if (lockError) {
-        console.error('❌ Lock error:', lockError);
-        // Fall through without lock - better to attempt the operation
-        break;
-      }
-      
-      if (lockResult === true) {
-        lockAcquired = true;
-        console.log(`🔒 Advisory lock acquired for rundown (attempt ${retryCount + 1})`);
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+    if (needsLock) {
+      // Try to acquire advisory lock with retries for operations that need serialization
+      while (!lockAcquired && retryCount < maxRetries) {
+        const { data: lockResult, error: lockError } = await supabase
+          .rpc('pg_try_advisory_lock', { lock_id: lockId });
+        
+        if (lockError) {
+          console.error('❌ Lock error:', lockError);
+          // Fall through without lock - better to attempt the operation
+          break;
+        }
+        
+        if (lockResult === true) {
+          lockAcquired = true;
+          console.log(`🔒 Advisory lock acquired for rundown (attempt ${retryCount + 1})`);
+        } else {
+          retryCount++;
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+          }
         }
       }
-    }
 
-    if (!lockAcquired && retryCount >= maxRetries) {
-      console.warn('⚠️ Could not acquire advisory lock after max retries, proceeding anyway');
+      if (!lockAcquired && retryCount >= maxRetries) {
+        console.warn('⚠️ Could not acquire advisory lock after max retries, proceeding anyway');
+      }
+    } else {
+      console.log('⚡ Bypassing advisory lock for update_sort_order (conflict-free operation)');
     }
 
     try {
