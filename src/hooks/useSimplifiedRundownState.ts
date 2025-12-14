@@ -568,6 +568,11 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
+              // Skip if we have an active local structural operation - our state takes priority
+              if (activeStructuralOperationRef.current) {
+                console.log('🛡️ Skipping reorder broadcast - local drag operation in progress');
+                break;
+              }
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
@@ -582,6 +587,11 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:add': {
+              // Skip if we have an active local structural operation
+              if (activeStructuralOperationRef.current) {
+                console.log('🛡️ Skipping add broadcast - local structural operation in progress');
+                break;
+              }
               const payload = update.value || {};
               
               // Check for batch add first (multiple items from undo/redo)
@@ -616,6 +626,11 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:copy': {
+              // Skip if we have an active local structural operation
+              if (activeStructuralOperationRef.current) {
+                console.log('🛡️ Skipping copy broadcast - local structural operation in progress');
+                break;
+              }
               // Handle immediate copy/paste for real-time collaboration
               const payload = update.value || {};
               const items = payload.items || [];
@@ -637,6 +652,11 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:remove': {
+              // Skip if we have an active local structural operation
+              if (activeStructuralOperationRef.current) {
+                console.log('🛡️ Skipping remove broadcast - local structural operation in progress');
+                break;
+              }
               const id = update.value?.id as string;
               if (id) {
                 const newItems = stateRef.current.items.filter(i => i.id !== id);
@@ -648,6 +668,11 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:remove-multiple': {
+              // Skip if we have an active local structural operation
+              if (activeStructuralOperationRef.current) {
+                console.log('🛡️ Skipping remove-multiple broadcast - local structural operation in progress');
+                break;
+              }
               const ids = update.value?.ids as string[];
               if (ids && Array.isArray(ids) && ids.length > 0) {
                 const newItems = stateRef.current.items.filter(i => !ids.includes(i.id));
@@ -2076,6 +2101,12 @@ export const useSimplifiedRundownState = () => {
     // Structural change handling
     markStructuralChange,
     clearStructuralChange,
+    
+    // Active structural operation flag for blocking remote broadcasts during local drags
+    setActiveStructuralOperation: useCallback((active: boolean) => {
+      activeStructuralOperationRef.current = active;
+      console.log(`🛡️ Active structural operation: ${active}`);
+    }, []),
     
     // Operation-based undo/redo system
     recordOperation,

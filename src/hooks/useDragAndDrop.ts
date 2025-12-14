@@ -41,7 +41,9 @@ export const useDragAndDrop = (
   rundownId?: string | null,
   currentUserId?: string | null,
   recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void,
-  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void
+  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void,
+  onDragOperationStart?: () => void,
+  onDragOperationEnd?: () => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -292,6 +294,9 @@ export const useDragAndDrop = (
     setDragTimeout();
     isDragActiveRef.current = true;
     
+    // Notify that a drag operation has started - block remote structural broadcasts
+    onDragOperationStart?.();
+    
     if (process.env.NODE_ENV === 'development') {
       console.log('🎯 Drag state set:', {
         activeId: active.id,
@@ -532,8 +537,14 @@ export const useDragAndDrop = (
     } finally {
       console.log('🎯 Resetting drag state');
       resetDragState();
+      
+      // Clear the active structural operation flag after a safety timeout
+      // This ensures the flag is cleared even if the save takes a while
+      setTimeout(() => {
+        onDragOperationEnd?.();
+      }, 5000);
     }
-  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
+  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState, onDragOperationEnd]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
