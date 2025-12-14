@@ -525,22 +525,28 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    console.log(`⏰ Health check interval STARTED for ${rundownId} - first check in 60s`);
+    console.log(`⏰ Health check interval STARTED for ${rundownId} - first check in 3m`);
 
     const checkInterval = setInterval(async () => {
+      // Skip if save is in progress
+      if (simpleConnectionHealth.isSaveInProgress(rundownId)) {
+        console.log('⏰ 3m health check: skipped (save in progress)');
+        return;
+      }
+      
       // Skip if reset already in progress
       if (realtimeReset.isResetInProgress()) {
-        console.log('⏰ 60s health check: skipped (reset in progress)');
+        console.log('⏰ 3m health check: skipped (reset in progress)');
         return;
       }
       
       const state = globalSubscriptions.get(rundownId);
       if (!state) {
-        console.log('⏰ 60s health check: skipped (no subscription state)');
+        console.log('⏰ 3m health check: skipped (no subscription state)');
         return;
       }
 
-      // PROACTIVE VERSION CHECK - detect desync within 60 seconds
+      // PROACTIVE VERSION CHECK - detect desync within 3 minutes
       const versionCheckResult = await checkServerVersionRef.current?.();
       
       if (versionCheckResult?.success) {
@@ -548,10 +554,10 @@ export const useConsolidatedRealtimeRundown = ({
         lastUpdateTimeRef.current = Date.now();
         
         if (versionCheckResult.needsSync) {
-          console.log('⏰ 60s health check: version mismatch - triggering catch-up sync');
+          console.log('⏰ 3m health check: version mismatch - triggering catch-up sync');
           await performCatchupSyncRef.current?.(true);
         } else {
-          console.log('⏰ 60s health check: versions match, connection healthy');
+          console.log('⏰ 3m health check: versions match, connection healthy');
         }
         return; // Skip stale check - connection is proven working
       }
@@ -561,10 +567,10 @@ export const useConsolidatedRealtimeRundown = ({
       const STALE_THRESHOLD = 180000; // 3 minutes - secondary safety net for network errors
       const isStale = timeSinceLastUpdate > STALE_THRESHOLD;
 
-      console.log(`⏰ 60s health check: version check failed, connected=${state.isConnected}, lastUpdate=${Math.round(timeSinceLastUpdate/1000)}s ago, stale=${isStale}`);
+      console.log(`⏰ 3m health check: version check failed, connected=${state.isConnected}, lastUpdate=${Math.round(timeSinceLastUpdate/1000)}s ago, stale=${isStale}`);
 
       if (!state.isConnected || isStale) {
-        console.log('⏰ Connection stale or disconnected - performing nuclear reset');
+        console.log('⏰ 3m health check: Connection stale or disconnected - performing nuclear reset');
         simpleConnectionHealth.cleanup(rundownId);
         
         const success = await realtimeReset.performNuclearReset();
@@ -600,7 +606,7 @@ export const useConsolidatedRealtimeRundown = ({
           }, 2000);
         }
       }
-    }, 60000); // Check every minute
+    }, 180000); // Check every 3 minutes
 
     return () => {
       console.log(`⏰ Health check interval STOPPED for ${rundownId}`);
