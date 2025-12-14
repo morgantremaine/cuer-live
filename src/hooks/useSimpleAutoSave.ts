@@ -145,24 +145,10 @@ export const useSimpleAutoSave = (
   const createContentSignatureFromState = useCallback((targetState: RundownState) => {
     const itemCount = targetState.items?.length || 0;
     
-    // FIXED: Create a more comprehensive cache key that includes actual content changes
-    const contentHash = targetState.items?.map(item => 
-      // Include all text fields that users can edit
-      `${item.id}:${item.name || ''}:${item.talent || ''}:${item.script || ''}:${item.gfx || ''}:${item.video || ''}:${item.images || ''}:${item.notes || ''}:${item.duration || ''}:${item.color || ''}`
-    ).join('|') || '';
-    
-    const cacheKey = JSON.stringify({
-      itemIds: targetState.items?.map(item => item.id) || [],
-      itemCount,
-      title: targetState.title || '',
-      startTime: targetState.startTime || '',
-      contentHash: contentHash.length > 1000 ? 
-        // For very long content, use a simple hash to avoid huge cache keys
-        contentHash.split('').reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0) 
-        : contentHash,
-      externalNotes: targetState.externalNotes || '',
-      timezone: targetState.timezone || ''
-    });
+    // SIMPLIFIED: Use cheap ID-based cache key instead of expensive content hashing
+    // The cache is just an optimization - cache misses are fine, but blocking main thread is not
+    const itemIds = targetState.items?.map(item => item.id).join(',') || '';
+    const cacheKey = `${rundownId}:${itemCount}:${itemIds}:${targetState.title || ''}`;
     
     // Check cache first for performance
     const cached = signatureCache.current.get(cacheKey);
