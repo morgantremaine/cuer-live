@@ -1618,6 +1618,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_item_sort_order: {
+        Args: {
+          p_item_id: string
+          p_rundown_id: string
+          p_sort_order: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       update_rundown_field_atomic: {
         Args: {
           field_name: string
