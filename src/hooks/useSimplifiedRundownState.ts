@@ -87,6 +87,11 @@ export const useSimplifiedRundownState = () => {
   // Track active structural operations to block realtime updates
   const activeStructuralOperationRef = useRef(false);
   
+  // Track active drag operation to ignore incoming reorder broadcasts
+  // This prevents race conditions when multiple users reorder simultaneously
+  const isDraggingRef = useRef(false);
+  const dragOperationTimeoutRef = useRef<NodeJS.Timeout>();
+  
   // Enhanced cooldown management with explicit flags  
   const blockUntilLocalEditRef = useRef(false);
   const cooldownUntilRef = useRef<number>(0);
@@ -568,6 +573,13 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
+              // GUARD: Ignore reorder broadcasts during active local drag
+              // This prevents race conditions when multiple users reorder simultaneously
+              if (isDraggingRef.current) {
+                console.log('🛡️ [BROADCAST-FIRST] Ignoring reorder broadcast during active drag');
+                break;
+              }
+              
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
@@ -2086,6 +2098,29 @@ export const useSimplifiedRundownState = () => {
       if (rundownId) {
         cellBroadcast.flushPendingBroadcasts(rundownId);
       }
-    }, [rundownId])
+    }, [rundownId]),
+    
+    // Drag state management for broadcast-first architecture
+    // Call setDragActive(true) when drag starts, setDragActive(false) when drag ends
+    // This prevents incoming reorder broadcasts from overwriting local drag state
+    setDragActive: useCallback((active: boolean) => {
+      isDraggingRef.current = active;
+      
+      // Clear any existing timeout
+      if (dragOperationTimeoutRef.current) {
+        clearTimeout(dragOperationTimeoutRef.current);
+      }
+      
+      if (active) {
+        console.log('🎯 [BROADCAST-FIRST] Drag started - blocking reorder broadcasts');
+      } else {
+        // Add a small delay before re-enabling broadcasts to ensure our save completes
+        dragOperationTimeoutRef.current = setTimeout(() => {
+          isDraggingRef.current = false;
+          console.log('🎯 [BROADCAST-FIRST] Drag protection window ended');
+        }, 500); // 500ms protection window after drag ends
+        console.log('🎯 [BROADCAST-FIRST] Drag ended - 500ms protection window active');
+      }
+    }, [])
   };
 };
