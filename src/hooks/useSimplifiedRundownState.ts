@@ -29,6 +29,7 @@ import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
+import { initializeSortOrders, compareSortOrder } from '@/utils/fractionalIndex';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -1274,9 +1275,12 @@ export const useSimplifiedRundownState = () => {
           if (error) {
             console.error('Error loading rundown:', error);
           } else if (data) {
-            const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
+            const rawItems = Array.isArray(data.items) && data.items.length > 0 
               ? data.items 
               : createDefaultRundownItems();
+            
+            // Initialize sortOrder for items that don't have it
+            const itemsToLoad = initializeSortOrders(rawItems) as RundownItem[];
 
             // Sync time from server timestamp and store it
             if (data.updated_at) {
