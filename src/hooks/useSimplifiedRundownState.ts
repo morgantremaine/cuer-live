@@ -2106,7 +2106,18 @@ export const useSimplifiedRundownState = () => {
     setActiveStructuralOperation: useCallback((active: boolean) => {
       activeStructuralOperationRef.current = active;
       console.log(`🛡️ Active structural operation: ${active}`);
-    }, []),
+      
+      // When clearing the flag, trigger catch-up sync to get any missed broadcasts
+      if (!active && rundownId) {
+        // Small delay to allow any pending broadcasts to settle
+        setTimeout(() => {
+          if (!activeStructuralOperationRef.current) { // Double-check we're not in a new operation
+            console.log('🔄 Structural operation ended - catching up with database');
+            performCatchupSync?.(true); // Force sync to get authoritative state
+          }
+        }, 500);
+      }
+    }, [rundownId, performCatchupSync]),
     
     // Operation-based undo/redo system
     recordOperation,
