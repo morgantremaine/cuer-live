@@ -18,12 +18,21 @@ export interface SimpleHealthStatus {
 class SimpleConnectionHealthService {
   private channelStatus = new Map<string, { consolidated: boolean; showcaller: boolean; cell: boolean }>();
   private subscribers = new Map<string, Set<(status: SimpleHealthStatus) => void>>();
+  private saveInProgress = new Map<string, boolean>();
 
   private getStatus(rundownId: string) {
     if (!this.channelStatus.has(rundownId)) {
       this.channelStatus.set(rundownId, { consolidated: false, showcaller: false, cell: false });
     }
     return this.channelStatus.get(rundownId)!;
+  }
+
+  setSaveInProgress(rundownId: string, inProgress: boolean): void {
+    this.saveInProgress.set(rundownId, inProgress);
+  }
+
+  isSaveInProgress(rundownId: string): boolean {
+    return this.saveInProgress.get(rundownId) || false;
   }
 
   setConsolidatedConnected(rundownId: string, connected: boolean): void {

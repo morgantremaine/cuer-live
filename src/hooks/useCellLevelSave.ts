@@ -5,6 +5,7 @@ import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 import { saveWithTimeout } from '@/utils/saveTimeout';
+import { simpleConnectionHealth } from '@/services/SimpleConnectionHealth';
 import { toast } from 'sonner';
 
 interface FieldUpdate {
@@ -153,6 +154,9 @@ export const useCellLevelSave = (
       return;
     }
 
+    // Track save-in-progress for health check coordination
+    simpleConnectionHealth.setSaveInProgress(rundownId, true);
+
     const updatesToSave = [...pendingUpdatesRef.current];
     pendingUpdatesRef.current = [];
 
@@ -271,6 +275,9 @@ export const useCellLevelSave = (
         if (onSaveComplete) {
           onSaveComplete(updatesToSave, saveCompletionCountRef.current);
         }
+        
+        // Clear save-in-progress flag on success
+        simpleConnectionHealth.setSaveInProgress(rundownId, false);
         
         return {
           updatedAt: data.updatedAt,
