@@ -2108,22 +2108,44 @@ export const useSimplifiedRundownState = () => {
     
     // Active structural operation flag for blocking remote broadcasts during local drags
     setActiveStructuralOperation: useCallback((active: boolean) => {
-      activeStructuralOperationRef.current = active;
-      console.log(`🛡️ Active structural operation: ${active}`);
+      // When setting to true, immediately set the flag
+      if (active) {
+        activeStructuralOperationRef.current = true;
+        console.log(`🛡️ Active structural operation: true`);
+        return;
+      }
       
-      // When clearing the flag, trigger catch-up sync to get any missed broadcasts
+      // When clearing the flag, KEEP IT TRUE until catch-up sync completes
+      // This prevents race conditions where broadcasts arrive between save completion and sync
       if (!active && rundownId) {
+        console.log('🔄 Structural operation save complete - starting catch-up sync (flag still TRUE)');
+        
         // Small delay to allow any pending broadcasts to settle
-        setTimeout(() => {
-          const flagValue = activeStructuralOperationRef.current;
-          console.log('🔄 Catch-up sync check:', { flagValue, rundownId, hasSync: !!performCatchupSync });
-          if (!flagValue) {
-            console.log('🔄 Structural operation ended - catching up with database');
-            performCatchupSync?.(true); // Force sync to get authoritative state
-          } else {
-            console.log('🔄 Skipping catch-up - new operation in progress');
+        setTimeout(async () => {
+          // Check if a new operation started
+          if (!activeStructuralOperationRef.current) {
+            console.log('🔄 Skipping catch-up - flag was already cleared by another operation');
+            return;
+          }
+          
+          console.log('🔄 Catch-up sync starting...', { rundownId, hasSync: !!performCatchupSync });
+          
+          try {
+            // Perform catch-up sync WHILE flag is still true
+            await performCatchupSync?.(true); // Force sync to get authoritative state
+            console.log('🔄 Catch-up sync complete - NOW clearing flag');
+          } catch (err) {
+            console.error('🔄 Catch-up sync error:', err);
+          } finally {
+            // NOW clear the flag after sync completes
+            activeStructuralOperationRef.current = false;
+            console.log(`🛡️ Active structural operation: false`);
           }
         }, 500);
+      } else if (!active) {
+        // No rundownId, just clear immediately
+        activeStructuralOperationRef.current = false;
+        console.log(`🛡️ Active structural operation: false (no rundownId)`);
       }
     }, [rundownId, performCatchupSync]),
     
