@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { debugLogger } from '@/utils/debugLogger';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
-import { generateKeyBetween } from '@/utils/fractionalIndex';
+import { generateKeyBetween, compareSortOrder } from '@/utils/fractionalIndex';
 
 export interface RundownState {
   items: RundownItem[];
@@ -52,7 +52,8 @@ type RundownAction =
   | { type: 'SET_NUMBERING_LOCKED'; payload: boolean } // Set lock state
   | { type: 'SET_LOCKED_ROW_NUMBERS'; payload: { [itemId: string]: string } } // Set locked numbers
   | { type: 'LOAD_STATE'; payload: Partial<RundownState> }
-  | { type: 'LOAD_REMOTE_STATE'; payload: Partial<RundownState> }; // Silent load for remote updates
+  | { type: 'LOAD_REMOTE_STATE'; payload: Partial<RundownState> } // Silent load for remote updates
+  | { type: 'UPDATE_SORT_ORDERS'; payload: Array<{ itemId: string; sortOrder: string }> }; // Functional sortOrder update
 
 const initialState: RundownState = {
   items: [],
@@ -328,6 +329,25 @@ function rundownReducer(
         // Don't update lastChanged for remote updates
       };
     }
+    
+    case 'UPDATE_SORT_ORDERS': {
+      // Surgical update: apply sortOrder changes to specific items and re-sort
+      // This uses functional state update - no stale ref reads needed!
+      const updates = action.payload;
+      const updatedItems = state.items.map(item => {
+        const update = updates.find(u => u.itemId === item.id);
+        return update ? { ...item, sortOrder: update.sortOrder } : item;
+      });
+      const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+      
+      debugLogger.autosave('UPDATE_SORT_ORDERS applied - surgical update, no stale ref');
+      return {
+        ...state,
+        items: sortedItems,
+        hasUnsavedChanges: false, // Remote updates should not trigger saves
+      };
+    }
+    
     default:
       return state;
   }
@@ -533,6 +553,11 @@ export const useRundownState = (
     
     reorderItems: (fromIndex: number, toIndex: number, count?: number) => {
       dispatch({ type: 'REORDER_ITEMS', payload: { fromIndex, toIndex, count } });
+    },
+    
+    // Functional sortOrder update - uses reducer for guaranteed current state
+    updateSortOrders: (updates: Array<{ itemId: string; sortOrder: string }>) => {
+      dispatch({ type: 'UPDATE_SORT_ORDERS', payload: updates });
     },
     
     setColumns: (columns: Column[]) => dispatch({ type: 'SET_COLUMNS', payload: columns }),

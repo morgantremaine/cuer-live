@@ -88,10 +88,8 @@ export const useSimplifiedRundownState = () => {
   // Track active structural operations to block realtime updates
   const activeStructuralOperationRef = useRef(false);
   
-  // Track active drag operation to ignore incoming reorder broadcasts
-  // This prevents race conditions when multiple users reorder simultaneously
-  const isDraggingRef = useRef(false);
-  const dragOperationTimeoutRef = useRef<NodeJS.Timeout>();
+  // Note: isDraggingRef removed - no longer needed with functional sortOrder updates
+  // The reducer-based UPDATE_SORT_ORDERS action operates on current state, not stale refs
   
   // Enhanced cooldown management with explicit flags  
   const blockUntilLocalEditRef = useRef(false);
@@ -574,12 +572,8 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
-              // GUARD: Ignore reorder broadcasts during active local drag
-              // This prevents race conditions when multiple users reorder simultaneously
-              if (isDraggingRef.current) {
-                console.log('🛡️ [BROADCAST-FIRST] Ignoring reorder broadcast during active drag');
-                break;
-              }
+              // Legacy reorder handler - kept for backwards compatibility
+              // New reordering uses sortOrder field with fractional indexing
               
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
@@ -689,34 +683,16 @@ export const useSimplifiedRundownState = () => {
             }
             case 'sortOrder': {
               // Handle sortOrder updates from other users' drag operations
-              if (isDraggingRef.current) {
-                console.log('📡 Ignoring sortOrder broadcast - local drag in progress');
-                return;
-              }
-              
+              // Uses functional state update via reducer - no stale ref issues!
               const { sortOrderUpdates } = update.value || {};
               if (sortOrderUpdates && Array.isArray(sortOrderUpdates) && sortOrderUpdates.length > 0) {
-                const currentItems = stateRef.current.items;
-                
-                // Apply sortOrder updates to items
-                const updatedItems = currentItems.map(item => {
-                  const updateEntry = sortOrderUpdates.find((u: { itemId: string; sortOrder: string }) => u.itemId === item.id);
-                  if (updateEntry) {
-                    return { ...item, sortOrder: updateEntry.sortOrder };
-                  }
-                  return item;
+                console.log('📡 Applying remote sortOrder changes via functional update', {
+                  updateCount: sortOrderUpdates.length
                 });
                 
-                // Re-sort by sortOrder
-                const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-                
-                console.log('📡 Applied remote sortOrder changes and re-sorted', {
-                  updateCount: sortOrderUpdates.length,
-                  itemCount: sortedItems.length
-                });
-                
-                stateRef.current = { ...stateRef.current, items: sortedItems };
-                actionsRef.current.loadRemoteState({ items: sortedItems });
+                // Use the reducer-based updateSortOrders action
+                // This operates on React's current state, not stateRef
+                actionsRef.current.updateSortOrders(sortOrderUpdates);
               }
               break;
             }
@@ -2243,26 +2219,13 @@ export const useSimplifiedRundownState = () => {
       }
     }, [rundownId]),
     
-    // Drag state management for broadcast-first architecture
-    // Call setDragActive(true) when drag starts, setDragActive(false) when drag ends
-    // This prevents incoming reorder broadcasts from overwriting local drag state
+    // Drag state tracking - simplified with functional sortOrder updates
+    // Protection windows no longer needed: reducer operates on current state, not stale refs
     setDragActive: useCallback((active: boolean) => {
-      isDraggingRef.current = active;
-      
-      // Clear any existing timeout
-      if (dragOperationTimeoutRef.current) {
-        clearTimeout(dragOperationTimeoutRef.current);
-      }
-      
       if (active) {
-        console.log('🎯 [BROADCAST-FIRST] Drag started - blocking reorder broadcasts');
+        console.log('🎯 Drag started');
       } else {
-        // Add a small delay before re-enabling broadcasts to ensure our save completes
-        dragOperationTimeoutRef.current = setTimeout(() => {
-          isDraggingRef.current = false;
-          console.log('🎯 [BROADCAST-FIRST] Drag protection window ended');
-        }, 500); // 500ms protection window after drag ends
-        console.log('🎯 [BROADCAST-FIRST] Drag ended - 500ms protection window active');
+        console.log('🎯 Drag ended');
       }
     }, []),
     
