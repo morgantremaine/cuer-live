@@ -17,6 +17,10 @@ const CAMEL_TO_SNAKE_FIELD_MAP: Record<string, string> = {
   lockedRowNumbers: 'locked_row_numbers'
 }
 
+// STRUCTURAL FIELDS - these are handled by structural-operation-save with advisory locks
+// Skip them here to prevent race conditions causing data loss
+const STRUCTURAL_FIELDS = ['sortOrder', 'rowNumber'];
+
 interface FieldUpdate {
   itemId?: string;
   field: string;
@@ -180,6 +184,12 @@ serve(async (req) => {
     let hasActualChanges = false;
     
     for (const update of fieldUpdates) {
+      // Skip structural fields - handled by structural-operation-save with advisory locks
+      if (STRUCTURAL_FIELDS.includes(update.field)) {
+        console.log(`⏭️ Skipping structural field ${update.field} - handled by structural-operation-save`);
+        continue;
+      }
+      
       if (update.itemId) {
         const itemIndex = updatedItems.findIndex(item => item.id === update.itemId)
         if (itemIndex >= 0) {
