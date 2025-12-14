@@ -311,14 +311,14 @@ export const useSimplifiedRundownState = () => {
     blockUntilLocalEditRef,
     // Pass hasPendingUpdates function via ref (populated after cellEditIntegration init)
     hasPendingUpdates: () => hasPendingUpdatesRef.current?.() || false,
-    onRundownUpdate: useCallback((updatedRundown) => {
+    onRundownUpdate: useCallback((updatedRundown): boolean => {
       // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
         const incomingTime = new Date(updatedRundown.updated_at).getTime();
         const knownTime = new Date(lastKnownTimestamp).getTime();
         
         if (incomingTime <= knownTime) {
-          return;
+          return false; // Update was skipped - don't update version tracking
         }
       }
       
@@ -401,6 +401,7 @@ export const useSimplifiedRundownState = () => {
         // SINGLE POINT: Update baseline after server data load
         updateBaselineRef.current?.();
         
+        return true; // Update was applied
       } else {
         // Safety guard: Don't apply updates that would clear all items unless intentional
         // Also ensure we only update fields that are actually present in the payload
@@ -412,7 +413,7 @@ export const useSimplifiedRundownState = () => {
             currentItems: state.items.length,
             timestamp: updatedRundown.updated_at
           });
-          return;
+          return false; // Update was skipped - don't update version tracking
         }
         
         debugLogger.realtime('Applying realtime update directly - last writer wins');
@@ -439,6 +440,7 @@ export const useSimplifiedRundownState = () => {
         
         // REMOVED: blockUntilLocalEditRef blocking - autosave now operates independently
         debugLogger.autosave('AutoSave: Remote update received - autosave continues normally');
+        return true; // Update was applied
        }
     }, [actions, getProtectedFields]),
     enabled: !isLoading
@@ -571,6 +573,8 @@ export const useSimplifiedRundownState = () => {
               // Skip if we have an active local structural operation - our state takes priority
               if (activeStructuralOperationRef.current) {
                 console.log('🛡️ Skipping reorder broadcast - local drag operation in progress');
+                // IMPORTANT: Signal that we need catch-up sync when operation ends
+                // by NOT returning - the catch-up sync timeout will handle this
                 break;
               }
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
