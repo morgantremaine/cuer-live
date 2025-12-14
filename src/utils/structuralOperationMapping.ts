@@ -45,6 +45,7 @@ export function mapOperationDataToPayload(
     sequenceNumber?: number;
     numberingLocked?: boolean;
     lockedRowNumbers?: { [itemId: string]: string };
+    sortOrderUpdates?: { itemId: string; sortOrder: string }[];
   }
 ): any {
   switch (operationType) {
@@ -92,6 +93,12 @@ export function mapOperationDataToPayload(
         lockedRowNumbers: operationData.lockedRowNumbers
       };
     
+    case 'update_sort_order':
+      // For sortOrder updates: { sortOrderUpdates: [{ itemId, sortOrder }] }
+      return {
+        sortOrderUpdates: operationData.sortOrderUpdates
+      };
+    
     default:
       console.warn('Unknown operation type:', operationType);
       return {};
@@ -122,6 +129,9 @@ export function validateOperationData(
     
     case 'toggle_lock':
       return operationData.numberingLocked !== undefined;
+    
+    case 'update_sort_order':
+      return !!(operationData.sortOrderUpdates?.length > 0);
     
     default:
       return false;
