@@ -88,8 +88,10 @@ export const useSimplifiedRundownState = () => {
   // Track active structural operations to block realtime updates
   const activeStructuralOperationRef = useRef(false);
   
-  // Note: isDraggingRef removed - no longer needed with functional sortOrder updates
-  // The reducer-based UPDATE_SORT_ORDERS action operates on current state, not stale refs
+  // DRAG PROTECTION: Track recently dragged items to ignore remote sortOrder updates
+  // Prevents race condition where concurrent drags desync row order
+  const recentDragOperationsRef = useRef<Map<string, { sortOrder: string; timestamp: number }>>(new Map());
+  const DRAG_PROTECTION_WINDOW_MS = 2000; // 2 seconds protection after drag
   
   // Enhanced cooldown management with explicit flags  
   const blockUntilLocalEditRef = useRef(false);
@@ -128,6 +130,7 @@ export const useSimplifiedRundownState = () => {
     return () => {
       recentlyEditedFieldsRef.current.clear();
       dropdownFieldProtectionRef.current.clear();
+      recentDragOperationsRef.current.clear();
       typingSessionRef.current = null;
       activeFocusFieldRef.current = null;
     };
@@ -686,13 +689,32 @@ export const useSimplifiedRundownState = () => {
               // Uses functional state update via reducer - no stale ref issues!
               const { sortOrderUpdates } = update.value || {};
               if (sortOrderUpdates && Array.isArray(sortOrderUpdates) && sortOrderUpdates.length > 0) {
-                console.log('📡 Applying remote sortOrder changes via functional update', {
-                  updateCount: sortOrderUpdates.length
+                const now = Date.now();
+                
+                // Filter out updates for items we recently dragged locally
+                const filteredUpdates = sortOrderUpdates.filter((u: { itemId: string; sortOrder: string }) => {
+                  const protection = recentDragOperationsRef.current.get(u.itemId);
+                  if (protection && now - protection.timestamp < DRAG_PROTECTION_WINDOW_MS) {
+                    console.log('🛡️ Ignoring remote sortOrder - item was just dragged locally', {
+                      itemId: u.itemId.slice(-6),
+                      localSortOrder: protection.sortOrder,
+                      remoteSortOrder: u.sortOrder
+                    });
+                    return false;
+                  }
+                  return true;
                 });
                 
-                // Use the reducer-based updateSortOrders action
-                // This operates on React's current state, not stateRef
-                actionsRef.current.updateSortOrders(sortOrderUpdates);
+                if (filteredUpdates.length > 0) {
+                  console.log('📡 Applying remote sortOrder changes via functional update', {
+                    updateCount: filteredUpdates.length,
+                    filtered: sortOrderUpdates.length - filteredUpdates.length
+                  });
+                  
+                  // Use the reducer-based updateSortOrders action
+                  // This operates on React's current state, not stateRef
+                  actionsRef.current.updateSortOrders(filteredUpdates);
+                }
               }
               break;
             }
@@ -773,6 +795,18 @@ export const useSimplifiedRundownState = () => {
           if (updatedItems.some((item, index) => item !== currentItems[index])) {
             // If sortOrder was updated, re-sort the items array
             if (update.field === 'sortOrder') {
+              // DRAG PROTECTION: Check if this item was recently dragged locally
+              const now = Date.now();
+              const protection = recentDragOperationsRef.current.get(update.itemId);
+              if (protection && now - protection.timestamp < DRAG_PROTECTION_WINDOW_MS) {
+                console.log('🛡️ Ignoring remote sortOrder update - item was just dragged locally', {
+                  itemId: update.itemId.slice(-6),
+                  localSortOrder: protection.sortOrder,
+                  remoteSortOrder: update.value
+                });
+                return; // Skip this update, our local drag takes precedence
+              }
+              
               const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
               
               // CRITICAL SAFETY CHECK: Verify item count consistency
@@ -2234,6 +2268,22 @@ export const useSimplifiedRundownState = () => {
     // NOTE: Local state is already updated by useDragAndDrop - this only handles persistence and broadcast
     trackSortOrderChange: useCallback((itemId: string, newSortOrder: string) => {
       console.log('📊 trackSortOrderChange:', { itemId, newSortOrder });
+      
+      // DRAG PROTECTION: Record this drag operation to protect from concurrent remote updates
+      // This prevents race conditions where two users drag the same row simultaneously
+      recentDragOperationsRef.current.set(itemId, {
+        sortOrder: newSortOrder,
+        timestamp: Date.now()
+      });
+      
+      // Cleanup old entries (older than protection window + buffer)
+      const now = Date.now();
+      const CLEANUP_THRESHOLD = DRAG_PROTECTION_WINDOW_MS + 1000;
+      for (const [key, value] of recentDragOperationsRef.current.entries()) {
+        if (now - value.timestamp > CLEANUP_THRESHOLD) {
+          recentDragOperationsRef.current.delete(key);
+        }
+      }
       
       // Use structural save system with advisory locking to prevent race conditions
       // This ensures sortOrder updates are serialized per-rundown
