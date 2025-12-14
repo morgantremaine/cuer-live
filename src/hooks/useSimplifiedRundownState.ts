@@ -1952,10 +1952,23 @@ export const useSimplifiedRundownState = () => {
     }
   }, [rundownId, undoStackSize, redoStackSize, state.items.length, columns.length, realtimeConnection.isConnected]);
 
+  // CRITICAL FIX: Synchronous ref update for setItems to prevent race conditions
+  // When a local drag operation calls setItems, the stateRef must be updated IMMEDIATELY
+  // before React schedules the state update. Otherwise, incoming broadcast handlers
+  // will read stale data from stateRef.current.items and overwrite the pending local state.
+  const setItemsSync = useCallback((items: RundownItem[]) => {
+    // 1. Update stateRef synchronously FIRST - this is the critical fix
+    stateRef.current = { ...stateRef.current, items };
+    // 2. Then trigger the React state update via dispatch
+    actions.setItems(items);
+  }, [actions]);
+
   return {
     // Core state with calculated values
     items: calculatedItems,
     setItems: actions.setItems,
+    // Synchronous version that updates stateRef immediately - use for drag operations
+    setItemsSync,
     columns,
     setColumns,
     visibleColumns,
