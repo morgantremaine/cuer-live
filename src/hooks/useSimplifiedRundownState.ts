@@ -1287,7 +1287,12 @@ export const useSimplifiedRundownState = () => {
               : createDefaultRundownItems();
             
             // Initialize sortOrder for items that don't have it
-            const itemsToLoad = initializeSortOrders(rawItems) as RundownItem[];
+            const itemsWithSortOrder = initializeSortOrders(rawItems) as RundownItem[];
+            
+            // CRITICAL: Sort by sortOrder to ensure array order matches sortOrder values
+            // This fixes inconsistency where existing sortOrder values don't match array order
+            const itemsToLoad = [...itemsWithSortOrder].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+            console.log('📊 Items sorted by sortOrder after initialization');
 
             // Sync time from server timestamp and store it
             if (data.updated_at) {
