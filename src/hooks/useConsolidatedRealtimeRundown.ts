@@ -36,7 +36,11 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
+  createdAt: number; // For stale event detection
 }>();
+
+// Stale event threshold - ignore CHANNEL_ERROR within 500ms of channel creation
+const STALE_EVENT_THRESHOLD_MS = 500;
 
 export const useConsolidatedRealtimeRundown = ({
   rundownId,
@@ -231,11 +235,13 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
-        refCount: 0
+        refCount: 0,
+        createdAt: Date.now()
       };
       globalSubscriptions.set(rundownId, globalState);
     } else {
       globalState.subscription = channel;
+      globalState.createdAt = Date.now();
     }
 
     channel.subscribe(async (status) => {
@@ -279,6 +285,13 @@ export const useConsolidatedRealtimeRundown = ({
           }, 2000);
         }
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        // Skip stale events that fire immediately after channel creation (race condition during nuclear reset)
+        const createdAt = state.createdAt || 0;
+        const timeSinceCreation = Date.now() - createdAt;
+        if (timeSinceCreation < STALE_EVENT_THRESHOLD_MS) {
+          console.log('📡 Consolidated: Ignoring stale', status, 'event (channel created', timeSinceCreation, 'ms ago)');
+          return;
+        }
         console.warn('📡 Consolidated channel issue:', status);
         // No retry - nuclear reset will handle recovery on visibility change
       }
