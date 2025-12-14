@@ -425,31 +425,76 @@ serve(async (req) => {
         }
 
         case 'update_sort_order': {
-          // Apply sortOrder updates to items - this is the critical path for reordering
+          // SURGICAL UPDATE: Use atomic database function to update individual items
+          // This bypasses the read-modify-write cycle entirely, eliminating race conditions
           const sortOrderUpdates = operation.operationData.sortOrderUpdates || [];
           
           if (sortOrderUpdates.length === 0) {
             console.warn('⚠️ update_sort_order called with no updates');
-            break;
+            // Return early - no work to do
+            return new Response(
+              JSON.stringify({ success: true, operation: 'update_sort_order', updatedCount: 0 }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
           
-          // Create a map for quick lookup
-          const sortOrderMap = new Map(sortOrderUpdates.map(u => [u.itemId, u.sortOrder]));
+          console.log(`⚡ Performing surgical sortOrder updates for ${sortOrderUpdates.length} item(s)`);
           
-          // Update each item's sortOrder
-          let updatedCount = 0;
-          updatedItems = updatedItems.map(item => {
-            const newSortOrder = sortOrderMap.get(item.id);
-            if (newSortOrder !== undefined) {
-              updatedCount++;
-              return { ...item, sortOrder: newSortOrder };
+          let successCount = 0;
+          let failureCount = 0;
+          
+          // Update each item's sortOrder atomically using the database function
+          for (const update of sortOrderUpdates) {
+            const { data, error } = await supabase.rpc('update_item_sort_order', {
+              p_rundown_id: operation.rundownId,
+              p_item_id: update.itemId,
+              p_sort_order: update.sortOrder,
+              p_user_id: user.id
+            });
+            
+            if (error) {
+              console.error(`❌ Failed to update sortOrder for ${update.itemId}:`, error);
+              failureCount++;
+            } else if (data?.success === false) {
+              console.warn(`⚠️ Item not found: ${update.itemId}`);
+              failureCount++;
+            } else {
+              successCount++;
             }
-            return item;
-          });
+          }
           
-          actionDescription = `Updated sortOrder for ${updatedCount} item(s)`;
-          console.log(`✅ ${actionDescription}`);
-          break;
+          console.log(`✅ Surgical sortOrder update complete: ${successCount} succeeded, ${failureCount} failed`);
+          
+          // Log the operation
+          const { error: logError } = await supabase
+            .from('rundown_operations')
+            .insert({
+              rundown_id: operation.rundownId,
+              user_id: user.id,
+              operation_type: operation.operationType,
+              operation_data: { 
+                sortOrderUpdates,
+                successCount,
+                failureCount
+              },
+              client_id: operation.clientId || null,
+              applied_at: new Date().toISOString()
+            });
+
+          if (logError) {
+            console.warn('⚠️ Failed to log operation:', logError);
+          }
+          
+          // Return immediately - we've already updated the database atomically
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              operation: 'update_sort_order',
+              updatedCount: successCount,
+              failedCount: failureCount
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         default:
