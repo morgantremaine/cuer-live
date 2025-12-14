@@ -1595,7 +1595,6 @@ export type Database = {
         Args: { team_id_to_leave: string; user_id_leaving: string }
         Returns: Json
       }
-      lock_and_fetch_rundown: { Args: { rundown_uuid: string }; Returns: Json }
       migrate_existing_custom_columns: { Args: never; Returns: undefined }
       pg_advisory_unlock: { Args: { key: number }; Returns: undefined }
       pg_try_advisory_lock: { Args: { key: number }; Returns: boolean }

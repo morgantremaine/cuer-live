@@ -232,10 +232,7 @@ export const useRundownStateCoordination = () => {
     persistedState.rundownId, // Pass rundownId for broadcasts
     userId, // Pass userId for broadcasts
     persistedState.recordOperation, // Pass recordOperation for operation-based undo
-    handleEditorialChange, // Pass MOS editorial change handler
-    // Active structural operation callbacks to block remote broadcasts during drag
-    () => persistedState.setActiveStructuralOperation?.(true),
-    () => persistedState.setActiveStructuralOperation?.(false)
+    handleEditorialChange // Pass MOS editorial change handler
   );
 
   // UI interactions that depend on the core state (NO showcaller interference)

@@ -41,9 +41,7 @@ export const useDragAndDrop = (
   rundownId?: string | null,
   currentUserId?: string | null,
   recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void,
-  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void,
-  onDragOperationStart?: () => void,
-  onDragOperationEnd?: () => void
+  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -59,9 +57,6 @@ export const useDragAndDrop = (
   const dropTargetIndexRef = useRef<number | null>(null);
   const draggedItemIndexRef = useRef<number | null>(null);
   const dragInfoRef = useRef<DragInfo | null>(null);
-  
-  // Single timeout ref for operation end - prevents race condition with rapid drags
-  const operationEndTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -296,15 +291,6 @@ export const useDragAndDrop = (
 
     setDragTimeout();
     isDragActiveRef.current = true;
-    
-    // Clear any pending operation end timeout from a previous drag
-    if (operationEndTimeoutRef.current) {
-      clearTimeout(operationEndTimeoutRef.current);
-      operationEndTimeoutRef.current = null;
-    }
-    
-    // Notify that a drag operation has started - block remote structural broadcasts
-    onDragOperationStart?.();
     
     if (process.env.NODE_ENV === 'development') {
       console.log('🎯 Drag state set:', {
@@ -546,19 +532,8 @@ export const useDragAndDrop = (
     } finally {
       console.log('🎯 Resetting drag state');
       resetDragState();
-      
-      // Clear any existing operation end timeout first
-      if (operationEndTimeoutRef.current) {
-        clearTimeout(operationEndTimeoutRef.current);
-      }
-      
-      // Set new timeout - only the LAST drag's timeout will actually fire
-      operationEndTimeoutRef.current = setTimeout(() => {
-        operationEndTimeoutRef.current = null;
-        onDragOperationEnd?.();
-      }, 5000);
     }
-  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState, onDragOperationEnd]);
+  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {

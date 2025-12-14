@@ -41,18 +41,13 @@ export const realtimeReset = {
     return isResetting;
   },
 
-  // Wait for WebSocket to actually connect and stabilize
+  // Wait for WebSocket to actually connect
   async waitForWebSocketConnection(timeoutMs: number = 5000): Promise<boolean> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       try {
         // @ts-ignore - accessing internal state
-        const isConnected = supabase.realtime.isConnected?.();
-        // @ts-ignore - check actual WebSocket readyState
-        const ws = supabase.realtime.conn;
-        const wsReady = ws?.readyState === 1; // WebSocket.OPEN = 1
-        
-        if (isConnected && wsReady) {
+        if (supabase.realtime.isConnected?.()) {
           return true;
         }
       } catch {
@@ -97,8 +92,8 @@ export const realtimeReset = {
       supabase.realtime.disconnect();
       console.log('☢️ WebSocket disconnected');
 
-      // Wait for clean disconnect - increased to 2 seconds to prevent race conditions
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for clean disconnect
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Reconnect WebSocket
       supabase.realtime.connect();
@@ -107,10 +102,7 @@ export const realtimeReset = {
       // Wait for actual connection before returning
       const connected = await this.waitForWebSocketConnection(5000);
       if (connected) {
-        // Add stabilization delay - prevents CHANNEL_ERROR oscillation
-        // The WebSocket may report connected before it's fully stable for channel subscriptions
-        await new Promise(resolve => setTimeout(resolve, 500));
-        console.log('☢️ WebSocket stabilized - channels can now re-subscribe');
+        console.log('☢️ WebSocket connected - channels can now re-subscribe');
       } else {
         console.warn('☢️ WebSocket connection not confirmed, proceeding anyway');
       }

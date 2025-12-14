@@ -36,11 +36,7 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
-  createdAt: number; // For stale event detection
 }>();
-
-// Stale event threshold - ignore CHANNEL_ERROR within 500ms of channel creation
-const STALE_EVENT_THRESHOLD_MS = 500;
 
 export const useConsolidatedRealtimeRundown = ({
   rundownId,
@@ -108,23 +104,24 @@ export const useConsolidatedRealtimeRundown = ({
         if (serverDoc > localDoc || forceSync) {
           const missedUpdates = serverDoc - localDoc;
           
-          // Update tracking state
+          // Update tracking state regardless
           state.lastProcessedDocVersion = serverDoc;
           state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
 
-          // When forceSync is true, ALWAYS apply the data - this is the recovery path
-          // This ensures we reconcile actual data state, not just version numbers
-          if (missedUpdates > 0 || forceSync) {
-            console.log(`✅ Catch-up sync: applying ${forceSync ? 'forced sync' : missedUpdates + ' missed update(s)'} (server=${serverDoc}, local=${localDoc})`);
+          // Only call callbacks if there are ACTUAL missed updates
+          if (missedUpdates > 0) {
+            console.log(`✅ Catch-up sync: applying ${missedUpdates} missed update(s)`);
             
             state.callbacks.onRundownUpdate.forEach(cb => {
               try { cb(data); } catch (err) { console.error('Error in callback:', err); }
             });
 
-            if (!isInitialLoadRef.current && missedUpdates > 0) {
+            if (!isInitialLoadRef.current) {
               toast.info(`Synced ${missedUpdates} update${missedUpdates > 1 ? 's' : ''}`);
             }
             return true;
+          } else {
+            console.log('📊 Catch-up sync: forceSync verified - already in sync');
           }
           return false;
         } else {
@@ -234,13 +231,11 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
-        refCount: 0,
-        createdAt: Date.now()
+        refCount: 0
       };
       globalSubscriptions.set(rundownId, globalState);
     } else {
       globalState.subscription = channel;
-      globalState.createdAt = Date.now();
     }
 
     channel.subscribe(async (status) => {
@@ -284,13 +279,6 @@ export const useConsolidatedRealtimeRundown = ({
           }, 2000);
         }
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        // Skip stale events that fire immediately after channel creation (race condition during nuclear reset)
-        const createdAt = state.createdAt || 0;
-        const timeSinceCreation = Date.now() - createdAt;
-        if (timeSinceCreation < STALE_EVENT_THRESHOLD_MS) {
-          console.log('📡 Consolidated: Ignoring stale', status, 'event (channel created', timeSinceCreation, 'ms ago)');
-          return;
-        }
         console.warn('📡 Consolidated channel issue:', status);
         // No retry - nuclear reset will handle recovery on visibility change
       }
@@ -332,56 +320,29 @@ export const useConsolidatedRealtimeRundown = ({
     const hasShowcallerChanges = JSON.stringify(payload.new?.showcaller_state) !== JSON.stringify(payload.old?.showcaller_state);
     const hasBlueprintChanges = payload.table === 'blueprints';
 
-    // Update timestamp tracking (always update - used for staleness detection)
+    // Update tracking state
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
+    if (incomingDocVersion) {
+      globalState.lastProcessedDocVersion = incomingDocVersion;
+    }
     lastUpdateTimeRef.current = Date.now();
 
-    // Helper to update version only when update is actually applied
-    const updateVersionIfApplied = (applied: boolean) => {
-      if (applied && incomingDocVersion) {
-        globalState.lastProcessedDocVersion = incomingDocVersion;
-        console.log(`📊 Updated lastProcessedDocVersion to ${incomingDocVersion}`);
-      } else if (!applied && incomingDocVersion) {
-        console.log(`⏭️ Skipped version update (${incomingDocVersion}) - callback returned false/skipped`);
-      }
-    };
-
-    // Dispatch to callbacks - only update version if callback returns true (applied)
+    // Dispatch to callbacks
     if (hasBlueprintChanges) {
-      let anyApplied = false;
-      globalState.callbacks.onBlueprintUpdate.forEach((cb: (d: any) => boolean | void) => {
-        try { 
-          const result = cb(payload.new); 
-          if (result !== false) anyApplied = true;
-        } catch (err) { console.error('Blueprint callback error:', err); }
+      globalState.callbacks.onBlueprintUpdate.forEach((cb: (d: any) => void) => {
+        try { cb(payload.new); } catch (err) { console.error('Blueprint callback error:', err); }
       });
-      updateVersionIfApplied(anyApplied);
     } else if (hasShowcallerChanges && !hasContentChanges) {
-      let anyApplied = false;
-      globalState.callbacks.onShowcallerUpdate.forEach((cb: (d: any) => boolean | void) => {
-        try { 
-          const result = cb(payload.new); 
-          if (result !== false) anyApplied = true;
-        } catch (err) { console.error('Showcaller callback error:', err); }
+      globalState.callbacks.onShowcallerUpdate.forEach((cb: (d: any) => void) => {
+        try { cb(payload.new); } catch (err) { console.error('Showcaller callback error:', err); }
       });
-      updateVersionIfApplied(anyApplied);
     } else if (hasContentChanges) {
       // Use cell broadcasts for content - only fall back to database if unhealthy
       import('@/utils/cellBroadcast').then(({ cellBroadcast }) => {
         if (!cellBroadcast.isBroadcastHealthy(rundownId || '')) {
-          let anyApplied = false;
-          globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => boolean | void) => {
-            try { 
-              const result = cb(payload.new); 
-              if (result !== false) anyApplied = true;
-            } catch (err) { console.error('Rundown callback error:', err); }
+          globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+            try { cb(payload.new); } catch (err) { console.error('Rundown callback error:', err); }
           });
-          updateVersionIfApplied(anyApplied);
-        } else {
-          // Cell broadcast is healthy - DON'T update version here
-          // Let the actual cell broadcast application update the version
-          // This prevents false "in sync" state when broadcasts are skipped during structural operations
-          console.log('📡 Content changes detected but cell broadcast healthy - relying on broadcast channel');
         }
       });
     }

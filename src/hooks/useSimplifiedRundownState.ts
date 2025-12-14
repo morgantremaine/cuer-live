@@ -311,14 +311,14 @@ export const useSimplifiedRundownState = () => {
     blockUntilLocalEditRef,
     // Pass hasPendingUpdates function via ref (populated after cellEditIntegration init)
     hasPendingUpdates: () => hasPendingUpdatesRef.current?.() || false,
-    onRundownUpdate: useCallback((updatedRundown): boolean => {
+    onRundownUpdate: useCallback((updatedRundown) => {
       // Monotonic timestamp guard for stale updates
       if (updatedRundown.updated_at && lastKnownTimestamp) {
         const incomingTime = new Date(updatedRundown.updated_at).getTime();
         const knownTime = new Date(lastKnownTimestamp).getTime();
         
         if (incomingTime <= knownTime) {
-          return false; // Update was skipped - don't update version tracking
+          return;
         }
       }
       
@@ -401,7 +401,6 @@ export const useSimplifiedRundownState = () => {
         // SINGLE POINT: Update baseline after server data load
         updateBaselineRef.current?.();
         
-        return true; // Update was applied
       } else {
         // Safety guard: Don't apply updates that would clear all items unless intentional
         // Also ensure we only update fields that are actually present in the payload
@@ -413,7 +412,7 @@ export const useSimplifiedRundownState = () => {
             currentItems: state.items.length,
             timestamp: updatedRundown.updated_at
           });
-          return false; // Update was skipped - don't update version tracking
+          return;
         }
         
         debugLogger.realtime('Applying realtime update directly - last writer wins');
@@ -440,7 +439,6 @@ export const useSimplifiedRundownState = () => {
         
         // REMOVED: blockUntilLocalEditRef blocking - autosave now operates independently
         debugLogger.autosave('AutoSave: Remote update received - autosave continues normally');
-        return true; // Update was applied
        }
     }, [actions, getProtectedFields]),
     enabled: !isLoading
@@ -570,13 +568,6 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
-              // Skip if we have an active local structural operation - our state takes priority
-              if (activeStructuralOperationRef.current) {
-                console.log('🛡️ Skipping reorder broadcast - local drag operation in progress');
-                // IMPORTANT: Signal that we need catch-up sync when operation ends
-                // by NOT returning - the catch-up sync timeout will handle this
-                break;
-              }
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
@@ -591,11 +582,6 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:add': {
-              // Skip if we have an active local structural operation
-              if (activeStructuralOperationRef.current) {
-                console.log('🛡️ Skipping add broadcast - local structural operation in progress');
-                break;
-              }
               const payload = update.value || {};
               
               // Check for batch add first (multiple items from undo/redo)
@@ -630,11 +616,6 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:copy': {
-              // Skip if we have an active local structural operation
-              if (activeStructuralOperationRef.current) {
-                console.log('🛡️ Skipping copy broadcast - local structural operation in progress');
-                break;
-              }
               // Handle immediate copy/paste for real-time collaboration
               const payload = update.value || {};
               const items = payload.items || [];
@@ -656,11 +637,6 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:remove': {
-              // Skip if we have an active local structural operation
-              if (activeStructuralOperationRef.current) {
-                console.log('🛡️ Skipping remove broadcast - local structural operation in progress');
-                break;
-              }
               const id = update.value?.id as string;
               if (id) {
                 const newItems = stateRef.current.items.filter(i => i.id !== id);
@@ -672,11 +648,6 @@ export const useSimplifiedRundownState = () => {
               break;
             }
             case 'items:remove-multiple': {
-              // Skip if we have an active local structural operation
-              if (activeStructuralOperationRef.current) {
-                console.log('🛡️ Skipping remove-multiple broadcast - local structural operation in progress');
-                break;
-              }
               const ids = update.value?.ids as string[];
               if (ids && Array.isArray(ids) && ids.length > 0) {
                 const newItems = stateRef.current.items.filter(i => !ids.includes(i.id));
@@ -2105,49 +2076,6 @@ export const useSimplifiedRundownState = () => {
     // Structural change handling
     markStructuralChange,
     clearStructuralChange,
-    
-    // Active structural operation flag for blocking remote broadcasts during local drags
-    setActiveStructuralOperation: useCallback((active: boolean) => {
-      // When setting to true, immediately set the flag
-      if (active) {
-        activeStructuralOperationRef.current = true;
-        console.log(`🛡️ Active structural operation: true`);
-        return;
-      }
-      
-      // When clearing the flag, KEEP IT TRUE until catch-up sync completes
-      // This prevents race conditions where broadcasts arrive between save completion and sync
-      if (!active && rundownId) {
-        console.log('🔄 Structural operation save complete - starting catch-up sync (flag still TRUE)');
-        
-        // Small delay to allow any pending broadcasts to settle
-        setTimeout(async () => {
-          // Check if a new operation started
-          if (!activeStructuralOperationRef.current) {
-            console.log('🔄 Skipping catch-up - flag was already cleared by another operation');
-            return;
-          }
-          
-          console.log('🔄 Catch-up sync starting...', { rundownId, hasSync: !!performCatchupSync });
-          
-          try {
-            // Perform catch-up sync WHILE flag is still true
-            await performCatchupSync?.(true); // Force sync to get authoritative state
-            console.log('🔄 Catch-up sync complete - NOW clearing flag');
-          } catch (err) {
-            console.error('🔄 Catch-up sync error:', err);
-          } finally {
-            // NOW clear the flag after sync completes
-            activeStructuralOperationRef.current = false;
-            console.log(`🛡️ Active structural operation: false`);
-          }
-        }, 500);
-      } else if (!active) {
-        // No rundownId, just clear immediately
-        activeStructuralOperationRef.current = false;
-        console.log(`🛡️ Active structural operation: false (no rundownId)`);
-      }
-    }, [rundownId, performCatchupSync]),
     
     // Operation-based undo/redo system
     recordOperation,
