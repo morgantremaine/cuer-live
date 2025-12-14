@@ -29,7 +29,7 @@ import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
-import { initializeSortOrders, compareSortOrder } from '@/utils/fractionalIndex';
+import { initializeSortOrders, compareSortOrder, generateKeyBetween } from '@/utils/fractionalIndex';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -1328,12 +1328,30 @@ export const useSimplifiedRundownState = () => {
               : createDefaultRundownItems();
             
             // Initialize sortOrder for items that don't have it
+            const hadMissingSortOrders = rawItems.some((item: any) => !item.sortOrder);
             const itemsWithSortOrder = initializeSortOrders(rawItems) as RundownItem[];
             
             // CRITICAL: Sort by sortOrder to ensure array order matches sortOrder values
             // This fixes inconsistency where existing sortOrder values don't match array order
             const itemsToLoad = [...itemsWithSortOrder].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
             console.log('📊 Items sorted by sortOrder after initialization');
+            
+            // If we initialized missing sortOrders, persist them to the database
+            if (hadMissingSortOrders && rundownId) {
+              console.log('📊 Persisting newly initialized sortOrder values to database');
+              // Fire and forget - don't block UI for this background save
+              supabase
+                .from('rundowns')
+                .update({ items: itemsToLoad })
+                .eq('id', rundownId)
+                .then(({ error }) => {
+                  if (error) {
+                    console.error('❌ Failed to persist sortOrder values:', error);
+                  } else {
+                    console.log('✅ sortOrder values persisted to database');
+                  }
+                });
+            }
 
             // Sync time from server timestamp and store it
             if (data.updated_at) {
@@ -1731,6 +1749,13 @@ export const useSimplifiedRundownState = () => {
       // Auto-save will handle this change - no special handling needed
     // Add operation already recorded by add_row operation
     
+    // Calculate sortOrder for the new item based on insertion position
+    const prevItem = insertIndex > 0 ? state.items[insertIndex - 1] : null;
+    const nextItem = insertIndex < state.items.length ? state.items[insertIndex] : null;
+    const prevSortOrder = prevItem?.sortOrder || null;
+    const nextSortOrder = nextItem?.sortOrder || null;
+    const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
+    
     const newItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'regular' as const,
@@ -1748,7 +1773,8 @@ export const useSimplifiedRundownState = () => {
       notes: '',
       color: '',
       isFloating: false,
-      customFields: {}
+      customFields: {},
+      sortOrder: newSortOrder
     };
 
     const newItems = [...state.items];
@@ -1795,6 +1821,13 @@ export const useSimplifiedRundownState = () => {
     // Auto-save will handle this change - no special handling needed
     // Add header operation already recorded by add_header operation
     
+    // Calculate sortOrder for the new header based on insertion position
+    const prevItem = insertIndex > 0 ? state.items[insertIndex - 1] : null;
+    const nextItem = insertIndex < state.items.length ? state.items[insertIndex] : null;
+    const prevSortOrder = prevItem?.sortOrder || null;
+    const nextSortOrder = nextItem?.sortOrder || null;
+    const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
+    
     const newHeader = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header' as const,
@@ -1812,7 +1845,8 @@ export const useSimplifiedRundownState = () => {
       notes: '',
       color: '',
       isFloating: false,
-      customFields: {}
+      customFields: {},
+      sortOrder: newSortOrder
     };
 
     const newItems = [...state.items];

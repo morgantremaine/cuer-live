@@ -58,6 +58,83 @@ function renumberItems(items: any[]): any[] {
   });
 }
 
+// Generate a sortOrder key between two existing keys
+function generateSortOrderBetween(before: string | null, after: string | null): string {
+  // If both null, start with 'a'
+  if (!before && !after) return 'a';
+  
+  // If only before exists, increment last char
+  if (!after) {
+    const lastChar = before!.charCodeAt(before!.length - 1);
+    if (lastChar < 126) { // '~' is 126
+      return before!.slice(0, -1) + String.fromCharCode(lastChar + 1);
+    }
+    return before + 'a'; // Append 'a' if at max
+  }
+  
+  // If only after exists, decrement first char
+  if (!before) {
+    const firstChar = after.charCodeAt(0);
+    if (firstChar > 33) { // '!' is 33
+      return String.fromCharCode(firstChar - 1);
+    }
+    return String.fromCharCode(33) + 'a';
+  }
+  
+  // Find midpoint between before and after
+  // Simple approach: find first differing char and pick midpoint
+  let result = '';
+  const maxLen = Math.max(before.length, after.length) + 1;
+  
+  for (let i = 0; i < maxLen; i++) {
+    const aChar = i < before.length ? before.charCodeAt(i) : 32;
+    const bChar = i < after.length ? after.charCodeAt(i) : 126;
+    
+    if (aChar === bChar) {
+      result += String.fromCharCode(aChar);
+      continue;
+    }
+    
+    const mid = Math.floor((aChar + bChar) / 2);
+    if (mid > aChar) {
+      return result + String.fromCharCode(mid);
+    }
+    
+    result += String.fromCharCode(aChar);
+  }
+  
+  return result + 'a';
+}
+
+// Ensure all items have sortOrder values
+function ensureSortOrders(items: any[]): any[] {
+  const needsInit = items.some(item => !item.sortOrder);
+  
+  if (!needsInit) {
+    return items;
+  }
+  
+  console.log('📊 Initializing missing sortOrder values');
+  
+  // Generate sequential sort orders
+  let prevKey: string | null = null;
+  
+  return items.map((item) => {
+    if (item.sortOrder) {
+      prevKey = item.sortOrder;
+      return item;
+    }
+    
+    const newKey = generateSortOrderBetween(prevKey, null);
+    prevKey = newKey;
+    
+    return {
+      ...item,
+      sortOrder: newKey
+    };
+  });
+}
+
 // Generate advisory lock ID from rundown ID
 function getLockId(rundownId: string): number {
   // Use a hash of the rundown ID to get a consistent lock number
@@ -213,7 +290,24 @@ serve(async (req) => {
           const newItems = operation.operationData.newItems || [];
           const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
           
-          updatedItems.splice(insertIndex, 0, ...newItems);
+          // Ensure new items have sortOrder values
+          const prevItem = insertIndex > 0 ? updatedItems[insertIndex - 1] : null;
+          const nextItem = insertIndex < updatedItems.length ? updatedItems[insertIndex] : null;
+          
+          let prevSortOrder = prevItem?.sortOrder || null;
+          const nextSortOrder = nextItem?.sortOrder || null;
+          
+          const itemsWithSortOrder = newItems.map((item: any) => {
+            if (item.sortOrder) {
+              prevSortOrder = item.sortOrder;
+              return item;
+            }
+            const newSortOrder = generateSortOrderBetween(prevSortOrder, nextSortOrder);
+            prevSortOrder = newSortOrder;
+            return { ...item, sortOrder: newSortOrder };
+          });
+          
+          updatedItems.splice(insertIndex, 0, ...itemsWithSortOrder);
           
           // Renumber all items to maintain sequential numbering
           console.log('🔢 Renumbering items after add operation');
@@ -267,8 +361,21 @@ serve(async (req) => {
           const items = operation.operationData.items || [];
           const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
           
+          // Assign new sortOrder values to copied items
+          const prevItem = insertIndex > 0 ? updatedItems[insertIndex - 1] : null;
+          const nextItem = insertIndex < updatedItems.length ? updatedItems[insertIndex] : null;
+          
+          let prevSortOrder = prevItem?.sortOrder || null;
+          const nextSortOrder = nextItem?.sortOrder || null;
+          
+          const itemsWithSortOrder = items.map((item: any) => {
+            const newSortOrder = generateSortOrderBetween(prevSortOrder, nextSortOrder);
+            prevSortOrder = newSortOrder;
+            return { ...item, sortOrder: newSortOrder };
+          });
+          
           // Insert copied items at the new position
-          updatedItems.splice(insertIndex, 0, ...items);
+          updatedItems.splice(insertIndex, 0, ...itemsWithSortOrder);
           
           // Renumber all items to maintain sequential numbering
           console.log('🔢 Renumbering items after copy operation');

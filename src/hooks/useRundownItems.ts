@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { generateKeyBetween } from '@/utils/fractionalIndex';
 
 export type { RundownItem } from '@/types/rundown';
 
@@ -30,10 +31,10 @@ export const useRundownItems = (
     // Determine how many rows to add based on selection
     const rowCount = selectedRows && selectedRows.size > 1 ? selectedRows.size : 1;
     
-    // Create array of new items
-    const newItems: RundownItem[] = [];
+    // Create array of new items (sortOrder will be calculated after we know the insertion point)
+    const newItemsBase: Omit<RundownItem, 'sortOrder'>[] = [];
     for (let i = 0; i < rowCount; i++) {
-      newItems.push({
+      newItemsBase.push({
         id: uuidv4(),
         type: 'regular',
         rowNumber: '',
@@ -75,6 +76,20 @@ export const useRundownItems = (
         }
       }
 
+      // Calculate sortOrder for each new item based on insertion position
+      const prevItem = insertIndex > 0 ? prevItems[insertIndex - 1] : null;
+      const nextItem = insertIndex < prevItems.length ? prevItems[insertIndex] : null;
+      
+      // Generate sortOrder for each new item, chaining them together
+      let prevSortOrder = prevItem?.sortOrder || null;
+      const nextSortOrder = nextItem?.sortOrder || null;
+      
+      const newItems: RundownItem[] = newItemsBase.map((item) => {
+        const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
+        prevSortOrder = newSortOrder; // Chain for next item
+        return { ...item, sortOrder: newSortOrder };
+      });
+
       const updatedItems = [...prevItems];
       updatedItems.splice(insertIndex, 0, ...newItems); // Insert all new items at once
       
@@ -108,26 +123,6 @@ export const useRundownItems = (
 
   const addHeader = useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
     setItems(prevItems => {
-      const newItem: RundownItem = {
-        id: uuidv4(),
-        type: 'header',
-        rowNumber: '', // Will be calculated properly by the calculation layer
-        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
-        startTime: '',
-        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
-        endTime: '',
-        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-        talent: '',
-        script: '',
-        gfx: '',
-        video: '',
-        images: '',
-        notes: '',
-        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-        isFloating: false,
-        customFields: {}
-      };
-
       let insertIndex = prevItems.length; // Default to end
 
       // Determine insertion point based on selection
@@ -147,6 +142,34 @@ export const useRundownItems = (
           insertIndex = selectedIndex + 1;
         }
       }
+
+      // Calculate sortOrder for the new header based on insertion position
+      const prevItem = insertIndex > 0 ? prevItems[insertIndex - 1] : null;
+      const nextItem = insertIndex < prevItems.length ? prevItems[insertIndex] : null;
+      const prevSortOrder = prevItem?.sortOrder || null;
+      const nextSortOrder = nextItem?.sortOrder || null;
+      const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
+
+      const newItem: RundownItem = {
+        id: uuidv4(),
+        type: 'header',
+        rowNumber: '', // Will be calculated properly by the calculation layer
+        name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
+        startTime: '',
+        duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
+        endTime: '',
+        elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
+        isFloating: false,
+        customFields: {},
+        sortOrder: newSortOrder
+      };
 
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
