@@ -160,7 +160,11 @@ export function compareSortOrder(a: string | undefined, b: string | undefined): 
   if (!a) return 1;
   if (!b) return -1;
   
-  return a.localeCompare(b);
+  // Use direct comparison (ASCII/char code order) instead of localeCompare
+  // This matches how generateKeyBetween calculates positions using char codes
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
 }
 
 /**
