@@ -681,6 +681,39 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
+            case 'sortOrder': {
+              // Handle sortOrder updates from other users' drag operations
+              if (isDraggingRef.current) {
+                console.log('📡 Ignoring sortOrder broadcast - local drag in progress');
+                return;
+              }
+              
+              const { sortOrderUpdates } = update.value || {};
+              if (sortOrderUpdates && Array.isArray(sortOrderUpdates) && sortOrderUpdates.length > 0) {
+                const currentItems = stateRef.current.items;
+                
+                // Apply sortOrder updates to items
+                const updatedItems = currentItems.map(item => {
+                  const updateEntry = sortOrderUpdates.find((u: { itemId: string; sortOrder: string }) => u.itemId === item.id);
+                  if (updateEntry) {
+                    return { ...item, sortOrder: updateEntry.sortOrder };
+                  }
+                  return item;
+                });
+                
+                // Re-sort by sortOrder
+                const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+                
+                console.log('📡 Applied remote sortOrder changes and re-sorted', {
+                  updateCount: sortOrderUpdates.length,
+                  itemCount: sortedItems.length
+                });
+                
+                stateRef.current = { ...stateRef.current, items: sortedItems };
+                actionsRef.current.loadRemoteState({ items: sortedItems });
+              }
+              break;
+            }
             default:
               console.warn('🚨 Unknown rundown-level field:', update.field);
           }
