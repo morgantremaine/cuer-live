@@ -6,6 +6,7 @@ import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 import { timeToSeconds, calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -84,9 +85,12 @@ export const useSharedRundownState = () => {
         const rawItems = Array.isArray(data.items) ? data.items : [];
         const startTime = data.start_time || '09:00:00';
         
+        // Sort items by sortOrder for consistent display order (same as main rundown)
+        const sortedItems = [...rawItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+        
         // Calculate timing and row numbers using the same logic as main rundown
         const itemsWithCalculations = calculateItemsWithTiming(
-          rawItems, 
+          sortedItems, 
           startTime,
           data.numbering_locked || false,
           data.locked_row_numbers || {}
@@ -168,9 +172,12 @@ export const useSharedRundownState = () => {
           const rawItems = Array.isArray(data.items) ? data.items : [];
           const startTime = data.start_time || '09:00:00';
           
+          // Sort items by sortOrder for consistent display order (same as main rundown)
+          const sortedItems = [...rawItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+          
           // Calculate timing and row numbers using the same logic as main rundown
           const itemsWithCalculations = calculateItemsWithTiming(
-            rawItems, 
+            sortedItems, 
             startTime,
             data.numbering_locked || false,
             data.locked_row_numbers || {}
