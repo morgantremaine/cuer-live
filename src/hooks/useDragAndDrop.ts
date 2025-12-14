@@ -537,16 +537,14 @@ export const useDragAndDrop = (
       }
       
       // ============================================================
-      // FRACTIONAL INDEXING: Broadcast sortOrder changes via cell update system
+      // FRACTIONAL INDEXING: Save sortOrder changes via cell update system
       // ============================================================
       // This replaces the structural reorder operation with per-cell sortOrder updates
-      if (trackSortOrderChange && rundownId && currentUserId) {
-        console.log('📊 Broadcasting sortOrder changes via cell system:', sortOrderUpdates.length);
+      // trackSortOrderChange handles both persistence and broadcasting
+      if (trackSortOrderChange) {
+        console.log('📊 Saving sortOrder changes via cell system:', sortOrderUpdates.length);
         sortOrderUpdates.forEach(({ itemId, sortOrder }) => {
           trackSortOrderChange(itemId, sortOrder);
-          
-          // Also broadcast immediately so other users see the reorder
-          cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'sortOrder', sortOrder, currentUserId, getTabId());
         });
       }
       
@@ -564,7 +562,7 @@ export const useDragAndDrop = (
       // BROADCAST-FIRST: Notify parent to re-enable incoming reorder broadcasts (with protection window)
       setDragActive?.(false);
     }
-  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState, setDragActive, trackSortOrderChange, rundownId, currentUserId]);
+  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState, setDragActive, trackSortOrderChange, recordOperation, onEditorialChange]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
