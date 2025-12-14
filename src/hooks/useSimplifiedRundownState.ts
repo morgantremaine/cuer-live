@@ -703,7 +703,19 @@ export const useSimplifiedRundownState = () => {
             return;
           }
 
-          const updatedItems = stateRef.current.items.map(item => {
+          // CRITICAL: Get a fresh snapshot of items to avoid stale ref issues
+          // when multiple broadcasts arrive in quick succession
+          const currentItems = stateRef.current.items;
+          const originalItemCount = currentItems.length;
+          
+          // Verify the item exists before updating
+          const targetItem = currentItems.find(item => item.id === update.itemId);
+          if (!targetItem) {
+            console.warn('📊 Remote update for non-existent item:', update.itemId);
+            return;
+          }
+          
+          const updatedItems = currentItems.map(item => {
             if (item.id === update.itemId) {
               // Handle nested field updates (like customFields.field)
               if (update.field.includes('.')) {
@@ -743,11 +755,40 @@ export const useSimplifiedRundownState = () => {
             return item;
           });
 
-          if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
+          if (updatedItems.some((item, index) => item !== currentItems[index])) {
             // If sortOrder was updated, re-sort the items array
             if (update.field === 'sortOrder') {
               const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-              console.log('📊 Applying remote sortOrder change - re-sorting items');
+              
+              // CRITICAL SAFETY CHECK: Verify item count consistency
+              if (sortedItems.length !== originalItemCount) {
+                console.error('🚨 CRITICAL: Item count mismatch after sortOrder update!', {
+                  originalCount: originalItemCount,
+                  sortedCount: sortedItems.length,
+                  updatedItemId: update.itemId
+                });
+                return; // Abort to prevent data loss
+              }
+              
+              // Verify the updated item still exists in sorted array
+              const itemStillExists = sortedItems.some(item => item.id === update.itemId);
+              if (!itemStillExists) {
+                console.error('🚨 CRITICAL: Item disappeared after sorting!', {
+                  itemId: update.itemId,
+                  newSortOrder: update.value
+                });
+                return; // Abort to prevent data loss
+              }
+              
+              console.log('📊 Applying remote sortOrder change - re-sorting items', {
+                itemId: update.itemId,
+                newSortOrder: update.value,
+                itemCount: sortedItems.length
+              });
+              
+              // CRITICAL: Update ref synchronously BEFORE calling loadRemoteState
+              // This prevents stale ref issues when multiple broadcasts arrive quickly
+              stateRef.current = { ...stateRef.current, items: sortedItems };
               actionsRef.current.loadRemoteState({ items: sortedItems });
             } else {
               actionsRef.current.loadRemoteState({ items: updatedItems });
