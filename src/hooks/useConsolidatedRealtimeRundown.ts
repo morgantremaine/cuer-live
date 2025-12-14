@@ -36,6 +36,7 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
+  generation: number; // Generation tracking to ignore stale callbacks
 }>();
 
 export const useConsolidatedRealtimeRundown = ({
@@ -196,6 +197,9 @@ export const useConsolidatedRealtimeRundown = ({
 
     console.log('📡 Initializing consolidated channel:', rundownId);
 
+    // Calculate new generation for this channel
+    const newGeneration = (globalSubscriptions.get(rundownId)?.generation || 0) + 1;
+
     const channel = supabase
       .channel(`consolidated-realtime-${rundownId}`)
       .on('postgres_changes', {
@@ -231,16 +235,30 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
-        refCount: 0
+        refCount: 0,
+        generation: newGeneration
       };
       globalSubscriptions.set(rundownId, globalState);
     } else {
       globalState.subscription = channel;
+      globalState.generation = newGeneration;
     }
+
+    // Capture generation at subscribe time for stale callback detection
+    const subscribedGeneration = newGeneration;
 
     channel.subscribe(async (status) => {
       const state = globalSubscriptions.get(rundownId);
-      if (!state || state.subscription !== channel) return;
+      
+      // Check BOTH reference AND generation to ignore stale callbacks
+      if (!state || state.subscription !== channel) {
+        console.log('📡 Consolidated: ignoring stale callback (channel reference mismatch)');
+        return;
+      }
+      if (state.generation !== subscribedGeneration) {
+        console.log('📡 Consolidated: ignoring stale callback (generation mismatch:', subscribedGeneration, 'vs', state.generation, ')');
+        return;
+      }
 
       state.isConnected = status === 'SUBSCRIBED';
       simpleConnectionHealth.setConsolidatedConnected(rundownId, state.isConnected);
@@ -494,14 +512,24 @@ export const useConsolidatedRealtimeRundown = ({
             cellBroadcast.reinitialize(rundownId);
             
             // Give channels a moment to connect, then force catch up and verify health
-            setTimeout(() => {
+            setTimeout(async () => {
               const health = simpleConnectionHealth.getHealth(rundownId);
               console.log('✅ Nuclear reset complete - health:', health, '- force syncing data');
               
               // Force notify to clear any stale UI state
               simpleConnectionHealth.forceNotify(rundownId);
               
-              performCatchupSync(true);
+              await performCatchupSync(true);
+              
+              // Secondary health verification 3 seconds later
+              setTimeout(() => {
+                const secondaryHealth = simpleConnectionHealth.getHealth(rundownId);
+                if (secondaryHealth.anyDisconnected) {
+                  console.warn('☢️ Post-reset health check failed - channels still disconnected, will retry on next visibility change');
+                } else {
+                  console.log('☢️ Post-reset health check passed - all channels stable');
+                }
+              }, 3000);
             }, 2000);
           }
         }
