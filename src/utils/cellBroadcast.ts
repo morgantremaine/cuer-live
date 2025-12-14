@@ -31,6 +31,7 @@ export class CellBroadcastManager {
   private channels = new Map<string, any>();
   private callbacks = new Map<string, Set<(update: CellUpdate | CellFocus) => void>>();
   private connectionStatus = new Map<string, string>();
+  private channelCreatedAt = new Map<string, number>();
 
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
@@ -41,6 +42,9 @@ export class CellBroadcastManager {
   private readonly BASE_TYPING_DEBOUNCE_MS = 300;
   private readonly DEBOUNCE_PER_USER_MS = 50;
   private readonly MAX_TYPING_DEBOUNCE_MS = 1000;
+  
+  // Stale event threshold - ignore CHANNEL_ERROR within 500ms of channel creation
+  private readonly STALE_EVENT_THRESHOLD_MS = 500;
 
   // Health monitoring
   private lastBroadcastReceivedAt = new Map<string, number>();
@@ -81,6 +85,7 @@ export class CellBroadcastManager {
       });
 
     this.channels.set(rundownId, channel);
+    this.channelCreatedAt.set(rundownId, Date.now());
 
     channel.subscribe((status: string) => {
       // Ignore callbacks from old channels
@@ -95,6 +100,13 @@ export class CellBroadcastManager {
       if (status === 'SUBSCRIBED') {
         console.log('✅ Cell channel connected:', rundownId);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        // Skip stale events that fire immediately after channel creation (race condition during nuclear reset)
+        const createdAt = this.channelCreatedAt.get(rundownId) || 0;
+        const timeSinceCreation = Date.now() - createdAt;
+        if (timeSinceCreation < this.STALE_EVENT_THRESHOLD_MS) {
+          console.log('🔌 Cell: Ignoring stale', status, 'event (channel created', timeSinceCreation, 'ms ago)');
+          return;
+        }
         console.warn('🔌 Cell channel issue:', rundownId, status);
         // No retry - nuclear reset will handle recovery
       }

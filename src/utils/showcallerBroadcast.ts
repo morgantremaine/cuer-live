@@ -23,6 +23,10 @@ class ShowcallerBroadcastManager {
   private channels = new Map<string, any>();
   private callbacks = new Map<string, Set<(state: ShowcallerBroadcastState) => void>>();
   private connectionStatus = new Map<string, string>();
+  private channelCreatedAt = new Map<string, number>();
+  
+  // Stale event threshold - ignore CHANNEL_ERROR within 500ms of channel creation
+  private readonly STALE_EVENT_THRESHOLD_MS = 500;
 
   private ensureChannel(rundownId: string) {
     if (this.channels.has(rundownId)) {
@@ -39,6 +43,7 @@ class ShowcallerBroadcastManager {
       });
 
     this.channels.set(rundownId, channel);
+    this.channelCreatedAt.set(rundownId, Date.now());
 
     channel.subscribe((status) => {
       // Ignore callbacks from old channels
@@ -53,6 +58,13 @@ class ShowcallerBroadcastManager {
       if (status === 'SUBSCRIBED') {
         console.log('✅ Showcaller channel connected:', rundownId);
       } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+        // Skip stale events that fire immediately after channel creation (race condition during nuclear reset)
+        const createdAt = this.channelCreatedAt.get(rundownId) || 0;
+        const timeSinceCreation = Date.now() - createdAt;
+        if (timeSinceCreation < this.STALE_EVENT_THRESHOLD_MS) {
+          console.log('📺 Showcaller: Ignoring stale', status, 'event (channel created', timeSinceCreation, 'ms ago)');
+          return;
+        }
         console.warn('📺 Showcaller channel issue:', rundownId, status);
         // No retry - nuclear reset will handle recovery
       }
