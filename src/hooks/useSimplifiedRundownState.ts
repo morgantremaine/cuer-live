@@ -2181,14 +2181,17 @@ export const useSimplifiedRundownState = () => {
     }, []),
     
     // Fractional indexing: track sortOrder changes for conflict-free reordering
-    // This uses the cell-level save system to persist and broadcast sortOrder changes
+    // This uses the STRUCTURAL save system with advisory locking to prevent race conditions
     // NOTE: Local state is already updated by useDragAndDrop - this only handles persistence and broadcast
     trackSortOrderChange: useCallback((itemId: string, newSortOrder: string) => {
       console.log('📊 trackSortOrderChange:', { itemId, newSortOrder });
       
-      // Use per-cell save system to persist
-      if (cellEditIntegration.isPerCellEnabled) {
-        cellEditIntegration.handleCellChange(itemId, 'sortOrder', newSortOrder);
+      // Use structural save system with advisory locking to prevent race conditions
+      // This ensures sortOrder updates are serialized per-rundown
+      if (cellEditIntegration.saveCoordination && currentUserId) {
+        cellEditIntegration.saveCoordination.handleStructuralOperation('update_sort_order', {
+          sortOrderUpdates: [{ itemId, sortOrder: newSortOrder }]
+        });
       }
       
       // Broadcast immediately for real-time sync

@@ -7,6 +7,11 @@ import { saveWithTimeout } from '@/utils/saveTimeout';
 import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 
+interface SortOrderUpdate {
+  itemId: string;
+  sortOrder: string;
+}
+
 interface StructuralOperationData {
   items?: RundownItem[];
   order?: string[];
@@ -21,11 +26,13 @@ interface StructuralOperationData {
   fromIndex?: number;           // Original position (first item's index for multi-select)
   toIndex?: number;             // New position (first item's index for multi-select)
   movedItemNames?: string[];    // Item names for display
+  // For sortOrder updates (used by fractional indexing)
+  sortOrderUpdates?: SortOrderUpdate[];
 }
 
 interface StructuralOperation {
   rundownId: string;
-  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
+  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order';
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;
@@ -285,11 +292,13 @@ export const useStructuralSave = (
       }
 
       // Immediate save for add operations to prevent ghost rows on quick navigation
-      const immediateOperations = ['add_row', 'add_header'];
+      // Also immediate for sortOrder updates to prevent race conditions
+      const immediateOperations = ['add_row', 'add_header', 'update_sort_order'];
       const shouldSaveImmediately = immediateOperations.includes(operationType);
 
       if (shouldSaveImmediately) {
         // Save immediately - prevents ghost rows that disappear on refresh
+        // For update_sort_order: advisory lock ensures serialization
         saveStructuralOperations().catch(error => {
           console.error('Structural save error:', error);
         });

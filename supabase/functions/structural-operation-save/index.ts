@@ -7,9 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+interface SortOrderUpdate {
+  itemId: string;
+  sortOrder: string;
+}
+
 interface StructuralOperation {
   rundownId: string;
-  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
+  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order';
   operationData: {
     items?: any[];
     order?: string[];
@@ -19,6 +24,8 @@ interface StructuralOperation {
     sequenceNumber?: number;
     lockedRowNumbers?: { [itemId: string]: string };
     numberingLocked?: boolean;
+    // For sortOrder updates
+    sortOrderUpdates?: SortOrderUpdate[];
   };
   userId: string;
   timestamp: string;
@@ -49,6 +56,18 @@ function renumberItems(items: any[]): any[] {
       };
     }
   });
+}
+
+// Generate advisory lock ID from rundown ID
+function getLockId(rundownId: string): number {
+  // Use a hash of the rundown ID to get a consistent lock number
+  let hash = 0;
+  for (let i = 0; i < rundownId.length; i++) {
+    const char = rundownId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
 }
 
 serve(async (req) => {
@@ -121,8 +140,42 @@ serve(async (req) => {
       timestamp: operation.timestamp,
       hasLockedNumbers: !!operation.operationData.lockedRowNumbers,
       lockedNumbersCount: Object.keys(operation.operationData.lockedRowNumbers || {}).length,
-      numberingLocked: operation.operationData.numberingLocked
+      numberingLocked: operation.operationData.numberingLocked,
+      sortOrderUpdatesCount: operation.operationData.sortOrderUpdates?.length
     });
+
+    // Use advisory lock to serialize operations per rundown
+    const lockId = getLockId(operation.rundownId);
+    let lockAcquired = false;
+    let retryCount = 0;
+    const maxRetries = 40;
+    const retryDelayMs = 500;
+
+    // Try to acquire advisory lock with retries
+    while (!lockAcquired && retryCount < maxRetries) {
+      const { data: lockResult, error: lockError } = await supabase
+        .rpc('pg_try_advisory_lock', { lock_id: lockId });
+      
+      if (lockError) {
+        console.error('❌ Lock error:', lockError);
+        // Fall through without lock - better to attempt the operation
+        break;
+      }
+      
+      if (lockResult === true) {
+        lockAcquired = true;
+        console.log(`🔒 Advisory lock acquired for rundown (attempt ${retryCount + 1})`);
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+        }
+      }
+    }
+
+    if (!lockAcquired && retryCount >= maxRetries) {
+      console.warn('⚠️ Could not acquire advisory lock after max retries, proceeding anyway');
+    }
 
     try {
       // Fetch current rundown from database
@@ -257,6 +310,34 @@ serve(async (req) => {
           break;
         }
 
+        case 'update_sort_order': {
+          // Apply sortOrder updates to items - this is the critical path for reordering
+          const sortOrderUpdates = operation.operationData.sortOrderUpdates || [];
+          
+          if (sortOrderUpdates.length === 0) {
+            console.warn('⚠️ update_sort_order called with no updates');
+            break;
+          }
+          
+          // Create a map for quick lookup
+          const sortOrderMap = new Map(sortOrderUpdates.map(u => [u.itemId, u.sortOrder]));
+          
+          // Update each item's sortOrder
+          let updatedCount = 0;
+          updatedItems = updatedItems.map(item => {
+            const newSortOrder = sortOrderMap.get(item.id);
+            if (newSortOrder !== undefined) {
+              updatedCount++;
+              return { ...item, sortOrder: newSortOrder };
+            }
+            return item;
+          });
+          
+          actionDescription = `Updated sortOrder for ${updatedCount} item(s)`;
+          console.log(`✅ ${actionDescription}`);
+          break;
+        }
+
         default:
           console.error('❌ Unknown operation type:', operation.operationType);
           return new Response(
@@ -325,9 +406,16 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-    } catch (innerError) {
-      console.error('❌ Error during structural operation:', innerError);
-      throw innerError;
+    } finally {
+      // Always release the advisory lock if we acquired it
+      if (lockAcquired) {
+        try {
+          await supabase.rpc('pg_advisory_unlock', { lock_id: lockId });
+          console.log('🔓 Advisory lock released');
+        } catch (unlockError) {
+          console.error('⚠️ Failed to release advisory lock:', unlockError);
+        }
+      }
     }
 
   } catch (error) {
