@@ -19,6 +19,7 @@ import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 import { printRundownScript } from '@/utils/scriptPrint';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -345,6 +346,8 @@ const Teleprompter = () => {
             if (item && !prev.items.find(i => i.id === item.id)) {
               const newItems = [...prev.items];
               newItems.splice(index, 0, item);
+              // Re-sort by sortOrder to ensure consistency across clients
+              newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
               
               // Recalculate timing and row numbers
               const itemsWithCalculations = calculateItemsWithTiming(
@@ -403,6 +406,8 @@ const Teleprompter = () => {
                 const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                 return ai - bi;
               });
+              // Final sort by sortOrder to ensure consistency
+              reordered.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
               
               // Recalculate timing and row numbers
               const itemsWithCalculations = calculateItemsWithTiming(
@@ -431,6 +436,8 @@ const Teleprompter = () => {
               if (newItemsToAdd.length > 0) {
                 const newItems = [...prev.items];
                 newItems.splice(index, 0, ...newItemsToAdd);
+                // Re-sort by sortOrder to ensure consistency across clients
+                newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                 
                 // Recalculate timing and row numbers using the shared calculation function
                 const itemsWithCalculations = calculateItemsWithTiming(
