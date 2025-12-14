@@ -59,6 +59,9 @@ export const useDragAndDrop = (
   const dropTargetIndexRef = useRef<number | null>(null);
   const draggedItemIndexRef = useRef<number | null>(null);
   const dragInfoRef = useRef<DragInfo | null>(null);
+  
+  // Single timeout ref for operation end - prevents race condition with rapid drags
+  const operationEndTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -293,6 +296,12 @@ export const useDragAndDrop = (
 
     setDragTimeout();
     isDragActiveRef.current = true;
+    
+    // Clear any pending operation end timeout from a previous drag
+    if (operationEndTimeoutRef.current) {
+      clearTimeout(operationEndTimeoutRef.current);
+      operationEndTimeoutRef.current = null;
+    }
     
     // Notify that a drag operation has started - block remote structural broadcasts
     onDragOperationStart?.();
@@ -538,9 +547,14 @@ export const useDragAndDrop = (
       console.log('🎯 Resetting drag state');
       resetDragState();
       
-      // Clear the active structural operation flag after a safety timeout
-      // This ensures the flag is cleared even if the save takes a while
-      setTimeout(() => {
+      // Clear any existing operation end timeout first
+      if (operationEndTimeoutRef.current) {
+        clearTimeout(operationEndTimeoutRef.current);
+      }
+      
+      // Set new timeout - only the LAST drag's timeout will actually fire
+      operationEndTimeoutRef.current = setTimeout(() => {
+        operationEndTimeoutRef.current = null;
         onDragOperationEnd?.();
       }, 5000);
     }
