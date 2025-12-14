@@ -92,8 +92,8 @@ export const realtimeReset = {
       supabase.realtime.disconnect();
       console.log('☢️ WebSocket disconnected');
 
-      // Wait for clean disconnect
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for clean disconnect - extended to allow stale callbacks to flush
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Reconnect WebSocket
       supabase.realtime.connect();
@@ -103,6 +103,9 @@ export const realtimeReset = {
       const connected = await this.waitForWebSocketConnection(5000);
       if (connected) {
         console.log('☢️ WebSocket connected - channels can now re-subscribe');
+        
+        // Extra delay to ensure old channel callbacks have time to fire and be filtered
+        await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         console.warn('☢️ WebSocket connection not confirmed, proceeding anyway');
       }
