@@ -1596,6 +1596,8 @@ export type Database = {
         Returns: Json
       }
       migrate_existing_custom_columns: { Args: never; Returns: undefined }
+      pg_advisory_unlock: { Args: { lock_id: number }; Returns: boolean }
+      pg_try_advisory_lock: { Args: { lock_id: number }; Returns: boolean }
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json
