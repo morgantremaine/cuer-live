@@ -2111,9 +2111,13 @@ export const useSimplifiedRundownState = () => {
       if (!active && rundownId) {
         // Small delay to allow any pending broadcasts to settle
         setTimeout(() => {
-          if (!activeStructuralOperationRef.current) { // Double-check we're not in a new operation
+          const flagValue = activeStructuralOperationRef.current;
+          console.log('🔄 Catch-up sync check:', { flagValue, rundownId, hasSync: !!performCatchupSync });
+          if (!flagValue) {
             console.log('🔄 Structural operation ended - catching up with database');
             performCatchupSync?.(true); // Force sync to get authoritative state
+          } else {
+            console.log('🔄 Skipping catch-up - new operation in progress');
           }
         }, 500);
       }
