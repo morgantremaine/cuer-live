@@ -150,7 +150,8 @@ export const useRundownStateCoordination = () => {
       // Re-sort by sortOrder
       const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       
-      persistedState.setItems(sortedItems);
+      // Use setItemsSync to update stateRef synchronously before broadcasts can interfere
+      persistedState.setItemsSync(sortedItems);
       
       // Use fractional indexing broadcast instead of structural reorder
       if (persistedState.trackSortOrderChange) {
@@ -190,7 +191,8 @@ export const useRundownStateCoordination = () => {
       // Re-sort by sortOrder
       const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       
-      persistedState.setItems(sortedItems);
+      // Use setItemsSync to update stateRef synchronously before broadcasts can interfere
+      persistedState.setItemsSync(sortedItems);
       
       // Use fractional indexing broadcast instead of structural reorder
       if (persistedState.trackSortOrderChange) {
@@ -222,8 +224,10 @@ export const useRundownStateCoordination = () => {
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // Update items through persisted state
-      persistedState.setItems(items);
+      // CRITICAL: Use setItemsSync to update stateRef synchronously
+      // This prevents race conditions where incoming sortOrder broadcasts read stale stateRef.current
+      // and overwrite the pending local drag state, causing drags to "revert"
+      persistedState.setItemsSync(items);
       // Clear structural change flag after items are set
       setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
