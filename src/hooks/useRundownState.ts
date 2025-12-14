@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { debugLogger } from '@/utils/debugLogger';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { generateKeyBetween } from '@/utils/fractionalIndex';
 
 export interface RundownState {
   items: RundownItem[];
@@ -605,9 +606,21 @@ export const useRundownState = (
       // Determine how many rows to add based on selection
       const rowCount = selectedRows && selectedRows.size > 1 ? selectedRows.size : 1;
       
-      // Create array of new items
+      // Calculate insert position and get adjacent sortOrders
+      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
+      const prevItem = finalInsertIndex > 0 ? state.items[finalInsertIndex - 1] : null;
+      const nextItem = finalInsertIndex < state.items.length ? state.items[finalInsertIndex] : null;
+      const prevSortOrder = prevItem?.sortOrder || null;
+      const nextSortOrder = nextItem?.sortOrder || null;
+      
+      // Create array of new items with sortOrder
       const newItems: RundownItem[] = [];
+      let currentPrevSortOrder = prevSortOrder;
+      
       for (let i = 0; i < rowCount; i++) {
+        // For multiple rows, chain sortOrders between each new item
+        const sortOrder = generateKeyBetween(currentPrevSortOrder, nextSortOrder);
+        
         newItems.push({
           id: uuidv4(),
           type: 'regular',
@@ -624,12 +637,15 @@ export const useRundownState = (
           images: '',
           notes: '',
           color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-          isFloating: false
+          isFloating: false,
+          sortOrder
         });
+        
+        // Next item's prevSortOrder is this item's sortOrder
+        currentPrevSortOrder = sortOrder;
       }
       
       // Add all items at once
-      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
       dispatch({ type: 'ADD_MULTIPLE_ROWS', payload: { items: newItems, insertIndex: finalInsertIndex } });
       
       // Return operation data for structural save coordination
@@ -640,6 +656,14 @@ export const useRundownState = (
     },
 
     addHeader: (insertIndex?: number) => {
+      // Calculate insert position and get adjacent sortOrders
+      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
+      const prevItem = finalInsertIndex > 0 ? state.items[finalInsertIndex - 1] : null;
+      const nextItem = finalInsertIndex < state.items.length ? state.items[finalInsertIndex] : null;
+      const prevSortOrder = prevItem?.sortOrder || null;
+      const nextSortOrder = nextItem?.sortOrder || null;
+      const sortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
+      
       const newItem: RundownItem = {
         id: uuidv4(),
         type: 'header',
@@ -656,7 +680,8 @@ export const useRundownState = (
         images: '',
         notes: '',
         color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-        isFloating: false
+        isFloating: false,
+        sortOrder
       };
       actions.addItem(newItem, insertIndex);
     },
