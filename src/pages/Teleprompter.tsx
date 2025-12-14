@@ -486,6 +486,43 @@ const Teleprompter = () => {
         return;
       }
 
+      // Handle sortOrder updates from drag operations (fractional indexing)
+      if (update.field === 'sortOrder') {
+        const { sortOrderUpdates } = update.value || {};
+        if (sortOrderUpdates && Array.isArray(sortOrderUpdates) && sortOrderUpdates.length > 0) {
+          console.log('📺 Teleprompter: Applying remote sortOrder changes', {
+            updateCount: sortOrderUpdates.length
+          });
+          
+          setRundownData(prev => {
+            if (!prev) return prev;
+            
+            // Apply sortOrder updates to items
+            const updatedItems = prev.items.map(item => {
+              const sortUpdate = sortOrderUpdates.find((u: { itemId: string; sortOrder: string }) => u.itemId === item.id);
+              if (sortUpdate) {
+                return { ...item, sortOrder: sortUpdate.sortOrder };
+              }
+              return item;
+            });
+            
+            // Re-sort by sortOrder
+            updatedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+            
+            // Recalculate timing
+            const itemsWithCalculations = calculateItemsWithTiming(
+              updatedItems,
+              prev.startTime || '09:00:00',
+              prev.numberingLocked || false,
+              prev.lockedRowNumbers || {}
+            );
+            
+            return { ...prev, items: itemsWithCalculations };
+          });
+        }
+        return;
+      }
+
       // Handle script, name, and isFloating field updates for teleprompter
       if (update.itemId && (update.field === 'script' || update.field === 'name' || update.field === 'isFloating')) {
         // Check if actively editing this field (not applicable to isFloating)
