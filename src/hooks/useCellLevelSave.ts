@@ -276,9 +276,7 @@ export const useCellLevelSave = (
           onSaveComplete(updatesToSave, saveCompletionCountRef.current);
         }
         
-        // Clear save-in-progress flag on success
-        simpleConnectionHealth.setSaveInProgress(rundownId, false);
-        
+        // Note: simpleConnectionHealth.setSaveInProgress is cleared in finally block
         return {
           updatedAt: data.updatedAt,
           docVersion: data.docVersion
@@ -332,6 +330,10 @@ export const useCellLevelSave = (
       if (saveInProgressRef) {
         saveInProgressRef.current = false;
       }
+    } finally {
+      // Always clear save-in-progress flag regardless of outcome
+      // This ensures health checks aren't skipped indefinitely after a failed save
+      simpleConnectionHealth.setSaveInProgress(rundownId, false);
     }
   }, [rundownId, onSaveError, onUnsavedChanges]);
 
