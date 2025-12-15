@@ -104,6 +104,7 @@ const Teleprompter = () => {
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
     lastSeenDocVersion,
+    skipShowcallerHealthCheck: true, // Teleprompter doesn't use showcaller channel
     onRundownUpdate: (updatedRundown) => {
       // Always accept remote updates to ensure real-time sync
       if (updatedRundown) {

@@ -8,7 +8,7 @@ let lastVisibleAt = Date.now();
 let resetAttempts = 0;
 let isResetting = false; // Lock to prevent concurrent resets
 
-const EXTENDED_SLEEP_THRESHOLD = 30000; // 30 seconds
+const EXTENDED_SLEEP_THRESHOLD = 60000; // 60 seconds - more reasonable for tab switches
 const MAX_RESET_ATTEMPTS = 3;
 
 export const realtimeReset = {

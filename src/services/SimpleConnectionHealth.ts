@@ -67,6 +67,28 @@ class SimpleConnectionHealthService {
     };
   }
 
+  // Context-aware health check for components that don't use all channels
+  // e.g., Teleprompter doesn't use showcaller channel
+  getContextualHealth(rundownId: string, options: { skipShowcaller?: boolean } = {}): SimpleHealthStatus {
+    const status = this.getStatus(rundownId);
+    
+    // Only check channels that are required
+    const channelsToCheck = [status.consolidated, status.cell];
+    if (!options.skipShowcaller) {
+      channelsToCheck.push(status.showcaller);
+    }
+    
+    const allConnected = channelsToCheck.every(c => c);
+
+    return {
+      ...status,
+      allConnected,
+      anyDisconnected: !allConnected,
+      consecutiveFailures: 0,
+      isStabilizing: false
+    };
+  }
+
   areAllChannelsHealthy(rundownId: string): boolean {
     return this.getHealth(rundownId).allConnected;
   }
