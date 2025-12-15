@@ -62,6 +62,11 @@ export const useDragAndDrop = (
   const dropTargetIndexRef = useRef<number | null>(null);
   const draggedItemIndexRef = useRef<number | null>(null);
   const dragInfoRef = useRef<DragInfo | null>(null);
+  
+  // RAF throttling refs for drag over performance
+  const rafIdRef = useRef<number | null>(null);
+  const pendingDropIndexRef = useRef<number | null>(null);
+  const itemsRef = useRef(items);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -97,11 +102,18 @@ export const useDragAndDrop = (
     draggedItemIndexRef.current = null;
     dragInfoRef.current = null;
     isDragActiveRef.current = false;
+    pendingDropIndexRef.current = null;
     
     // Clear any pending timeout
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
+    }
+    
+    // Cancel any pending RAF
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
     }
     
     if (process.env.NODE_ENV === 'development') {
@@ -125,11 +137,19 @@ export const useDragAndDrop = (
     }, 45000);
   }, [resetDragState]);
 
+  // Keep items ref in sync
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (dragTimeoutRef.current) {
         clearTimeout(dragTimeoutRef.current);
+      }
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
       }
     };
   }, []);
@@ -599,8 +619,9 @@ export const useDragAndDrop = (
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      // Check if the target is a header
-      const targetItem = items[targetIndex];
+      // Use ref to avoid items in dependency array
+      const currentItems = itemsRef.current;
+      const targetItem = currentItems[targetIndex];
       const isTargetHeader = targetItem?.type === 'header';
       
       let insertIndex: number;
@@ -615,13 +636,24 @@ export const useDragAndDrop = (
         insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
       }
       
-      // Only update if different to avoid unnecessary re-renders
-      if (insertIndex !== dropTargetIndex) {
-        setDropTargetIndex(insertIndex);
-        dropTargetIndexRef.current = insertIndex;
+      // Only schedule RAF update if the index is different
+      if (insertIndex !== pendingDropIndexRef.current) {
+        pendingDropIndexRef.current = insertIndex;
+        
+        // Throttle state updates with requestAnimationFrame
+        if (rafIdRef.current === null) {
+          rafIdRef.current = requestAnimationFrame(() => {
+            const pending = pendingDropIndexRef.current;
+            if (pending !== null && pending !== dropTargetIndexRef.current) {
+              setDropTargetIndex(pending);
+              dropTargetIndexRef.current = pending;
+            }
+            rafIdRef.current = null;
+          });
+        }
       }
     }
-  }, [dropTargetIndex, items]);
+  }, []); // No dependencies - uses refs only
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
