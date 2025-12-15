@@ -301,6 +301,12 @@ const Teleprompter = () => {
           }
           return prev;
         });
+        
+        // Update doc version tracking to prevent false catch-up sync triggers
+        if (data.doc_version && data.doc_version > lastSeenDocVersion) {
+          console.log(`📺 Teleprompter: Updating doc version from ${lastSeenDocVersion} to ${data.doc_version}`);
+          setLastSeenDocVersion(data.doc_version);
+        }
       }
     } catch (error) {
       console.error('📺 Teleprompter: Silent refresh failed:', error);
