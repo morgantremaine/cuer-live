@@ -164,19 +164,45 @@ export const useADViewConnectionHealth = ({
 
   const performHealthCheck = useCallback(async () => {
     const isChannelConnected = showcallerBroadcast.isChannelConnected(rundownId);
+    
+    // If channel reports disconnected, reinitialize it
+    if (!isChannelConnected) {
+      console.warn('📺 AD View health check: Showcaller channel disconnected');
+      showcallerBroadcast.reinitialize(rundownId);
+      return;
+    }
+    
+    // Channel reports connected - verify with actual database query
+    // This prevents false "stale" detection when nobody is editing
+    try {
+      const { data, error } = await supabase
+        .from('rundowns')
+        .select('doc_version')
+        .eq('id', rundownId)
+        .single();
+      
+      if (!error && data) {
+        // Database query succeeded - connection is actually healthy
+        console.log('📺 AD View health check: Database connectivity verified - healthy');
+        lastPollTimeRef.current = Date.now();
+        lastBroadcastTimeRef.current = Date.now();
+        return; // Skip staleness check entirely
+      }
+    } catch (e) {
+      console.warn('📺 AD View health check: Database query failed');
+    }
+    
+    // Database query failed - now check staleness as fallback
     const timeSinceLastPoll = Date.now() - lastPollTimeRef.current;
     const timeSinceLastBroadcast = Date.now() - lastBroadcastTimeRef.current;
     
     const isPollStale = timeSinceLastPoll > staleThresholdMs;
     const isBroadcastStale = timeSinceLastBroadcast > staleThresholdMs;
-    const isStale = isPollStale && (isBroadcastStale || !isChannelConnected);
+    const isStale = isPollStale && isBroadcastStale;
     
     if (isStale) {
-      console.warn(`📺 AD View health check: Connection stale`);
+      console.warn(`📺 AD View health check: Connection stale (db query failed + no activity in ${Math.round(timeSinceLastPoll/1000)}s)`);
       await attemptSilentRecovery();
-    } else if (!isChannelConnected && timeSinceLastBroadcast > staleThresholdMs / 2) {
-      console.warn('📺 AD View health check: Showcaller channel disconnected');
-      showcallerBroadcast.reinitialize(rundownId);
     }
   }, [rundownId, staleThresholdMs, attemptSilentRecovery]);
 
