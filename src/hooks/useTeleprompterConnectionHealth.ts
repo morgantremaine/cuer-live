@@ -20,8 +20,8 @@ export const useTeleprompterConnectionHealth = ({
   rundownId,
   enabled = true,
   onSilentRefresh,
-  staleThresholdMs = 180000,      // 3 minutes (aligned with main rundown)
-  healthCheckIntervalMs = 180000  // 3 minutes (aligned with main rundown)
+  staleThresholdMs = 60000,
+  healthCheckIntervalMs = 30000
 }: UseTeleprompterConnectionHealthProps) => {
   const [state, setState] = useState<ConnectionHealthState>({
     showConnectionWarning: false,
@@ -129,43 +129,18 @@ export const useTeleprompterConnectionHealth = ({
     
     const performHealthCheck = async () => {
       const isChannelConnected = cellBroadcast.isChannelConnected(rundownId);
-      
-      // If channel reports disconnected, attempt recovery
-      if (!isChannelConnected) {
-        console.warn('📺 Teleprompter health check: Channel disconnected');
-        await attemptSilentRecovery();
-        return;
-      }
-      
-      // Channel reports connected - verify with actual database query
-      // This prevents false "stale" detection when nobody is editing
-      try {
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('doc_version')
-          .eq('id', rundownId)
-          .single();
-        
-        if (!error && data) {
-          // Database query succeeded - connection is actually healthy
-          console.log('📺 Teleprompter health check: Database connectivity verified - healthy');
-          lastManualBroadcastRef.current = Date.now(); // Reset stale timer
-          return; // Skip staleness check entirely
-        }
-      } catch (e) {
-        console.warn('📺 Teleprompter health check: Database query failed');
-      }
-      
-      // Database query failed - now check broadcast staleness as fallback
       const lastBroadcast = cellBroadcast.getLastBroadcastTime(rundownId);
       const manualLastBroadcast = lastManualBroadcastRef.current;
       const mostRecentBroadcast = Math.max(lastBroadcast, manualLastBroadcast);
       const timeSinceLastBroadcast = Date.now() - mostRecentBroadcast;
       
-      const isStale = timeSinceLastBroadcast > staleThresholdMs;
+      const isStale = isChannelConnected && timeSinceLastBroadcast > staleThresholdMs;
       
       if (isStale) {
-        console.warn(`📺 Teleprompter health check: Connection stale (db query failed + no broadcasts in ${Math.round(timeSinceLastBroadcast/1000)}s)`);
+        console.warn(`📺 Teleprompter health check: Connection stale`);
+        await attemptSilentRecovery();
+      } else if (!isChannelConnected) {
+        console.warn('📺 Teleprompter health check: Channel disconnected');
         await attemptSilentRecovery();
       }
     };

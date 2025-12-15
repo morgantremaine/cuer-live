@@ -19,6 +19,7 @@ import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 import { printRundownScript } from '@/utils/scriptPrint';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -104,7 +105,6 @@ const Teleprompter = () => {
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
     lastSeenDocVersion,
-    skipShowcallerHealthCheck: true, // Teleprompter doesn't use showcaller channel
     onRundownUpdate: (updatedRundown) => {
       // Always accept remote updates to ensure real-time sync
       if (updatedRundown) {
@@ -194,9 +194,13 @@ const Teleprompter = () => {
         setError(`Unable to load rundown: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
+        const rawItems = data.items || [];
+        // Sort items by sortOrder for consistent display order (same as main rundown)
+        const sortedItems = [...rawItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+        
         const loadedData = {
           title: data.title || 'Untitled Rundown',
-          items: data.items || [],
+          items: sortedItems,
           startTime: data.startTime || '00:00:00'
         };
         
@@ -272,9 +276,13 @@ const Teleprompter = () => {
         .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
       if (!queryError && data) {
+        const rawItems = data.items || [];
+        // Sort items by sortOrder for consistent display order (same as main rundown)
+        const sortedItems = [...rawItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+        
         const refreshedData = {
           title: data.title || 'Untitled Rundown',
-          items: data.items || [],
+          items: sortedItems,
           startTime: data.startTime || '00:00:00',
           numberingLocked: data.numbering_locked,
           lockedRowNumbers: data.locked_row_numbers
@@ -301,12 +309,6 @@ const Teleprompter = () => {
           }
           return prev;
         });
-        
-        // Update doc version tracking to prevent false catch-up sync triggers
-        if (data.doc_version && data.doc_version > lastSeenDocVersion) {
-          console.log(`📺 Teleprompter: Updating doc version from ${lastSeenDocVersion} to ${data.doc_version}`);
-          setLastSeenDocVersion(data.doc_version);
-        }
       }
     } catch (error) {
       console.error('📺 Teleprompter: Silent refresh failed:', error);
@@ -318,8 +320,8 @@ const Teleprompter = () => {
     rundownId: rundownId || '',
     enabled: !!rundownId,
     onSilentRefresh: silentRefreshData,
-    staleThresholdMs: 180000,      // 3 minutes
-    healthCheckIntervalMs: 180000  // 3 minutes
+    staleThresholdMs: 60000, // 60 seconds
+    healthCheckIntervalMs: 30000 // 30 seconds
   });
 
   // Set up cell broadcast for instant collaboration (per-tab, not per-user)
@@ -352,6 +354,8 @@ const Teleprompter = () => {
             if (item && !prev.items.find(i => i.id === item.id)) {
               const newItems = [...prev.items];
               newItems.splice(index, 0, item);
+              // Re-sort by sortOrder to ensure consistency across clients
+              newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
               
               // Recalculate timing and row numbers
               const itemsWithCalculations = calculateItemsWithTiming(
@@ -410,6 +414,8 @@ const Teleprompter = () => {
                 const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                 return ai - bi;
               });
+              // Final sort by sortOrder to ensure consistency
+              reordered.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
               
               // Recalculate timing and row numbers
               const itemsWithCalculations = calculateItemsWithTiming(
@@ -438,6 +444,8 @@ const Teleprompter = () => {
               if (newItemsToAdd.length > 0) {
                 const newItems = [...prev.items];
                 newItems.splice(index, 0, ...newItemsToAdd);
+                // Re-sort by sortOrder to ensure consistency across clients
+                newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                 
                 // Recalculate timing and row numbers using the shared calculation function
                 const itemsWithCalculations = calculateItemsWithTiming(
@@ -475,6 +483,43 @@ const Teleprompter = () => {
 
           return prev;
         });
+        return;
+      }
+
+      // Handle sortOrder updates from drag operations (fractional indexing)
+      if (update.field === 'sortOrder') {
+        const { sortOrderUpdates } = update.value || {};
+        if (sortOrderUpdates && Array.isArray(sortOrderUpdates) && sortOrderUpdates.length > 0) {
+          console.log('📺 Teleprompter: Applying remote sortOrder changes', {
+            updateCount: sortOrderUpdates.length
+          });
+          
+          setRundownData(prev => {
+            if (!prev) return prev;
+            
+            // Apply sortOrder updates to items
+            const updatedItems = prev.items.map(item => {
+              const sortUpdate = sortOrderUpdates.find((u: { itemId: string; sortOrder: string }) => u.itemId === item.id);
+              if (sortUpdate) {
+                return { ...item, sortOrder: sortUpdate.sortOrder };
+              }
+              return item;
+            });
+            
+            // Re-sort by sortOrder
+            updatedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+            
+            // Recalculate timing
+            const itemsWithCalculations = calculateItemsWithTiming(
+              updatedItems,
+              prev.startTime || '09:00:00',
+              prev.numberingLocked || false,
+              prev.lockedRowNumbers || {}
+            );
+            
+            return { ...prev, items: itemsWithCalculations };
+          });
+        }
         return;
       }
 

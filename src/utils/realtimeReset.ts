@@ -8,7 +8,7 @@ let lastVisibleAt = Date.now();
 let resetAttempts = 0;
 let isResetting = false; // Lock to prevent concurrent resets
 
-const EXTENDED_SLEEP_THRESHOLD = 60000; // 60 seconds - more reasonable for tab switches
+const EXTENDED_SLEEP_THRESHOLD = 30000; // 30 seconds
 const MAX_RESET_ATTEMPTS = 3;
 
 export const realtimeReset = {
@@ -92,8 +92,8 @@ export const realtimeReset = {
       supabase.realtime.disconnect();
       console.log('☢️ WebSocket disconnected');
 
-      // Wait for clean disconnect
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for clean disconnect - extended to allow stale callbacks to flush
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Reconnect WebSocket
       supabase.realtime.connect();
@@ -103,6 +103,9 @@ export const realtimeReset = {
       const connected = await this.waitForWebSocketConnection(5000);
       if (connected) {
         console.log('☢️ WebSocket connected - channels can now re-subscribe');
+        
+        // Extra delay to ensure old channel callbacks have time to fire and be filtered
+        await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         console.warn('☢️ WebSocket connection not confirmed, proceeding anyway');
       }

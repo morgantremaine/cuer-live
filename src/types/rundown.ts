@@ -16,6 +16,8 @@ export interface RundownItem {
   notes: string;
   color: string;
   isFloating: boolean;
+  // Fractional index for conflict-free collaborative reordering
+  sortOrder?: string;
   // Legacy properties for backward compatibility
   isFloated?: boolean;
   isHeader?: boolean;

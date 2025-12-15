@@ -20,6 +20,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { getTabId } from '@/utils/tabUtils';
 import { RundownItem } from '@/types/rundown';
+import { generateKeyBetween, generateNKeysBetween } from '@/utils/fractionalIndex';
 
 interface DragInfo {
   draggedIds: string[];
@@ -41,7 +42,11 @@ export const useDragAndDrop = (
   rundownId?: string | null,
   currentUserId?: string | null,
   recordOperation?: (operation: { type: 'cell_edit' | 'add_row' | 'add_header' | 'delete_row' | 'reorder', data: any, description: string }) => void,
-  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void
+  onEditorialChange?: (segmentId: string, segmentData?: any, eventType?: string) => void,
+  // BROADCAST-FIRST: Notify parent when drag state changes to block incoming reorder broadcasts
+  setDragActive?: (active: boolean) => void,
+  // FRACTIONAL INDEXING: Track sortOrder field changes via cell update system
+  trackSortOrderChange?: (itemId: string, newSortOrder: string) => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -57,6 +62,11 @@ export const useDragAndDrop = (
   const dropTargetIndexRef = useRef<number | null>(null);
   const draggedItemIndexRef = useRef<number | null>(null);
   const dragInfoRef = useRef<DragInfo | null>(null);
+  
+  // RAF throttling refs for drag over performance
+  const rafIdRef = useRef<number | null>(null);
+  const pendingDropIndexRef = useRef<number | null>(null);
+  const itemsRef = useRef(items);
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -92,11 +102,18 @@ export const useDragAndDrop = (
     draggedItemIndexRef.current = null;
     dragInfoRef.current = null;
     isDragActiveRef.current = false;
+    pendingDropIndexRef.current = null;
     
     // Clear any pending timeout
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
+    }
+    
+    // Cancel any pending RAF
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
     }
     
     if (process.env.NODE_ENV === 'development') {
@@ -120,11 +137,19 @@ export const useDragAndDrop = (
     }, 45000);
   }, [resetDragState]);
 
+  // Keep items ref in sync
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (dragTimeoutRef.current) {
         clearTimeout(dragTimeoutRef.current);
+      }
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
       }
     };
   }, []);
@@ -292,6 +317,9 @@ export const useDragAndDrop = (
     setDragTimeout();
     isDragActiveRef.current = true;
     
+    // BROADCAST-FIRST: Notify parent to block incoming reorder broadcasts
+    setDragActive?.(true);
+    
     if (process.env.NODE_ENV === 'development') {
       console.log('🎯 Drag state set:', {
         activeId: active.id,
@@ -300,7 +328,7 @@ export const useDragAndDrop = (
         isHeaderGroup
       });
     }
-   }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
+   }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout, setDragActive]);
 
   // @dnd-kit drag end handler
   const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {
@@ -361,6 +389,7 @@ export const useDragAndDrop = (
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
+      let insertionIndex: number; // Track where items were inserted for sortOrder calculation
 
       if (draggedIds.length > 1) {
         // Get all dragged items in their CURRENT order from items array
@@ -403,6 +432,7 @@ export const useDragAndDrop = (
         
         // Ensure we don't go out of bounds
         adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
+        insertionIndex = adjustedDropIndex;
         
         // Insert all items at the adjusted drop position
         newItems = [...remainingItems];
@@ -422,18 +452,56 @@ export const useDragAndDrop = (
           if (activeIndex < dropTargetIndex) {
             insertIndex = dropTargetIndex - 1;
           }
+          insertionIndex = insertIndex;
           
           newItems = [...remainingItems];
           newItems.splice(insertIndex, 0, item);
         } else {
           // Fallback to @dnd-kit's arrayMove
           newItems = arrayMove(items, activeIndex, overIndex);
+          insertionIndex = overIndex;
         }
         
         const draggedItem = items[activeIndex];
         hasHeaderMoved = draggedItem?.type === 'header';
         actionDescription = `Reorder "${draggedItem?.name || 'row'}"`;
       }
+      
+      // ============================================================
+      // FRACTIONAL INDEXING: Calculate new sortOrder values
+      // ============================================================
+      // Get the items around the insertion point to calculate new sortOrder
+      const prevItem = insertionIndex > 0 ? newItems[insertionIndex - 1] : null;
+      const afterInsertedItems = insertionIndex + draggedIds.length;
+      const nextItem = afterInsertedItems < newItems.length ? newItems[afterInsertedItems] : null;
+      
+      const prevSortOrder = prevItem?.sortOrder || null;
+      const nextSortOrder = nextItem?.sortOrder || null;
+      
+      console.log('📊 Calculating sortOrder between:', {
+        prevId: prevItem?.id?.slice(-6),
+        prevSortOrder,
+        nextId: nextItem?.id?.slice(-6),
+        nextSortOrder,
+        draggedCount: draggedIds.length
+      });
+      
+      // Generate new sortOrder values for all dragged items
+      const newSortOrders = generateNKeysBetween(prevSortOrder, nextSortOrder, draggedIds.length);
+      
+      // Update items with new sortOrder values
+      const sortOrderUpdates: { itemId: string; sortOrder: string }[] = [];
+      newItems = newItems.map((item, index) => {
+        const draggedIndex = draggedIds.indexOf(item.id);
+        if (draggedIndex !== -1 && newSortOrders[draggedIndex]) {
+          const newSortOrder = newSortOrders[draggedIndex];
+          sortOrderUpdates.push({ itemId: item.id, sortOrder: newSortOrder });
+          return { ...item, sortOrder: newSortOrder };
+        }
+        return item;
+      });
+      
+      console.log('📊 New sortOrder values:', sortOrderUpdates);
       
       // Always renumber items after any drag operation to ensure proper sequencing
       console.log('🔢 Renumbering items after drag operation');
@@ -450,14 +518,24 @@ export const useDragAndDrop = (
       
       console.log('🎯 Setting new items array, length:', newItems.length);
       
-      // 🎯 NEW: Record reorder operation for undo/redo
-      const oldOrder = items.map(item => item.id);
-      const newOrder = newItems.map(item => item.id);
-      console.log('📝 Recording reorder:', { oldOrderLength: oldOrder.length, newOrderLength: newOrder.length });
+      // 🎯 Record reorder operation for undo/redo (now using sortOrder)
+      const oldSortOrders = draggedIds.map(id => {
+        const item = items.find(i => i.id === id);
+        return { itemId: id, sortOrder: item?.sortOrder || '' };
+      });
+      console.log('📝 Recording reorder:', { 
+        draggedCount: draggedIds.length, 
+        oldSortOrders: oldSortOrders.slice(0, 3),
+        newSortOrders: sortOrderUpdates.slice(0, 3)
+      });
       if (recordOperation) {
         recordOperation({
           type: 'reorder',
-          data: { oldOrder, newOrder },
+          data: { 
+            oldSortOrders,
+            newSortOrders: sortOrderUpdates,
+            draggedIds
+          },
           description: actionDescription
         });
       }
@@ -478,47 +556,16 @@ export const useDragAndDrop = (
         });
       }
       
-      // Handle reorder via structural coordination if available (database persistence)
-      if (markStructuralChange && typeof markStructuralChange === 'function') {
-        const order = newItems.map(item => item.id);
-        console.log('🏗️ Triggering structural operation for reorder (database persistence)');
-        
-        // Capture move metadata for history display
-        let movedItemNames: string[] = [];
-        let fromIndex = activeIndex;
-        let toIndex = overIndex;
-        
-        if (draggedIds.length > 1) {
-          // Multi-item move
-          const draggedItems = draggedIds
-            .map((id: string) => items.find(item => item.id === id))
-            .filter(Boolean) as RundownItem[];
-          movedItemNames = draggedItems.map(item => item.name || 'Untitled');
-          
-          // Find the actual destination index in the new array
-          if (dropTargetIndex !== null) {
-            toIndex = dropTargetIndex;
-          }
-        } else {
-          // Single item move
-          const draggedItem = items[activeIndex];
-          movedItemNames = [draggedItem?.name || 'Untitled'];
-        }
-        
-        // Call structural change handler with reorder operation and move metadata
-        try {
-          // Try to call as structural operation handler
-          (markStructuralChange as any)('reorder', { 
-            order,
-            movedItemIds: draggedIds,
-            fromIndex,
-            toIndex,
-            movedItemNames
-          });
-        } catch (error) {
-          // Fallback to just marking structural change
-          markStructuralChange();
-        }
+      // ============================================================
+      // FRACTIONAL INDEXING: Save sortOrder changes via cell update system
+      // ============================================================
+      // This replaces the structural reorder operation with per-cell sortOrder updates
+      // trackSortOrderChange handles both persistence and broadcasting
+      if (trackSortOrderChange) {
+        console.log('📊 Saving sortOrder changes via cell system:', sortOrderUpdates.length);
+        sortOrderUpdates.forEach(({ itemId, sortOrder }) => {
+          trackSortOrderChange(itemId, sortOrder);
+        });
       }
       
     } catch (error) {
@@ -532,8 +579,10 @@ export const useDragAndDrop = (
     } finally {
       console.log('🎯 Resetting drag state');
       resetDragState();
+      // BROADCAST-FIRST: Notify parent to re-enable incoming reorder broadcasts (with protection window)
+      setDragActive?.(false);
     }
-  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
+  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState, setDragActive, trackSortOrderChange, recordOperation, onEditorialChange]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
@@ -570,8 +619,9 @@ export const useDragAndDrop = (
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      // Check if the target is a header
-      const targetItem = items[targetIndex];
+      // Use ref to avoid items in dependency array
+      const currentItems = itemsRef.current;
+      const targetItem = currentItems[targetIndex];
       const isTargetHeader = targetItem?.type === 'header';
       
       let insertIndex: number;
@@ -586,13 +636,24 @@ export const useDragAndDrop = (
         insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
       }
       
-      // Only update if different to avoid unnecessary re-renders
-      if (insertIndex !== dropTargetIndex) {
-        setDropTargetIndex(insertIndex);
-        dropTargetIndexRef.current = insertIndex;
+      // Only schedule RAF update if the index is different
+      if (insertIndex !== pendingDropIndexRef.current) {
+        pendingDropIndexRef.current = insertIndex;
+        
+        // Throttle state updates with requestAnimationFrame
+        if (rafIdRef.current === null) {
+          rafIdRef.current = requestAnimationFrame(() => {
+            const pending = pendingDropIndexRef.current;
+            if (pending !== null && pending !== dropTargetIndexRef.current) {
+              setDropTargetIndex(pending);
+              dropTargetIndexRef.current = pending;
+            }
+            rafIdRef.current = null;
+          });
+        }
       }
     }
-  }, [dropTargetIndex, items]);
+  }, []); // No dependencies - uses refs only
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -659,7 +720,9 @@ export const useDragAndDrop = (
     // No valid drop or same position - just reset
     console.log('🎯 No valid drop - resetting state');
     resetDragState();
-  }, [items, handleDndKitDragEnd, resetDragState]);
+    // BROADCAST-FIRST: Re-enable reorder broadcasts since we're not processing a drop
+    setDragActive?.(false);
+  }, [items, handleDndKitDragEnd, resetDragState, setDragActive]);
 
   // Create sortable items list for @dnd-kit
   const sortableItems = useMemo(() => 

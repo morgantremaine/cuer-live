@@ -19,6 +19,10 @@ interface FieldUpdate {
 const QUICK_SAVE_FIELDS = ['timezone', 'startTime', 'endTime', 'showDate', 'title'];
 const QUICK_SAVE_DELAY = 300; // 300ms for quick-save fields
 
+// STRUCTURAL FIELDS - handled exclusively by structural-operation-save with advisory locks
+// Skip these to prevent race conditions causing data loss during concurrent editing
+const STRUCTURAL_FIELDS = ['sortOrder', 'rowNumber'];
+
 export const useCellLevelSave = (
   rundownId: string | null,
   onSaveComplete?: (savedUpdates?: FieldUpdate[], completionCount?: number) => void,
@@ -92,6 +96,12 @@ export const useCellLevelSave = (
   // Track individual field changes
   const trackCellChange = useCallback((itemId: string | undefined, field: string, value: any) => {
     if (!rundownId) return;
+    
+    // Skip structural fields - handled by structural-operation-save with advisory locks
+    if (STRUCTURAL_FIELDS.includes(field)) {
+      console.log(`⏭️ Skipping structural field ${field} - handled by structural operations`);
+      return;
+    }
 
     const update: FieldUpdate = {
       itemId,
@@ -276,7 +286,9 @@ export const useCellLevelSave = (
           onSaveComplete(updatesToSave, saveCompletionCountRef.current);
         }
         
-        // Note: simpleConnectionHealth.setSaveInProgress is cleared in finally block
+        // Clear save-in-progress flag on success
+        simpleConnectionHealth.setSaveInProgress(rundownId, false);
+        
         return {
           updatedAt: data.updatedAt,
           docVersion: data.docVersion
@@ -330,10 +342,6 @@ export const useCellLevelSave = (
       if (saveInProgressRef) {
         saveInProgressRef.current = false;
       }
-    } finally {
-      // Always clear save-in-progress flag regardless of outcome
-      // This ensures health checks aren't skipped indefinitely after a failed save
-      simpleConnectionHealth.setSaveInProgress(rundownId, false);
     }
   }, [rundownId, onSaveError, onUnsavedChanges]);
 
