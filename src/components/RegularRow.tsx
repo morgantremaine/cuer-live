@@ -32,7 +32,7 @@ interface RegularRowProps {
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
@@ -265,12 +265,13 @@ const RegularRow = (props: RegularRowProps) => {
           contain: 'style paint'
         }}
         data-item-id={item.id}
+        data-row-index={index}
         data-type="regular"
         data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
         data-floated={item.isFloating ? 'true' : 'false'}
         draggable
         onDragStart={handleDragStart}
-        onDragOver={onDragOver}
+        onDragOver={(e) => onDragOver(e, index)}
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
