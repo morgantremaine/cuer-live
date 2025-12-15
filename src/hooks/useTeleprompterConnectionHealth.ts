@@ -20,8 +20,8 @@ export const useTeleprompterConnectionHealth = ({
   rundownId,
   enabled = true,
   onSilentRefresh,
-  staleThresholdMs = 60000,
-  healthCheckIntervalMs = 30000
+  staleThresholdMs = 180000,      // 3 minutes (aligned with main rundown)
+  healthCheckIntervalMs = 180000  // 3 minutes (aligned with main rundown)
 }: UseTeleprompterConnectionHealthProps) => {
   const [state, setState] = useState<ConnectionHealthState>({
     showConnectionWarning: false,

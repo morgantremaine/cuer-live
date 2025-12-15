@@ -311,8 +311,8 @@ const Teleprompter = () => {
     rundownId: rundownId || '',
     enabled: !!rundownId,
     onSilentRefresh: silentRefreshData,
-    staleThresholdMs: 60000, // 60 seconds
-    healthCheckIntervalMs: 30000 // 30 seconds
+    staleThresholdMs: 180000,      // 3 minutes
+    healthCheckIntervalMs: 180000  // 3 minutes
   });
 
   // Set up cell broadcast for instant collaboration (per-tab, not per-user)
