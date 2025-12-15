@@ -10,13 +10,13 @@ import { useAuth } from './useAuth';
 import { useTeamId } from './useTeamId';
 import { useDragAndDrop } from './useDragAndDrop';
 import { useMOSIntegration } from './useMOSIntegration';
+import { arrayMove } from '@dnd-kit/sortable';
 import { getTabId } from '@/utils/tabUtils';
 import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
-import { generateKeyBetween, compareSortOrder } from '@/utils/fractionalIndex';
 
 export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
@@ -118,44 +118,40 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // Add move up/down functions for mobile context menu - using fractional indexing
+  // Add move up/down functions for mobile context menu
   const moveItemUp = (index: number) => {
     console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
     if (index > 0) {
       const currentItems = performanceOptimization.calculatedItems;
-      const movedItem = currentItems[index];
-      const targetIndex = index - 1;
+      const newItems = arrayMove(currentItems, index, index - 1);
+      console.log('🔄 Moving item from', index, 'to', index - 1);
+      persistedState.setItems(newItems);
       
-      // Calculate new sortOrder for the moved item
-      // It should go between item at targetIndex-1 and item at targetIndex
-      const prevItem = targetIndex > 0 ? currentItems[targetIndex - 1] : null;
-      const nextItem = currentItems[targetIndex]; // The item we're moving before
+      // Broadcast reorder for immediate realtime sync (dual broadcasting)
+      if (persistedState.rundownId && userId) {
+        const order = newItems.map(item => item.id);
+        cellBroadcast.broadcastCellUpdate(
+          persistedState.rundownId,
+          undefined,
+          'items:reorder',
+          { order },
+          userId,
+          getTabId()
+        );
+        console.log('📡 Broadcasting moveUp reorder:', { orderLength: order.length });
+      }
       
-      const prevSortOrder = prevItem?.sortOrder || null;
-      const nextSortOrder = nextItem?.sortOrder || null;
-      
-      const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
-      
-      console.log('📊 MoveUp sortOrder:', { 
-        prevSortOrder, 
-        nextSortOrder, 
-        newSortOrder,
-        movedItemId: movedItem.id
-      });
-      
-      // Update local state with new sortOrder
-      const updatedItems = currentItems.map(item => 
-        item.id === movedItem.id ? { ...item, sortOrder: newSortOrder } : item
-      );
-      // Re-sort by sortOrder
-      const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-      
-      // Use setItemsSync to update stateRef synchronously before broadcasts can interfere
-      persistedState.setItemsSync(sortedItems);
-      
-      // Use fractional indexing broadcast instead of structural reorder
-      if (persistedState.trackSortOrderChange) {
-        persistedState.trackSortOrderChange(movedItem.id, newSortOrder);
+      // Trigger structural operation for database persistence
+      if (persistedState.markStructuralChange) {
+        const order = newItems.map(item => item.id);
+        persistedState.markStructuralChange('reorder', { 
+          order,
+          movedItemIds: [currentItems[index].id],
+          fromIndex: index,
+          toIndex: index - 1,
+          movedItemNames: [currentItems[index].name || 'Untitled']
+        });
+        console.log('🏗️ Triggered structural operation for moveUp');
       }
     }
   };
@@ -164,39 +160,35 @@ export const useRundownStateCoordination = () => {
     const currentItems = performanceOptimization.calculatedItems;
     console.log('🔄 Moving item down:', { index, itemsLength: currentItems.length });
     if (index < currentItems.length - 1) {
-      const movedItem = currentItems[index];
-      const targetIndex = index + 1;
+      const newItems = arrayMove(currentItems, index, index + 1);
+      console.log('🔄 Moving item from', index, 'to', index + 1);
+      persistedState.setItems(newItems);
       
-      // Calculate new sortOrder for the moved item
-      // It should go between item at targetIndex and item at targetIndex+1
-      const prevItem = currentItems[targetIndex]; // The item we're moving after
-      const nextItem = targetIndex + 1 < currentItems.length ? currentItems[targetIndex + 1] : null;
+      // Broadcast reorder for immediate realtime sync (dual broadcasting)
+      if (persistedState.rundownId && userId) {
+        const order = newItems.map(item => item.id);
+        cellBroadcast.broadcastCellUpdate(
+          persistedState.rundownId,
+          undefined,
+          'items:reorder',
+          { order },
+          userId,
+          getTabId()
+        );
+        console.log('📡 Broadcasting moveDown reorder:', { orderLength: order.length });
+      }
       
-      const prevSortOrder = prevItem?.sortOrder || null;
-      const nextSortOrder = nextItem?.sortOrder || null;
-      
-      const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
-      
-      console.log('📊 MoveDown sortOrder:', { 
-        prevSortOrder, 
-        nextSortOrder, 
-        newSortOrder,
-        movedItemId: movedItem.id
-      });
-      
-      // Update local state with new sortOrder
-      const updatedItems = currentItems.map(item => 
-        item.id === movedItem.id ? { ...item, sortOrder: newSortOrder } : item
-      );
-      // Re-sort by sortOrder
-      const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-      
-      // Use setItemsSync to update stateRef synchronously before broadcasts can interfere
-      persistedState.setItemsSync(sortedItems);
-      
-      // Use fractional indexing broadcast instead of structural reorder
-      if (persistedState.trackSortOrderChange) {
-        persistedState.trackSortOrderChange(movedItem.id, newSortOrder);
+      // Trigger structural operation for database persistence
+      if (persistedState.markStructuralChange) {
+        const order = newItems.map(item => item.id);
+        persistedState.markStructuralChange('reorder', { 
+          order,
+          movedItemIds: [currentItems[index].id],
+          fromIndex: index,
+          toIndex: index + 1,
+          movedItemNames: [currentItems[index].name || 'Untitled']
+        });
+        console.log('🏗️ Triggered structural operation for moveDown');
       }
     }
   };
@@ -224,10 +216,8 @@ export const useRundownStateCoordination = () => {
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // CRITICAL: Use setItemsSync to update stateRef synchronously
-      // This prevents race conditions where incoming sortOrder broadcasts read stale stateRef.current
-      // and overwrite the pending local drag state, causing drags to "revert"
-      persistedState.setItemsSync(items);
+      // Update items through persisted state
+      persistedState.setItems(items);
       // Clear structural change flag after items are set
       setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
@@ -242,9 +232,7 @@ export const useRundownStateCoordination = () => {
     persistedState.rundownId, // Pass rundownId for broadcasts
     userId, // Pass userId for broadcasts
     persistedState.recordOperation, // Pass recordOperation for operation-based undo
-    handleEditorialChange, // Pass MOS editorial change handler
-    persistedState.setDragActive, // BROADCAST-FIRST: Block reorder broadcasts during drag
-    persistedState.trackSortOrderChange // Fractional indexing: track sortOrder changes
+    handleEditorialChange // Pass MOS editorial change handler
   );
 
   // UI interactions that depend on the core state (NO showcaller interference)

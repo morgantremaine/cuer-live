@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { debugLogger } from '@/utils/debugLogger';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
-import { generateKeyBetween, compareSortOrder } from '@/utils/fractionalIndex';
 
 export interface RundownState {
   items: RundownItem[];
@@ -52,8 +51,7 @@ type RundownAction =
   | { type: 'SET_NUMBERING_LOCKED'; payload: boolean } // Set lock state
   | { type: 'SET_LOCKED_ROW_NUMBERS'; payload: { [itemId: string]: string } } // Set locked numbers
   | { type: 'LOAD_STATE'; payload: Partial<RundownState> }
-  | { type: 'LOAD_REMOTE_STATE'; payload: Partial<RundownState> } // Silent load for remote updates
-  | { type: 'UPDATE_SORT_ORDERS'; payload: Array<{ itemId: string; sortOrder: string }> }; // Functional sortOrder update
+  | { type: 'LOAD_REMOTE_STATE'; payload: Partial<RundownState> }; // Silent load for remote updates
 
 const initialState: RundownState = {
   items: [],
@@ -329,25 +327,6 @@ function rundownReducer(
         // Don't update lastChanged for remote updates
       };
     }
-    
-    case 'UPDATE_SORT_ORDERS': {
-      // Surgical update: apply sortOrder changes to specific items and re-sort
-      // This uses functional state update - no stale ref reads needed!
-      const updates = action.payload;
-      const updatedItems = state.items.map(item => {
-        const update = updates.find(u => u.itemId === item.id);
-        return update ? { ...item, sortOrder: update.sortOrder } : item;
-      });
-      const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-      
-      debugLogger.autosave('UPDATE_SORT_ORDERS applied - surgical update, no stale ref');
-      return {
-        ...state,
-        items: sortedItems,
-        hasUnsavedChanges: false, // Remote updates should not trigger saves
-      };
-    }
-    
     default:
       return state;
   }
@@ -555,11 +534,6 @@ export const useRundownState = (
       dispatch({ type: 'REORDER_ITEMS', payload: { fromIndex, toIndex, count } });
     },
     
-    // Functional sortOrder update - uses reducer for guaranteed current state
-    updateSortOrders: (updates: Array<{ itemId: string; sortOrder: string }>) => {
-      dispatch({ type: 'UPDATE_SORT_ORDERS', payload: updates });
-    },
-    
     setColumns: (columns: Column[]) => dispatch({ type: 'SET_COLUMNS', payload: columns }),
     
     updateColumn: (id: string, updates: Partial<Column>) =>
@@ -631,21 +605,9 @@ export const useRundownState = (
       // Determine how many rows to add based on selection
       const rowCount = selectedRows && selectedRows.size > 1 ? selectedRows.size : 1;
       
-      // Calculate insert position and get adjacent sortOrders
-      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
-      const prevItem = finalInsertIndex > 0 ? state.items[finalInsertIndex - 1] : null;
-      const nextItem = finalInsertIndex < state.items.length ? state.items[finalInsertIndex] : null;
-      const prevSortOrder = prevItem?.sortOrder || null;
-      const nextSortOrder = nextItem?.sortOrder || null;
-      
-      // Create array of new items with sortOrder
+      // Create array of new items
       const newItems: RundownItem[] = [];
-      let currentPrevSortOrder = prevSortOrder;
-      
       for (let i = 0; i < rowCount; i++) {
-        // For multiple rows, chain sortOrders between each new item
-        const sortOrder = generateKeyBetween(currentPrevSortOrder, nextSortOrder);
-        
         newItems.push({
           id: uuidv4(),
           type: 'regular',
@@ -662,15 +624,12 @@ export const useRundownState = (
           images: '',
           notes: '',
           color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-          isFloating: false,
-          sortOrder
+          isFloating: false
         });
-        
-        // Next item's prevSortOrder is this item's sortOrder
-        currentPrevSortOrder = sortOrder;
       }
       
       // Add all items at once
+      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
       dispatch({ type: 'ADD_MULTIPLE_ROWS', payload: { items: newItems, insertIndex: finalInsertIndex } });
       
       // Return operation data for structural save coordination
@@ -681,14 +640,6 @@ export const useRundownState = (
     },
 
     addHeader: (insertIndex?: number) => {
-      // Calculate insert position and get adjacent sortOrders
-      const finalInsertIndex = insertIndex !== undefined ? insertIndex : state.items.length;
-      const prevItem = finalInsertIndex > 0 ? state.items[finalInsertIndex - 1] : null;
-      const nextItem = finalInsertIndex < state.items.length ? state.items[finalInsertIndex] : null;
-      const prevSortOrder = prevItem?.sortOrder || null;
-      const nextSortOrder = nextItem?.sortOrder || null;
-      const sortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
-      
       const newItem: RundownItem = {
         id: uuidv4(),
         type: 'header',
@@ -705,8 +656,7 @@ export const useRundownState = (
         images: '',
         notes: '',
         color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
-        isFloating: false,
-        sortOrder
+        isFloating: false
       };
       actions.addItem(newItem, insertIndex);
     },

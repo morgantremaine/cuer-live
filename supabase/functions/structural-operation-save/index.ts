@@ -7,14 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-interface SortOrderUpdate {
-  itemId: string;
-  sortOrder: string;
-}
-
 interface StructuralOperation {
   rundownId: string;
-  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order';
+  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
   operationData: {
     items?: any[];
     order?: string[];
@@ -24,8 +19,6 @@ interface StructuralOperation {
     sequenceNumber?: number;
     lockedRowNumbers?: { [itemId: string]: string };
     numberingLocked?: boolean;
-    // For sortOrder updates
-    sortOrderUpdates?: SortOrderUpdate[];
   };
   userId: string;
   timestamp: string;
@@ -56,95 +49,6 @@ function renumberItems(items: any[]): any[] {
       };
     }
   });
-}
-
-// Generate a sortOrder key between two existing keys
-function generateSortOrderBetween(before: string | null, after: string | null): string {
-  // If both null, start with 'a'
-  if (!before && !after) return 'a';
-  
-  // If only before exists, increment last char
-  if (!after) {
-    const lastChar = before!.charCodeAt(before!.length - 1);
-    if (lastChar < 126) { // '~' is 126
-      return before!.slice(0, -1) + String.fromCharCode(lastChar + 1);
-    }
-    return before + 'a'; // Append 'a' if at max
-  }
-  
-  // If only after exists, decrement first char
-  if (!before) {
-    const firstChar = after.charCodeAt(0);
-    if (firstChar > 33) { // '!' is 33
-      return String.fromCharCode(firstChar - 1);
-    }
-    return String.fromCharCode(33) + 'a';
-  }
-  
-  // Find midpoint between before and after
-  // Simple approach: find first differing char and pick midpoint
-  let result = '';
-  const maxLen = Math.max(before.length, after.length) + 1;
-  
-  for (let i = 0; i < maxLen; i++) {
-    const aChar = i < before.length ? before.charCodeAt(i) : 32;
-    const bChar = i < after.length ? after.charCodeAt(i) : 126;
-    
-    if (aChar === bChar) {
-      result += String.fromCharCode(aChar);
-      continue;
-    }
-    
-    const mid = Math.floor((aChar + bChar) / 2);
-    if (mid > aChar) {
-      return result + String.fromCharCode(mid);
-    }
-    
-    result += String.fromCharCode(aChar);
-  }
-  
-  return result + 'a';
-}
-
-// Ensure all items have sortOrder values
-function ensureSortOrders(items: any[]): any[] {
-  const needsInit = items.some(item => !item.sortOrder);
-  
-  if (!needsInit) {
-    return items;
-  }
-  
-  console.log('📊 Initializing missing sortOrder values');
-  
-  // Generate sequential sort orders
-  let prevKey: string | null = null;
-  
-  return items.map((item) => {
-    if (item.sortOrder) {
-      prevKey = item.sortOrder;
-      return item;
-    }
-    
-    const newKey = generateSortOrderBetween(prevKey, null);
-    prevKey = newKey;
-    
-    return {
-      ...item,
-      sortOrder: newKey
-    };
-  });
-}
-
-// Generate advisory lock ID from rundown ID
-function getLockId(rundownId: string): number {
-  // Use a hash of the rundown ID to get a consistent lock number
-  let hash = 0;
-  for (let i = 0; i < rundownId.length; i++) {
-    const char = rundownId.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
 }
 
 serve(async (req) => {
@@ -217,49 +121,8 @@ serve(async (req) => {
       timestamp: operation.timestamp,
       hasLockedNumbers: !!operation.operationData.lockedRowNumbers,
       lockedNumbersCount: Object.keys(operation.operationData.lockedRowNumbers || {}).length,
-      numberingLocked: operation.operationData.numberingLocked,
-      sortOrderUpdatesCount: operation.operationData.sortOrderUpdates?.length
+      numberingLocked: operation.operationData.numberingLocked
     });
-
-    // sortOrder updates don't need advisory locks - they're independent item-level updates
-    // Fractional indexing was designed specifically for conflict-free concurrent reordering
-    const needsLock = operation.operationType !== 'update_sort_order';
-    
-    const lockId = getLockId(operation.rundownId);
-    let lockAcquired = false;
-    let retryCount = 0;
-    const maxRetries = 40;
-    const retryDelayMs = 500;
-
-    if (needsLock) {
-      // Try to acquire advisory lock with retries for operations that need serialization
-      while (!lockAcquired && retryCount < maxRetries) {
-        const { data: lockResult, error: lockError } = await supabase
-          .rpc('pg_try_advisory_lock', { lock_id: lockId });
-        
-        if (lockError) {
-          console.error('❌ Lock error:', lockError);
-          // Fall through without lock - better to attempt the operation
-          break;
-        }
-        
-        if (lockResult === true) {
-          lockAcquired = true;
-          console.log(`🔒 Advisory lock acquired for rundown (attempt ${retryCount + 1})`);
-        } else {
-          retryCount++;
-          if (retryCount < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, retryDelayMs));
-          }
-        }
-      }
-
-      if (!lockAcquired && retryCount >= maxRetries) {
-        console.warn('⚠️ Could not acquire advisory lock after max retries, proceeding anyway');
-      }
-    } else {
-      console.log('⚡ Bypassing advisory lock for update_sort_order (conflict-free operation)');
-    }
 
     try {
       // Fetch current rundown from database
@@ -297,24 +160,7 @@ serve(async (req) => {
           const newItems = operation.operationData.newItems || [];
           const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
           
-          // Ensure new items have sortOrder values
-          const prevItem = insertIndex > 0 ? updatedItems[insertIndex - 1] : null;
-          const nextItem = insertIndex < updatedItems.length ? updatedItems[insertIndex] : null;
-          
-          let prevSortOrder = prevItem?.sortOrder || null;
-          const nextSortOrder = nextItem?.sortOrder || null;
-          
-          const itemsWithSortOrder = newItems.map((item: any) => {
-            if (item.sortOrder) {
-              prevSortOrder = item.sortOrder;
-              return item;
-            }
-            const newSortOrder = generateSortOrderBetween(prevSortOrder, nextSortOrder);
-            prevSortOrder = newSortOrder;
-            return { ...item, sortOrder: newSortOrder };
-          });
-          
-          updatedItems.splice(insertIndex, 0, ...itemsWithSortOrder);
+          updatedItems.splice(insertIndex, 0, ...newItems);
           
           // Renumber all items to maintain sequential numbering
           console.log('🔢 Renumbering items after add operation');
@@ -368,21 +214,8 @@ serve(async (req) => {
           const items = operation.operationData.items || [];
           const insertIndex = operation.operationData.insertIndex ?? updatedItems.length;
           
-          // Assign new sortOrder values to copied items
-          const prevItem = insertIndex > 0 ? updatedItems[insertIndex - 1] : null;
-          const nextItem = insertIndex < updatedItems.length ? updatedItems[insertIndex] : null;
-          
-          let prevSortOrder = prevItem?.sortOrder || null;
-          const nextSortOrder = nextItem?.sortOrder || null;
-          
-          const itemsWithSortOrder = items.map((item: any) => {
-            const newSortOrder = generateSortOrderBetween(prevSortOrder, nextSortOrder);
-            prevSortOrder = newSortOrder;
-            return { ...item, sortOrder: newSortOrder };
-          });
-          
           // Insert copied items at the new position
-          updatedItems.splice(insertIndex, 0, ...itemsWithSortOrder);
+          updatedItems.splice(insertIndex, 0, ...items);
           
           // Renumber all items to maintain sequential numbering
           console.log('🔢 Renumbering items after copy operation');
@@ -422,79 +255,6 @@ serve(async (req) => {
           actionDescription = `Updated row locks: ${lockedCount} locked rows, numbering ${updatedNumberingLocked ? 'locked' : 'unlocked'}`;
           console.log(`✅ ${actionDescription}`);
           break;
-        }
-
-        case 'update_sort_order': {
-          // SURGICAL UPDATE: Use atomic database function to update individual items
-          // This bypasses the read-modify-write cycle entirely, eliminating race conditions
-          const sortOrderUpdates = operation.operationData.sortOrderUpdates || [];
-          
-          if (sortOrderUpdates.length === 0) {
-            console.warn('⚠️ update_sort_order called with no updates');
-            // Return early - no work to do
-            return new Response(
-              JSON.stringify({ success: true, operation: 'update_sort_order', updatedCount: 0 }),
-              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-          
-          console.log(`⚡ Performing surgical sortOrder updates for ${sortOrderUpdates.length} item(s)`);
-          
-          let successCount = 0;
-          let failureCount = 0;
-          
-          // Update each item's sortOrder atomically using the database function
-          for (const update of sortOrderUpdates) {
-            const { data, error } = await supabase.rpc('update_item_sort_order', {
-              p_rundown_id: operation.rundownId,
-              p_item_id: update.itemId,
-              p_sort_order: update.sortOrder,
-              p_user_id: user.id
-            });
-            
-            if (error) {
-              console.error(`❌ Failed to update sortOrder for ${update.itemId}:`, error);
-              failureCount++;
-            } else if (data?.success === false) {
-              console.warn(`⚠️ Item not found: ${update.itemId}`);
-              failureCount++;
-            } else {
-              successCount++;
-            }
-          }
-          
-          console.log(`✅ Surgical sortOrder update complete: ${successCount} succeeded, ${failureCount} failed`);
-          
-          // Log the operation
-          const { error: logError } = await supabase
-            .from('rundown_operations')
-            .insert({
-              rundown_id: operation.rundownId,
-              user_id: user.id,
-              operation_type: operation.operationType,
-              operation_data: { 
-                sortOrderUpdates,
-                successCount,
-                failureCount
-              },
-              client_id: operation.clientId || null,
-              applied_at: new Date().toISOString()
-            });
-
-          if (logError) {
-            console.warn('⚠️ Failed to log operation:', logError);
-          }
-          
-          // Return immediately - we've already updated the database atomically
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              operation: 'update_sort_order',
-              updatedCount: successCount,
-              failedCount: failureCount
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
         }
 
         default:
@@ -565,16 +325,9 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-    } finally {
-      // Always release the advisory lock if we acquired it
-      if (lockAcquired) {
-        try {
-          await supabase.rpc('pg_advisory_unlock', { lock_id: lockId });
-          console.log('🔓 Advisory lock released');
-        } catch (unlockError) {
-          console.error('⚠️ Failed to release advisory lock:', unlockError);
-        }
-      }
+    } catch (innerError) {
+      console.error('❌ Error during structural operation:', innerError);
+      throw innerError;
     }
 
   } catch (error) {

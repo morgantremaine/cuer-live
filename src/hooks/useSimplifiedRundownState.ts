@@ -29,7 +29,6 @@ import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
-import { initializeSortOrders, compareSortOrder, generateKeyBetween } from '@/utils/fractionalIndex';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -88,11 +87,6 @@ export const useSimplifiedRundownState = () => {
   // Track active structural operations to block realtime updates
   const activeStructuralOperationRef = useRef(false);
   
-  // DRAG PROTECTION: Track recently dragged items to ignore remote sortOrder updates
-  // Prevents race condition where concurrent drags desync row order
-  const recentDragOperationsRef = useRef<Map<string, { sortOrder: string; timestamp: number }>>(new Map());
-  const DRAG_PROTECTION_WINDOW_MS = 2000; // 2 seconds protection after drag
-  
   // Enhanced cooldown management with explicit flags  
   const blockUntilLocalEditRef = useRef(false);
   const cooldownUntilRef = useRef<number>(0);
@@ -130,7 +124,6 @@ export const useSimplifiedRundownState = () => {
     return () => {
       recentlyEditedFieldsRef.current.clear();
       dropdownFieldProtectionRef.current.clear();
-      recentDragOperationsRef.current.clear();
       typingSessionRef.current = null;
       activeFocusFieldRef.current = null;
     };
@@ -575,9 +568,6 @@ export const useSimplifiedRundownState = () => {
               actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
-              // Legacy reorder handler - kept for backwards compatibility
-              // New reordering uses sortOrder field with fractional indexing
-              
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
@@ -608,10 +598,8 @@ export const useSimplifiedRundownState = () => {
                   if (newItemsToAdd.length > 0) {
                     const newItems = [...stateRef.current.items];
                     newItems.splice(index, 0, ...newItemsToAdd);
-                    // Re-sort by sortOrder to ensure consistency across clients
-                    newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                     actionsRef.current.loadState({ items: newItems });
-                    console.log('📊 items:add batch - re-sorted by sortOrder', { count: newItemsToAdd.length });
+                    
                   }
                 }
               } else {
@@ -621,10 +609,8 @@ export const useSimplifiedRundownState = () => {
                 if (item && !stateRef.current.items.find(i => i.id === item.id)) {
                   const newItems = [...stateRef.current.items];
                   newItems.splice(index, 0, item);
-                  // Re-sort by sortOrder to ensure consistency across clients
-                  newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                   actionsRef.current.loadState({ items: newItems });
-                  console.log('📊 items:add single - re-sorted by sortOrder', { itemId: item.id, sortOrder: item.sortOrder });
+                  
                 }
               }
               break;
@@ -644,10 +630,8 @@ export const useSimplifiedRundownState = () => {
                 if (newItemsToAdd.length > 0) {
                   const newItems = [...stateRef.current.items];
                   newItems.splice(index, 0, ...newItemsToAdd);
-                  // Re-sort by sortOrder to ensure consistency across clients
-                  newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                   actionsRef.current.loadState({ items: newItems });
-                  console.log('📊 items:copy - re-sorted by sortOrder', { count: newItemsToAdd.length });
+                  
                 }
               }
               break;
@@ -684,40 +668,6 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
-            case 'sortOrder': {
-              // Handle sortOrder updates from other users' drag operations
-              // Uses functional state update via reducer - no stale ref issues!
-              const { sortOrderUpdates } = update.value || {};
-              if (sortOrderUpdates && Array.isArray(sortOrderUpdates) && sortOrderUpdates.length > 0) {
-                const now = Date.now();
-                
-                // Filter out updates for items we recently dragged locally
-                const filteredUpdates = sortOrderUpdates.filter((u: { itemId: string; sortOrder: string }) => {
-                  const protection = recentDragOperationsRef.current.get(u.itemId);
-                  if (protection && now - protection.timestamp < DRAG_PROTECTION_WINDOW_MS) {
-                    console.log('🛡️ Ignoring remote sortOrder - item was just dragged locally', {
-                      itemId: u.itemId.slice(-6),
-                      localSortOrder: protection.sortOrder,
-                      remoteSortOrder: u.sortOrder
-                    });
-                    return false;
-                  }
-                  return true;
-                });
-                
-                if (filteredUpdates.length > 0) {
-                  console.log('📡 Applying remote sortOrder changes via functional update', {
-                    updateCount: filteredUpdates.length,
-                    filtered: sortOrderUpdates.length - filteredUpdates.length
-                  });
-                  
-                  // Use the reducer-based updateSortOrders action
-                  // This operates on React's current state, not stateRef
-                  actionsRef.current.updateSortOrders(filteredUpdates);
-                }
-              }
-              break;
-            }
             default:
               console.warn('🚨 Unknown rundown-level field:', update.field);
           }
@@ -740,19 +690,7 @@ export const useSimplifiedRundownState = () => {
             return;
           }
 
-          // CRITICAL: Get a fresh snapshot of items to avoid stale ref issues
-          // when multiple broadcasts arrive in quick succession
-          const currentItems = stateRef.current.items;
-          const originalItemCount = currentItems.length;
-          
-          // Verify the item exists before updating
-          const targetItem = currentItems.find(item => item.id === update.itemId);
-          if (!targetItem) {
-            console.warn('📊 Remote update for non-existent item:', update.itemId);
-            return;
-          }
-          
-          const updatedItems = currentItems.map(item => {
+          const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
               // Handle nested field updates (like customFields.field)
               if (update.field.includes('.')) {
@@ -792,56 +730,8 @@ export const useSimplifiedRundownState = () => {
             return item;
           });
 
-          if (updatedItems.some((item, index) => item !== currentItems[index])) {
-            // If sortOrder was updated, re-sort the items array
-            if (update.field === 'sortOrder') {
-              // DRAG PROTECTION: Check if this item was recently dragged locally
-              const now = Date.now();
-              const protection = recentDragOperationsRef.current.get(update.itemId);
-              if (protection && now - protection.timestamp < DRAG_PROTECTION_WINDOW_MS) {
-                console.log('🛡️ Ignoring remote sortOrder update - item was just dragged locally', {
-                  itemId: update.itemId.slice(-6),
-                  localSortOrder: protection.sortOrder,
-                  remoteSortOrder: update.value
-                });
-                return; // Skip this update, our local drag takes precedence
-              }
-              
-              const sortedItems = [...updatedItems].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-              
-              // CRITICAL SAFETY CHECK: Verify item count consistency
-              if (sortedItems.length !== originalItemCount) {
-                console.error('🚨 CRITICAL: Item count mismatch after sortOrder update!', {
-                  originalCount: originalItemCount,
-                  sortedCount: sortedItems.length,
-                  updatedItemId: update.itemId
-                });
-                return; // Abort to prevent data loss
-              }
-              
-              // Verify the updated item still exists in sorted array
-              const itemStillExists = sortedItems.some(item => item.id === update.itemId);
-              if (!itemStillExists) {
-                console.error('🚨 CRITICAL: Item disappeared after sorting!', {
-                  itemId: update.itemId,
-                  newSortOrder: update.value
-                });
-                return; // Abort to prevent data loss
-              }
-              
-              console.log('📊 Applying remote sortOrder change - re-sorting items', {
-                itemId: update.itemId,
-                newSortOrder: update.value,
-                itemCount: sortedItems.length
-              });
-              
-              // CRITICAL: Update ref synchronously BEFORE calling loadRemoteState
-              // This prevents stale ref issues when multiple broadcasts arrive quickly
-              stateRef.current = { ...stateRef.current, items: sortedItems };
-              actionsRef.current.loadRemoteState({ items: sortedItems });
-            } else {
-              actionsRef.current.loadRemoteState({ items: updatedItems });
-            }
+          if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
+            actionsRef.current.loadRemoteState({ items: updatedItems });
           }
       } catch (error) {
         console.error('📱 Error applying cell broadcast update:', error);
@@ -1372,35 +1262,9 @@ export const useSimplifiedRundownState = () => {
           if (error) {
             console.error('Error loading rundown:', error);
           } else if (data) {
-            const rawItems = Array.isArray(data.items) && data.items.length > 0 
+            const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
               ? data.items 
               : createDefaultRundownItems();
-            
-            // Initialize sortOrder for items that don't have it
-            const hadMissingSortOrders = rawItems.some((item: any) => !item.sortOrder);
-            const itemsWithSortOrder = initializeSortOrders(rawItems) as RundownItem[];
-            
-            // CRITICAL: Sort by sortOrder to ensure array order matches sortOrder values
-            // This fixes inconsistency where existing sortOrder values don't match array order
-            const itemsToLoad = [...itemsWithSortOrder].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-            console.log('📊 Items sorted by sortOrder after initialization');
-            
-            // If we initialized missing sortOrders, persist them to the database
-            if (hadMissingSortOrders && rundownId) {
-              console.log('📊 Persisting newly initialized sortOrder values to database');
-              // Fire and forget - don't block UI for this background save
-              supabase
-                .from('rundowns')
-                .update({ items: itemsToLoad })
-                .eq('id', rundownId)
-                .then(({ error }) => {
-                  if (error) {
-                    console.error('❌ Failed to persist sortOrder values:', error);
-                  } else {
-                    console.log('✅ sortOrder values persisted to database');
-                  }
-                });
-            }
 
             // Sync time from server timestamp and store it
             if (data.updated_at) {
@@ -1798,13 +1662,6 @@ export const useSimplifiedRundownState = () => {
       // Auto-save will handle this change - no special handling needed
     // Add operation already recorded by add_row operation
     
-    // Calculate sortOrder for the new item based on insertion position
-    const prevItem = insertIndex > 0 ? state.items[insertIndex - 1] : null;
-    const nextItem = insertIndex < state.items.length ? state.items[insertIndex] : null;
-    const prevSortOrder = prevItem?.sortOrder || null;
-    const nextSortOrder = nextItem?.sortOrder || null;
-    const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
-    
     const newItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'regular' as const,
@@ -1822,8 +1679,7 @@ export const useSimplifiedRundownState = () => {
       notes: '',
       color: '',
       isFloating: false,
-      customFields: {},
-      sortOrder: newSortOrder
+      customFields: {}
     };
 
     const newItems = [...state.items];
@@ -1870,13 +1726,6 @@ export const useSimplifiedRundownState = () => {
     // Auto-save will handle this change - no special handling needed
     // Add header operation already recorded by add_header operation
     
-    // Calculate sortOrder for the new header based on insertion position
-    const prevItem = insertIndex > 0 ? state.items[insertIndex - 1] : null;
-    const nextItem = insertIndex < state.items.length ? state.items[insertIndex] : null;
-    const prevSortOrder = prevItem?.sortOrder || null;
-    const nextSortOrder = nextItem?.sortOrder || null;
-    const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
-    
     const newHeader = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header' as const,
@@ -1894,8 +1743,7 @@ export const useSimplifiedRundownState = () => {
       notes: '',
       color: '',
       isFloating: false,
-      customFields: {},
-      sortOrder: newSortOrder
+      customFields: {}
     };
 
     const newItems = [...state.items];
@@ -1962,23 +1810,10 @@ export const useSimplifiedRundownState = () => {
     }
   }, [rundownId, undoStackSize, redoStackSize, state.items.length, columns.length, realtimeConnection.isConnected]);
 
-  // CRITICAL FIX: Synchronous ref update for setItems to prevent race conditions
-  // When a local drag operation calls setItems, the stateRef must be updated IMMEDIATELY
-  // before React schedules the state update. Otherwise, incoming broadcast handlers
-  // will read stale data from stateRef.current.items and overwrite the pending local state.
-  const setItemsSync = useCallback((items: RundownItem[]) => {
-    // 1. Update stateRef synchronously FIRST - this is the critical fix
-    stateRef.current = { ...stateRef.current, items };
-    // 2. Then trigger the React state update via dispatch
-    actions.setItems(items);
-  }, [actions]);
-
   return {
     // Core state with calculated values
     items: calculatedItems,
     setItems: actions.setItems,
-    // Synchronous version that updates stateRef immediately - use for drag operations
-    setItemsSync,
     columns,
     setColumns,
     visibleColumns,
@@ -2251,59 +2086,6 @@ export const useSimplifiedRundownState = () => {
       if (rundownId) {
         cellBroadcast.flushPendingBroadcasts(rundownId);
       }
-    }, [rundownId]),
-    
-    // Drag state tracking - simplified with functional sortOrder updates
-    // Protection windows no longer needed: reducer operates on current state, not stale refs
-    setDragActive: useCallback((active: boolean) => {
-      if (active) {
-        console.log('🎯 Drag started');
-      } else {
-        console.log('🎯 Drag ended');
-      }
-    }, []),
-    
-    // Fractional indexing: track sortOrder changes for conflict-free reordering
-    // This uses the STRUCTURAL save system with advisory locking to prevent race conditions
-    // NOTE: Local state is already updated by useDragAndDrop - this only handles persistence and broadcast
-    trackSortOrderChange: useCallback((itemId: string, newSortOrder: string) => {
-      console.log('📊 trackSortOrderChange:', { itemId, newSortOrder });
-      
-      // DRAG PROTECTION: Record this drag operation to protect from concurrent remote updates
-      // This prevents race conditions where two users drag the same row simultaneously
-      recentDragOperationsRef.current.set(itemId, {
-        sortOrder: newSortOrder,
-        timestamp: Date.now()
-      });
-      
-      // Cleanup old entries (older than protection window + buffer)
-      const now = Date.now();
-      const CLEANUP_THRESHOLD = DRAG_PROTECTION_WINDOW_MS + 1000;
-      for (const [key, value] of recentDragOperationsRef.current.entries()) {
-        if (now - value.timestamp > CLEANUP_THRESHOLD) {
-          recentDragOperationsRef.current.delete(key);
-        }
-      }
-      
-      // Use structural save system with advisory locking to prevent race conditions
-      // This ensures sortOrder updates are serialized per-rundown
-      if (cellEditIntegration.saveCoordination && currentUserId) {
-        cellEditIntegration.saveCoordination.handleStructuralOperation('update_sort_order', {
-          sortOrderUpdates: [{ itemId, sortOrder: newSortOrder }]
-        });
-      }
-      
-      // Broadcast immediately for real-time sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          itemId,
-          'sortOrder',
-          newSortOrder,
-          currentUserId,
-          getTabId()
-        );
-      }
-    }, [cellEditIntegration, rundownId, currentUserId])
+    }, [rundownId])
   };
 };

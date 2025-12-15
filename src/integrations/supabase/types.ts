@@ -1596,8 +1596,8 @@ export type Database = {
         Returns: Json
       }
       migrate_existing_custom_columns: { Args: never; Returns: undefined }
-      pg_advisory_unlock: { Args: { lock_id: number }; Returns: boolean }
-      pg_try_advisory_lock: { Args: { lock_id: number }; Returns: boolean }
+      pg_advisory_unlock: { Args: { key: number }; Returns: undefined }
+      pg_try_advisory_lock: { Args: { key: number }; Returns: boolean }
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json
@@ -1617,15 +1617,6 @@ export type Database = {
           team_uuid: string
         }
         Returns: undefined
-      }
-      update_item_sort_order: {
-        Args: {
-          p_item_id: string
-          p_rundown_id: string
-          p_sort_order: string
-          p_user_id?: string
-        }
-        Returns: Json
       }
       update_rundown_field_atomic: {
         Args: {

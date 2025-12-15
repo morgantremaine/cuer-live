@@ -7,11 +7,6 @@ import { saveWithTimeout } from '@/utils/saveTimeout';
 import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 
-interface SortOrderUpdate {
-  itemId: string;
-  sortOrder: string;
-}
-
 interface StructuralOperationData {
   items?: RundownItem[];
   order?: string[];
@@ -26,13 +21,11 @@ interface StructuralOperationData {
   fromIndex?: number;           // Original position (first item's index for multi-select)
   toIndex?: number;             // New position (first item's index for multi-select)
   movedItemNames?: string[];    // Item names for display
-  // For sortOrder updates (used by fractional indexing)
-  sortOrderUpdates?: SortOrderUpdate[];
 }
 
 interface StructuralOperation {
   rundownId: string;
-  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order';
+  operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;
@@ -105,8 +98,6 @@ export const useStructuralSave = (
   }, [rundownId]); // Only run on mount or rundownId change
 
   // Debounced save for batching operations
-  // BROADCAST-FIRST ARCHITECTURE: Broadcast immediately, save in parallel
-  // This reduces race windows and ensures all clients see changes quickly
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
     if (!rundownId || pendingOperationsRef.current.length === 0) {
       return;
@@ -115,7 +106,7 @@ export const useStructuralSave = (
     const operations = [...pendingOperationsRef.current];
     pendingOperationsRef.current = [];
     
-    console.log(`📦 [BROADCAST-FIRST] Processing ${operations.length} structural operations:`, 
+    console.log(`📦 Batching ${operations.length} structural operations:`, 
       operations.map(op => op.operationType).join(', '));
     
     onSaveStart?.();
@@ -155,28 +146,8 @@ export const useStructuralSave = (
       }
 
       for (const operation of operations) {
-        // PHASE 1: BROADCAST FIRST (reduces race window, instant UI sync)
-        // Broadcast immediately so other clients see changes ~instantly
-        if (rundownId && currentUserId) {
-          const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
-          
-          const broadcastField = mapOperationToBroadcastField(operation.operationType);
-          const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
-          
-          console.log(`📡 [BROADCAST-FIRST] Broadcasting ${operation.operationType} BEFORE save`);
-          
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            broadcastField,
-            payload,
-            currentUserId,
-            getTabId()
-          );
-        }
-
-        // PHASE 2: SAVE TO DATABASE (parallel with broadcast delivery)
-        // Database is source of truth, but broadcast already sent for speed
+        // PHASE 1: SAVE FIRST (Ensures data integrity)
+        // Only broadcast after successful database save to prevent ghost data
         const { data, error } = await saveWithTimeout(
           () => supabase.functions.invoke('structural-operation-save', {
             body: operation
@@ -206,9 +177,6 @@ export const useStructuralSave = (
             });
           } else {
             console.error('🌐 NETWORK ERROR during structural save:', errorMsg);
-            // Note: Broadcast already sent - other clients may have stale state
-            // They'll catch up on next refresh or catch-up sync
-            console.warn('⚠️ [BROADCAST-FIRST] Broadcast sent but save failed - clients may need catch-up sync');
           }
           
           throw new Error(errorMsg);
@@ -220,17 +188,36 @@ export const useStructuralSave = (
           throw new Error('Save verification failed - no success confirmation');
         }
 
-        console.log(`✅ [BROADCAST-FIRST] ${operation.operationType} saved successfully after broadcast`);
-
         // Track our own update to prevent conflict detection
         if (data.updatedAt) {
           const context = rundownId ? `realtime-${rundownId}` : undefined;
           ownUpdateTracker.track(data.updatedAt, context);
         }
+        
+        
+
+        // PHASE 2: BROADCAST AFTER SUCCESS (prevents ghost data)
+        // Only broadcast once we know the save succeeded
+        if (rundownId && currentUserId) {
+          const { mapOperationToBroadcastField, mapOperationDataToPayload } = await import('@/utils/structuralOperationMapping');
+          
+          const broadcastField = mapOperationToBroadcastField(operation.operationType);
+          const payload = mapOperationDataToPayload(operation.operationType, operation.operationData);
+          
+          
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            broadcastField,
+            payload,
+            currentUserId,
+            getTabId()
+          );
+        }
       }
       
       onSaveComplete?.();
-      console.log(`✅ Structural batch completed: ${operations.length} operations (broadcast-first)`);
+      console.log(`✅ Structural batch saved successfully: ${operations.length} operations`);
     } catch (error) {
       console.error(`❌ Structural batch failed: ${operations.length} operations - re-queued for retry`, error);
       
@@ -292,13 +279,11 @@ export const useStructuralSave = (
       }
 
       // Immediate save for add operations to prevent ghost rows on quick navigation
-      // Also immediate for sortOrder updates to prevent race conditions
-      const immediateOperations = ['add_row', 'add_header', 'update_sort_order'];
+      const immediateOperations = ['add_row', 'add_header'];
       const shouldSaveImmediately = immediateOperations.includes(operationType);
 
       if (shouldSaveImmediately) {
         // Save immediately - prevents ghost rows that disappear on refresh
-        // For update_sort_order: advisory lock ensures serialization
         saveStructuralOperations().catch(error => {
           console.error('Structural save error:', error);
         });

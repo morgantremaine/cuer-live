@@ -23,18 +23,11 @@ class ShowcallerBroadcastManager {
   private channels = new Map<string, any>();
   private callbacks = new Map<string, Set<(state: ShowcallerBroadcastState) => void>>();
   private connectionStatus = new Map<string, string>();
-  
-  // Generation tracking to ignore stale callbacks after nuclear reset
-  private channelGeneration = new Map<string, number>();
 
   private ensureChannel(rundownId: string) {
     if (this.channels.has(rundownId)) {
       return this.channels.get(rundownId);
     }
-
-    // Increment generation for this channel
-    const generation = (this.channelGeneration.get(rundownId) || 0) + 1;
-    this.channelGeneration.set(rundownId, generation);
 
     const channel = supabase
       .channel(`showcaller-broadcast-${rundownId}`)
@@ -47,17 +40,9 @@ class ShowcallerBroadcastManager {
 
     this.channels.set(rundownId, channel);
 
-    // Capture generation at subscribe time for stale callback detection
-    const subscribedGeneration = generation;
-
     channel.subscribe((status) => {
-      // Ignore callbacks from old channels - check BOTH reference AND generation
+      // Ignore callbacks from old channels
       if (this.channels.get(rundownId) !== channel) {
-        console.log('📺 Showcaller: ignoring stale callback (channel reference mismatch)');
-        return;
-      }
-      if (this.channelGeneration.get(rundownId) !== subscribedGeneration) {
-        console.log('📺 Showcaller: ignoring stale callback (generation mismatch:', subscribedGeneration, 'vs', this.channelGeneration.get(rundownId), ')');
         return;
       }
 

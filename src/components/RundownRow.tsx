@@ -34,7 +34,7 @@ interface RundownRowProps {
   onToggleFloat?: (id: string) => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;

@@ -32,9 +32,6 @@ export class CellBroadcastManager {
   private callbacks = new Map<string, Set<(update: CellUpdate | CellFocus) => void>>();
   private connectionStatus = new Map<string, string>();
 
-  // Generation tracking to ignore stale callbacks after nuclear reset
-  private channelGeneration = new Map<string, number>();
-
   // Debouncing for typing fields
   private debouncedBroadcasts = new Map<string, NodeJS.Timeout>();
   private pendingBroadcasts = new Map<string, CellUpdate>();
@@ -52,10 +49,6 @@ export class CellBroadcastManager {
     if (this.channels.has(rundownId)) {
       return this.channels.get(rundownId);
     }
-
-    // Increment generation for this channel
-    const generation = (this.channelGeneration.get(rundownId) || 0) + 1;
-    this.channelGeneration.set(rundownId, generation);
 
     const channel = supabase.channel(`rundown-cells-${rundownId}`, {
       config: { broadcast: { self: true } }
@@ -89,17 +82,9 @@ export class CellBroadcastManager {
 
     this.channels.set(rundownId, channel);
 
-    // Capture generation at subscribe time for stale callback detection
-    const subscribedGeneration = generation;
-
     channel.subscribe((status: string) => {
-      // Ignore callbacks from old channels - check BOTH reference AND generation
+      // Ignore callbacks from old channels
       if (this.channels.get(rundownId) !== channel) {
-        console.log('🔌 Cell: ignoring stale callback (channel reference mismatch)');
-        return;
-      }
-      if (this.channelGeneration.get(rundownId) !== subscribedGeneration) {
-        console.log('🔌 Cell: ignoring stale callback (generation mismatch:', subscribedGeneration, 'vs', this.channelGeneration.get(rundownId), ')');
         return;
       }
 

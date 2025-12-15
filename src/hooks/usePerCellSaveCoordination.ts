@@ -87,7 +87,7 @@ export const usePerCellSaveCoordination = ({
 
   // Handle structural operations with enhanced coordination and content snapshot
   const handleStructuralOperation = useCallback((
-    operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order',
+    operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: {
       items?: RundownItem[];
       order?: string[];
@@ -96,7 +96,6 @@ export const usePerCellSaveCoordination = ({
       insertIndex?: number;
       lockedRowNumbers?: { [itemId: string]: string };
       numberingLocked?: boolean;
-      sortOrderUpdates?: { itemId: string; sortOrder: string }[];
     },
     currentItems?: RundownItem[]
   ) => {

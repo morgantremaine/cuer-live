@@ -7,9 +7,9 @@
 
 import { RundownItem } from '@/types/rundown';
 
-export type StructuralOperationType = 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock' | 'update_sort_order';
+export type StructuralOperationType = 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header' | 'toggle_lock';
 
-export type BroadcastFieldName = 'items:add' | 'items:remove' | 'items:remove-multiple' | 'items:copy' | 'items:reorder' | 'lock_state' | 'sortOrder';
+export type BroadcastFieldName = 'items:add' | 'items:remove' | 'items:remove-multiple' | 'items:copy' | 'items:reorder' | 'lock_state';
 
 /**
  * Maps database operation types to broadcast field names
@@ -23,8 +23,7 @@ export function mapOperationToBroadcastField(operationType: StructuralOperationT
     'copy_rows': 'items:copy',
     'move_rows': 'items:reorder',
     'reorder': 'items:reorder',
-    'toggle_lock': 'lock_state',
-    'update_sort_order': 'sortOrder'
+    'toggle_lock': 'lock_state'
   };
   
   return mapping[operationType];
@@ -45,7 +44,6 @@ export function mapOperationDataToPayload(
     sequenceNumber?: number;
     numberingLocked?: boolean;
     lockedRowNumbers?: { [itemId: string]: string };
-    sortOrderUpdates?: { itemId: string; sortOrder: string }[];
   }
 ): any {
   switch (operationType) {
@@ -93,12 +91,6 @@ export function mapOperationDataToPayload(
         lockedRowNumbers: operationData.lockedRowNumbers
       };
     
-    case 'update_sort_order':
-      // For sortOrder updates: { sortOrderUpdates: [{ itemId, sortOrder }] }
-      return {
-        sortOrderUpdates: operationData.sortOrderUpdates
-      };
-    
     default:
       console.warn('Unknown operation type:', operationType);
       return {};
@@ -129,9 +121,6 @@ export function validateOperationData(
     
     case 'toggle_lock':
       return operationData.numberingLocked !== undefined;
-    
-    case 'update_sort_order':
-      return !!(operationData.sortOrderUpdates?.length > 0);
     
     default:
       return false;
