@@ -244,9 +244,15 @@ Return a structured array of rundown items with these fields:
     }
 
     const generatedData = JSON.parse(toolCall.function.arguments);
-    const items = generatedData.items || [];
+    const rawItems = generatedData.items || [];
+    
+    // Initialize sortOrder for all generated items using simple sequential assignment
+    const items = rawItems.map((item: any, index: number) => ({
+      ...item,
+      sortOrder: String.fromCharCode(33 + index) // '!' = 33, sequential from there
+    }));
 
-    console.log(`Successfully generated ${items.length} rundown items`);
+    console.log(`Successfully generated ${items.length} rundown items with sortOrder`);
 
     return new Response(
       JSON.stringify({ items }), 

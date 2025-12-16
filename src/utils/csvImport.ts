@@ -2,6 +2,7 @@
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { v4 as uuidv4 } from 'uuid';
+import { initializeSortOrders } from '@/utils/fractionalIndex';
 
 interface ColumnMapping {
   csvColumn: string;
@@ -126,8 +127,11 @@ export const transformCSVData = (
     items.push(item as RundownItem);
   });
 
-  console.log('CSV Transform - Final result:', { items });
-  return { items };
+  // Initialize sortOrder for all imported items
+  const itemsWithSortOrder = initializeSortOrders(items) as RundownItem[];
+
+  console.log('CSV Transform - Final result:', { items: itemsWithSortOrder });
+  return { items: itemsWithSortOrder };
 };
 
 export const validateCSVData = (csvRows: any[][]): boolean => {

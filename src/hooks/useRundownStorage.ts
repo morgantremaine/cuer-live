@@ -7,6 +7,7 @@ import { useSubscription } from './useSubscription';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { SavedRundown } from './useRundownStorage/types';
 import { RundownOperations } from './useRundownStorage/operations';
+import { initializeSortOrders } from '@/utils/fractionalIndex';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
@@ -154,11 +155,14 @@ export const useRundownStorage = () => {
       }
     }
 
+    // Initialize sortOrder for all items
+    const itemsWithSortOrder = initializeSortOrders(items);
+
     const { data, error } = await supabase
       .from('rundowns')
       .insert({
         title,
-        items,
+        items: itemsWithSortOrder,
         user_id: user.id,
         team_id: teamId,
         folder_id: folderId,
@@ -188,11 +192,14 @@ export const useRundownStorage = () => {
   const saveRundown = useCallback(async (rundown: SavedRundown) => {
     if (!user || !teamId) throw new Error('User not authenticated or no team');
 
+    // Initialize sortOrder for all items
+    const itemsWithSortOrder = initializeSortOrders(rundown.items || []);
+
     const { data, error } = await supabase
       .from('rundowns')
       .insert({
         title: rundown.title,
-        items: rundown.items,
+        items: itemsWithSortOrder,
         user_id: user.id,
         team_id: rundown.team_id || teamId,
         columns: rundown.columns,
@@ -295,6 +302,9 @@ export const useRundownStorage = () => {
       ...item,
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }));
+    
+    // Initialize sortOrder in case original items were missing it
+    const itemsWithSortOrder = initializeSortOrders(duplicatedItems);
 
     // First, try to get the user's column preferences for the original rundown
     const { data: originalPrefs } = await supabase
@@ -310,7 +320,7 @@ export const useRundownStorage = () => {
       .from('rundowns')
       .insert({
         title: duplicatedTitle,
-        items: duplicatedItems,
+        items: itemsWithSortOrder,
         user_id: user.id,
         team_id: teamId,
         folder_id: originalRundown.folder_id,

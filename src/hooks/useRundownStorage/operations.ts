@@ -3,6 +3,7 @@ import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/types/columns'
 import { SavedRundown } from './types'
 import { mapDatabaseToRundown } from './dataMapper'
+import { initializeSortOrders } from '@/utils/fractionalIndex'
 
 export class RundownOperations {
   constructor(
@@ -104,11 +105,14 @@ export class RundownOperations {
     }
 
     try {
+      // Initialize sortOrder for items in case original was missing it
+      const itemsWithSortOrder = initializeSortOrders(rundown.items || []);
+      
       // Create the duplicated rundown data
       const duplicatedRundown: Omit<SavedRundown, 'id'> = {
         user_id: this.user.id,
         title: `${rundown.title} (Copy)`,
-        items: rundown.items || [],
+        items: itemsWithSortOrder,
         columns: rundown.columns,
         timezone: rundown.timezone,
         start_time: rundown.start_time,
@@ -138,11 +142,14 @@ export class RundownOperations {
     }
 
     try {
+      // Initialize sortOrder for items in case original was missing it
+      const itemsWithSortOrder = initializeSortOrders(rundown.items || []);
+      
       // Create the duplicated rundown with new team_id
       const duplicatedRundown: Omit<SavedRundown, 'id'> = {
         user_id: this.user.id,
         title: `${rundown.title} (Copy)`,
-        items: rundown.items || [],
+        items: itemsWithSortOrder,
         columns: rundown.columns,
         timezone: rundown.timezone,
         start_time: rundown.start_time,
