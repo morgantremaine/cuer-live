@@ -2,8 +2,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { RundownItem } from '@/types/rundown';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { initializeSortOrders } from '@/utils/fractionalIndex';
 
-export const createDefaultRundownItems = (): RundownItem[] => [
+export const createDefaultRundownItems = (): RundownItem[] => {
+  const items: RundownItem[] = [
   // First Header
   {
     id: uuidv4(),
@@ -352,4 +354,7 @@ export const createDefaultRundownItems = (): RundownItem[] => [
     rowNumber: '',
     color: ''
   }
-];
+  ];
+  // Initialize sortOrder for all items
+  return initializeSortOrders(items) as RundownItem[];
+};

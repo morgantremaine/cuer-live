@@ -3,7 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
-import { generateKeyBetween } from '@/utils/fractionalIndex';
+import { generateKeyBetween, compareSortOrder } from '@/utils/fractionalIndex';
 
 export type { RundownItem } from '@/types/rundown';
 
@@ -117,6 +117,8 @@ export const useRundownItems = (
       }
       
       markAsChanged();
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      updatedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       return updatedItems;
     });
   }, [markAsChanged]);
@@ -197,6 +199,8 @@ export const useRundownItems = (
       }
       
       markAsChanged();
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       return newItems;
     });
   }, [markAsChanged]);
@@ -249,6 +253,8 @@ export const useRundownItems = (
     setItems(prevItems => {
       const allItems = [...prevItems, ...newItems];
       markAsChanged();
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      allItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       return allItems;
     });
   }, [markAsChanged]);

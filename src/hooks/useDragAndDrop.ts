@@ -20,7 +20,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { getTabId } from '@/utils/tabUtils';
 import { RundownItem } from '@/types/rundown';
-import { generateKeyBetween, generateNKeysBetween } from '@/utils/fractionalIndex';
+import { generateKeyBetween, generateNKeysBetween, compareSortOrder } from '@/utils/fractionalIndex';
 
 interface DragInfo {
   draggedIds: string[];
@@ -540,6 +540,8 @@ export const useDragAndDrop = (
         });
       }
       
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
