@@ -137,6 +137,8 @@ function rundownReducer(
       } else {
         items = [...state.items, item];
       }
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      items.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       
       // AUTO-LOCK NEW ITEM IF IN LOCKED MODE
       let updatedLockedNumbers = state.lockedRowNumbers;
@@ -192,6 +194,8 @@ function rundownReducer(
       const { items: newItems, insertIndex } = action.payload;
       const items = [...state.items];
       items.splice(insertIndex, 0, ...newItems);
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      items.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       return markChanged({ items: clearHeaderNumbers(items) }, 'ADD_MULTIPLE_ROWS');
     }
 
@@ -220,6 +224,8 @@ function rundownReducer(
       const items = [...state.items];
       const movedItems = items.splice(fromIndex, count);
       items.splice(toIndex, 0, ...movedItems);
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      items.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       return markChanged({ items: clearHeaderNumbers(items) }, 'REORDER_ITEMS');
     }
 
