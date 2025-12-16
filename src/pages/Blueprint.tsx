@@ -4,6 +4,7 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { calculateItemsWithTiming } from '@/utils/rundownCalculations';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import AddListDialog from '@/components/blueprint/AddListDialog';
@@ -413,10 +414,17 @@ const Blueprint = () => {
     return savedRundowns.find(r => r.id === id) || undefined;
   }, [savedRundowns, id, loading]);
 
+  // Sort items by sortOrder before calculating timing
+  // This ensures Blueprint displays items in correct order (matching main rundown)
+  const sortedItems = React.useMemo(() => {
+    const items = rundown?.items || [];
+    return [...items].sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+  }, [rundown?.items]);
+
   // Calculate timing for items before passing to blueprint
   // MUST be called before any conditional returns (React hooks rule)
   const itemsWithTiming = calculateItemsWithTiming(
-    rundown?.items || [],
+    sortedItems,
     rundown?.start_time || '09:00:00',
     rundown?.numbering_locked || false,
     (rundown?.locked_row_numbers as { [itemId: string]: string }) || {}
