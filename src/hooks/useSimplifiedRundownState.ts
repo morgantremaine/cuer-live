@@ -397,9 +397,14 @@ export const useSimplifiedRundownState = () => {
           return merged;
         }) || [];
         
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        const sortedMergedItems = [...mergedItems].sort((a, b) => 
+          compareSortOrder(a.sortOrder, b.sortOrder)
+        );
+        
         // Apply the update with simple field-level protection
         actions.loadState({
-          items: mergedItems,
+          items: sortedMergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
@@ -597,6 +602,8 @@ export const useSimplifiedRundownState = () => {
                   const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                   return ai - bi;
                 });
+                // CRITICAL: Final sort by sortOrder to ensure consistency (matches Teleprompter behavior)
+                reordered.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                 actionsRef.current.loadState({ items: reordered });
                 console.log('🔄 Applied reorder broadcast:', { itemCount: reordered.length });
               }
@@ -1104,9 +1111,14 @@ export const useSimplifiedRundownState = () => {
           return merged;
         }) || [];
         
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        const sortedMergedItems = [...mergedItems].sort((a, b) => 
+          compareSortOrder(a.sortOrder, b.sortOrder)
+        );
+        
         // Apply merged update
         actions.loadState({
-          items: mergedItems,
+          items: sortedMergedItems,
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
           startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
@@ -1114,9 +1126,14 @@ export const useSimplifiedRundownState = () => {
         });
         
       } else {
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        const sortedItems = [...(deferredUpdate.items || [])].sort((a, b) => 
+          compareSortOrder(a.sortOrder, b.sortOrder)
+        );
+        
         // No protected fields - apply update normally
         actions.loadState({
-          items: deferredUpdate.items || [],
+          items: sortedItems,
           title: deferredUpdate.title,
           startTime: deferredUpdate.start_time,
           timezone: deferredUpdate.timezone,
