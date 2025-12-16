@@ -520,6 +520,57 @@ const RundownIndexContentInner = () => {
     // Silent insert - user can see the text inserted directly
   }, []);
 
+  // Function to manually scroll to current segment (matches autoscroll behavior)
+  const handleJumpToCurrentSegment = useCallback(() => {
+    if (!currentSegmentId) return;
+    
+    const targetElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
+    if (!targetElement) return;
+
+    try {
+      const viewport = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      
+      if (!viewport) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        return;
+      }
+
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isMobileOrTablet = window.innerWidth < 1280 && isTouchDevice;
+
+      if (isMobileOrTablet) {
+        const viewportRect = viewport.getBoundingClientRect();
+        const elementRect = targetElement.getBoundingClientRect();
+        const currentScrollTop = viewport.scrollTop;
+        const elementOffsetFromViewportTop = elementRect.top - viewportRect.top;
+        const desiredPositionInViewport = viewportRect.height * 0.25;
+        const scrollAdjustment = elementOffsetFromViewportTop - desiredPositionInViewport;
+        const targetScrollTop = currentScrollTop + scrollAdjustment;
+        const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+        const finalScrollTop = Math.max(0, Math.min(maxScrollTop, targetScrollTop));
+        
+        if (Math.abs(finalScrollTop - currentScrollTop) > 4) {
+          viewport.scrollTo({ top: finalScrollTop, behavior: 'smooth' });
+        }
+      } else {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const viewportRect = viewport.getBoundingClientRect();
+            const elementRect = targetElement.getBoundingClientRect();
+            const desiredTop = viewportRect.top + (viewportRect.height * 0.25);
+            const offsetNeeded = elementRect.top - desiredTop;
+            if (Math.abs(offsetNeeded) > 4) {
+              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+            }
+          });
+        });
+      }
+    } catch (error) {
+      console.warn('Error in handleJumpToCurrentSegment:', error);
+    }
+  }, [currentSegmentId]);
+
   useRundownKeyboardShortcuts({
     onCopy: handleCopySelectedRows,
     onPaste: handlePasteRows,
@@ -539,7 +590,8 @@ const RundownIndexContentInner = () => {
     canRedo: coreState.canRedo,
     userRole: userRole,
     talentPresets: talentPresets,
-    onInsertTalent: handleInsertTalent
+    onInsertTalent: handleInsertTalent,
+    onScrollToCurrentSegment: handleJumpToCurrentSegment
   });
 
   const { 
