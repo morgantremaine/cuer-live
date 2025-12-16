@@ -5,6 +5,7 @@ import { SavedRundown } from './useRundownStorage/types';
 import { Column } from '@/types/columns';
 import { RundownItem } from '@/types/rundown';
 import { migrateTimezone } from '@/utils/timezoneMigration';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -74,7 +75,11 @@ export const useRundownDataLoader = ({
     // Load the items back into the state using the updater pattern
     if (rundown.items && Array.isArray(rundown.items)) {
       console.log('📋 Setting rundown items:', rundown.items.length);
-      setItems(() => rundown.items);
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      const sortedItems = [...rundown.items].sort((a, b) => 
+        compareSortOrder(a.sortOrder, b.sortOrder)
+      );
+      setItems(() => sortedItems);
     }
 
     // Call the callback with the loaded rundown

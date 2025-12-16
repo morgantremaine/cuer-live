@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { generateHeaderLabel } from '@/utils/headerUtils';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 interface UseRundownClipboardOperationsProps {
   items: RundownItem[];
@@ -115,6 +116,9 @@ export const useRundownClipboardOperations = ({
         newItems.splice(insertIndex, 0, ...itemsToPaste);
         
         console.log('New items length after insert:', newItems.length);
+        
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
         
         // Update header segment names for all headers in the correct order
         return updateHeaderSegmentNames(newItems);

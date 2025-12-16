@@ -3,6 +3,7 @@ import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { getTabId } from '@/utils/tabUtils';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -193,6 +194,8 @@ export const useRundownGridHandlers = ({
       setItems(prevItems => {
         const newItems = [...prevItems];
         newItems.splice(insertIndex, 0, ...itemsToPaste);
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
         return newItems;
       });
       

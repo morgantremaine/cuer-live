@@ -1,5 +1,6 @@
 import { UndoableOperation } from '@/types/undoOperation';
 import { RundownItem } from '@/hooks/useRundownItems';
+import { compareSortOrder } from '@/utils/fractionalIndex';
 
 export const reverseOperation = (
   operation: UndoableOperation,
@@ -39,11 +40,15 @@ export const reverseOperation = (
             const index = operation.data.deletedIndices[idx];
             newItems.splice(index, 0, item);
           });
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           setItems(newItems);
         } else {
           // Single delete reversal
           const newItems = [...items];
           newItems.splice(operation.data.deletedIndex, 0, operation.data.deletedItem);
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           setItems(newItems);
         }
         return true;
@@ -51,7 +56,9 @@ export const reverseOperation = (
       case 'reorder':
         const reorderedItems = operation.data.oldOrder
           .map((id: string) => items.find(item => item.id === id))
-          .filter(Boolean);
+          .filter(Boolean) as RundownItem[];
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        reorderedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
         setItems(reorderedItems);
         return true;
         
@@ -86,11 +93,15 @@ export const applyOperationForward = (
           // Batch add forward (paste redo) - add multiple items
           const addItems = [...items];
           addItems.splice(operation.data.addedIndex, 0, ...operation.data.addedItems);
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          addItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           setItems(addItems);
         } else {
           // Single add forward
           const addItems = [...items];
           addItems.splice(operation.data.addedIndex, 0, operation.data.addedItem);
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          addItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           setItems(addItems);
         }
         return true;
@@ -109,10 +120,12 @@ export const applyOperationForward = (
         return true;
         
       case 'reorder':
-        const reorderedItems = operation.data.newOrder
+        const reorderedItemsFwd = operation.data.newOrder
           .map((id: string) => items.find(item => item.id === id))
-          .filter(Boolean);
-        setItems(reorderedItems);
+          .filter(Boolean) as RundownItem[];
+        // CRITICAL: Sort by sortOrder to ensure consistent display order
+        reorderedItemsFwd.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+        setItems(reorderedItemsFwd);
         return true;
         
       default:
