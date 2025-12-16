@@ -675,7 +675,8 @@ export const useSimplifiedRundownState = () => {
               if (id) {
                 const newItems = stateRef.current.items.filter(i => i.id !== id);
                 if (newItems.length !== stateRef.current.items.length) {
-                  
+                  // CRITICAL: Sort by sortOrder to ensure consistent display order
+                  newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                   actionsRef.current.loadState({ items: newItems });
                 }
               }
@@ -686,7 +687,8 @@ export const useSimplifiedRundownState = () => {
               if (ids && Array.isArray(ids) && ids.length > 0) {
                 const newItems = stateRef.current.items.filter(i => !ids.includes(i.id));
                 if (newItems.length !== stateRef.current.items.length) {
-                  
+                  // CRITICAL: Sort by sortOrder to ensure consistent display order
+                  newItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
                   actionsRef.current.loadState({ items: newItems });
                 }
               }
@@ -1458,8 +1460,11 @@ export const useSimplifiedRundownState = () => {
         // DON'T replace existing data with blank data on error!
         // Only load default data if we have no existing data
         if (state.items.length === 0) {
+          const defaultItems = createDefaultRundownItems();
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          defaultItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           actions.loadState({
-            items: createDefaultRundownItems(),
+            items: defaultItems,
             columns: [],
             title: 'Untitled Rundown',
             startTime: '09:00:00',
@@ -1616,8 +1621,12 @@ export const useSimplifiedRundownState = () => {
           // Navigate to the actual rundown URL via React Router (replace history)
           navigate(`/rundown/${data.id}`, { replace: true });
           // Load the newly created rundown data
+          const loadedItems = Array.isArray(data.items) ? data.items : createDefaultRundownItems();
+          // Initialize sortOrder if needed and sort
+          const itemsWithSortOrder = initializeSortOrders(loadedItems) as RundownItem[];
+          itemsWithSortOrder.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           actions.loadState({
-            items: Array.isArray(data.items) ? data.items : createDefaultRundownItems(),
+            items: itemsWithSortOrder,
             columns: [],
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
@@ -1633,8 +1642,11 @@ export const useSimplifiedRundownState = () => {
         } catch (error) {
           console.error('❌ Failed to create new rundown:', error);
           // Fallback to local-only mode
+          const fallbackItems = createDefaultRundownItems();
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          fallbackItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
           actions.loadState({
-            items: createDefaultRundownItems(),
+            items: fallbackItems,
             columns: [],
             title: 'Untitled Rundown',
             startTime: '09:00:00',
@@ -1650,8 +1662,11 @@ export const useSimplifiedRundownState = () => {
       createNewRundown();
     } else if (!rundownId && !isInitialized) {
       // Handle other cases where rundownId is null but not 'new'
+      const defaultItems = createDefaultRundownItems();
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      defaultItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
       actions.loadState({
-        items: createDefaultRundownItems(),
+        items: defaultItems,
         columns: [],
         title: 'Untitled Rundown',
         startTime: '09:00:00',
