@@ -22,6 +22,7 @@ interface UseConsolidatedRealtimeRundownProps {
   isSharedView?: boolean;
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
   hasPendingUpdates?: () => boolean;
+  skipShowcallerInHealthCheck?: boolean; // For views that don't use showcaller channel (teleprompter, AD view)
 }
 
 // Simple global subscription state
@@ -48,7 +49,8 @@ export const useConsolidatedRealtimeRundown = ({
   lastSeenDocVersion = 0,
   isSharedView = false,
   blockUntilLocalEditRef,
-  hasPendingUpdates
+  hasPendingUpdates,
+  skipShowcallerInHealthCheck = false
 }: UseConsolidatedRealtimeRundownProps) => {
   const { user, tokenReady } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
@@ -468,7 +470,12 @@ export const useConsolidatedRealtimeRundown = ({
         // Check if channels are actually healthy before nuking them
         const health = simpleConnectionHealth.getHealth(rundownId);
         
-        if (health.allConnected) {
+        // Context-aware health check - some views (teleprompter) don't use showcaller channel
+        const isHealthy = skipShowcallerInHealthCheck 
+          ? (health.consolidated && health.cell)  // Only check channels this view uses
+          : health.allConnected;                   // Check all channels
+        
+        if (isHealthy) {
           // Channels survived the extended absence - force sync to catch missed updates
           console.log('👁️ Extended absence but channels healthy - force catching up');
           await performCatchupSync(true);
