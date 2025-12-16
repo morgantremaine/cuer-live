@@ -16,7 +16,7 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
-import { generateKeyBetween, compareSortOrder } from '@/utils/fractionalIndex';
+import { generateKeyBetween, compareSortOrder, initializeSortOrders } from '@/utils/fractionalIndex';
 
 export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
@@ -98,7 +98,15 @@ export const useRundownStateCoordination = () => {
       endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    persistedState.setItems(itemsToAdd);
+    // Initialize sortOrder for new items
+    const itemsWithSortOrder = initializeSortOrders(itemsToAdd);
+    
+    // FIX: Add to existing items instead of replacing all items
+    const currentItems = performanceOptimization.calculatedItems;
+    const allItems = [...currentItems, ...itemsWithSortOrder];
+    // Sort by sortOrder for consistent display
+    const sortedItems = allItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+    persistedState.setItems(sortedItems);
   };
 
   // Add the missing functions that simplifiedState should provide
