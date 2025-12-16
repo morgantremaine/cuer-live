@@ -200,9 +200,14 @@ export const useSimplifiedRundownState = () => {
   // Handle conflict resolution from auto-save
   const handleConflictResolved = useCallback((mergedData: any) => {
     
+    // CRITICAL: Sort by sortOrder to ensure consistent display order
+    const sortedItems = [...(mergedData.items || [])].sort((a, b) => 
+      compareSortOrder(a.sortOrder, b.sortOrder)
+    );
+    
     // Apply merged data to state
     actions.loadState({
-      items: mergedData.items || [],
+      items: sortedItems,
       columns: [], // Keep columns separate
       title: mergedData.title || state.title,
       startTime: mergedData.start_time || state.startTime,
@@ -427,7 +432,13 @@ export const useSimplifiedRundownState = () => {
         // Simple approach: apply all changes, don't try to protect anything
         // If user is actively typing, their next keystroke will overwrite anyway
         const updateData: any = {};
-        if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
+        if (updatedRundown.hasOwnProperty('items')) {
+          // CRITICAL: Sort by sortOrder to ensure consistent display order across all views
+          const sortedItems = [...(updatedRundown.items || [])].sort((a, b) => 
+            compareSortOrder(a.sortOrder, b.sortOrder)
+          );
+          updateData.items = sortedItems;
+        }
         if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
         if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
         if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
@@ -1498,8 +1509,13 @@ export const useSimplifiedRundownState = () => {
         return merged;
       });
       
+      // CRITICAL: Sort by sortOrder to ensure consistent display order
+      const sortedMergedItems = [...mergedItems].sort((a, b) => 
+        compareSortOrder(a.sortOrder, b.sortOrder)
+      );
+      
       actions.loadState({
-        items: mergedItems,
+        items: sortedMergedItems,
         title: protectedFields.has('title') ? state.title : latestData.title,
         startTime: protectedFields.has('startTime') ? state.startTime : latestData.start_time,
         timezone: protectedFields.has('timezone') ? state.timezone : latestData.timezone,
@@ -1514,8 +1530,13 @@ export const useSimplifiedRundownState = () => {
     }
     
     // No protected fields - safe to apply latest data
+    // CRITICAL: Sort by sortOrder to ensure consistent display order
+    const sortedItems = [...(latestData.items || [])].sort((a, b) => 
+      compareSortOrder(a.sortOrder, b.sortOrder)
+    );
+    
     actions.loadState({
-      items: latestData.items || [],
+      items: sortedItems,
       title: latestData.title,
       startTime: latestData.start_time,
       timezone: latestData.timezone,

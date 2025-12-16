@@ -116,9 +116,14 @@ const Teleprompter = () => {
           const numberingLocked = updatedRundown.numbering_locked ?? prev?.numberingLocked ?? false;
           const lockedRowNumbers = updatedRundown.locked_row_numbers ?? prev?.lockedRowNumbers ?? {};
           
+          // CRITICAL: Sort by sortOrder to ensure consistent display order
+          const sortedItems = [...(updatedRundown.items || [])].sort((a, b) => 
+            compareSortOrder(a.sortOrder, b.sortOrder)
+          );
+          
           // Recalculate timing and row numbers for received items
           const itemsWithCalculations = calculateItemsWithTiming(
-            updatedRundown.items || [],
+            sortedItems,
             startTime,
             numberingLocked,
             lockedRowNumbers
