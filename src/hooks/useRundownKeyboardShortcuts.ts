@@ -44,6 +44,7 @@ interface UseRundownKeyboardShortcutsProps {
   userRole?: string | null;
   talentPresets?: TalentPreset[];
   onInsertTalent?: (talentName: string) => void;
+  onScrollToCurrentSegment?: () => void;
 }
 
 export const useRundownKeyboardShortcuts = ({
@@ -65,7 +66,8 @@ export const useRundownKeyboardShortcuts = ({
   canRedo,
   userRole,
   talentPresets = [],
-  onInsertTalent
+  onInsertTalent,
+  onScrollToCurrentSegment
 }: UseRundownKeyboardShortcutsProps) => {
   useEffect(() => {
     const isEditableElement = (target: EventTarget | null): boolean => {
@@ -240,6 +242,13 @@ export const useRundownKeyboardShortcuts = ({
           onShowcallerReset();
         }
       }
+
+      // Backtick: Scroll to current showcaller segment (no modifiers)
+      if (e.key === '`' && !isCtrlOrCmd && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        console.log('⌨️ Keyboard shortcut: Scroll to current segment');
+        onScrollToCurrentSegment?.();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -247,5 +256,5 @@ export const useRundownKeyboardShortcuts = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onCopy, onPaste, onAddRow, onDelete, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole, talentPresets, onInsertTalent]);
+  }, [onCopy, onPaste, onAddRow, onDelete, selectedRows, hasClipboardData, onShowcallerPlay, onShowcallerPause, onShowcallerForward, onShowcallerBackward, onShowcallerReset, isShowcallerPlaying, onUndo, canUndo, onRedo, canRedo, userRole, talentPresets, onInsertTalent, onScrollToCurrentSegment]);
 };

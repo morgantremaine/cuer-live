@@ -1,9 +1,6 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import RundownContainer from '@/components/RundownContainer';
+import React, { useCallback } from 'react';
 import { useTalentPresets } from '@/contexts/TalentPresetsContext';
 import { useRundownKeyboardShortcuts } from '@/hooks/useRundownKeyboardShortcuts';
-import { toast } from 'sonner';
 
 interface RundownIndexContentInnerProps {
   coreState: any;
@@ -34,6 +31,25 @@ export const RundownIndexContentInner: React.FC<RundownIndexContentInnerProps> =
     // Silent insert - no toast notification
   }, []);
 
+  // Scroll to current showcaller segment
+  const handleScrollToCurrentSegment = useCallback(() => {
+    const currentSegmentId = coreState.currentSegmentId;
+    if (!currentSegmentId) return;
+    
+    const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollContainer) return;
+    
+    const targetElement = scrollContainer.querySelector(`[data-item-id="${currentSegmentId}"]`);
+    if (targetElement) {
+      console.log('⌨️ Main Rundown: Scroll to current segment', currentSegmentId);
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  }, [coreState.currentSegmentId]);
+
   // Add keyboard shortcuts including talent presets
   useRundownKeyboardShortcuts({
     onCopy: interactions.handleCopySelectedRows,
@@ -54,7 +70,8 @@ export const RundownIndexContentInner: React.FC<RundownIndexContentInnerProps> =
     canRedo: coreState.canRedo,
     userRole: userRole,
     talentPresets: talentPresets,
-    onInsertTalent: handleInsertTalent
+    onInsertTalent: handleInsertTalent,
+    onScrollToCurrentSegment: handleScrollToCurrentSegment
   });
 
   return null; // This component only sets up keyboard shortcuts

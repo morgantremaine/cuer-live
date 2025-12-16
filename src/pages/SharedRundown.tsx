@@ -156,6 +156,35 @@ const SharedRundown = () => {
     items: rundownData?.items || []
   });
 
+  // Keyboard shortcut: Backtick (`) to scroll to current showcaller segment
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if user is typing in an editable element
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      
+      // Backtick key: Scroll to current segment
+      if (e.key === '`' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        if (realtimeCurrentSegmentId) {
+          const targetElement = document.querySelector(`[data-item-id="${realtimeCurrentSegmentId}"]`);
+          if (targetElement) {
+            console.log('⌨️ SharedRundown: Scroll to current segment', realtimeCurrentSegmentId);
+            targetElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [realtimeCurrentSegmentId]);
+
   // Helper function to format time remaining from seconds to string (using same logic as main showcaller)
   const formatTimeRemaining = (seconds: number): string => {
     if (seconds <= 0) return '00:00';
