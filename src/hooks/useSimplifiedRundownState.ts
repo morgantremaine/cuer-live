@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useOperationUndo } from './useOperationUndo';
+import { useMemoryTracking } from './useMemoryTracking';
 import { debouncedFieldTracker } from '@/utils/debouncedFieldTracker';
 
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
@@ -539,6 +540,15 @@ export const useSimplifiedRundownState = () => {
       // cell_edit operations will be broadcast by the per-cell save system
       // when updateItem triggers the UPDATE_ITEM action
     }
+  });
+
+  // Memory tracking for diagnostics - call window.memoryDiag() in console
+  useMemoryTracking({
+    items: state.items,
+    undoStackSize,
+    redoStackSize,
+    rundownId,
+    columns,
   });
 
   // Cell-level broadcast system for immediate sync
