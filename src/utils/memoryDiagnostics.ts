@@ -134,14 +134,17 @@ export const runMemoryDiagnostics = (): MemoryReport => {
       });
 
       // Add recommendations based on findings
-      if (name.includes('items') && size > 10 * 1024 * 1024) {
+      if (name === 'rundown-items' && size > 10 * 1024 * 1024) {
         report.recommendations.push(`⚠️ ${name} is large (${formatBytes(size)}) - possible large scripts`);
       }
-      if (name.includes('undo') && count && count >= 5) {
-        report.recommendations.push(`ℹ️ Undo stack at max capacity (${count})`);
+      if (name === 'undo-stack' && count && count >= 5) {
+        report.recommendations.push(`ℹ️ Undo stack at max capacity (${count}/5)`);
       }
-      if (name.includes('script') && count && count > 20) {
-        report.recommendations.push(`ℹ️ ${count} large script fields detected`);
+      if (name === 'script-fields' && size > 5 * 1024 * 1024) {
+        report.recommendations.push(`⚠️ Script content is ${formatBytes(size)} - ${count} fields`);
+      }
+      if (name === 'recently-edited-fields' && count && count > 50) {
+        report.recommendations.push(`ℹ️ ${count} recently edited fields tracked - map may need cleanup`);
       }
     } catch (e) {
       report.estimates.push({
@@ -162,7 +165,7 @@ export const runMemoryDiagnostics = (): MemoryReport => {
       };
     }
     if (batcher.config && batcher.memoryPressureMultiplier !== undefined) {
-      const interval = batcher.config.baseBatchIntervalMs * batcher.memoryPressureMultiplier;
+      const interval = (batcher.config.baseBatchInterval || 500) * batcher.memoryPressureMultiplier;
       report.broadcastSystem.currentInterval = `${interval}ms`;
       report.broadcastSystem.memoryMultiplier = `${batcher.memoryPressureMultiplier}x`;
     }
