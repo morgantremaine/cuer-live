@@ -3,7 +3,7 @@ import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { getTabId } from '@/utils/tabUtils';
-import { compareSortOrder } from '@/utils/fractionalIndex';
+import { compareSortOrder, generateKeyBetween } from '@/utils/fractionalIndex';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -156,11 +156,6 @@ export const useRundownGridHandlers = ({
         finalizeAllTypingSessions();
       }
       
-      const itemsToPaste = clipboardItems.map(item => ({
-        ...item,
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      }));
-      
       let insertIndex: number;
       
       if (targetRowId) {
@@ -171,6 +166,24 @@ export const useRundownGridHandlers = ({
         // Fallback to end if no target specified
         insertIndex = items.length;
       }
+      
+      // Calculate correct sortOrders for pasted items based on insertion position
+      const prevItem = insertIndex > 0 ? items[insertIndex - 1] : null;
+      const nextItem = insertIndex < items.length ? items[insertIndex] : null;
+      
+      let prevSortOrder = prevItem?.sortOrder || null;
+      const nextSortOrder = nextItem?.sortOrder || null;
+      
+      // Generate items with correct sortOrders for their paste position
+      const itemsToPaste = clipboardItems.map(item => {
+        const newSortOrder = generateKeyBetween(prevSortOrder, nextSortOrder);
+        prevSortOrder = newSortOrder; // Chain for next item
+        return {
+          ...item,
+          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          sortOrder: newSortOrder
+        };
+      });
       
       // Record paste operation for undo/redo
       if (recordOperation) {
