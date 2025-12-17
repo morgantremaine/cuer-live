@@ -54,13 +54,25 @@ export const reverseOperation = (
         return true;
         
       case 'reorder':
-        const reorderedItems = operation.data.oldOrder
-          .map((id: string) => items.find(item => item.id === id))
-          .filter(Boolean) as RundownItem[];
-        // CRITICAL: Sort by sortOrder to ensure consistent display order
-        reorderedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-        setItems(reorderedItems);
-        return true;
+        // NEW: Handle sortOrder-based reorder (fractional indexing)
+        // This PRESERVES ALL ITEMS and only updates sortOrder values
+        if (operation.data.oldSortOrders && Array.isArray(operation.data.oldSortOrders)) {
+          const updatedItems = items.map(item => {
+            const oldSortOrder = operation.data.oldSortOrders.find(
+              (o: {itemId: string, sortOrder: string}) => o.itemId === item.id
+            );
+            if (oldSortOrder) {
+              return { ...item, sortOrder: oldSortOrder.sortOrder };
+            }
+            return item;
+          });
+          updatedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+          setItems(updatedItems);
+          return true;
+        }
+        // Legacy format fallback - should not be reached with new system
+        console.warn('Legacy reorder format detected in undo - skipping');
+        return false;
         
       default:
         return false;
@@ -120,13 +132,25 @@ export const applyOperationForward = (
         return true;
         
       case 'reorder':
-        const reorderedItemsFwd = operation.data.newOrder
-          .map((id: string) => items.find(item => item.id === id))
-          .filter(Boolean) as RundownItem[];
-        // CRITICAL: Sort by sortOrder to ensure consistent display order
-        reorderedItemsFwd.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
-        setItems(reorderedItemsFwd);
-        return true;
+        // NEW: Handle sortOrder-based reorder (fractional indexing)
+        // This PRESERVES ALL ITEMS and only updates sortOrder values
+        if (operation.data.newSortOrders && Array.isArray(operation.data.newSortOrders)) {
+          const updatedItems = items.map(item => {
+            const newSortOrder = operation.data.newSortOrders.find(
+              (o: {itemId: string, sortOrder: string}) => o.itemId === item.id
+            );
+            if (newSortOrder) {
+              return { ...item, sortOrder: newSortOrder.sortOrder };
+            }
+            return item;
+          });
+          updatedItems.sort((a, b) => compareSortOrder(a.sortOrder, b.sortOrder));
+          setItems(updatedItems);
+          return true;
+        }
+        // Legacy format fallback - should not be reached with new system
+        console.warn('Legacy reorder format detected in redo - skipping');
+        return false;
         
       default:
         return false;

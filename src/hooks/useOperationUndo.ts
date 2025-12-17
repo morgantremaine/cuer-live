@@ -34,9 +34,10 @@ const transformDataForStructuralSave = (operationType: string, operationData: an
       };
       
     case 'reorder':
-      // Transform to expected format (order array)
+      // NEW: sortOrder-based reorder - pass sortOrder updates for cell save
       return {
-        order: operationData.newOrder
+        sortOrderUpdates: operationData.newSortOrders || [],
+        draggedIds: operationData.draggedIds || []
       };
       
     default:
@@ -114,11 +115,11 @@ const transformDataForReverseOp = (originalType: string, originalData: any): any
       }
       
     case 'reorder':
-      // Original: { oldOrder, newOrder }
-      // Reverse (reorder) expects: { oldOrder, newOrder } but swapped
+      // NEW: sortOrder-based reorder - swap old/new sortOrders
       return {
-        oldOrder: originalData.newOrder,
-        newOrder: originalData.oldOrder
+        oldSortOrders: originalData.newSortOrders,
+        newSortOrders: originalData.oldSortOrders,
+        draggedIds: originalData.draggedIds
       };
       
     default:
