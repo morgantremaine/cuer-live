@@ -500,7 +500,11 @@ export const useSimplifiedRundownState = () => {
     canRedo,
     nextRedoAction,
     undoStackSize,
-    redoStackSize
+    redoStackSize,
+    // Memory diagnostics getters
+    getUndoStack,
+    getRedoStack,
+    getTypingSessionsCount
   } = useOperationUndo({
     items: state.items,
     updateItem: (id: string, updates: Partial<RundownItem>) => {
@@ -549,6 +553,12 @@ export const useSimplifiedRundownState = () => {
     redoStackSize,
     rundownId,
     columns,
+    getUndoStack,
+    getRedoStack,
+    getTypingSessionsCount,
+    recentlyEditedFieldsRef,
+    dropdownFieldProtectionRef,
+    recentDragOperationsRef,
   });
 
   // Cell-level broadcast system for immediate sync

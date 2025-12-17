@@ -406,6 +406,11 @@ export const useOperationUndo = ({
   const canRedo = redoStack.length > 0;
   const nextRedoAction = redoStack.length > 0 ? redoStack[redoStack.length - 1].description : null;
 
+  // Expose getters for memory diagnostics
+  const getUndoStack = useCallback(() => undoStack, [undoStack]);
+  const getRedoStack = useCallback(() => redoStack, [redoStack]);
+  const getTypingSessionsCount = useCallback(() => typingSessionsRef.current.size, []);
+
   return {
     recordOperation,
     recordBatchedCellEdit,
@@ -418,6 +423,10 @@ export const useOperationUndo = ({
     canRedo,
     nextRedoAction,
     undoStackSize: undoStack.length,
-    redoStackSize: redoStack.length
+    redoStackSize: redoStack.length,
+    // Memory diagnostics getters
+    getUndoStack,
+    getRedoStack,
+    getTypingSessionsCount
   };
 };
