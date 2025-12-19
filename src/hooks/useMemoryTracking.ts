@@ -2,7 +2,7 @@
  * Hook to register rundown state objects for memory diagnostics
  */
 import { useEffect } from 'react';
-import { registerTrackedObject, unregisterTrackedObject } from '@/utils/memoryDiagnostics';
+import { registerTrackedObject, unregisterTrackedObject, setComponentCounts } from '@/utils/memoryDiagnostics';
 import { RundownItem } from '@/types/rundown';
 
 interface UseMemoryTrackingProps {
@@ -37,6 +37,11 @@ export const useMemoryTracking = ({
   recentDragOperationsRef,
 }: UseMemoryTrackingProps) => {
   
+  // Update component counts for memory estimation
+  useEffect(() => {
+    setComponentCounts(items.length, columns.length);
+  }, [items.length, columns.length]);
+  
   useEffect(() => {
     if (!rundownId) return;
     
@@ -44,12 +49,14 @@ export const useMemoryTracking = ({
     registerTrackedObject('rundown-items', () => ({
       data: items,
       count: items.length,
+      category: 'Core Data',
     }));
     
     // Register columns
     registerTrackedObject('columns', () => ({
       data: columns,
       count: columns.length,
+      category: 'Core Data',
     }));
     
     // Register undo stack (with actual data if getter provided)
@@ -59,13 +66,15 @@ export const useMemoryTracking = ({
         return { 
           data: stack, 
           count: stack.length,
-          details: stack.length > 0 ? `types: ${stack.map((op: any) => op.type).join(', ')}` : undefined
+          details: stack.length > 0 ? `types: ${stack.map((op: any) => op.type).join(', ')}` : undefined,
+          category: 'Undo System',
         };
       });
     } else {
       registerTrackedObject('undo-stack', () => ({
         data: { estimatedSize: undoStackSize },
         count: undoStackSize,
+        category: 'Undo System',
       }));
     }
     
@@ -76,13 +85,15 @@ export const useMemoryTracking = ({
         return { 
           data: stack, 
           count: stack.length,
-          details: stack.length > 0 ? `types: ${stack.map((op: any) => op.type).join(', ')}` : undefined
+          details: stack.length > 0 ? `types: ${stack.map((op: any) => op.type).join(', ')}` : undefined,
+          category: 'Undo System',
         };
       });
     } else {
       registerTrackedObject('redo-stack', () => ({
         data: { estimatedSize: redoStackSize },
         count: redoStackSize,
+        category: 'Undo System',
       }));
     }
     
@@ -92,7 +103,8 @@ export const useMemoryTracking = ({
         const baseline = getBaseline();
         return { 
           data: baseline, 
-          count: baseline?.items?.length || 0 
+          count: baseline?.items?.length || 0,
+          category: 'Core Data',
         };
       });
     }
@@ -106,7 +118,8 @@ export const useMemoryTracking = ({
       return {
         data: allScripts, // Track actual content for size estimation
         count: allScripts.length,
-        details: `${totalChars.toLocaleString()} total chars`
+        details: `${totalChars.toLocaleString()} total chars`,
+        category: 'Core Data',
       };
     });
     
@@ -117,7 +130,8 @@ export const useMemoryTracking = ({
         return {
           data: { activeCount: count },
           count,
-          details: count > 0 ? 'active typing batches' : undefined
+          details: count > 0 ? 'active typing batches' : undefined,
+          category: 'Real-time Sync',
         };
       });
     }
@@ -129,7 +143,8 @@ export const useMemoryTracking = ({
         return {
           data: Object.fromEntries(map),
           count: map.size,
-          details: map.size > 0 ? `oldest: ${Math.round((Date.now() - Math.min(...map.values())) / 1000)}s ago` : undefined
+          details: map.size > 0 ? `oldest: ${Math.round((Date.now() - Math.min(...map.values())) / 1000)}s ago` : undefined,
+          category: 'Protection Maps',
         };
       });
     }
@@ -141,6 +156,7 @@ export const useMemoryTracking = ({
         return {
           data: Object.fromEntries(map),
           count: map.size,
+          category: 'Protection Maps',
         };
       });
     }
@@ -152,6 +168,7 @@ export const useMemoryTracking = ({
         return {
           data: Object.fromEntries(map),
           count: map.size,
+          category: 'Protection Maps',
         };
       });
     }

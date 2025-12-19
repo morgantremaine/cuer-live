@@ -1,10 +1,12 @@
 /**
  * Memory diagnostics utility for debugging memory usage in large rundowns
  * Call window.memoryDiag() from console to see detailed breakdown
+ * Call window.memoryDiagDeep() for extended analysis
  */
 
 import { broadcastBatcher } from './broadcastBatcher';
 import { cellBroadcast } from './cellBroadcast';
+import { getGlobalSubscriptionStats } from '@/hooks/useConsolidatedRealtimeRundown';
 
 // Rough size estimation for objects
 const estimateObjectSize = (obj: any, seen = new WeakSet()): number => {
@@ -51,19 +53,39 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 };
 
+interface TrackedObjectEstimate {
+  name: string;
+  size: string;
+  sizeBytes: number;
+  count?: number;
+  details?: string;
+  category?: string;
+}
+
+interface GlobalServiceStats {
+  cellBroadcast: ReturnType<typeof cellBroadcast.getStats>;
+  subscriptions: ReturnType<typeof getGlobalSubscriptionStats>;
+}
+
+interface ComponentEstimate {
+  cellCount: number;
+  estimatedOverheadMB: number;
+  itemCount: number;
+  columnCount: number;
+}
+
 interface MemoryReport {
   jsHeap: {
     used: string;
+    usedBytes: number;
     total: string;
     limit: string;
     percentage: string;
   } | null;
-  estimates: {
-    name: string;
-    size: string;
-    count?: number;
-    details?: string;
-  }[];
+  estimates: TrackedObjectEstimate[];
+  totalTrackedBytes: number;
+  componentEstimate: ComponentEstimate | null;
+  globalServices: GlobalServiceStats | null;
   broadcastSystem: {
     batcherQueues: {
       cell: number;
@@ -74,13 +96,19 @@ interface MemoryReport {
     memoryMultiplier: string;
     cellBroadcastChannels: number;
   };
+  memoryBudgetAnalysis: {
+    trackedTotal: string;
+    estimatedComponentOverhead: string;
+    untrackedEstimate: string;
+    coveragePercentage: string;
+  } | null;
   recommendations: string[];
 }
 
 // Registry for trackable objects
-const trackedObjects: Map<string, () => { data: any; count?: number; details?: string }> = new Map();
+const trackedObjects: Map<string, () => { data: any; count?: number; details?: string; category?: string }> = new Map();
 
-export const registerTrackedObject = (name: string, getter: () => { data: any; count?: number; details?: string }) => {
+export const registerTrackedObject = (name: string, getter: () => { data: any; count?: number; details?: string; category?: string }) => {
   trackedObjects.set(name, getter);
 };
 
@@ -88,60 +116,79 @@ export const unregisterTrackedObject = (name: string) => {
   trackedObjects.delete(name);
 };
 
+// Store item/column counts for component estimation
+let lastKnownItemCount = 0;
+let lastKnownColumnCount = 0;
+
+export const setComponentCounts = (items: number, columns: number) => {
+  lastKnownItemCount = items;
+  lastKnownColumnCount = columns;
+};
+
 export const runMemoryDiagnostics = (): MemoryReport => {
   const report: MemoryReport = {
     jsHeap: null,
     estimates: [],
+    totalTrackedBytes: 0,
+    componentEstimate: null,
+    globalServices: null,
     broadcastSystem: {
       batcherQueues: { cell: 0, focus: 0, structural: 0 },
       currentInterval: 'unknown',
       memoryMultiplier: '1x',
       cellBroadcastChannels: 0,
     },
+    memoryBudgetAnalysis: null,
     recommendations: [],
   };
 
   // JS Heap from performance.memory (Chrome only)
   const perf = performance as any;
+  let usedBytes = 0;
   if (perf.memory) {
-    const used = perf.memory.usedJSHeapSize;
+    usedBytes = perf.memory.usedJSHeapSize;
     const total = perf.memory.totalJSHeapSize;
     const limit = perf.memory.jsHeapSizeLimit;
     report.jsHeap = {
-      used: formatBytes(used),
+      used: formatBytes(usedBytes),
+      usedBytes,
       total: formatBytes(total),
       limit: formatBytes(limit),
-      percentage: `${((used / limit) * 100).toFixed(1)}%`,
+      percentage: `${((usedBytes / limit) * 100).toFixed(1)}%`,
     };
 
-    if (used > 600 * 1024 * 1024) {
+    if (usedBytes > 600 * 1024 * 1024) {
       report.recommendations.push('🔴 Critical memory usage (>600MB) - refresh recommended');
-    } else if (used > 400 * 1024 * 1024) {
+    } else if (usedBytes > 400 * 1024 * 1024) {
       report.recommendations.push('🟡 High memory usage (>400MB) - monitor closely');
     }
   }
 
   // Estimate tracked objects
+  let totalTrackedBytes = 0;
   for (const [name, getter] of trackedObjects) {
     try {
-      const { data, count, details } = getter();
-      const size = estimateObjectSize(data);
+      const { data, count, details, category } = getter();
+      const sizeBytes = estimateObjectSize(data);
+      totalTrackedBytes += sizeBytes;
       report.estimates.push({
         name,
-        size: formatBytes(size),
+        size: formatBytes(sizeBytes),
+        sizeBytes,
         count,
         details,
+        category,
       });
 
       // Add recommendations based on findings
-      if (name === 'rundown-items' && size > 10 * 1024 * 1024) {
-        report.recommendations.push(`⚠️ ${name} is large (${formatBytes(size)}) - possible large scripts`);
+      if (name === 'rundown-items' && sizeBytes > 10 * 1024 * 1024) {
+        report.recommendations.push(`⚠️ ${name} is large (${formatBytes(sizeBytes)}) - possible large scripts`);
       }
       if (name === 'undo-stack' && count && count >= 5) {
         report.recommendations.push(`ℹ️ Undo stack at max capacity (${count}/5)`);
       }
-      if (name === 'script-fields' && size > 5 * 1024 * 1024) {
-        report.recommendations.push(`⚠️ Script content is ${formatBytes(size)} - ${count} fields`);
+      if (name === 'script-fields' && sizeBytes > 5 * 1024 * 1024) {
+        report.recommendations.push(`⚠️ Script content is ${formatBytes(sizeBytes)} - ${count} fields`);
       }
       if (name === 'recently-edited-fields' && count && count > 50) {
         report.recommendations.push(`ℹ️ ${count} recently edited fields tracked - map may need cleanup`);
@@ -150,8 +197,39 @@ export const runMemoryDiagnostics = (): MemoryReport => {
       report.estimates.push({
         name,
         size: 'error',
+        sizeBytes: 0,
       });
     }
+  }
+  report.totalTrackedBytes = totalTrackedBytes;
+
+  // Component overhead estimation
+  const cellCount = lastKnownItemCount * lastKnownColumnCount;
+  if (cellCount > 0) {
+    // Estimate ~50KB per cell component (React overhead, refs, closures, handlers)
+    const estimatedOverheadMB = (cellCount * 50 * 1024) / (1024 * 1024);
+    report.componentEstimate = {
+      cellCount,
+      estimatedOverheadMB,
+      itemCount: lastKnownItemCount,
+      columnCount: lastKnownColumnCount,
+    };
+
+    if (cellCount > 3000) {
+      report.recommendations.push(`⚠️ High cell count (${cellCount.toLocaleString()}) - consider virtualization or column reduction`);
+    } else if (cellCount > 2000) {
+      report.recommendations.push(`ℹ️ ${cellCount.toLocaleString()} cells rendered - monitor performance`);
+    }
+  }
+
+  // Global services stats
+  try {
+    report.globalServices = {
+      cellBroadcast: cellBroadcast.getStats(),
+      subscriptions: getGlobalSubscriptionStats(),
+    };
+  } catch (e) {
+    // Ignore errors
   }
 
   // Broadcast batcher stats
@@ -183,6 +261,27 @@ export const runMemoryDiagnostics = (): MemoryReport => {
     // Ignore errors
   }
 
+  // Memory budget analysis
+  if (usedBytes > 0) {
+    const componentOverhead = report.componentEstimate 
+      ? report.componentEstimate.estimatedOverheadMB * 1024 * 1024 
+      : 0;
+    const tracked = totalTrackedBytes + componentOverhead;
+    const untracked = usedBytes - tracked;
+    const coverage = (tracked / usedBytes) * 100;
+
+    report.memoryBudgetAnalysis = {
+      trackedTotal: formatBytes(totalTrackedBytes),
+      estimatedComponentOverhead: formatBytes(componentOverhead),
+      untrackedEstimate: formatBytes(Math.max(0, untracked)),
+      coveragePercentage: `${coverage.toFixed(1)}%`,
+    };
+
+    if (coverage < 50 && usedBytes > 200 * 1024 * 1024) {
+      report.recommendations.push(`⚠️ Low tracking coverage (${coverage.toFixed(1)}%) - ${formatBytes(untracked)} unaccounted`);
+    }
+  }
+
   return report;
 };
 
@@ -203,29 +302,38 @@ export const printMemoryDiagnostics = () => {
 
   if (report.estimates.length > 0) {
     console.group('📦 Tracked Objects (sorted by size)');
-    // Sort by size (parse the formatted string back)
-    const sorted = [...report.estimates].sort((a, b) => {
-      const parseSize = (s: string) => {
-        if (s === 'error') return 0;
-        const match = s.match(/^([\d.]+)\s*(B|KB|MB)$/);
-        if (!match) return 0;
-        const num = parseFloat(match[1]);
-        const unit = match[2];
-        if (unit === 'MB') return num * 1024 * 1024;
-        if (unit === 'KB') return num * 1024;
-        return num;
-      };
-      return parseSize(b.size) - parseSize(a.size);
-    });
+    const sorted = [...report.estimates].sort((a, b) => b.sizeBytes - a.sizeBytes);
     
     for (const item of sorted) {
       const countStr = item.count !== undefined ? ` (${item.count} items)` : '';
       const detailStr = item.details ? ` - ${item.details}` : '';
       console.log(`${item.name}: ${item.size}${countStr}${detailStr}`);
     }
+    console.log(`📊 Total tracked: ${formatBytes(report.totalTrackedBytes)}`);
     console.groupEnd();
   } else {
     console.log('📦 No tracked objects registered (open a rundown first)');
+  }
+
+  if (report.componentEstimate) {
+    console.group('🧩 Component Overhead Estimate');
+    console.log(`Cells: ${report.componentEstimate.cellCount.toLocaleString()} (${report.componentEstimate.itemCount} rows × ${report.componentEstimate.columnCount} columns)`);
+    console.log(`Estimated React overhead: ~${report.componentEstimate.estimatedOverheadMB.toFixed(1)} MB`);
+    console.groupEnd();
+  }
+
+  if (report.globalServices) {
+    console.group('🌐 Global Services');
+    const cb = report.globalServices.cellBroadcast;
+    console.log(`CellBroadcast: ${cb.channelCount} channels, ${cb.callbackCount} callbacks, ${cb.pendingBroadcasts} pending`);
+    console.log(`  Debounce: ${cb.currentDebounceMs}ms, Active users: ${cb.activeUserCount}`);
+    
+    const subs = report.globalServices.subscriptions;
+    console.log(`Subscriptions: ${subs.subscriptionCount} active`);
+    for (const sub of subs.subscriptions) {
+      console.log(`  ${sub.rundownId.slice(0, 8)}...: connected=${sub.isConnected}, refs=${sub.refCount}, callbacks=${sub.callbackCounts.rundown}/${sub.callbackCounts.showcaller}/${sub.callbackCounts.blueprint}`);
+    }
+    console.groupEnd();
   }
 
   console.group('📡 Broadcast System');
@@ -234,6 +342,15 @@ export const printMemoryDiagnostics = () => {
   console.log(`Memory pressure multiplier: ${report.broadcastSystem.memoryMultiplier}`);
   console.log(`Cell broadcast channels: ${report.broadcastSystem.cellBroadcastChannels}`);
   console.groupEnd();
+
+  if (report.memoryBudgetAnalysis) {
+    console.group('📈 Memory Budget Analysis');
+    console.log(`Tracked data: ${report.memoryBudgetAnalysis.trackedTotal}`);
+    console.log(`Component overhead: ${report.memoryBudgetAnalysis.estimatedComponentOverhead}`);
+    console.log(`Untracked: ${report.memoryBudgetAnalysis.untrackedEstimate}`);
+    console.log(`Coverage: ${report.memoryBudgetAnalysis.coveragePercentage}`);
+    console.groupEnd();
+  }
 
   if (report.recommendations.length > 0) {
     console.group('💡 Recommendations');
@@ -248,9 +365,69 @@ export const printMemoryDiagnostics = () => {
   return report;
 };
 
+// Deep diagnostics with more detailed breakdown
+export const printMemoryDiagnosticsDeep = () => {
+  const report = runMemoryDiagnostics();
+  
+  console.group('🔬 Deep Memory Diagnostics');
+  
+  // Standard report first
+  printMemoryDiagnostics();
+  
+  console.group('📋 Detailed Object Breakdown');
+  
+  // Show top 10 largest items within rundown-items
+  for (const [name, getter] of trackedObjects) {
+    if (name === 'rundown-items') {
+      try {
+        const { data } = getter();
+        if (Array.isArray(data) && data.length > 0) {
+          console.group(`🔍 ${name} - Individual Item Sizes (top 10)`);
+          const itemSizes = data.map((item: any, idx: number) => ({
+            idx,
+            id: item.id?.slice(0, 8) || 'unknown',
+            size: estimateObjectSize(item),
+            scriptSize: (item.script?.length || 0) * 2,
+            hasScript: !!item.script,
+          }));
+          itemSizes.sort((a, b) => b.size - a.size);
+          for (const item of itemSizes.slice(0, 10)) {
+            console.log(`Row ${item.idx}: ${formatBytes(item.size)} (script: ${formatBytes(item.scriptSize)})`);
+          }
+          console.groupEnd();
+        }
+      } catch (e) {
+        console.log(`Could not analyze ${name}:`, e);
+      }
+    }
+  }
+  
+  console.groupEnd();
+  
+  // Memory trend tracking
+  console.group('📊 Memory Snapshot');
+  const perf = performance as any;
+  if (perf.memory) {
+    console.log('Current snapshot - save and compare later:');
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      heapUsed: perf.memory.usedJSHeapSize,
+      trackedBytes: report.totalTrackedBytes,
+      cellCount: report.componentEstimate?.cellCount || 0,
+      itemCount: report.componentEstimate?.itemCount || 0,
+    }));
+  }
+  console.groupEnd();
+  
+  console.groupEnd();
+  
+  return report;
+};
+
 // Expose to window for console access
 if (typeof window !== 'undefined') {
   (window as any).memoryDiag = printMemoryDiagnostics;
   (window as any).memoryDiagRaw = runMemoryDiagnostics;
-  console.log('💡 Memory diagnostics available: window.memoryDiag()');
+  (window as any).memoryDiagDeep = printMemoryDiagnosticsDeep;
+  console.log('💡 Memory diagnostics available: window.memoryDiag() or window.memoryDiagDeep()');
 }
