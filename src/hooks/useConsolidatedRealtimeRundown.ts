@@ -40,6 +40,38 @@ const globalSubscriptions = new Map<string, {
   generation: number; // Generation tracking to ignore stale callbacks
 }>();
 
+// Export stats function for memory diagnostics
+export const getGlobalSubscriptionStats = () => {
+  const stats: {
+    rundownId: string;
+    isConnected: boolean;
+    refCount: number;
+    generation: number;
+    lastProcessedDocVersion: number;
+    callbackCounts: { rundown: number; showcaller: number; blueprint: number };
+  }[] = [];
+
+  globalSubscriptions.forEach((state, rundownId) => {
+    stats.push({
+      rundownId,
+      isConnected: state.isConnected,
+      refCount: state.refCount,
+      generation: state.generation,
+      lastProcessedDocVersion: state.lastProcessedDocVersion,
+      callbackCounts: {
+        rundown: state.callbacks.onRundownUpdate.size,
+        showcaller: state.callbacks.onShowcallerUpdate.size,
+        blueprint: state.callbacks.onBlueprintUpdate.size,
+      },
+    });
+  });
+
+  return {
+    subscriptionCount: globalSubscriptions.size,
+    subscriptions: stats,
+  };
+};
+
 export const useConsolidatedRealtimeRundown = ({
   rundownId,
   onRundownUpdate,

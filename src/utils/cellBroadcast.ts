@@ -335,6 +335,23 @@ export class CellBroadcastManager {
     this.lastBroadcastReceivedAt.delete(rundownId);
     this.cleanupChannel(rundownId);
   }
+
+  // Memory diagnostics stats
+  getStats() {
+    let totalCallbacks = 0;
+    this.callbacks.forEach(set => totalCallbacks += set.size);
+
+    return {
+      channelCount: this.channels.size,
+      callbackCount: totalCallbacks,
+      pendingBroadcasts: this.pendingBroadcasts.size,
+      debouncedBroadcasts: this.debouncedBroadcasts.size,
+      connectionStatuses: Object.fromEntries(this.connectionStatus),
+      channelGenerations: Object.fromEntries(this.channelGeneration),
+      activeUserCount: this.activeUserCount,
+      currentDebounceMs: this.getAdaptiveDebounceMs(),
+    };
+  }
 }
 
 export const cellBroadcast = new CellBroadcastManager();
