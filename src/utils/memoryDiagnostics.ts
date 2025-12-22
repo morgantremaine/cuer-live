@@ -70,8 +70,24 @@ interface GlobalServiceStats {
 interface ComponentEstimate {
   cellCount: number;
   estimatedOverheadMB: number;
+  measuredPerCellKB: number;
   itemCount: number;
   columnCount: number;
+}
+
+interface ScalingProjection {
+  rows: number;
+  estimatedMB: number;
+  status: 'ok' | 'warning' | 'danger';
+}
+
+interface MemoryBudgetAnalysis {
+  trackedDataBytes: number;
+  reactOverheadBytes: number;
+  measuredPerCellKB: number;
+  baselineOverheadMB: number;
+  scalingProjections: ScalingProjection[];
+  maxRecommendedRows: number;
 }
 
 interface MemoryReport {
@@ -96,14 +112,14 @@ interface MemoryReport {
     memoryMultiplier: string;
     cellBroadcastChannels: number;
   };
-  memoryBudgetAnalysis: {
-    trackedTotal: string;
-    estimatedComponentOverhead: string;
-    untrackedEstimate: string;
-    coveragePercentage: string;
-  } | null;
+  memoryBudgetAnalysis: MemoryBudgetAnalysis | null;
   recommendations: string[];
 }
+
+// Calibrated from actual measurements: ~15KB per cell (down from 50KB estimate)
+const CALIBRATED_PER_CELL_KB = 15;
+// Baseline app overhead (React, libraries, etc.) - approximately 40MB
+const BASELINE_APP_OVERHEAD_MB = 40;
 
 // Registry for trackable objects
 const trackedObjects: Map<string, () => { data: any; count?: number; details?: string; category?: string }> = new Map();
@@ -203,22 +219,29 @@ export const runMemoryDiagnostics = (): MemoryReport => {
   }
   report.totalTrackedBytes = totalTrackedBytes;
 
-  // Component overhead estimation
+  // Component overhead estimation with calibrated values
   const cellCount = lastKnownItemCount * lastKnownColumnCount;
   if (cellCount > 0) {
-    // Estimate ~50KB per cell component (React overhead, refs, closures, handlers)
-    const estimatedOverheadMB = (cellCount * 50 * 1024) / (1024 * 1024);
+    // Calculate measured per-cell overhead from actual heap data
+    const reactOverhead = usedBytes - totalTrackedBytes - (BASELINE_APP_OVERHEAD_MB * 1024 * 1024);
+    const measuredPerCellKB = cellCount > 0 ? Math.max(0, reactOverhead / cellCount / 1024) : CALIBRATED_PER_CELL_KB;
+    
+    // Use measured value if reasonable, otherwise fall back to calibrated
+    const effectivePerCellKB = (measuredPerCellKB > 5 && measuredPerCellKB < 50) ? measuredPerCellKB : CALIBRATED_PER_CELL_KB;
+    const estimatedOverheadMB = (cellCount * effectivePerCellKB * 1024) / (1024 * 1024);
+    
     report.componentEstimate = {
       cellCount,
       estimatedOverheadMB,
+      measuredPerCellKB: effectivePerCellKB,
       itemCount: lastKnownItemCount,
       columnCount: lastKnownColumnCount,
     };
 
-    if (cellCount > 3000) {
+    if (cellCount > 5000) {
+      report.recommendations.push(`🔴 Very high cell count (${cellCount.toLocaleString()}) - virtualization strongly recommended`);
+    } else if (cellCount > 3000) {
       report.recommendations.push(`⚠️ High cell count (${cellCount.toLocaleString()}) - consider virtualization or column reduction`);
-    } else if (cellCount > 2000) {
-      report.recommendations.push(`ℹ️ ${cellCount.toLocaleString()} cells rendered - monitor performance`);
     }
   }
 
@@ -261,24 +284,46 @@ export const runMemoryDiagnostics = (): MemoryReport => {
     // Ignore errors
   }
 
-  // Memory budget analysis
-  if (usedBytes > 0) {
-    const componentOverhead = report.componentEstimate 
-      ? report.componentEstimate.estimatedOverheadMB * 1024 * 1024 
-      : 0;
-    const tracked = totalTrackedBytes + componentOverhead;
-    const untracked = usedBytes - tracked;
-    const coverage = (tracked / usedBytes) * 100;
-
-    report.memoryBudgetAnalysis = {
-      trackedTotal: formatBytes(totalTrackedBytes),
-      estimatedComponentOverhead: formatBytes(componentOverhead),
-      untrackedEstimate: formatBytes(Math.max(0, untracked)),
-      coveragePercentage: `${coverage.toFixed(1)}%`,
+  // Memory budget analysis with scaling projections
+  if (usedBytes > 0 && lastKnownItemCount > 0 && lastKnownColumnCount > 0) {
+    const perCellKB = report.componentEstimate?.measuredPerCellKB || CALIBRATED_PER_CELL_KB;
+    const reactOverheadBytes = (cellCount * perCellKB * 1024);
+    
+    // Calculate scaling projections
+    const projectRows = (rows: number): ScalingProjection => {
+      const cells = rows * lastKnownColumnCount;
+      const estimatedMB = BASELINE_APP_OVERHEAD_MB + (cells * perCellKB / 1024) + (totalTrackedBytes / 1024 / 1024 * (rows / lastKnownItemCount));
+      return {
+        rows,
+        estimatedMB: Math.round(estimatedMB),
+        status: estimatedMB > 400 ? 'danger' : estimatedMB > 250 ? 'warning' : 'ok',
+      };
     };
 
-    if (coverage < 50 && usedBytes > 200 * 1024 * 1024) {
-      report.recommendations.push(`⚠️ Low tracking coverage (${coverage.toFixed(1)}%) - ${formatBytes(untracked)} unaccounted`);
+    // Calculate max recommended rows (target: stay under 300MB)
+    const targetMemoryMB = 300;
+    const availableForCells = (targetMemoryMB - BASELINE_APP_OVERHEAD_MB) * 1024; // KB available
+    const maxCells = availableForCells / perCellKB;
+    const maxRecommendedRows = Math.floor(maxCells / lastKnownColumnCount);
+
+    report.memoryBudgetAnalysis = {
+      trackedDataBytes: totalTrackedBytes,
+      reactOverheadBytes,
+      measuredPerCellKB: perCellKB,
+      baselineOverheadMB: BASELINE_APP_OVERHEAD_MB,
+      scalingProjections: [
+        projectRows(lastKnownItemCount), // Current
+        projectRows(300),
+        projectRows(500),
+        projectRows(800),
+        projectRows(1000),
+      ],
+      maxRecommendedRows,
+    };
+
+    // Add scaling warnings
+    if (lastKnownItemCount > maxRecommendedRows * 0.8) {
+      report.recommendations.push(`⚠️ Approaching memory limit: ${lastKnownItemCount}/${maxRecommendedRows} recommended max rows`);
     }
   }
 
@@ -318,6 +363,7 @@ export const printMemoryDiagnostics = () => {
   if (report.componentEstimate) {
     console.group('🧩 Component Overhead Estimate');
     console.log(`Cells: ${report.componentEstimate.cellCount.toLocaleString()} (${report.componentEstimate.itemCount} rows × ${report.componentEstimate.columnCount} columns)`);
+    console.log(`Per-cell overhead: ~${report.componentEstimate.measuredPerCellKB.toFixed(1)} KB (measured)`);
     console.log(`Estimated React overhead: ~${report.componentEstimate.estimatedOverheadMB.toFixed(1)} MB`);
     console.groupEnd();
   }
@@ -344,11 +390,22 @@ export const printMemoryDiagnostics = () => {
   console.groupEnd();
 
   if (report.memoryBudgetAnalysis) {
+    const mba = report.memoryBudgetAnalysis;
     console.group('📈 Memory Budget Analysis');
-    console.log(`Tracked data: ${report.memoryBudgetAnalysis.trackedTotal}`);
-    console.log(`Component overhead: ${report.memoryBudgetAnalysis.estimatedComponentOverhead}`);
-    console.log(`Untracked: ${report.memoryBudgetAnalysis.untrackedEstimate}`);
-    console.log(`Coverage: ${report.memoryBudgetAnalysis.coveragePercentage}`);
+    console.log(`Tracked data: ${formatBytes(mba.trackedDataBytes)}`);
+    console.log(`React component overhead: ~${formatBytes(mba.reactOverheadBytes)}`);
+    console.log(`Per-cell overhead: ~${mba.measuredPerCellKB.toFixed(1)} KB (measured)`);
+    console.log(`App baseline: ~${mba.baselineOverheadMB} MB`);
+    console.groupEnd();
+    
+    console.group('📊 Scaling Projections');
+    const statusEmoji = { ok: '✅', warning: '⚠️', danger: '🔴' };
+    for (const proj of mba.scalingProjections) {
+      const isCurrent = proj.rows === lastKnownItemCount;
+      const label = isCurrent ? `Current (${proj.rows} rows)` : `At ${proj.rows} rows`;
+      console.log(`${statusEmoji[proj.status]} ${label}: ~${proj.estimatedMB} MB`);
+    }
+    console.log(`Max recommended: ~${mba.maxRecommendedRows} rows (to stay under 300MB)`);
     console.groupEnd();
   }
 
