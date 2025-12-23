@@ -238,11 +238,7 @@ export const runMemoryDiagnostics = (): MemoryReport => {
       columnCount: lastKnownColumnCount,
     };
 
-    if (cellCount > 5000) {
-      report.recommendations.push(`🔴 Very high cell count (${cellCount.toLocaleString()}) - virtualization strongly recommended`);
-    } else if (cellCount > 3000) {
-      report.recommendations.push(`⚠️ High cell count (${cellCount.toLocaleString()}) - consider virtualization or column reduction`);
-    }
+    // Cell count recommendations are now handled by memory-pressure-based logic below
   }
 
   // Global services stats
@@ -321,9 +317,24 @@ export const runMemoryDiagnostics = (): MemoryReport => {
       maxRecommendedRows,
     };
 
-    // Add scaling warnings
+    // Memory-pressure-based recommendations using actual heap data
+    const heapUsedMB = usedBytes / (1024 * 1024);
+    
+    if (heapUsedMB > 300) {
+      report.recommendations.push('🔴 Critical memory usage (>300MB) - reduce rows or consider virtualization');
+    } else if (heapUsedMB > 200) {
+      report.recommendations.push('⚠️ High memory usage (>200MB) - monitor for potential issues');
+    } else if (heapUsedMB > 150) {
+      report.recommendations.push('📊 Memory usage moderate - see scaling projections above for limits');
+    } else if (cellCount > 0) {
+      report.recommendations.push(`✅ Memory usage healthy - running efficiently at ~${perCellKB.toFixed(1)} KB/cell`);
+    }
+
+    // Add row limit warning when approaching max
     if (lastKnownItemCount > maxRecommendedRows * 0.8) {
-      report.recommendations.push(`⚠️ Approaching memory limit: ${lastKnownItemCount}/${maxRecommendedRows} recommended max rows`);
+      report.recommendations.push(`⚠️ Approaching row limit: ${lastKnownItemCount}/${maxRecommendedRows} max recommended`);
+    } else if (lastKnownItemCount > maxRecommendedRows * 0.6) {
+      report.recommendations.push(`ℹ️ Room for growth: ${maxRecommendedRows - lastKnownItemCount} more rows before recommended limit`);
     }
   }
 
