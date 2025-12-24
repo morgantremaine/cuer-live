@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,19 @@ interface AIRundownDialogProps {
 
 type DialogState = 'input' | 'loading' | 'preview';
 
+const STAGE_MESSAGES = [
+  "Analyzing your show description...",
+  "Creating show structure...",
+  "Generating segment details...",
+  "Writing scripts and cues...",
+  "Calculating durations...",
+  "Polishing final details...",
+];
+
+const PROGRESS_DURATION = 70000; // 70 seconds to reach 90%
+const PROGRESS_TARGET = 90;
+const STAGE_INTERVAL = 10000; // Change message every 10 seconds
+
 export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: AIRundownDialogProps) => {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<DialogState>('input');
@@ -26,7 +40,58 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
   const [startTime, setStartTime] = useState('09:00:00');
   const [timezone, setTimezone] = useState('America/New_York');
   const [generatedItems, setGeneratedItems] = useState<RundownItem[]>([]);
+  const [progress, setProgress] = useState(0);
+  const [stageMessage, setStageMessage] = useState(STAGE_MESSAGES[0]);
   const { toast } = useToast();
+
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const stageIndexRef = useRef(0);
+
+  const clearProgressTimers = useCallback(() => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    if (stageIntervalRef.current) {
+      clearInterval(stageIntervalRef.current);
+      stageIntervalRef.current = null;
+    }
+  }, []);
+
+  const startProgressAnimation = useCallback(() => {
+    // Reset state
+    setProgress(0);
+    setStageMessage(STAGE_MESSAGES[0]);
+    stageIndexRef.current = 0;
+    startTimeRef.current = Date.now();
+
+    // Clear any existing timers
+    clearProgressTimers();
+
+    // Progress animation with cubic ease-out
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const t = Math.min(elapsed / PROGRESS_DURATION, 1);
+      // Cubic ease-out: starts fast, slows down toward end
+      const easedProgress = PROGRESS_TARGET * (1 - Math.pow(1 - t, 3));
+      setProgress(Math.min(easedProgress, PROGRESS_TARGET));
+    }, 100);
+
+    // Stage message rotation
+    stageIntervalRef.current = setInterval(() => {
+      stageIndexRef.current = (stageIndexRef.current + 1) % STAGE_MESSAGES.length;
+      setStageMessage(STAGE_MESSAGES[stageIndexRef.current]);
+    }, STAGE_INTERVAL);
+  }, [clearProgressTimers]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearProgressTimers();
+    };
+  }, [clearProgressTimers]);
 
   const examplePrompt = "Cuer, create a rundown template for an esports best-of-three tournament. I need sections for TOP OF SHOW, GAME 1, GAME 2, GAME 3, and BOTTOM OF SHOW. Include key segments like Show Open, Team Intros, Live Gameplay, Post-Game Analysis, Recaps, and Winner Interview. Cast members: Host Alex, Casters Moxie and Rekkz.";
 
@@ -41,11 +106,15 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
     }
 
     setState('loading');
+    startProgressAnimation();
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-rundown', {
         body: { prompt, startTime }
       });
+
+      // Stop progress animation
+      clearProgressTimers();
 
       if (error) {
         console.error('Edge function error:', error);
@@ -56,6 +125,10 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
         throw new Error('Invalid response from AI');
       }
 
+      // Complete the progress bar
+      setProgress(100);
+      setStageMessage("Complete!");
+
       setGeneratedItems(data.items);
       
       // Set default title if not provided
@@ -64,7 +137,10 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
         setTitle(`AI Generated Rundown - ${date}`);
       }
 
-      setState('preview');
+      // Brief delay to show 100% before transitioning
+      setTimeout(() => {
+        setState('preview');
+      }, 300);
       
       toast({
         title: "Rundown generated!",
@@ -73,6 +149,8 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
 
     } catch (error) {
       console.error('Generation error:', error);
+      clearProgressTimers();
+      setProgress(0);
       
       let errorMessage = 'Failed to generate rundown. Please try again.';
       
@@ -121,6 +199,8 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
   };
 
   const handleCancel = () => {
+    clearProgressTimers();
+    setProgress(0);
     setOpen(false);
     setPrompt('');
     setTitle('');
@@ -240,10 +320,21 @@ export const AIRundownDialog = ({ onCreateRundown, disabled, disabledReason }: A
         )}
 
         {state === 'loading' && (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-            <p className="text-lg font-medium">Cuer is generating your rundown...</p>
-            <p className="text-sm text-muted-foreground">This usually takes about a minute</p>
+          <div className="flex flex-col items-center justify-center py-12 space-y-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-6 w-6 text-green-500 animate-pulse" />
+              <p className="text-lg font-medium">Generating your rundown...</p>
+            </div>
+            
+            <div className="w-full max-w-md space-y-3">
+              <Progress value={progress} className="h-2" />
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground italic">{stageMessage}</span>
+                <span className="text-muted-foreground font-medium">{Math.round(progress)}%</span>
+              </div>
+            </div>
+            
+            <p className="text-xs text-muted-foreground">Typically takes about 1 minute</p>
           </div>
         )}
 
