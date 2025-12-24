@@ -210,9 +210,10 @@ const Help = () => {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Editing</h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm ml-4">
                   <li>Click any cell to edit content</li>
-                  <li>Press Tab to move to next cell</li>
-                  <li>Use Enter to save and move down</li>
-                  <li>Use Cmd+Enter (Mac) or Ctrl+Enter (Windows) to insert line breaks in cells</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Tab</kbd> - Move to next cell</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Save and move down</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Enter</kbd> - Insert line break in cell</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Delete</kbd> or <kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Backspace</kbd> - Delete selected rows</li>
                 </ul>
               </div>
               
@@ -272,6 +273,16 @@ const Help = () => {
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + V</kbd> - Paste rows</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Shift + Enter</kbd> - Add new segment</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Cmd/Ctrl + Enter</kbd> - Line break in cell</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Delete</kbd> / <kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Backspace</kbd> - Delete selected rows</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Showcaller</h3>
+                <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-sm">
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Space</kbd> - Play/Pause showcaller</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Arrow Keys</kbd> - Move backward/forward</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Reset showcaller</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">`</kbd> - Scroll to current segment</li>
                 </ul>
               </div>
               <div>
@@ -519,6 +530,7 @@ const Help = () => {
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Left Arrow</kbd> or <kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Up Arrow</kbd> - Move backward</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Right Arrow</kbd> or <kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Down Arrow</kbd> - Move forward</li>
                   <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Enter</kbd> - Reset showcaller</li>
+                  <li><kbd className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">`</kbd> - Scroll to current segment</li>
                 </ul>
               </div>
               
